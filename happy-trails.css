@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 1.1
+   version 1.2
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
 
      body.page-map     the main map          (index.html)
-     body.page-trail   a single trail's page (Beltline 5.4.html)
+     body.page-trail   a single trail's page (Beltline 5.5.html)
      body.page-text    a reading page        (Trails / About / Contact)
 
    The two map pages share their whole interface — the navigation bar, the
@@ -140,6 +140,13 @@
   --handle-line:       2px;
   --hint-bob-speed:    1.9s;
   --knob-colour:       #fff;
+  /* the buffering spinner on a video */
+  --spinner-size:      34px;
+  --spinner-weight:     3px;
+  --spinner-track:     rgba(255,255,255,.22);
+  --spinner-lit:       #fff;
+  --spinner-speed:     .8s;
+
   --knob-size:         7px;
   --maplink-size:      9.5px;
   --media-ease:        cubic-bezier(.4, 0, .2, 1);
@@ -594,6 +601,17 @@ body.page-trail{
   display:grid; gap:var(--switch-gap);
   grid-template-columns:repeat(var(--switch-columns), minmax(0, 1fr));
 }
+/* A group holding a single switch gives it the whole width rather than half of
+   it with an empty hole beside it — which is what the Beltline's Layers panel
+   is whenever only one layer is available. `1 / -1` means "first grid line to
+   last", so it holds whatever --switch-columns is set to and needs no change
+   if the column count ever does.
+   Swap :only-child for :last-child:nth-child(odd) below if you would also like
+   the last switch of an odd-numbered group to stretch across. */
+.ht-switches > .ht-switch:only-child,
+.tm-switches > .tm-switch:only-child{
+  grid-column: 1 / -1;
+}
 .tm-switch{
   display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left;
   padding:11px 12px; border-radius:12px; cursor:pointer;
@@ -712,6 +730,30 @@ body.page-trail{
   transition:transform var(--media-slide) var(--media-ease);
 }
 .tm-slide{ flex:0 0 100%; position:relative; height:100%; }
+/* ── the buffering spinner ────────────────────────────────────────────────
+   Shown while a video is fetching enough of itself to play, and again if it
+   runs dry part-way through. Without it the picture area simply sits there,
+   which reads as a broken card rather than a loading one — and the first play
+   of a video that has so far fetched only its metadata is exactly when that
+   happens.
+
+   It is a ring with one brighter quarter, turned by a CSS animation, so it
+   keeps moving even while the main thread is busy decoding video. */
+.tm-spinner{
+  position:absolute; left:50%; top:50%;
+  width:var(--spinner-size); height:var(--spinner-size);
+  margin:calc(var(--spinner-size) / -2) 0 0 calc(var(--spinner-size) / -2);
+  border-radius:50%;
+  border:var(--spinner-weight) solid var(--spinner-track);
+  border-top-color:var(--spinner-lit);
+  animation:tm-spin var(--spinner-speed) linear infinite;
+  opacity:0; pointer-events:none; z-index:1;
+  transition:opacity .18s ease;
+}
+/* the engine puts this on the slide while its video is waiting */
+.tm-slide.is-buffering .tm-spinner{ opacity:1; }
+@keyframes tm-spin{ to{ transform:rotate(360deg); } }
+
 .tm-slide img, .tm-slide video{
   display:block; width:100%; height:100%;
   object-fit:cover;          /* fill the window, crop whatever hangs over */
