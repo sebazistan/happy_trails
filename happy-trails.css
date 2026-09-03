@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 1.0
+   version 1.1
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -218,12 +218,9 @@ body.page-map{
   --title-pad:         20px;
 }
 
-/* a single trail's page — dark interface over pale paper */
-body.page-trail{
-  /* the defaults in ① are already this page's values, so there is nothing to
-     restate here. The block is kept so the set of pages is visible in one
-     place, and so page-only rules have somewhere obvious to go. */
-}
+/* a single trail's page — dark interface over pale paper. The variables in ①
+   are already this page's values, so there is nothing to restate; its layout
+   rules are with the <body> rules further down. */
 
 
 /* ═══ ③  THE INTERFACE ══════════════════════════════════════════════════════
@@ -252,12 +249,26 @@ body.page-trail{
    ═══════════════════════════════════════════════════════════════════════════ */*,
 *{ box-sizing:border-box; }
 
+/* ── <body> ───────────────────────────────────────────────────────────────
+   What every page shares is here; what only one kind of page wants is in the
+   three blocks below it. That split matters more than it looks: the main map
+   fills the window and must NOT scroll, while a trail page IS a long scroll —
+   scrolling is the whole mechanism, it is what walks you along the route. When
+   the two stylesheets were merged into one file both pages had a plain `body`
+   rule, the map's `overflow:hidden` won, and the trail page could not be
+   scrolled at all. Hence the scoping. */
 body{
   margin:0;
-  background:var(--backdrop);
   color:var(--text);
   font-family:var(--font-body);
   -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+
+/* a trail page: it scrolls, and the ground around the artwork is its own
+   paper colour so panning past the edge is not a jolt */
+body.page-trail{
+  background:var(--backdrop);
   overscroll-behavior-y:none;
 }
 
@@ -1071,18 +1082,13 @@ body.tm-satellite .tm-label .tm-tag{ background:rgba(10,12,14,.82); }
 
 
 
-body{
-  margin:0;
-  font-family:var(--font-body);
-  color:var(--text);
+/* the main map: it fills the window and nothing scrolls. Nothing on it is
+   meant to be selected either — a drag is a pan, and a double-click on a route
+   button should not leave a blue highlight behind. The one exception is the
+   coordinate readout, which turns selection back on for itself. */
+body.page-map{
   background:var(--map-backdrop);
-  -webkit-font-smoothing:antialiased;
-  overflow:hidden;                 /* the map fills the window; nothing scrolls */
-  overscroll-behavior:none;
-  /* Nothing on this page is meant to be selected: a drag is a pan, and a
-     double-click on a route button should not leave a blue highlight behind.
-     The one exception is the coordinate readout, which you are meant to be
-     able to copy — it turns selection back on for itself. */
+  overflow:hidden;
   user-select:none; -webkit-user-select:none;
   -webkit-tap-highlight-color:transparent;
 }
