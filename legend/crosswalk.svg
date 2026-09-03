@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 99.13 16">
+  <defs>
+    <style>
+      .trails {
+        stroke: #4ecf4e;
+        stroke-width: 16px;
+      }
+
+      .trails, .cls-1 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .cls-1 {
+        stroke: #fff;
+        stroke-width: 12px;
+      }
+    </style>
+  </defs>
+  <g id="legend">
+    <g id="crosswalk">
+      <line class="trails" x1="8" y1="8" x2="91.13" y2="8"/>
+      <line class="cls-1" x1="32.99" y1="8" x2="32.99" y2="8"/>
+    </g>
+  </g>
+</svg>

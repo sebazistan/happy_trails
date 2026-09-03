@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 99.13 16">
+  <defs>
+    <style>
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke: #4ecf4e;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 16px;
+      }
+
+      .cls-2 {
+        stroke-dasharray: 0 20.78;
+      }
+    </style>
+  </defs>
+  <g id="legend">
+    <g id="under_const" data-name="under const">
+      <g>
+        <line class="cls-1" x1="8" y1="8" x2="8" y2="8"/>
+        <line class="cls-2" x1="28.78" y1="8" x2="80.74" y2="8"/>
+        <line class="cls-1" x1="91.13" y1="8" x2="91.13" y2="8"/>
+      </g>
+    </g>
+  </g>
+</svg>
