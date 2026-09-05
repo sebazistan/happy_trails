@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- A trail crossing a river valley: the two things every route on this site
+       is made of. Drawn heavy and simple so it survives being 16px wide. -->
+  <rect width="64" height="64" rx="13" fill="#1d2124"/>
+  <path d="M8 46 C20 46 20 22 32 22 C44 22 44 46 56 46" fill="none"
+        stroke="#5c8595" stroke-width="9" stroke-linecap="round"/>
+  <path d="M10 20 C24 20 22 44 34 44 C46 44 46 30 56 30" fill="none"
+        stroke="#c0392b" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="10" cy="20" r="5" fill="#efe8d8"/>
+  <circle cx="56" cy="30" r="5" fill="#efe8d8"/>
+</svg>

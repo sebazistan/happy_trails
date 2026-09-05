@@ -1,0 +1,1906 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   HAPPY TRAILS — one stylesheet for the whole site
+   version 1.7
+
+   Every page loads this file and nothing else. Which page is which is decided
+   by a class on <body>:
+
+     body.page-map     the main map          (index.html)
+     body.page-trail   a single trail's page (beltline.html)
+     body.page-text    a reading page        (Trails / About / Contact)
+
+   The two map pages share their whole interface — the navigation bar, the
+   corner title, the left rail, the panel, the layer switches, the legend, the
+   round buttons. Those are written once here, with both pages' selectors
+   listed together, so a change lands on both. Where the two genuinely want
+   different values, the variable is declared once below and overridden in the
+   page block that wants something else.
+
+   HOW IT IS LAID OUT
+     ①  the variables, all of them, in one block
+     ②  the three page blocks, each overriding only what it must
+     ③  the shared interface, then what belongs to one page or the other
+     ④  the reading pages
+     ⑤  the responsive rules, last, so they win
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ═══ ①  THE VARIABLES ══════════════════════════════════════════════════════
+   Change a value here and it changes everywhere it is used. The twelve at the
+   bottom of this block are the ones the two map pages disagree about; their
+   value here is the default and section ② overrides it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root{
+
+  /* THE NAVIGATION BAR */
+  --bar-height:        40px;
+  --bar-pad:           clamp(14px, 3vw, 30px);
+  --bar-bg:            #ffffff;
+  --bar-line:          rgba(0,0,0,.10);
+  --bar-text:          #3d3d3d;
+  --bar-brand:         #6cc24a;
+  --bar-here:          #e8503a;
+  --bar-brand-size:    17px;
+  --bar-link-size:     11.5px;
+  --bar-link-gap:      clamp(11px, 2.2vw, 22px);
+
+  /* SPACING */
+  --edge-gap:          clamp(14px, 3vw, 34px);
+  --gutter:            18px;
+
+  /* THE TOP BAND — the corner title and its link buttons */
+  --title-height:      44px;
+  --title-links:       35px;
+  --band-top:          calc(var(--title-height) + var(--title-links) + var(--title-pad) * 2);
+  --trail-link-size:   9.5px;
+  --trail-link-gap:    7px;
+  --trail-link-top:    11px;
+
+  /* THE LEFT RAIL AND ITS PANEL */
+  --rail-top:          8px;
+  --rail-gap:          10px;
+  --compass-size:      52px;
+  --compass-arrow:     22px;
+  --compass-drop:      8px;
+  --panel-width-wide:  min(438px, 88vw);
+  --panel-gap:         12px;
+  --panel-radius:      16px;
+  --panel-slide:       .34s;
+  --panel-ease:        cubic-bezier(.22, 1, .36, 1);
+
+  /* THE ROUND BUTTONS AND CONTROLS */
+  --control-size:      46px;
+  --control-gap:       10px;
+  --button-shadow:     0 4px 16px rgba(0,0,0,.28);
+  --button-fade:       .2s;
+
+  /* THE LEGEND AND THE LAYER SWITCHES */
+  --swatch-width:      44px;
+  --swatch-height:     20px;
+  --switch-columns:    2;
+  --switch-off:        rgba(255,255,255,.20);
+  --switch-slide:      .22s;
+  --switch-gap:        7px;
+
+  /* COLOURS */
+  --accent-soft:       #e0a323;
+  --text:              #f4f2ee;
+  --text-quiet:        #a9a49c;
+  --text-faint:        rgba(255,255,255,.45);
+  --panel:             rgba(18,20,23,.78);
+  --panel-edge:        rgba(255,255,255,.13);
+  --shadow:            0 18px 50px rgba(0,0,0,.45);
+  --map-backdrop:      #1e1e1e;
+  --backdrop:          #efe8d8;
+  --pin-green:         #6cc24a;
+  --pin-purple:        #c78bf0;
+  --pin-text:          #14310c;
+  --pin-text-purple:   #2b0f3d;
+  --wishful:           #8e5bd0;
+  --wishful-edge:      rgba(158,110,222,.62);
+  --wishful-panel:     rgba(31,22,44,.66);
+  --wishful-kicker:    #c39bf0;
+
+  /* TYPE */
+  --font-body:         "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display:      "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --note-size:         11.5px;
+
+  /* EVERYTHING ELSE — the trail page's cards, media, blur and
+     elevation graph, and the map pin sizes. Named as they were. */
+  --arrow-bg:          rgba(8,10,12,.55);
+  --arrow-bg-hover:    var(--accent);
+  --arrow-size:        32px;
+  --band-bottom:       calc(var(--readout-row) + var(--readout-gap) + var(--profile-height) + var(--readout-drop));
+  --caption-fade:      .22s;
+  /* the "scroll for more" line at the foot of a card, on a phone */
+  --more-size:         10px;
+  --more-gap:          7px;
+  --more-top:          12px;
+  /* the "turn your phone" screen */
+  --turn-veil:         rgba(8,10,12,.92);
+  --caption-size:      11px;
+  --card-blur:         10px;
+  --card-body:         15px;
+  /* Everything in a card that is NOT the picture, added up: the padding, the
+     heading, the text window, the pager, the facts. The picture takes what is
+     left of the column, so this number is how the card is kept inside it.
+     ANYTHING ADDED TO A CARD HAS TO BE ADDED HERE TOO, or the card grows past
+     the bottom of its column and starts overhanging the screen. */
+  --more-height:        40px;  /* what the "scroll for more" line at the foot
+                                  of a card costs, counted into --card-chrome
+                                  below because the line is always shown */
+  --card-chrome:       calc(278px + var(--more-height));
+  --card-lean:         .1;
+  --card-lift:         50%;
+  --card-line:         1.65;
+  --card-media:        4/3;
+  --card-media-min:    130px;
+  --card-panel:        rgba(18,20,23,.66);
+  --card-radius:       18px;
+  --card-sit:          50%;
+  --card-text-lines:   7;
+  --card-title:        24px;
+  --card-width:        min(540px, 44vw);
+  --close-fade:        .15s;
+  --column-height:     calc(100vh - var(--bar-height) - var(--band-top) - var(--band-bottom));
+  --dot-off:           rgba(255,255,255,.42);
+  --dot-on:            #fff;
+  --dot-size:          6px;
+  --handle-colour:     #fff;
+  --handle-grip:       30px;
+  --handle-hit:        44px;
+  --handle-line:       2px;
+  --hint-bob-speed:    1.9s;
+  --knob-colour:       #fff;
+  /* the buffering spinner on a video */
+  --spinner-size:      34px;
+  --spinner-weight:     3px;
+  --spinner-track:     rgba(255,255,255,.22);
+  --spinner-lit:       #fff;
+  --spinner-speed:     .8s;
+
+  --knob-size:         7px;
+  --maplink-size:      9.5px;
+  --media-ease:        cubic-bezier(.4, 0, .2, 1);
+  --media-slide:       .45s;
+  --pin-lift:          1.08;
+  --pin-radius:        999px;
+  --pin-size:          13px;
+  --profile-height:    58px;
+  --profile-line:      rgba(255,255,255,.78);
+  --reader-fade:       .18s;
+  --readout-drop:      26px;
+  --readout-gap:       10px;
+  --readout-row:       42px;
+  --readout-size:      clamp(17px, 2.3vw, 24px);
+  --screen-veil-centre: .34;
+  --screen-veil-edge:  .70;
+  /* how far down the opening screen its darkening has faded to nothing. The
+     panel travels up and off, and without this its bottom edge would sweep up
+     the map as a hard horizontal line. Below this point there is no veil, so
+     there is no edge to see. */
+  --screen-veil-ends:  86%;
+  --scroll-length:     900vh;
+  --shade-bottom:      .55;
+  --shade-edges:       .20;
+  --shade-top:         0;
+  --text-turn:         .3s;
+  --trail-ahead:       rgba(60,45,25,.55);
+  --trail-outline:     rgba(255,255,255,.55);
+  --trail-walked:      var(--accent);
+  --walker-ring:       76px;
+  --walker-size:       16px;
+  --walker-speed:      2.4s;
+  --wpdot-colour:      rgba(255,255,255,.9);
+  --wpdot-ring:        rgba(0,0,0,.45);
+  --wpdot-size:        5px;
+
+  /* THE READING PAGES — Trails, About, Contact */
+  --read-width:        min(940px, 100%);
+  --read-top:          46px;    /* below the navigation bar                  */
+  --read-gap:          46px;    /* between one section and the next          */
+  --card-min:          260px;   /* a trail card stops shrinking here and the
+                                   grid drops to one column                  */
+
+  /* ── THE TWELVE THE TWO MAP PAGES DISAGREE ABOUT ──────────────────────────
+     These are the defaults; section ② below changes them per page. They are
+     kept together rather than scattered so it is obvious which values are
+     page-dependent and which are the whole site's.                         */
+  --accent:            #c0392b;   /* map page: #e8503a */
+  --map-edge-shadow:   none;   /* map page: 0 0 90px rgba(0,0,0,.55) */
+  --over-map-ink:      #2c2418;   /* map page: #f4f2ee */
+  --over-map-kicker:   #94661a;   /* map page: #e0a323 */
+  --over-map-quiet:    #7b6a4c;   /* map page: #b9b2a4 */
+  --panel-bg:          rgba(20,22,26,.90);   /* map page: rgba(20,22,26,.94) */
+  --panel-bg-blur:     20px;   /* map page: 0px */
+  --panel-blur:        16px;   /* map page: 10px */
+  --panel-width:       min(310px, 76vw);   /* map page: min(320px, 82vw) */
+  --switch-height:     20px;   /* map page: 18px */
+  --switch-width:      34px;   /* map page: 30px */
+  --title-pad:         22px;   /* map page: 20px */
+}
+
+
+/* ═══ ②  THE THREE KINDS OF PAGE ════════════════════════════════════════════
+   Each block overrides only what it must. body.page-map and body.page-trail
+   both get the map interface; body.page-text gets none of it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* the main map — light interface over a dark drawing */
+body.page-map{
+  --accent:            #e8503a;
+  --map-edge-shadow:   0 0 90px rgba(0,0,0,.55);
+  --over-map-ink:      #f4f2ee;
+  --over-map-kicker:   #e0a323;
+  --over-map-quiet:    #b9b2a4;
+  --panel-bg:          rgba(20,22,26,.94);
+  --panel-bg-blur:     0px;
+  --panel-blur:        10px;
+  --panel-width:       min(320px, 82vw);
+  --switch-height:     18px;
+  --switch-width:      30px;
+  --title-pad:         20px;
+}
+
+/* a single trail's page — dark interface over pale paper. The variables in ①
+   are already this page's values, so there is nothing to restate; its layout
+   rules are with the <body> rules further down. */
+
+
+/* ═══ ③  THE INTERFACE ══════════════════════════════════════════════════════
+   Shared rules list both pages' selectors together; the rest belongs to one
+   page or the other and is prefixed ht- (the main map) or tm- (a trail).
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLLING TRAIL MAP — stylesheet
+   version 5.3
+
+   Everything you are likely to want to change lives in the :root block below.
+   Change a value there and it changes everywhere it is used. Below that block
+   is plain layout, grouped and labelled, which you can ignore unless you want
+   to rearrange things.
+
+   The first group in :root is SCREEN REGIONS. Nothing on this page carries its
+   own private offset any more — every element is placed against one of a few
+   named regions, so moving an edge moves everything that leans on it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT — from here down it is plumbing
+   ═══════════════════════════════════════════════════════════════════════════ */*,
+*{ box-sizing:border-box; }
+
+/* ── <body> ───────────────────────────────────────────────────────────────
+   What every page shares is here; what only one kind of page wants is in the
+   three blocks below it. That split matters more than it looks: the main map
+   fills the window and must NOT scroll, while a trail page IS a long scroll —
+   scrolling is the whole mechanism, it is what walks you along the route. When
+   the two stylesheets were merged into one file both pages had a plain `body`
+   rule, the map's `overflow:hidden` won, and the trail page could not be
+   scrolled at all. Hence the scoping. */
+body{
+  margin:0;
+  color:var(--text);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+
+/* a trail page: it scrolls, and the ground around the artwork is its own
+   paper colour so panning past the edge is not a jolt */
+body.page-trail{
+  background:var(--backdrop);
+  overscroll-behavior-y:none;
+}
+
+/* ── the map ─────────────────────────────────────────────────────────────
+   #tm-stage is a fixed window; #tm-world is the artwork, moved by one transform.
+   The blur at the start and finish is applied to the stage rather than the
+   artwork, so it is measured in screen pixels and does not grow and shrink
+   with the zoom. The engine sets --map-blur; the stylesheet only says where
+   it goes and how strong it may get.                                        */
+/* ── the site's navigation bar ────────────────────────────────────────────
+   Shared with the other pages on the site, so it is deliberately plain: an
+   opaque strip that owns the top --bar-height of the window. Everything else
+   on the page starts below it, which is why nothing else has to know it is
+   there. Change --bar-height and the map, the title and the cards all follow.
+   Its z-index is above every other layer so a card can never ride over it. */#tm-bar,
+#ht-bar{
+  position:fixed; top:0; left:0; right:0; height:var(--bar-height); z-index:40;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:0 var(--bar-pad);
+  background:var(--bar-bg); border-bottom:1px solid var(--bar-line);
+}
+#tm-barBrand{
+  font:700 var(--bar-brand-size)/1 var(--font-body); letter-spacing:.01em;
+  color:var(--bar-brand); text-decoration:none; white-space:nowrap;
+}
+#tm-barNav{ display:flex; gap:var(--bar-link-gap); }
+#tm-barNav a{
+  font:500 var(--bar-link-size)/1 var(--font-body);
+  letter-spacing:.09em; text-transform:uppercase; white-space:nowrap;
+  color:var(--bar-text); text-decoration:none;
+  transition:color var(--button-fade);
+}
+#tm-barNav a:hover{ color:var(--bar-here); }
+#tm-barNav a.tm-here{
+  color:var(--bar-here); text-decoration:underline; text-underline-offset:4px;
+}
+
+/* ── the map ─────────────────────────────────────────────────────────────
+   Everything below sits under the bar rather than behind it. The engine reads
+   the stage's own size when it works out what to centre, so the walker lands
+   in the middle of the map area and not the middle of the window.          */
+#tm-stage{
+  position:fixed; top:var(--bar-height); left:0; right:0; bottom:0;
+  z-index:0; overflow:hidden;
+  --map-blur:0px;                       /* set frame by frame from the engine */
+}
+/* the filter is only switched on while there is actually something to blur —
+   an always-on filter would cost a rendering pass during the whole walk */
+#tm-stage.tm-blurred{ filter:blur(var(--map-blur)); }#tm-world,
+#ht-world{
+  position:absolute; top:0; left:0;
+  transform-origin:0 0;
+  will-change:transform;
+  box-shadow:var(--map-edge-shadow);
+}
+#tm-world > svg, #tm-world > img{ display:block; }
+#tm-trail{ position:absolute; top:0; left:0; overflow:visible; pointer-events:none; }
+#tm-labels{
+  position:absolute; top:0; left:0;
+  /* --tag-fade is written by the engine on every frame of the pull-back. The
+     names hold their size on screen, so once the whole map is in view a dozen
+     of them at full size cover the map they are naming; they fade out and
+     leave the route, the rings and the picture. See draw(). */
+  --tag-fade:1;
+}
+
+/* ── waypoint labels and the moving point ────────────────────────────── */
+.tm-label{ position:absolute; transform-origin:50% 50%; }
+/* a chip you can click to bring its waypoint card back */
+.tm-label.tm-clickable{ cursor:pointer; }
+.tm-label.tm-clickable .tm-tag{ transition:background var(--button-fade), color var(--button-fade); }
+.tm-label.tm-clickable:hover .tm-tag{ background:var(--accent); color:#fff; border-color:transparent; }
+/* the moving point is decoration — never let it eat a click */
+#tm-walker{ pointer-events:none; }
+.tm-label .tm-dot{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:11px; height:11px; border-radius:50%;
+  background:var(--backdrop); border:2.5px solid #fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.6);
+}
+/* ── the ring the page draws on the route at each waypoint ────────────────
+   Sizes come from SETTINGS.waypointSize / waypointRing, which the engine
+   writes onto :root — the numbers stay in the HTML with the rest of the
+   settings, and the shape stays here. The whole chip is counter-scaled as the
+   map zooms, so this holds the size given whatever the zoom, and it sits over
+   the satellite view because the page draws it rather than the artwork. */
+.tm-label .tm-pin{
+  position:absolute; left:0; top:50%;
+  width:var(--marker-size, 15px); height:var(--marker-size, 15px);
+  margin-left:calc(var(--marker-size, 15px) / -2);
+  transform:translateY(-50%);
+  border-radius:50%; box-sizing:border-box;
+  background:#fff;
+  border:var(--marker-ring, 4px) solid var(--accent);
+  box-shadow:0 1px 5px rgba(0,0,0,.45);
+}
+.tm-label.tm-wishful .tm-pin{
+  border-width:var(--marker-ring-wish, 3px);
+  border-color:var(--wishful);
+}
+.tm-label.tm-clickable .tm-pin{ transition:transform var(--button-fade); }
+.tm-label.tm-clickable:hover .tm-pin{ transform:translateY(-50%) scale(1.18); }
+
+.tm-label .tm-tag{
+  opacity:var(--tag-fade, 1);
+  /* clear of the ring, whatever size the ring is */
+  position:absolute; left:calc(var(--marker-size, 15px) / 2 + 7px);
+  top:50%; transform:translateY(-50%);
+  white-space:nowrap; padding:3px 9px; border-radius:999px;
+  background:var(--panel); border:1px solid var(--panel-edge);
+  backdrop-filter:blur(6px);
+  font:600 10.5px/1.6 var(--font-body); letter-spacing:.05em; text-transform:uppercase;
+}
+#tm-walker .tm-dot{
+  width:var(--walker-size); height:var(--walker-size);
+  background:var(--accent); border:3px solid #fff;
+}
+#tm-walker .tm-ring{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:var(--walker-size); height:var(--walker-size);
+  border-radius:50%; border:2px solid var(--accent);
+  animation:pulse var(--walker-speed) ease-out infinite;
+}
+@keyframes pulse{
+  from{ opacity:.9; width:var(--walker-size); height:var(--walker-size); }
+  to  { opacity:0;  width:var(--walker-ring); height:var(--walker-ring); }
+}
+
+/* ── the shade over the map ──────────────────────────────────────────── */
+#tm-shade{
+  position:fixed; top:var(--bar-height); left:0; right:0; bottom:0;
+  z-index:1; pointer-events:none;
+  background:
+    radial-gradient(125% 95% at 50% 45%, rgba(0,0,0,0) 42%, rgba(0,0,0,var(--shade-edges)) 100%),
+    linear-gradient(to bottom,
+      rgba(0,0,0,var(--shade-top)), rgba(0,0,0,0) 24%,
+      rgba(0,0,0,0) 60%, rgba(0,0,0,var(--shade-bottom)));
+}
+
+/* ── interface layer ─────────────────────────────────────────────────── */
+/* The interface layer starts below the bar too, so every region measured
+   inside it — --band-top and the rest — counts from the top of the map, not
+   the top of the window. */
+#tm-ui{
+  position:fixed; top:var(--bar-height); left:0; right:0; bottom:0;
+  z-index:3; pointer-events:none;
+}
+
+/* the top band. Its height is --band-top, which is also what the card column
+   measures down from — so a taller title, or another link button wrapping
+   onto a second row, pushes the cards down by itself. */
+#tm-topbar{
+  position:absolute; top:0; left:0; right:0; min-height:var(--band-top);
+  display:flex; gap:16px; align-items:flex-start; justify-content:space-between;
+  padding:var(--title-pad) var(--edge-gap);
+}
+#tm-brand{ max-width:46ch; }
+#tm-brand .tm-kicker{
+  font:600 10.5px/1 var(--font-body); letter-spacing:.22em; text-transform:uppercase;
+  color:var(--over-map-kicker); margin-bottom:8px;
+}
+#tm-brand h1{
+  margin:0; font:700 clamp(15px,2.1vw,21px)/1.25 var(--font-body); letter-spacing:-.01em;
+  color:var(--over-map-ink);
+}
+
+/* ── the link buttons under the corner title ──────────────────────────────
+   Small pills for the things a walker might want off the page: the map file
+   itself, the Wikipedia entry, the route on Google Maps. Each one is written
+   in WORDS.trailLinks; a link with an empty href is left off the page
+   altogether, and if none of them has an href the whole row disappears —
+   so there is nothing to comment out when a trail has no links.           */#tm-links,
+#ht-links{
+  display:flex; flex-wrap:wrap; gap:var(--trail-link-gap);
+  margin-top:var(--trail-link-top);
+}#tm-links:empty,
+#ht-links:empty{ display:none; }
+#tm-links a{
+  pointer-events:auto; cursor:pointer;
+  font:600 var(--trail-link-size)/1 var(--font-body);
+  letter-spacing:.11em; text-transform:uppercase; text-decoration:none;
+  color:var(--over-map-ink);
+  background:rgba(255,255,255,.62); border:1px solid rgba(60,45,25,.28);
+  padding:6px 10px; border-radius:999px; backdrop-filter:blur(6px);
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade);
+}#tm-links a:hover,
+#ht-links a:hover{ color:#fff; background:var(--accent); border-color:transparent; }#tm-links a:focus-visible,
+#ht-links a:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:2px; }
+#tm-topright{ display:flex; align-items:center; gap:12px; }
+#tm-version{ font:500 10px/1 var(--font-body); letter-spacing:.14em; color:var(--over-map-quiet); }
+
+.tm-button{
+  pointer-events:auto; cursor:pointer;
+  font:600 11px/1 var(--font-body); letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-quiet); background:var(--panel); border:1px solid var(--panel-edge);
+  padding:9px 12px; border-radius:999px; backdrop-filter:blur(10px);
+  transition:color var(--button-fade), background var(--button-fade);
+}
+.tm-button:hover{ color:var(--text); }
+
+/* ── the compass ──────────────────────────────────────────────────────────
+   It lives in the page rather than in the artwork, so it stays in the corner
+   however far the map is panned or zoomed. The map is drawn north-up, so the
+   needle never has to turn. */
+/* THE LEFT RAIL — the compass and the two panel buttons, in one fixed column.
+   Left-hand side because the waypoint cards live on the right. It hangs off
+   the bottom of the top band, so restyling the corner title carries it along.
+   Nothing in here ever moves: that is what keeps the buttons attached to the
+   panel they open. */
+#tm-rail{
+  position:absolute; z-index:5;
+  left:var(--edge-gap);
+  /* --rail-drop is written by the page, and only on a phone, to lower the rail
+     until no waypoint card can cut a button in half. See placeRail(). It is 0
+     everywhere else, so this reads exactly as it did before. */
+  top:calc(var(--band-top) + var(--compass-drop) + var(--rail-drop, 0px));
+  display:flex; flex-direction:column; gap:var(--rail-gap);
+}
+
+#tm-compass{
+  width:var(--compass-size); height:var(--compass-size); border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--panel); border:1px solid var(--panel-edge);
+  backdrop-filter:blur(10px); box-shadow:0 4px 16px rgba(0,0,0,.28);
+}#tm-compass[hidden],
+#ht-compass[hidden]{ display:none; }#tm-compass svg,
+#ht-compass svg{
+  width:var(--compass-arrow); height:var(--compass-arrow);
+  fill:var(--accent); margin-bottom:-3px;
+}#tm-compass span,
+#ht-compass span{ font:700 10px/1 var(--font-body); letter-spacing:.1em; color:var(--text); }
+
+/* the two round buttons under the compass */
+.tm-railBtn{
+  pointer-events:auto; cursor:pointer; padding:0;
+  width:var(--compass-size); height:var(--compass-size); border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--panel); border:1px solid var(--panel-edge);
+  color:var(--text-quiet);
+  backdrop-filter:blur(10px); box-shadow:0 4px 16px rgba(0,0,0,.28);
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade);
+}.tm-railBtn[hidden],
+.ht-railBtn[hidden]{ display:none; }.tm-railBtn svg,
+.ht-railBtn svg{ width:20px; height:20px; }.tm-railBtn:hover,
+.ht-railBtn:hover{ color:var(--text); }.tm-railBtn.is-on,
+.ht-railBtn.is-on{ background:var(--accent); border-color:transparent; color:#fff; }.tm-railBtn:focus-visible,
+.ht-railBtn:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:3px; }
+/* the label is for screen readers; the icon and the tooltip carry it on screen */.tm-railName,
+.ht-railName{
+  position:absolute; width:1px; height:1px; overflow:hidden;
+  clip-path:inset(50%); white-space:nowrap;
+}
+
+/* ── the one panel both buttons open ──────────────────────────────────────
+   It is anchored to the rail, not to the window edge, and slides out from
+   behind it. Only one exists and its contents are swapped, so there is never
+   a second panel to get out of step with. */
+#tm-panel{
+  position:absolute; z-index:5;
+  left:calc(var(--edge-gap) + var(--compass-size) + var(--panel-gap));
+  top:calc(var(--band-top) + var(--compass-drop));
+  width:var(--panel-width);
+  max-height:calc(100% - var(--band-top) - var(--compass-drop) - var(--gutter));
+  display:flex; flex-direction:column;
+  background:var(--panel-bg); border:1px solid var(--panel-edge);
+  border-radius:var(--panel-radius); box-shadow:var(--shadow);
+  backdrop-filter:blur(var(--panel-bg-blur)) saturate(1.2);
+  overflow:hidden; transform-origin:0 0;
+
+  /* THE CLOSED STATE. All three of these matter:
+       opacity        makes it fade rather than vanish
+       visibility     takes it out of the accessibility tree, and — with the
+                      0s delay below — waits until the fade has finished
+       pointer-events stops it catching clicks while it is invisible
+
+     That last one was a bug up to 5.2: a panel at opacity 0 is still a solid
+     pane as far as the pointer is concerned, so a closed panel sat over the
+     map swallowing clicks meant for waypoints beneath it. The `hidden`
+     attribute alone does NOT fix it — an element with a display of its own
+     overrides what [hidden] would do — hence the rule below as well. */
+  opacity:0; transform:translateX(-10px) scale(.98);
+  visibility:hidden; pointer-events:none;
+  transition:opacity var(--panel-slide) var(--panel-ease),
+             transform var(--panel-slide) var(--panel-ease),
+             visibility 0s linear var(--panel-slide);
+}
+#tm-panel.is-open{
+  opacity:1; transform:none;
+  visibility:visible; pointer-events:auto;
+  transition:opacity var(--panel-slide) var(--panel-ease),
+             transform var(--panel-slide) var(--panel-ease),
+             visibility 0s;
+}
+/* and the belt to that pair of braces: [hidden] means gone, whatever display
+   the rule above asked for. The engine sets this once the fade has played. */#tm-panel[hidden],
+#ht-panel[hidden]{ display:none; }#tm-panelTop,
+#ht-panelTop{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:14px 12px 12px 16px;
+}#tm-panelTop h2,
+#ht-panelTop h2{
+  margin:0; font:700 10.5px/1 var(--font-body);
+  letter-spacing:.18em; text-transform:uppercase; color:var(--accent-soft);
+}
+#tm-panelTop .tm-close{ position:static; width:24px; height:24px; font-size:16px; }#tm-panelNote,
+#ht-panelNote{
+  margin:0 16px 12px; font:400 12px/1.55 var(--font-body); color:var(--text-quiet);
+}#tm-panelNote[hidden],
+#ht-panelNote[hidden]{ display:none; }
+#tm-panelBody{ overflow:auto; padding:0 16px 16px; }
+
+/* ── the legend list ────────────────────────────────────────────────────── */.tm-legend,
+.ht-legend{ list-style:none; margin:0; padding:0; display:grid; gap:11px; }.tm-legend li,
+.ht-legend li{ display:flex; align-items:center; gap:12px; }.tm-legend span,
+.ht-legend span{ font:400 12.5px/1.35 var(--font-body); color:var(--text); }
+/* Each row's drawing is a file in the legend/ folder — legend/trails.svg and
+   so on — named after the row's `swatch` in WORDS.legend. They come straight
+   out of the Happy Trails Illustrator file, so they arrive at wildly different
+   proportions: a bike-lane line is 11:1, the golf square is 1:1, the stairs
+   are taller than wide. Each is fitted inside one box of this size, which is
+   what keeps every label on the same left margin however different the
+   drawings are. The Happy Trails map uses the same box. */.tm-sw,
+.ht-sw{
+  flex:0 0 var(--swatch-width);
+  width:var(--swatch-width); height:var(--swatch-height);
+  display:block; object-fit:contain;
+}
+
+/* ── the layer switches ─────────────────────────────────────────────────── */
+.tm-switches{
+  display:grid; gap:var(--switch-gap);
+  grid-template-columns:repeat(var(--switch-columns), minmax(0, 1fr));
+}
+/* A group holding a single switch gives it the whole width rather than half of
+   it with an empty hole beside it — which is what the Beltline's Layers panel
+   is whenever only one layer is available. `1 / -1` means "first grid line to
+   last", so it holds whatever --switch-columns is set to and needs no change
+   if the column count ever does.
+   Swap :only-child for :last-child:nth-child(odd) below if you would also like
+   the last switch of an odd-numbered group to stretch across. */
+.ht-switches > .ht-switch:only-child,
+.tm-switches > .tm-switch:only-child{
+  grid-column: 1 / -1;
+}
+.tm-switch{
+  display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left;
+  padding:11px 12px; border-radius:12px; cursor:pointer;
+  background:rgba(255,255,255,.045); border:1px solid var(--panel-edge);
+  transition:background var(--button-fade), border-color var(--button-fade);
+}.tm-switch:hover,
+.ht-switch:hover{ background:rgba(255,255,255,.09); }.tm-switch:focus-visible,
+.ht-switch:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:2px; }.tm-switch .tm-track,
+.ht-switch .ht-track{
+  flex:0 0 auto; width:var(--switch-width); height:var(--switch-height);
+  margin-top:1px; border-radius:999px; position:relative;
+  background:var(--switch-off); transition:background var(--switch-slide);
+}.tm-switch .tm-knobby,
+.ht-switch .ht-knobby{
+  position:absolute; top:2px; left:2px;
+  width:calc(var(--switch-height) - 4px); height:calc(var(--switch-height) - 4px);
+  border-radius:50%; background:#fff;
+  transition:transform var(--switch-slide) var(--panel-ease);
+}.tm-switch.is-on .tm-track,
+.ht-switch.is-on .ht-track{ background:var(--accent); }.tm-switch.is-on .tm-knobby,
+.ht-switch.is-on .ht-knobby{
+  transform:translateX(calc(var(--switch-width) - var(--switch-height)));
+}
+.tm-switchText b{
+  display:block; font:600 12.5px/1.25 var(--font-body); color:var(--text);
+}
+.tm-switchText small{
+  display:block; margin-top:3px;
+  font:400 11px/1.4 var(--font-body); color:var(--text-quiet);
+}
+
+/* ── waypoint cards ──────────────────────────────────────────────────── */
+/* The card column: everything left over between the two bands, held against
+   the right-hand edge. Never centred on the window — a tall card centred on
+   the window runs underneath the numbers along the bottom. The engine measures
+   this column and gives the card's text however many lines actually fit.
+
+   left and right are both set and the width is capped, so the column is as
+   wide as --card-width allows and no wider; margin-left:auto spends whatever
+   is left over on the left, holding it against the right edge. Lift the cap
+   (--card-width:none, which is what a phone does) and the column simply fills
+   the width between the two margins. */
+#tm-cards{
+  position:absolute;
+  top:var(--band-top); bottom:var(--band-bottom);
+  left:var(--edge-gap); right:var(--edge-gap);
+  width:auto; max-width:var(--card-width); margin-left:auto;
+}
+/* Where the card sits in that column, and the small rise as it fades in, are
+   both here rather than in the engine — the engine only reports how far
+   through the fade it is, as --card-nudge (a plain number of pixels). */
+.tm-card{
+  position:absolute; right:0; width:100%;
+  bottom:var(--card-sit);
+  transform:
+    translateY(calc(var(--card-lift) + var(--card-nudge, 0) * var(--card-lean) * 1%))
+    translateY(calc(var(--card-nudge, 0) * 1px));
+  background:var(--card-panel); border:1px solid var(--panel-edge);
+  border-radius:var(--card-radius); box-shadow:var(--shadow);
+  backdrop-filter:blur(var(--card-blur)) saturate(1.2);
+  overflow:hidden; opacity:0; will-change:opacity, transform;
+}
+/* ── a wishful-thinking card ──────────────────────────────────────────────
+   Everything about it is the ordinary card; only the colour changes. The
+   border is deliberately thin — it should read as a marked variant, not as a
+   different component. */
+.tm-card.tm-wishful{
+  background:var(--wishful-panel);
+  border-color:var(--wishful-edge);
+}
+.tm-card.tm-wishful .tm-count{ color:var(--wishful-kicker); }
+.tm-card.tm-wishful .tm-facts{ border-top-color:var(--wishful-edge); }
+/* its name chip on the map, and the arrows on its picture, follow the card */
+.tm-label.tm-wishful .tm-tag{
+  border-color:var(--wishful-edge); color:var(--wishful-kicker);
+}
+.tm-label.tm-clickable.tm-wishful:hover .tm-tag{
+  background:var(--wishful); color:#fff; border-color:transparent;
+}
+/* and so does its dot on the elevation graph */
+#tm-profile .tm-wpdot.tm-wishful{
+  background:var(--wishful-kicker); border-color:rgba(0,0,0,.5);
+}
+
+/* the × that closes a card. It sits over the photo, top right. */
+.tm-close{
+  position:absolute; top:10px; right:10px; z-index:2;
+  width:28px; height:28px; padding:0; border-radius:50%;
+  display:grid; place-items:center; cursor:pointer;
+  font:400 18px/1 var(--font-body); color:var(--text);
+  background:rgba(8,10,12,.55); border:1px solid var(--panel-edge);
+  backdrop-filter:blur(6px);
+  transition:background var(--close-fade), color var(--close-fade), transform var(--close-fade);
+}.tm-close:hover,
+.ht-close:hover{ background:var(--accent); border-color:transparent; transform:scale(1.08); }
+.tm-close:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:2px; }
+
+/* ── the picture area ─────────────────────────────────────────────────────
+   A fixed-shape window (--card-media) holding one or more slides. Every
+   picture and video inside is object-fit:cover, so anything you drop in is
+   scaled and centre-cropped to fill the window exactly — a portrait photo, a
+   square one and a 16:9 one all sit correctly without being squashed.      */
+.tm-media{
+  position:relative; margin:0; overflow:hidden;
+  /* width:100% is not decoration — without it the cap below makes the browser
+     narrow the picture to keep the 4:3 ratio, instead of keeping it full
+     width and cropping the top and bottom, which is what we want. */
+  width:100%;
+  aspect-ratio:var(--card-media); background:#1b1e22;
+  /* the cap that keeps the whole card inside its column on a short window */
+  max-height:max(var(--card-media-min),
+                 calc(var(--column-height) - var(--card-chrome)));
+}
+.tm-track{
+  display:flex; width:100%; height:100%;
+  transition:transform var(--media-slide) var(--media-ease);
+}
+.tm-slide{ flex:0 0 100%; position:relative; height:100%; }
+/* ── the buffering spinner ────────────────────────────────────────────────
+   Shown while a video is fetching enough of itself to play, and again if it
+   runs dry part-way through. Without it the picture area simply sits there,
+   which reads as a broken card rather than a loading one — and the first play
+   of a video that has so far fetched only its metadata is exactly when that
+   happens.
+
+   It is a ring with one brighter quarter, turned by a CSS animation, so it
+   keeps moving even while the main thread is busy decoding video. */
+.tm-spinner{
+  position:absolute; left:50%; top:50%;
+  width:var(--spinner-size); height:var(--spinner-size);
+  margin:calc(var(--spinner-size) / -2) 0 0 calc(var(--spinner-size) / -2);
+  border-radius:50%;
+  border:var(--spinner-weight) solid var(--spinner-track);
+  border-top-color:var(--spinner-lit);
+  animation:tm-spin var(--spinner-speed) linear infinite;
+  opacity:0; pointer-events:none; z-index:1;
+  transition:opacity .18s ease;
+}
+/* the engine puts this on the slide while its video is waiting */
+.tm-slide.is-buffering .tm-spinner{ opacity:1; }
+@keyframes tm-spin{ to{ transform:rotate(360deg); } }
+
+.tm-slide img, .tm-slide video{
+  display:block; width:100%; height:100%;
+  object-fit:cover;          /* fill the window, crop whatever hangs over */
+  object-position:center;
+}
+.tm-caption{
+  position:absolute; left:10px; bottom:9px;
+  font:500 9.5px/1 var(--font-body); letter-spacing:.14em; text-transform:uppercase;
+  color:rgba(255,255,255,.6); text-shadow:0 1px 6px rgba(0,0,0,.8);
+}
+
+/* ── the before/after slide ───────────────────────────────────────────────
+   Two pictures stacked in the same box. The top one is clipped to the left of
+   the handle, so dragging the handle wipes between them. Both are cover-
+   cropped, exactly like every other picture, so the two line up.
+   --split is the handle position as a percentage; the engine sets it.      */
+.tm-compare{ position:relative; width:100%; height:100%; --split:50%; }
+.tm-compare img{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center;
+}
+.tm-compare .tm-before{
+  /* inset(top right bottom left) — keep only what is left of the handle, so
+     "before" fills the left of the picture and "after" shows through on the
+     right, which is the way round people expect to read it */
+  clip-path:inset(0 calc(100% - var(--split)) 0 0);
+}
+.tm-compare-label{
+  position:absolute; bottom:12px; z-index:2;
+  padding:4px 9px; border-radius:var(--radius-pill);
+  background:rgba(8,10,12,.6); color:#fff; backdrop-filter:blur(6px);
+  font:600 9.5px/1 var(--font-body); letter-spacing:.14em; text-transform:uppercase;
+  pointer-events:none; transition:opacity var(--button-fade);
+}
+.tm-compare-label.is-before{ left:12px; }
+.tm-compare-label.is-after{ right:12px; }
+
+.tm-compare-handle{
+  position:absolute; top:0; bottom:0; left:var(--split); z-index:3;
+  width:var(--handle-hit); margin-left:calc(var(--handle-hit) / -2);
+  cursor:ew-resize; touch-action:none;   /* only the handle grabs a touch, so
+                                            dragging the card still scrolls   */
+  display:grid; place-items:center;
+}
+.tm-compare-handle::before{         /* the line down the join */
+  content:""; position:absolute; top:0; bottom:0; left:50%;
+  width:var(--handle-line); margin-left:calc(var(--handle-line) / -2);
+  background:var(--handle-colour); box-shadow:0 0 10px rgba(0,0,0,.5);
+}
+.tm-compare-handle span{            /* the grab circle */
+  position:relative; display:grid; place-items:center;
+  width:var(--handle-grip); height:var(--handle-grip); border-radius:50%;
+  background:var(--handle-colour); color:#14181c;
+  font:400 13px/1 var(--font-body); letter-spacing:-1px;
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
+  transition:transform var(--button-fade);
+}
+.tm-compare-handle:hover span, .tm-compare-handle:focus-visible span{ transform:scale(1.12); }
+.tm-compare-handle:focus-visible{ outline:none; }
+.tm-compare-handle:focus-visible span{ outline:2px solid var(--accent-soft); outline-offset:3px; }
+
+/* ── carousel arrows and dots ─────────────────────────────────────────── */
+.tm-media-arrow{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:var(--arrow-size); height:var(--arrow-size); border-radius:50%;
+  display:grid; place-items:center; cursor:pointer;
+  border:1px solid var(--panel-edge); background:var(--arrow-bg); color:#fff;
+  font:400 17px/1 var(--font-body); backdrop-filter:blur(6px);
+  transition:background var(--button-fade), color var(--button-fade);
+}
+.tm-media-arrow:hover:not([disabled]){ background:var(--arrow-bg-hover); color:#12161a; }
+.tm-media-arrow.is-prev{ left:9px; }
+.tm-media-arrow.is-next{ right:9px; }
+.tm-media-arrow[disabled]{ opacity:.3; cursor:default; }
+
+.tm-dots{
+  position:absolute; left:0; right:0; bottom:9px;
+  display:flex; gap:6px; justify-content:center;
+}
+.tm-dot{
+  width:var(--dot-size); height:var(--dot-size); padding:0; border:0; border-radius:50%;
+  background:var(--dot-off); cursor:pointer;
+  transition:background var(--button-fade), transform var(--button-fade);
+}
+.tm-dot.is-on{ background:var(--dot-on); transform:scale(1.25); }
+
+.tm-card .tm-inner{ padding:17px 21px 20px; }
+/* The waypoint number on the left, the current picture's caption on the right.
+   baseline alignment keeps the two lines of type sitting on the same line even
+   though they are different sizes; the caption is allowed to wrap under itself
+   rather than push the number about. */
+.tm-card .tm-countRow{
+  display:flex; align-items:baseline; justify-content:space-between;
+  gap:14px; margin-bottom:9px;
+}
+.tm-card .tm-count{
+  flex:0 0 auto;
+  font:700 10px/1 var(--font-body); letter-spacing:.2em; text-transform:uppercase;
+  color:var(--accent-soft);
+}
+/* the caption for whichever picture is showing. It is emptied and refilled by
+   the engine; .tm-fading is on while the words are being changed, which is
+   what turns the swap into a fade rather than a jump. Empty means no caption
+   for that picture, and it simply takes no room. */
+.tm-card .tm-slideCaption{
+  flex:1 1 auto; min-width:0; text-align:right;
+  font:400 var(--caption-size)/1.4 var(--font-body);
+  color:var(--text-quiet); font-style:italic;
+  transition:opacity var(--caption-fade) ease;
+}
+.tm-card .tm-slideCaption.tm-fading{ opacity:0; }
+.tm-card.tm-wishful .tm-count{ color:var(--wishful-kicker); }
+.tm-card .tm-count span{ color:var(--text-quiet); letter-spacing:.1em; font-weight:500; }
+.tm-card h2{ margin:0 0 9px; font:600 var(--card-title)/1.2 var(--font-display); letter-spacing:-.01em; }
+/* ── the body text, in pages ──────────────────────────────────────────────
+   The window is a whole number of lines tall and hides everything past it;
+   the block inside slides up one page at a time. No scrollbar, so nothing in
+   the card can ever swallow a scroll meant for the map.                    */
+.tm-textwindow{ position:relative; overflow:hidden; }
+.tm-textpages{ transition:transform var(--text-turn) var(--media-ease); }
+.tm-card p{ margin:0; font:400 var(--card-body)/var(--card-line) var(--font-body); color:var(--text-quiet); }
+/* The gap between paragraphs is exactly one line, which keeps every line of
+   the card on the same grid — so a page break always lands between lines and
+   never slices one in half. */
+.tm-card p + p{ margin-top:calc(var(--card-body) * var(--card-line)); }
+
+.tm-pager{ display:none; align-items:center; gap:10px; margin-top:11px; }
+.tm-pager.is-on{ display:flex; }
+.tm-pager button{
+  width:26px; height:26px; border-radius:50%; cursor:pointer;
+  display:grid; place-items:center;
+  border:1px solid var(--panel-edge); background:transparent; color:var(--text);
+  font:400 15px/1 var(--font-body);
+  transition:background var(--button-fade), color var(--button-fade);
+}
+.tm-pager button:hover:not([disabled]){ background:var(--accent); color:#12161a; border-color:transparent; }
+.tm-pager button[disabled]{ opacity:.28; cursor:default; }
+.tm-pager .tm-pagecount{
+  font:600 10px/1 var(--font-body); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--text-faint); font-variant-numeric:tabular-nums;
+}
+.tm-card .tm-facts{
+  margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-edge);
+  /* flex-end so the link button sits on the same baseline as the numbers
+     beside it rather than stretching to the full height of the row */
+  display:flex; gap:20px; align-items:flex-end;
+}
+/* the link button at the end of the facts row. It reads as a button rather
+   than a fact, but it is the same size and sits on the same line, so the row
+   still scans as one thing. margin-left:auto pushes it to the far end. */
+.tm-card .tm-mapLink{
+  margin-left:auto; flex:0 0 auto; align-self:center;
+  font:600 var(--maplink-size)/1 var(--font-body);
+  letter-spacing:.11em; text-transform:uppercase; text-decoration:none;
+  white-space:nowrap; color:var(--text);
+  background:rgba(255,255,255,.10); border:1px solid var(--panel-edge);
+  padding:7px 11px; border-radius:999px;
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade);
+}
+.tm-card .tm-mapLink:hover{
+  color:#fff; background:var(--accent); border-color:transparent;
+}
+.tm-card.tm-wishful .tm-mapLink:hover{ background:var(--wishful); }
+.tm-card .tm-mapLink:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:2px; }
+.tm-card .tm-facts div{ font:600 12px/1.2 var(--font-body); }
+.tm-card .tm-facts small{
+  display:block; font:500 9.5px/1 var(--font-body); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text-faint); margin-bottom:5px;
+}
+
+/* ── readouts and elevation profile along the bottom ─────────────────────
+   This is the bottom band. Its three parts — the row of numbers, the gap, the
+   graph — plus the drop below it are the same values --band-bottom is built
+   from at the top of the file, so the card column always stops exactly where
+   this begins. Restyle the graph and the cards move up out of its way.     */
+#tm-readouts{
+  position:absolute; left:0; right:0; bottom:0;
+  display:flex; flex-direction:column; gap:var(--readout-gap);
+  padding:0 var(--edge-gap) var(--readout-drop);
+}
+#tm-numbers{
+  display:flex; gap:clamp(16px,3vw,34px); align-items:flex-end;
+  min-height:var(--readout-row);
+}
+#tm-numbers .tm-gap{ flex:1; }
+.tm-readout small{
+  display:block; font:500 9.5px/1 var(--font-body); letter-spacing:.16em;
+  text-transform:uppercase; color:var(--text-faint); margin-bottom:6px;
+}
+.tm-readout b{
+  font:700 var(--readout-size)/1 var(--font-body);
+  letter-spacing:-.02em; font-variant-numeric:tabular-nums;
+}
+.tm-readout b i{ font:500 11px/1 var(--font-body); font-style:normal; color:var(--text-quiet); margin-left:2px; }
+
+#tm-profile{ position:relative; height:var(--profile-height); }
+#tm-profile svg{ width:100%; height:100%; display:block; overflow:visible; }
+#tm-profile .tm-under{ fill:rgba(255,255,255,.10); }
+#tm-profile .tm-whole{ fill:none; stroke:var(--profile-line); stroke-width:1.5; vector-effect:non-scaling-stroke; }
+#tm-profile .tm-walked{
+  fill:none; stroke:var(--accent); stroke-width:2.5; vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 0 5px rgba(192,57,43,.75));
+}
+#tm-profile .tm-cursor{ stroke:rgba(255,255,255,.5); stroke-width:1; vector-effect:non-scaling-stroke; stroke-dasharray:2 3; }
+/* The dot marking where you are on the graph.
+   It is a plain element rather than a circle inside the SVG on purpose. The
+   graph is drawn in a square 1000×100 box and then stretched to whatever
+   width and height it is given — roughly 1372×58 on a desktop — so a circle
+   drawn inside it comes out as a wide, flat oval. Sitting outside the SVG and
+   positioned in percentages, this stays perfectly round at any size. */
+/* A dot for each waypoint, so you can see at a glance where the stops fall
+   against the climb. Placed from the same waypoint list as everything else —
+   see the profile block in the HTML. Round for the same reason the knob is. */
+#tm-profile .tm-wpdot{
+  position:absolute; width:var(--wpdot-size); height:var(--wpdot-size);
+  border-radius:50%; background:var(--wpdot-colour);
+  border:1px solid var(--wpdot-ring);
+  transform:translate(-50%, -50%); pointer-events:none;
+}
+#tm-profile .tm-knob{
+  position:absolute; width:var(--knob-size); height:var(--knob-size);
+  border-radius:50%; background:var(--knob-colour);
+  transform:translate(-50%, -50%); pointer-events:none;
+  box-shadow:0 0 5px rgba(0,0,0,.9);
+}
+
+/* ── opening and closing screens ─────────────────────────────────────── */
+/* The darkening behind the opening and closing text. It is gentle: the text
+   sits in its own box now, which is what carries the contrast, so this only
+   has to settle the map down a little around it. There is no blur behind
+   either screen any more — see blurAtStart / blurAtEnd in the page. */
+#tm-opening, #tm-closing{
+  position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:6vw;
+  /* above the left-hand rail (z-index 5), so on a narrow screen the box is
+     never sliced through by the legend and layers buttons */
+  z-index:6;
+  background:radial-gradient(60% 60% at 50% 50%,
+    rgba(6,8,10,var(--screen-veil-centre)), rgba(6,8,10,var(--screen-veil-edge)));
+}
+/* The opening screen is the one that MOVES, so it needs a bottom that is
+   already nothing by the time you can see it. Two gradients, not a mask: the
+   radial does the darkening as before, the linear underneath it thins that
+   darkening away to clear before the element's own edge. A mask would do the
+   same job and cost a compositing pass on a layer that is being moved every
+   frame; this costs nothing. */
+#tm-opening{
+  /* the engine moves this up and off the top as you scroll, so it is given its
+     own compositing layer — and the engine hands the layer back (will-change:
+     auto) the moment it has gone, so a full-screen layer is not held for the
+     rest of the visit. The closing screen never moves and never needs one. */
+  will-change:transform, opacity;
+  background:
+    linear-gradient(to bottom,
+      rgba(6,8,10,var(--screen-veil-edge)) 0%,
+      rgba(6,8,10,var(--screen-veil-edge)) 55%,
+      rgba(6,8,10,0) var(--screen-veil-ends)),
+    radial-gradient(70% 55% at 50% 42%,
+      rgba(6,8,10,0) 0%, rgba(6,8,10,0) 100%);
+}
+#tm-closing{ opacity:0; }
+#tm-opening .tm-kicker{
+  font:600 11px/1 var(--font-body); letter-spacing:.28em; text-transform:uppercase; color:var(--accent-soft);
+}
+#tm-opening h2{
+  /* it is inside a box now, not floating on the whole screen, so it wants to
+     be a size that sits in that box rather than one that fills the window */
+  margin:16px 0 14px; font:600 clamp(26px,4.6vw,48px)/1.08 var(--font-display);
+  letter-spacing:-.02em; text-wrap:balance;
+}
+#tm-opening p, #tm-closing p{
+  margin:0 auto; max-width:50ch;
+  font:400 clamp(14px,1.5vw,16.5px)/1.65 var(--font-body); color:var(--text-quiet);
+}
+#tm-hint{
+  margin-top:34px; font:600 10.5px/1 var(--font-body); letter-spacing:.22em; text-transform:uppercase;
+  color:var(--text-quiet); display:flex; flex-direction:column; align-items:center; gap:12px;
+}
+#tm-hint svg{ animation:bob var(--hint-bob-speed) ease-in-out infinite; }
+@keyframes bob{ 0%,100%{ transform:translateY(0); opacity:.5 } 50%{ transform:translateY(7px); opacity:1 } }
+/* The panel both ends of the page sit in. It was the closing screen's; the
+   opening screen now uses the same one, which is why the two ends read as the
+   same object rather than two unrelated title cards. */
+#tm-opening .tm-box, #tm-closing .tm-box{
+  background:var(--panel); border:1px solid var(--panel-edge); border-radius:22px;
+  padding:clamp(24px,4vw,40px); box-shadow:var(--shadow);
+  backdrop-filter:blur(var(--panel-blur)); max-width:540px;
+}
+/* The opening box holds a heading rather than a line of totals, so it needs
+   more room across and a little less air inside than the closing one did. */
+#tm-opening .tm-box{ max-width:600px; padding:clamp(26px,4.4vw,44px) clamp(24px,4vw,46px); }
+#tm-closing h2{ margin:0 0 10px; font:600 clamp(22px,3.4vw,34px)/1.15 var(--font-display); }
+#tm-closing .tm-row{ display:flex; gap:28px; justify-content:center; margin-top:22px; }
+
+/* ── "scroll for more", at the foot of a waypoint card ────────────────────
+   A card can read as a place the page has stopped rather than a place it is
+   passing through. This says otherwise, at every screen size — the height it
+   takes is paid for in --card-chrome, so the picture above gives back exactly
+   what the line costs and the card still fits its column. */
+.tm-more{
+  display:flex;
+  margin-top:var(--more-top);
+  padding-top:var(--more-top);
+  border-top:1px solid var(--panel-edge);
+  align-items:center; justify-content:center; gap:var(--more-gap);
+  font:600 var(--more-size)/1 var(--font-body);
+  letter-spacing:.22em; text-transform:uppercase;
+  color:var(--text-quiet);
+}
+/* No animation on this arrow, deliberately. There are thirteen cards in the
+   page and every one of them holds one of these, so an "infinite" animation
+   here is thirteen animations running for the whole visit — including on the
+   twelve cards you cannot see. Measured at about eight frames a second on a
+   phone. The opening screen's arrow still bobs: there is only one of it. */
+.tm-more svg{ opacity:.75; }
+
+/* ── the invisible column you actually scroll ────────────────────────── */
+#tm-scroller{ position:relative; z-index:2; height:var(--scroll-length); pointer-events:none; }
+
+/* ── "turn your phone upright" ────────────────────────────────────────────
+   Hidden always, except in the one media query that asks for it: a short
+   window in landscape. Nothing in the page switches this on or off, so there
+   is no state to keep in step — turn the phone back and it is simply gone. */
+#tm-turn{ display:none; }
+/* Phones only. Without the width and pointer tests this would also fire on a
+   laptop whose window happens to be short and wide, which is a window someone
+   chose and can resize — not a device that cannot be turned. `pointer:coarse`
+   is the honest question here: is this a finger on a screen? */
+@media (orientation: landscape) and (max-height: 520px)
+   and (max-width: 950px) and (pointer: coarse){
+  body.page-trail #tm-turn{
+    display:grid; place-items:center; text-align:center;
+    position:fixed; inset:0; z-index:80; padding:24px;
+    background:var(--turn-veil);
+  }
+  body.page-trail #tm-turn .tm-box{
+    background:var(--panel); border:1px solid var(--panel-edge); border-radius:20px;
+    padding:24px 30px; box-shadow:var(--shadow); max-width:420px;
+  }
+  body.page-trail #tm-turn h2{
+    margin:14px 0 8px; font:600 20px/1.2 var(--font-display);
+  }
+  body.page-trail #tm-turn p{
+    margin:0; font:400 13px/1.55 var(--font-body); color:var(--text-quiet);
+  }
+  body.page-trail #tm-turn svg{ color:var(--accent); }
+}
+
+/* ── the coordinate reader (press E) ─────────────────────────────────── */
+#tm-reader{ position:absolute; inset:0; z-index:5; display:none; pointer-events:auto; cursor:crosshair; }
+#tm-reader.tm-open{ display:block; }
+/* while reading coordinates, clear the interface but keep the trail visible */
+body.tm-reading #tm-ui, body.tm-reading #tm-shade, body.tm-reading #tm-labels{
+  opacity:0; transition:opacity var(--reader-fade);
+}
+#tm-readerPanel{
+  position:absolute; right:var(--gutter); top:var(--gutter);
+  width:min(420px,42vw); max-height:calc(100vh - var(--gutter) * 2);
+  display:flex; flex-direction:column; gap:10px; padding:16px;
+  background:var(--panel); border:1px solid var(--panel-edge); border-radius:16px;
+  backdrop-filter:blur(var(--panel-blur));
+}
+#tm-readerPanel h3{
+  margin:0; font:700 11px/1 var(--font-body); letter-spacing:.18em;
+  text-transform:uppercase; color:var(--accent-soft);
+}
+#tm-readerPanel p{ margin:0; font:400 12px/1.55 var(--font-body); color:var(--text-quiet); }
+#tm-readerPanel kbd{
+  font:600 10.5px/1 var(--font-body); background:rgba(255,255,255,.1);
+  border:1px solid var(--panel-edge); border-radius:5px; padding:3px 5px; color:var(--text);
+}
+#tm-readerOut{
+  flex:1; min-height:150px; resize:vertical; width:100%;
+  font:500 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--text);
+  background:rgba(0,0,0,.45); border:1px solid var(--panel-edge); border-radius:10px; padding:10px;
+}
+#tm-readerButtons{ display:flex; gap:8px; }
+#tm-coords{
+  position:absolute; left:var(--gutter); bottom:var(--gutter);
+  padding:8px 12px; border-radius:10px;
+  background:var(--panel); border:1px solid var(--panel-edge); backdrop-filter:blur(10px);
+  font:600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ── the "something went wrong" screen ───────────────────────────────── */
+#tm-problem{
+  position:fixed; inset:0; z-index:9; display:none; place-items:center;
+  padding:8vw; text-align:center; background:var(--backdrop);
+}
+#tm-problem.tm-open{ display:grid; }
+#tm-problem p{ max-width:56ch; font:400 15px/1.75 var(--font-body); color:var(--text-quiet); }code,
+code{ font:500 12.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--accent-soft); }
+
+/* ── phones and small windows ────────────────────────────────────────── */
+/* Only the regions change here. No element repeats its position on a phone —
+   they all still read the same variables, so this block is the whole of the
+   difference between the two layouts. */
+
+
+/* ── the satellite view ───────────────────────────────────────────────────
+   The photograph sits underneath the artwork at exactly the artwork's size.
+   When the layer is on, the page puts .tm-satellite on <body> and a few things
+   that were drawn for pale paper switch to their dark-ground versions.     */
+#tm-satellite{
+  position:absolute; top:0; left:0; display:none;
+  user-select:none; -webkit-user-drag:none;
+}
+/* The flat picture of the artwork that phones walk on instead of the drawing
+   itself — see flattenArtwork() in the page. It is laid over the drawing at
+   exactly the drawing's size, so the two are interchangeable and everything
+   that sits above them (the route, the waypoints, the chips) is unaffected. */
+#tm-flatMap{
+  position:absolute; top:0; left:0;
+  user-select:none; -webkit-user-drag:none; pointer-events:none;
+}
+body.tm-satellite{
+  /* the ground around the artwork, so panning past its edge is not a jolt */
+  --backdrop: #23282b;
+  /* The corner title, its kicker and the version are dark ink chosen for pale
+     paper, and disappear against a photograph. Over the satellite they become
+     their light-ground versions. This is the whole reason those three colours
+     are named separately from the rest. */
+  --over-map-ink:    #f4f2ee;
+  --over-map-quiet:  #b9b2a4;
+  --over-map-kicker: #e8b657;
+  /* the not-yet-walked line was a dark brown for a cream map, and vanishes on
+     a dark photograph — so it turns pale instead */
+  --trail-ahead: rgba(255,255,255,.72);
+  /* the photograph is already dark; less shading is needed over it */
+  --shade-edges: .10;
+  --shade-bottom: .42;
+}
+/* the name chips gain a touch more weight over busy imagery */
+body.tm-satellite .tm-label .tm-tag{ background:rgba(10,12,14,.82); }
+
+/* ── short windows ────────────────────────────────────────────────────────
+   A laptop in a small window, or any screen turned on its side. There is not
+   enough height for the bands to be generous, so they tighten and hand the
+   room to the card column. Variables only again — nothing is repositioned. */
+
+
+/* ── for people who ask their system to reduce motion ────────────────── */
+
+
+/* ── the main map's own pieces ─────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   HAPPY TRAILS — stylesheet
+   version 4.1
+
+   Built to match the scrolling trail map, so the two pages read as one site.
+   The variables below are deliberately named the same as that page's, and the
+   shared pieces — the navigation bar, the left rail, the panel, the layer
+   switches, the legend — are the same values in both files. Change one and
+   change the other.
+
+   Everything you are likely to want to change lives in the :root block. Below
+   it is plain layout, grouped and labelled.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+
+/* the main map: it fills the window and nothing scrolls. Nothing on it is
+   meant to be selected either — a drag is a pan, and a double-click on a route
+   button should not leave a blue highlight behind. The one exception is the
+   coordinate readout, which turns selection back on for itself. */
+body.page-map{
+  background:var(--map-backdrop);
+  overflow:hidden;
+  user-select:none; -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+img{ -webkit-user-drag:none; user-drag:none; }
+#ht-brand{
+  font:700 var(--bar-brand-size)/1 var(--font-body); letter-spacing:.01em;
+  color:var(--bar-brand); text-decoration:none; white-space:nowrap;
+}
+#ht-nav{ display:flex; gap:var(--bar-link-gap); }
+#ht-nav a{
+  font:500 var(--bar-link-size)/1 var(--font-body);
+  letter-spacing:.09em; text-transform:uppercase; white-space:nowrap;
+  color:var(--bar-text); text-decoration:none;
+  transition:color var(--button-fade);
+}
+#ht-nav a:hover{ color:var(--bar-here); }
+/* the page you are on. The class name matches what writeWords() writes —
+   these two drifted apart in 2.0 and the marker quietly stopped appearing. */
+#ht-nav a.is-here{
+  color:var(--bar-here); text-decoration:underline; text-underline-offset:4px;
+}
+
+/* ── the corner title, over the map ──────────────────────────────────────
+   The top band. Its height is --band-top, which is what the rail below it
+   measures down from — so restyling the title carries the rail with it. */
+#ht-topbar{
+  position:fixed; top:var(--bar-height); left:0; right:0; z-index:30;
+  min-height:var(--band-top);
+  display:flex; gap:16px; align-items:flex-start; justify-content:space-between;
+  padding:var(--title-pad) var(--edge-gap);
+  pointer-events:none;                 /* the map underneath stays draggable */
+}
+#ht-brandline{ max-width:52ch; }
+#ht-brandline .ht-kicker{
+  font:600 10.5px/1 var(--font-body); letter-spacing:.22em; text-transform:uppercase;
+  color:var(--over-map-kicker); margin-bottom:8px;
+  text-shadow:0 1px 6px rgba(0,0,0,.7);
+}
+#ht-brandline h1{
+  margin:0; font:700 clamp(15px,2.1vw,21px)/1.25 var(--font-body); letter-spacing:-.01em;
+  color:var(--over-map-ink); text-shadow:0 1px 8px rgba(0,0,0,.75);
+}
+#ht-version{
+  font:500 10px/1 var(--font-body); letter-spacing:.14em;
+  color:var(--over-map-quiet); text-shadow:0 1px 6px rgba(0,0,0,.7);
+}
+#ht-links a{
+  pointer-events:auto; cursor:pointer;
+  font:600 var(--trail-link-size)/1 var(--font-body);
+  letter-spacing:.11em; text-transform:uppercase; text-decoration:none;
+  color:var(--text);
+  background:rgba(18,20,23,.62); border:1px solid var(--panel-edge);
+  padding:6px 10px; border-radius:999px; backdrop-filter:blur(6px);
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade);
+}
+
+/* ── the map stage: everything below the bar ─────────────────────────────── */
+#ht-stage{
+  position:fixed; top:var(--bar-height); left:0; right:0; bottom:0; z-index:0;
+  overflow:hidden; background:var(--map-backdrop);
+  cursor:grab; touch-action:none;
+}
+#ht-stage.is-dragging{ cursor:grabbing; }
+#ht-world svg{ display:block; }
+
+/* ── the trail pins ──────────────────────────────────────────────────────── */
+#ht-pins{ position:absolute; inset:0; }
+/* Centred on the point given, in both directions. No stem: the button sits ON
+   its route, so there is nothing to line up and nothing pointing at empty
+   ground. The engine writes --pin-counter each frame (1/zoom, so the button
+   holds its size on screen); the hover lift multiplies that rather than
+   replacing it, which is why both can happen at once. */
+.ht-pin{
+  position:absolute; z-index:5; text-decoration:none;
+  transform-origin:50% 50%;
+  transform:translate(-50%, -50%) scale(var(--pin-counter, 1));
+  padding:5px 11px; border-radius:var(--pin-radius);
+  background:var(--pin-green); color:var(--pin-text);
+  font:700 var(--pin-size)/1 var(--font-body); letter-spacing:.02em;
+  white-space:nowrap; box-shadow:0 3px 10px rgba(0,0,0,.45);
+  transition:filter var(--button-fade), box-shadow var(--button-fade);
+}
+.ht-pin[hidden]{ display:none; }
+.ht-pin.is-purple{ background:var(--pin-purple); color:var(--pin-text-purple); }
+.ht-pin:hover, .ht-pin:focus-visible{
+  transform:translate(-50%, -50%)
+            scale(calc(var(--pin-counter, 1) * var(--pin-lift)));
+  filter:brightness(1.08);
+  box-shadow:0 5px 16px rgba(0,0,0,.55);
+}
+.ht-pin:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+
+/* ── THE LEFT RAIL ────────────────────────────────────────────────────────
+   The compass and the two panel buttons in one fixed column. Nothing in here
+   ever moves, which is what keeps the buttons attached to the panel they
+   open. Same construction as the trail map's rail. */
+#ht-rail{
+  position:fixed; z-index:35;
+  left:var(--edge-gap);
+  top:calc(var(--bar-height) + var(--band-top) + var(--rail-top));
+  display:flex; flex-direction:column; gap:var(--rail-gap);
+}
+
+/* the north badge. The map is drawn north-up, so the needle never turns. */
+#ht-compass{
+  width:var(--compass-size); height:var(--compass-size); border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--panel); border:1px solid var(--panel-edge);
+  backdrop-filter:blur(var(--panel-blur)); box-shadow:var(--button-shadow);
+}
+
+.ht-railBtn{
+  cursor:pointer; padding:0;
+  width:var(--compass-size); height:var(--compass-size); border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--panel); border:1px solid var(--panel-edge);
+  color:var(--text-quiet);
+  backdrop-filter:blur(var(--panel-blur)); box-shadow:var(--button-shadow);
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade);
+}
+
+/* ── the one panel both buttons open ─────────────────────────────────────── */
+#ht-panel{
+  position:fixed; z-index:35;
+  left:calc(var(--edge-gap) + var(--compass-size) + var(--panel-gap));
+  top:calc(var(--bar-height) + var(--band-top) + var(--rail-top));
+  width:var(--panel-width);
+  max-height:calc(100vh - var(--bar-height) - var(--band-top)
+                        - var(--rail-top) - var(--gutter));
+  display:flex; flex-direction:column;
+  background:var(--panel-bg); border:1px solid var(--panel-edge);
+  border-radius:var(--panel-radius); box-shadow:var(--shadow);
+  backdrop-filter:blur(var(--panel-bg-blur));
+  overflow:hidden;
+  transform-origin:0 0;
+
+  /* THE CLOSED STATE. All three of these matter:
+       opacity        makes it fade rather than vanish
+       visibility     takes it out of the accessibility tree, and — with the
+                      0s delay below — waits until the fade has finished
+       pointer-events stops it catching clicks and drags while it is invisible
+
+     That last one was the bug: a panel at opacity 0 is still a solid pane as
+     far as the pointer is concerned, so a closed panel sat over the map
+     swallowing clicks and swallowing drags across a third of the window. The
+     `hidden` attribute alone does NOT fix it — an element with a display of
+     its own overrides what [hidden] would do — which is why the rule below
+     spells that out too. */
+  opacity:0; transform:translateX(-10px) scale(.98);
+  visibility:hidden; pointer-events:none;
+  transition:opacity var(--panel-slide) var(--panel-ease),
+             transform var(--panel-slide) var(--panel-ease),
+             width var(--panel-slide) var(--panel-ease),
+             visibility 0s linear var(--panel-slide);
+}
+#ht-panel.is-open{
+  opacity:1; transform:none;
+  visibility:visible; pointer-events:auto;
+  transition:opacity var(--panel-slide) var(--panel-ease),
+             transform var(--panel-slide) var(--panel-ease),
+             width var(--panel-slide) var(--panel-ease),
+             visibility 0s;
+}
+#ht-panel.is-layers{ width:var(--panel-width-wide); }
+.ht-close{
+  width:24px; height:24px; padding:0; border-radius:50%;
+  display:grid; place-items:center; cursor:pointer;
+  font:400 16px/1 var(--font-body); color:var(--text);
+  background:rgba(8,10,12,.55); border:1px solid var(--panel-edge);
+  transition:background var(--button-fade), transform var(--button-fade);
+}
+#ht-panelBody{ overflow:auto; overscroll-behavior:contain; padding:0 16px 16px; }
+
+/* ── the layer switches ──────────────────────────────────────────────────
+   The same sliding switches as the trail map's Layers panel. */
+.ht-groupTitle{
+  margin:18px 0 9px; font:700 9.5px/1 var(--font-body);
+  letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint);
+}
+.ht-groupTitle:first-child{ margin-top:0; }
+/* two columns, so the whole set is visible without a scroll bar. The count is
+   --switch-columns; nothing in the HTML knows about it. */
+.ht-switches{
+  display:grid; gap:var(--switch-gap);
+  grid-template-columns:repeat(var(--switch-columns), minmax(0, 1fr));
+}
+.ht-switch{
+  display:flex; align-items:flex-start; gap:9px; width:100%; text-align:left;
+  padding:9px 10px; border-radius:11px; cursor:pointer;
+  background:rgba(255,255,255,.045); border:1px solid var(--panel-edge);
+  transition:background var(--button-fade), border-color var(--button-fade);
+}
+.ht-switchText{ min-width:0; }
+.ht-switchText b{ display:block; font:600 12px/1.25 var(--font-body); color:var(--text); }
+.ht-switchText small{
+  display:block; margin-top:3px;
+  font:400 10.5px/1.35 var(--font-body); color:var(--text-quiet);
+}
+
+/* ── the reset button, at the foot of the Layers panel ───────────────────── */
+.ht-reset{
+  margin-top:14px; width:100%; cursor:pointer;
+  padding:9px 12px; border-radius:11px;
+  background:rgba(255,255,255,.06); border:1px solid var(--panel-edge);
+  color:var(--text-quiet);
+  font:600 10px/1 var(--font-body); letter-spacing:.16em; text-transform:uppercase;
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade);
+}
+.ht-reset:hover{ color:#fff; background:var(--accent); border-color:transparent; }
+.ht-reset:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:2px; }
+
+/* ── the round zoom controls ─────────────────────────────────────────────
+   Bottom right, so they sit opposite the rail rather than competing with it.
+   Same round dark-glass button as the rail uses. */
+#ht-controls{
+  position:fixed; right:var(--edge-gap); bottom:var(--edge-gap); z-index:35;
+  display:flex; flex-direction:column; gap:var(--control-gap);
+}
+.ht-control{
+  width:var(--control-size); height:var(--control-size); border-radius:50%;
+  border:1px solid var(--panel-edge); cursor:pointer;
+  background:var(--panel); color:var(--text-quiet);
+  display:grid; place-items:center;
+  backdrop-filter:blur(var(--panel-blur)); box-shadow:var(--button-shadow);
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade);
+}
+.ht-control:hover{ color:#fff; background:var(--accent); border-color:transparent; }
+/* the small press when one is clicked. The map's own easing does the rest —
+   see SETTINGS.buttonGlide. */
+.ht-control.is-pressed{
+  transform:scale(.88);
+  transition:transform .1s var(--panel-ease);
+}
+.ht-control{ transition:color var(--button-fade), background var(--button-fade),
+                        border-color var(--button-fade), transform .22s var(--panel-ease); }
+.ht-control:disabled{ opacity:.4; cursor:default; background:var(--panel); color:var(--text-quiet); }
+.ht-control:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:3px; }
+.ht-control svg{ width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; }
+.ht-control .ht-11{ font:700 10px/1 var(--font-body); letter-spacing:.08em; }
+
+/* ── the footnotes along the bottom ──────────────────────────────────────── */
+.ht-note{
+  position:fixed; bottom:var(--edge-gap); z-index:20;
+  font:500 var(--note-size)/1.4 var(--font-body); color:var(--text);
+  text-shadow:0 1px 6px rgba(0,0,0,.85);
+  pointer-events:none;
+}
+#ht-hint{ left:var(--edge-gap); max-width:44vw; opacity:.85; }
+
+/* ── the coordinate readout (press C) ────────────────────────────────────── */
+#ht-coords{
+  /* the one thing you are meant to be able to select and copy */
+  user-select:text; -webkit-user-select:text;
+  position:fixed; left:var(--edge-gap); bottom:calc(var(--edge-gap) + 30px); z-index:36;
+  display:none; padding:8px 12px; border-radius:10px;
+  background:var(--panel); border:1px solid var(--panel-edge);
+  backdrop-filter:blur(var(--panel-blur));
+  font:600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--text);
+}
+#ht-coords.is-on{ display:block; }
+
+/* ── the "something went wrong" screen ───────────────────────────────────── */
+#ht-problem{
+  position:fixed; inset:0; z-index:60; display:none; place-items:center;
+  padding:8vw; text-align:center; background:var(--map-backdrop); color:var(--text-quiet);
+}
+#ht-problem.is-on{ display:grid; }
+#ht-problem p{ max-width:56ch; font:400 15px/1.75 var(--font-body); }
+
+/* ── phones and small windows ────────────────────────────────────────────
+   Region variables only, the way the trail map does it — no element repeats
+   its position here. */
+
+
+/* ── short windows ────────────────────────────────────────────────────────
+   A laptop in a small window. The top band gives up some air and the switches
+   tighten, which buys the panel enough height to show the whole set without a
+   scroll bar for a good deal further down. Below about 700px tall it scrolls
+   anyway, which is the right answer at that size. */
+
+
+
+/* ═══ ④  THE READING PAGES ═════════════════════════════════════════════════
+   Trails, About and Contact. They share the navigation bar with the two map
+   pages and nothing else: these scroll, hold long text, and want a comfortable
+   measure rather than a full-bleed drawing. The palette is the same one, so
+   they read as the same site.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.page-text{
+  overflow:auto; overscroll-behavior:auto;
+  background:var(--map-backdrop); color:var(--text);
+  user-select:text; -webkit-user-select:text;
+}
+body.page-text main{
+  max-width:var(--read-width);
+  margin:0 auto;
+  padding:calc(var(--bar-height) + var(--read-top)) var(--edge-gap) 96px;
+}
+
+/* the page's own title block, matching the corner title on the map pages */
+.pt-head{ margin:0 0 var(--read-gap); }
+.pt-kicker{
+  font:600 10.5px/1 var(--font-body); letter-spacing:.22em; text-transform:uppercase;
+  color:var(--over-map-kicker); margin-bottom:10px;
+}
+.pt-head h1{
+  margin:0; font:700 clamp(26px, 4.6vw, 40px)/1.15 var(--font-body);
+  letter-spacing:-.02em; color:var(--text);
+}
+.pt-lede{
+  margin:14px 0 0; max-width:62ch;
+  font:400 clamp(15px, 1.6vw, 17px)/1.7 var(--font-body); color:var(--text-quiet);
+}
+
+/* a section of prose */
+.pt-section{ margin-top:var(--read-gap); }
+.pt-section h2{
+  margin:0 0 14px; font:700 clamp(18px, 2.4vw, 23px)/1.25 var(--font-body);
+  letter-spacing:-.01em; color:var(--text);
+}
+.pt-section h3{
+  margin:26px 0 10px; font:700 11px/1 var(--font-body);
+  letter-spacing:.16em; text-transform:uppercase; color:var(--accent-soft);
+}
+.pt-section p{
+  margin:0 0 15px; max-width:68ch;
+  font:400 15px/1.75 var(--font-body); color:var(--text-quiet);
+}
+.pt-section p strong{ color:var(--text); font-weight:600; }
+.pt-section a{ color:var(--bar-here); text-decoration:underline; text-underline-offset:3px; }
+
+/* a picture inside the prose */
+.pt-figure{ margin:22px 0 6px; }
+.pt-figure img, .pt-figure video{
+  display:block; width:100%; height:auto; border-radius:var(--panel-radius);
+  background:#111; border:1px solid var(--panel-edge);
+}
+.pt-figure figcaption{
+  margin-top:9px; font:400 12.5px/1.6 var(--font-body); color:var(--text-faint);
+}
+
+/* ── the list of trails ────────────────────────────────────────────────────
+   One card per trail, in a grid that becomes a single column when there is no
+   room for two. The whole card is the link to that trail's page. */
+.pt-group{ margin-top:var(--read-gap); }
+.pt-groupTitle{
+  margin:0 0 14px; font:700 10.5px/1 var(--font-body);
+  letter-spacing:.18em; text-transform:uppercase; color:var(--accent-soft);
+}
+.pt-cards{
+  display:grid; gap:14px;
+  grid-template-columns:repeat(auto-fit, minmax(var(--card-min), 1fr));
+}
+.pt-card{
+  display:flex; flex-direction:column;
+  padding:18px 18px 16px; border-radius:var(--panel-radius);
+  background:var(--panel-bg); border:1px solid var(--panel-edge);
+  text-decoration:none; color:inherit;
+  transition:border-color var(--button-fade), background var(--button-fade),
+             transform var(--button-fade);
+}
+.pt-card:hover{
+  border-color:var(--bar-here); background:rgba(255,255,255,.05);
+  transform:translateY(-2px);
+}
+.pt-card:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:3px; }
+.pt-card{ position:relative; }
+.pt-card h3{
+  margin:0 0 6px; font:700 17px/1.2 var(--font-body); color:var(--text);
+  letter-spacing:-.01em;
+}
+/* The trail's name is the link, and this stretches it across the whole card so
+   the card feels clickable — without putting one <a> inside another, which is
+   invalid and which browsers pull apart. The small buttons sit above it. */
+.pt-card h3 a{ color:inherit; text-decoration:none; }
+.pt-open::after{ content:""; position:absolute; inset:0; border-radius:inherit; }
+.pt-links{ position:relative; z-index:1; }
+.pt-card .pt-meta{
+  font:600 9.5px/1 var(--font-body); letter-spacing:.15em; text-transform:uppercase;
+  color:var(--over-map-kicker); margin-bottom:9px;
+}
+.pt-card p{ margin:0; font:400 13.5px/1.65 var(--font-body); color:var(--text-quiet); }
+.pt-card .pt-go{
+  margin-top:13px; font:600 10px/1 var(--font-body);
+  letter-spacing:.14em; text-transform:uppercase; color:var(--bar-here);
+}
+/* a trail with no page of its own yet: still listed, but plainly not a link */
+.pt-card.is-soon{ opacity:.62; }
+.pt-card.is-soon .pt-go{ color:var(--text-faint); }
+
+/* the small link buttons under a trail's name, matching the map pages' */
+.pt-links{ display:flex; flex-wrap:wrap; gap:var(--trail-link-gap); margin-top:13px; }
+.pt-links a{
+  font:600 var(--trail-link-size)/1 var(--font-body);
+  letter-spacing:.11em; text-transform:uppercase; text-decoration:none;
+  color:var(--text); background:rgba(255,255,255,.07);
+  border:1px solid var(--panel-edge); padding:6px 10px; border-radius:999px;
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade);
+}
+.pt-links a:hover{ color:#fff; background:var(--accent); border-color:transparent; }
+
+/* ── the contact page ──────────────────────────────────────────────────── */
+.pt-contact{
+  margin-top:var(--read-gap); padding:26px;
+  border-radius:var(--panel-radius);
+  background:var(--panel-bg); border:1px solid var(--panel-edge);
+  max-width:520px;
+}
+.pt-contact label{
+  display:block; margin-bottom:6px;
+  font:600 9.5px/1 var(--font-body); letter-spacing:.15em; text-transform:uppercase;
+  color:var(--text-faint);
+}
+.pt-field{ margin-bottom:16px; }
+.pt-contact input, .pt-contact textarea{
+  width:100%; padding:11px 13px; border-radius:11px;
+  background:rgba(0,0,0,.35); border:1px solid var(--panel-edge);
+  color:var(--text); font:400 14px/1.5 var(--font-body);
+  transition:border-color var(--button-fade);
+}
+.pt-contact input:focus, .pt-contact textarea:focus{
+  outline:none; border-color:var(--bar-here);
+}
+.pt-contact textarea{ min-height:132px; resize:vertical; }
+.pt-send{
+  cursor:pointer; padding:12px 22px; border-radius:999px;
+  background:var(--accent); border:1px solid transparent; color:#fff;
+  font:700 10.5px/1 var(--font-body); letter-spacing:.16em; text-transform:uppercase;
+  transition:filter var(--button-fade);
+}
+.pt-send:hover{ filter:brightness(1.1); }
+.pt-mail{
+  margin-top:20px; font:400 14px/1.7 var(--font-body); color:var(--text-quiet);
+}
+.pt-mail a{ color:var(--bar-here); }
+
+/* the footer every reading page ends with */
+.pt-foot{
+  margin-top:60px; padding-top:22px; border-top:1px solid var(--panel-edge);
+  font:400 12px/1.7 var(--font-body); color:var(--text-faint);
+  display:flex; flex-wrap:wrap; gap:16px; justify-content:space-between;
+}
+.pt-foot a{ color:var(--text-quiet); text-decoration:none; }
+.pt-foot a:hover{ color:var(--bar-here); }
+
+/* ═══ ⑤  SMALL SCREENS ═════════════════════════════════════════════════════
+   Last in the file so these win. The page-specific blocks that follow were
+   each written for one page and are scoped to it, so the two map pages cannot
+   rewrite one another's variables at odd widths.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the layers panel on a phone ───────────────────────────────────────────
+   The panel used to be one tall column of switches, each with a line of
+   explanation under its name, and on a short phone the bottom of the list was
+   simply cut off — there was no way to reach the last switch at all.
+
+   Two changes fix it, and both are variables rather than new rules:
+     * two columns instead of one, which halves the height
+     * the explanations are dropped. They are a nicety on a desktop and the
+       reason the list was twice as tall as it needed to be. The switch's name
+       is what identifies it; the note only ever expanded on that.
+   Between them the whole set fits on a phone screen without scrolling.      */
+@media (max-width: 700px){
+  :root{ --switch-columns: 2; --switch-gap: 6px; }
+  .ht-switchText small, .tm-switchText small{ display:none; }
+  .ht-switch, .tm-switch{ padding:9px 10px; gap:8px; }
+  .ht-switchText b, .tm-switchText b{ font-size:11.5px; line-height:1.2; }
+  /* the switch itself shrinks a little so two fit side by side */
+  :root{ --switch-width: 28px; --switch-height: 17px; }
+  .ht-reset{ margin-top:10px; }
+
+  /* The panel's opening line of explanation goes too. On a desktop it says
+     what the switches do; on a phone it costs three lines of a screen that has
+     none to spare, and the switches explain themselves. */
+  #ht-panelNote, #tm-panelNote{ display:none; }
+  .ht-groupTitle{ margin:10px 0 6px; }
+  /* the corner title tucks in, which raises the panel's ceiling */
+  :root{ --title-pad: 14px; }
+}
+
+/* the same again for a short, wide window — a phone on its side, mostly */
+@media (max-height: 560px){
+  :root{ --switch-columns: 2; }
+  .ht-switchText small, .tm-switchText small{ display:none; }
+}
+
+/* ── the reading pages ─────────────────────────────────────────────────── */
+@media (max-width: 700px){
+  :root{ --read-top: 26px; --read-gap: 34px; }
+  .pt-foot{ flex-direction:column; gap:8px; }
+}
+
+
+/* the page-specific responsive rules, scoped so neither page can rewrite the
+   other's variables at an awkward width */
+@media (max-width:860px){
+  body.page-trail{
+    --edge-gap:    12px;    /* less air to spare, so tighter margins           */
+    --bar-height:  44px;    /* a touch deeper: thumbs need more than pointers  */
+    --bar-brand-size: 15px;
+    --bar-link-size:  10px;
+    --title-pad:   16px;    /* and the corner title tucks in tighter           */
+    --trail-link-size: 9px;
+    --band-bottom: 144px;   /* a little more than the derived stack above, so a
+                               thumb on the card never brushes the numbers     */
+    --card-width:  none;    /* the column spans the full width instead         */
+    --card-sit:    0%;      /* and the card drops to the bottom of it,         */
+    --card-lift:   0%;      /*   rather than being centred                     */
+    --card-lean:   0;       /* no extra rise: it has nowhere to rise from      */
+
+    /* the picture keeps its 4:3 shape on a phone; fewer lines of text show at
+       once so the whole card still fits above the readouts */
+    --card-text-lines:4;
+    --arrow-size:28px;
+  }
+  /* ── frosted glass, and why a phone does not get it ──────────────────
+     backdrop-filter means "blur everything behind this box, every frame".
+     Behind the waypoint card is the moving map, so on a phone that is a full
+     blur of a moving picture on every frame of the walk — measured at around
+     eleven frames a second of the budget, which is most of the difference
+     between a walk that flows and one that stutters. The blur goes, and the
+     panels behind it become solid enough to read against a busy map instead.
+     Raise the alpha in these two if you ever want them denser still. */
+  body.page-trail{
+    --card-panel:    rgba(18,20,23,.90);
+    --wishful-panel: rgba(31,22,44,.90);
+    --panel:         rgba(18,20,23,.93);
+  }
+  /* Setting the blur radius to zero is NOT enough — blur(0) is still a filter,
+     and the browser still does the pass. It has to be switched off outright. */
+  body.page-trail .tm-card,
+  body.page-trail #tm-panel,
+  body.page-trail .tm-railBtn,
+  body.page-trail #tm-opening .tm-box,
+  body.page-trail #tm-closing .tm-box,
+  body.page-trail .tm-caption,
+  body.page-trail .tm-slideCaption,
+  body.page-trail .tm-compare-label,
+  body.page-trail #tm-numbers,
+  body.page-trail #tm-coords{
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+  }
+  /* ── who is in front of whom, on a phone ────────────────────────────
+     The card is full width here and fills nearly the whole column, so it and
+     the rail of buttons cannot both have the space. The card takes it: it is
+     laid OVER the rail, the way a sheet is laid over what is under it. Nothing
+     fades and nothing blinks — for the two thirds of the walk with no card up
+     the buttons are exactly where they always were, and when a card rises it
+     simply covers them. The page lowers the rail far enough that a card can
+     never cross one halfway down; see placeRail().
+
+     The panel keeps the top layer, so a panel you have deliberately opened is
+     never buried by a card arriving underneath it. */
+  body.page-trail #tm-cards{ z-index:6; }
+  body.page-trail #tm-panel{ z-index:7; }
+  .tm-card .tm-inner{ padding:14px 16px 16px; }
+  .tm-close{ width:34px; height:34px; font-size:20px; }   /* easier to hit with a thumb */
+  .tm-card h2{ font-size:19px; }
+  .tm-card p{ font-size:13px; }
+  /* the version is hidden here, so the title has the row to itself and the
+     link buttons get the full width before they start wrapping */
+  #tm-brand{ max-width:100%; }
+  #tm-brand h1{ font-size:14px; }
+  #tm-version{ display:none; }
+  #tm-numbers .tm-optional{ display:none; }
+  #tm-readerPanel{ width:auto; left:var(--edge-gap); right:var(--edge-gap); }
+}
+@media (max-height:720px){
+  body.page-trail{
+    --title-pad:      12px;   /* the corner title stops taking so much air    */
+    --title-links:    30px;
+    --readout-drop:   14px;   /* and the numbers sit closer to the edge       */
+    --profile-height: 40px;   /* a shallower elevation graph                  */
+    --card-chrome:   calc(264px + var(--more-height));  /* tighter padding, but
+                                 the hint still has to be paid for            */
+    --card-media-min: 116px;  /* and the picture may go a little smaller here
+                                 before the card is allowed to overhang       */
+  }
+  .tm-card .tm-inner{ padding:14px 18px 18px; }
+  .tm-card .tm-facts{ margin-top:10px; padding-top:9px; }
+}
+@media (prefers-reduced-motion:reduce){
+  #tm-hint svg, #tm-walker .tm-ring{ animation:none; }
+}
+@media (max-width: 700px){
+  body.page-map{
+    --edge-gap:      12px;
+    --bar-height:    44px;
+    --bar-brand-size:15px;
+    --bar-link-size: 10px;
+    --compass-size:  46px;
+    --compass-arrow: 20px;
+    --control-size:  40px;
+    --rail-top:      6px;
+    --title-pad:     14px;
+    --trail-link-size: 9px;
+    --note-size:     11px;
+    /* Both panels take exactly the room left beside the rail, so neither can
+       run off the right-hand edge. Worked out rather than guessed, because a
+       fixed width that suits a 390px phone is wrong on a 430px one. */
+    --panel-width:      calc(100vw - var(--edge-gap) * 2
+                                   - var(--compass-size) - var(--panel-gap));
+    --panel-width-wide: var(--panel-width);
+    /* --switch-columns stays at 2 here. It used to drop to 1 on a phone, which
+       made the list twice as tall as the screen and cut the last switches off
+       entirely. Two columns with the explanations hidden — see the small-screen
+       block above — is what makes the whole set reachable. */
+  }
+  /* On a narrow screen the panel reaches nearly to the right-hand edge, where
+     the zoom controls are. Rather than squeeze the panel, the controls step
+     aside while it is open — on a phone you are reading the panel, not
+     zooming, and they come straight back when it closes. */
+  body.ht-panel-open #ht-controls{
+    opacity:0; pointer-events:none;
+    transition:opacity var(--panel-slide) var(--panel-ease);
+  }
+  /* the same trade as the trail page above: no frosted glass on a phone,
+     denser panels instead, so dragging the map stays smooth */
+  body.page-map{ --panel: rgba(18,20,23,.93); }
+  body.page-map #ht-panel,
+  body.page-map .ht-railBtn,
+  body.page-map .ht-control,
+  body.page-map .ht-pin,
+  body.page-map #ht-hint,
+  body.page-map #ht-brandline{
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+  }
+  #ht-brandline{ max-width:100%; }
+  #ht-brandline h1{ font-size:14px; }
+  #ht-version{ display:none; }
+  #ht-hint{ max-width:54vw; }
+}
+@media (max-height: 860px){
+  body.page-map{
+    --title-pad:    12px;
+    --rail-top:      6px;
+    --switch-gap:    6px;
+  }
+  .ht-switch{ padding:6px 9px; }
+  .ht-switchText small{ margin-top:2px; font-size:10px; line-height:1.3; }
+  .ht-groupTitle{ margin:11px 0 6px; }
+  .ht-legend{ gap:8px; }
+  .ht-reset{ margin-top:9px; padding:7px 12px; }
+}
+@media (prefers-reduced-motion: reduce){
+  #ht-panel, .ht-switch, .ht-control, .ht-pin, .ht-railBtn{ transition-duration:.01ms; }
+}
