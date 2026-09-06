@@ -339,6 +339,10 @@ const SETTINGS = {
      browser can animate between arrangements and a card keeps its scroll
      position, its focus and its loaded picture. */
   stagger:        26,          // ms between one card appearing and the next
+  leaveMs:        150,         // how long a card takes to shrink away before
+                               // it is taken out of the layout. Short: this is
+                               // an acknowledgement, not a performance.
+  enterMs:        280,         // and how long one takes to arrive
 
   /* THE SLIDER SLIDES, AND THEN SNAPS. With a step of 1 the thumb jumps from
      stop to stop under the finger, which feels like a fault rather than a
@@ -364,6 +368,16 @@ const byValue = (a, b) => b._value - a._value || a._cost - b._cost;
    been dragged between two of them */
 const stopOf = el => Math.max(0, Math.min(3, Math.round(+el.value)));
 
+/* WHAT THE LIST WAS LAST SHOWING. apply() runs on every frame of a slider —
+   dragging one, or gliding it to a stop, calls it sixty times a second — and
+   almost all of those frames ask for exactly the same set of cards. Re-running
+   the animation on each of them would mean the cards never finished arriving.
+   So the readouts follow the slider continuously, and the list is only rebuilt
+   when the pair of values it depends on actually changes. */
+let lastFilter = null;
+let pass = 0;                 // cancels the timers of a filter change that has
+                              // been overtaken by a newer one
+
 function apply() {
   const wantCost = SETTINGS.levels[stopOf($("wt-cost"))];
   const wantPri  = SETTINGS.levels[stopOf($("wt-priority"))];
@@ -382,28 +396,73 @@ function apply() {
       b.classList.toggle("is-on", +b.dataset.at === at));
   });
 
+  /* a shortcut lights up when the sliders happen to be where it would put
+     them — however they got there */
+  document.querySelectorAll(".wt-sort button").forEach(b =>
+    b.classList.toggle("is-on",
+      +b.dataset.cost === stopOf($("wt-cost")) &&
+      +b.dataset.priority === stopOf($("wt-priority"))));
+
+  const asked = wantCost + "|" + wantPri;
+  if (asked === lastFilter) return;      // nothing to rebuild
+  lastFilter = asked;
+  const mine = ++pass;
+
   const showing = cards.filter(c =>
     (!wantCost || c.dataset.cost === wantCost) &&
     (!wantPri  || c.dataset.priority === wantPri));
 
   showing.sort(byValue);
-  showing.forEach((c, i) => {
-    c.style.order = i;
-    c.style.transitionDelay = (i * SETTINGS.stagger) + "ms";
-  });
 
-  /* A CARD THAT IS OUT IS TAKEN OUT OF THE LAYOUT, not just faded. The class
-     is what does it — `hidden` alone could not, because .wt-card sets a
-     display of its own and beats the browser's own [hidden] rule. That is
-     what left holes in the grid and knocked the rest out of alignment: the
-     cards were invisible and still occupying their cells. */
-  cards.forEach(c => {
-    const on = showing.indexOf(c) !== -1;
-    c.classList.toggle("is-out", !on);
-    c.classList.toggle("is-in", on);
-    c.hidden = !on;
-    if (!on) c.style.transitionDelay = "0ms";
+  /* ── GOING ──────────────────────────────────────────────────────────────
+     A card that is leaving shrinks and fades first, and is taken out of the
+     layout only once that has played. Taken out immediately it would simply
+     blink out of existence and the cards after it would jump into the hole.
+
+     A CARD THAT IS OUT MUST LEAVE THE LAYOUT, though — the class is what does
+     that. `hidden` alone could not: .wt-card sets a display of its own, which
+     beats the browser's [hidden] rule, so filtered-out cards kept their cells
+     and left holes in the grid. */
+  const leaving = cards.filter(c =>
+    showing.indexOf(c) === -1 && !c.classList.contains("is-out"));
+  leaving.forEach(c => {
+    c.classList.remove("is-in");
+    c.classList.add("is-leaving");
+    c.style.transitionDelay = "0ms";
   });
+  const clear = () => {
+    if (mine !== pass) return;           // a newer filter has taken over
+    leaving.forEach(c => {
+      c.classList.remove("is-leaving");
+      c.classList.add("is-out");
+      c.hidden = true;
+    });
+    place();
+  };
+  if (leaving.length) setTimeout(clear, SETTINGS.leaveMs);
+  else place();
+
+  /* ── AND ARRIVING ───────────────────────────────────────────────────────
+     Order is written as a CSS `order` rather than by moving the cards in the
+     document: nothing is destroyed and rebuilt, so pictures stay loaded and
+     focus stays where it was. A card that was out is put back into the layout
+     first, then — after a frame, so the browser has something to animate FROM
+     — told to arrive. */
+  function place() {
+    if (mine !== pass) return;
+    showing.forEach((c, i) => {
+      c.style.order = i;
+      c.hidden = false;
+      c.classList.remove("is-leaving", "is-out");
+    });
+    requestAnimationFrame(() => {
+      if (mine !== pass) return;
+      showing.forEach((c, i) => {
+        c.style.transitionDelay = (i * SETTINGS.stagger) + "ms";
+        c.classList.add("is-in");
+      });
+    });
+  }
 
   const n = showing.length;
   $("wt-count").textContent =
@@ -412,13 +471,6 @@ function apply() {
     : SETTINGS.countSome.replace("%s", n);
   $("wt-empty").hidden = n > 0;
   $("wt-list").hidden = n === 0;
-
-  /* a shortcut lights up when the sliders happen to be where it would put
-     them — however they got there */
-  document.querySelectorAll(".wt-sort button").forEach(b =>
-    b.classList.toggle("is-on",
-      +b.dataset.cost === stopOf($("wt-cost")) &&
-      +b.dataset.priority === stopOf($("wt-priority"))));
 
   /* the address remembers the filter, so a filtered view can be sent to
      somebody — which is the whole point of a page that answers a question */

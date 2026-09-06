@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 2.7
+   version 2.8
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -359,6 +359,29 @@ body.page-map{
    the two stylesheets were merged into one file both pages had a plain `body`
    rule, the map's `overflow:hidden` won, and the trail page could not be
    scrolled at all. Hence the scoping. */
+/* ── THE SCROLLBAR KEEPS ITS SEAT ────────────────────────────────────────
+   On a reading page whose length changes — filter the Wishful thinking list
+   and it can go from twelve cards to one — the scrollbar appears and vanishes
+   with it, and on Windows and Linux, where the scrollbar takes real width, the
+   whole page jumps sideways by fifteen pixels every time. It is a small jump
+   and it is the most distracting thing on the page, because everything moves
+   at once and none of it moved for a reason.
+
+   `scrollbar-gutter: stable` reserves the space whether or not there is
+   anything to scroll, so the page's width stops depending on its height. It
+   costs nothing where scrollbars are overlaid (macOS, phones) — there is no
+   width to reserve. The fallback for browsers that do not know the property
+   is the older trick of always showing the track, which is uglier and does
+   the same job.
+
+   Only on the reading pages. The map pages do not scroll at all, so there is
+   nothing to reserve and a permanent gutter beside a full-bleed map would be
+   a stripe of nothing down the edge of the artwork. */
+html:has(body.page-text){ scrollbar-gutter:stable; }
+@supports not (scrollbar-gutter: stable){
+  html:has(body.page-text){ overflow-y:scroll; }
+}
+
 body{
   margin:0;
   color:var(--text);
@@ -2176,7 +2199,11 @@ body.page-wishful{
   --wt-gap:            16px;
   --wt-shot-height:    150px;  /* the picture at the top of a card              */
   --wt-radius:         14px;
-  --wt-move:           340ms;  /* how long a card takes to arrive or leave      */
+  --wt-in:             300ms;  /* how long a card takes to arrive               */
+  --wt-out:            150ms;  /* and to shrink away. Shorter, on purpose: you
+                                  are waiting for what is left, not watching
+                                  what has gone.                                */
+  --wt-ease:           cubic-bezier(.22,.9,.28,1);   /* quick out, soft landing */
   --wt-track:          6px;    /* the thickness of a slider's groove            */
   --wt-thumb:          22px;
   --wt-panel:          rgba(255,255,255,.035);
@@ -2343,16 +2370,31 @@ body.page-wishful{
   display:grid; gap:var(--wt-gap);
   grid-template-columns:repeat(auto-fill, minmax(var(--wt-card-min), 1fr));
 }
+/* A CARD HAS THREE STATES, and the middle one is why it can be animated away.
+     resting (no class)  it is in the layout, not yet arrived
+     .is-in              arrived: full size, full opacity
+     .is-leaving         still in the layout, shrinking and fading
+     .is-out             gone from the layout entirely
+   Leaving is a state rather than a removal because a card taken out of a grid
+   the instant it stops matching simply blinks out, and everything after it
+   jumps into the hole. It shrinks first, and the hole closes afterwards. */
 .wt-card{
   display:flex; flex-direction:column; position:relative;
   border:1px solid var(--panel-edge); border-radius:var(--wt-radius);
   background:var(--panel-bg); overflow:hidden;
-  opacity:0; transform:translateY(10px) scale(.985);
-  transition:opacity var(--wt-move) var(--panel-ease),
-             transform var(--wt-move) var(--panel-ease),
+  opacity:0; transform:translateY(10px) scale(.97);
+  transition:opacity var(--wt-in) var(--wt-ease),
+             transform var(--wt-in) var(--wt-ease),
              border-color var(--button-fade);
 }
 .wt-card.is-in{ opacity:1; transform:none; }
+.wt-card.is-leaving{
+  opacity:0; transform:scale(.9);
+  /* out faster than in, and from wherever it is rather than after a queue —
+     leaving should feel like a dismissal, arriving like an arrival */
+  transition-duration:var(--wt-out); transition-delay:0ms !important;
+  pointer-events:none;
+}
 /* A CARD THAT IS FILTERED OUT LEAVES THE LAYOUT.
    This rule is the fix for the holes in the grid. The script also sets the
    `hidden` attribute, and `hidden` alone did nothing here: the browser's own
@@ -2449,7 +2491,8 @@ body.page-wishful{
    choreography — the cards still appear and disappear, they simply do it at
    once. */
 @media (prefers-reduced-motion: reduce){
-  .wt-card, .wt-shot, .wt-mark img, .wt-go, .wt-go span{
+  .wt-card, .wt-shot, .wt-mark img, .wt-go, .wt-go span,
+  .wt-ticks button, .wt-sort button, .wt-reset{
     transition-duration:1ms !important; transition-delay:0ms !important;
   }
 }

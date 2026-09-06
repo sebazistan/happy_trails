@@ -12,6 +12,26 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+  8.6  The Wishful thinking page stops moving when it should not.
+       THE SCROLLBAR NO LONGER SHIFTS THE PAGE. Filtering twelve cards down to
+       one made the page short enough not to need a scrollbar, the scrollbar
+       went away, and on Windows and Linux the whole layout jumped fifteen
+       pixels sideways — everything moving at once, none of it for a reason.
+       The reading pages now reserve the gutter whether or not they need it
+       (scrollbar-gutter: stable, with the older always-show-the-track trick
+       for browsers that do not know the property). The map pages do not: they
+       never scroll, and a permanent gutter beside a full-bleed map is a stripe
+       of nothing down the edge of the artwork.
+       CARDS ARRIVE AND LEAVE PROPERLY. A card that stops matching now shrinks
+       and fades for 150ms and is taken out of the layout after that, rather
+       than blinking out and letting the ones behind it jump into the hole.
+       Arriving is slower than leaving on purpose: you are waiting for what is
+       left, not watching what has gone.
+       The filtering also stopped doing sixty times the work it needed to. The
+       sliders call it on every frame while they are being dragged, and almost
+       every one of those frames asks for the same set of cards; it now
+       compares what was asked for against what is already shown and returns
+       early, so an animation can finish instead of restarting each frame.
   8.5  THE BELTLINE IS NO LONGER A SPECIAL CASE. It was a hand-written page —
        the same page as the other eleven, but maintained separately, so every
        change to the shared template had to be made twice and its three wishful

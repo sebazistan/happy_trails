@@ -1,4 +1,4 @@
-HAPPY TRAILS — site assets, version 2.0
+HAPPY TRAILS — site assets, version 2.1
 
 The folder carries the version; the files inside do not. Every page and asset
 has a plain name so that links never need rewriting and replacing a file is
