@@ -363,7 +363,9 @@ const WORDS = {
     { label: "Map",     href: "index.html",         here: true  },
     { label: "Trails",  href: "trails.html",  here: false },
     { label: "About",   href: "about.html",   here: false },
-    { label: "Contact", href: "contact.html", here: false }
+    { label: "Contact", href: "contact.html", here: false },
+    { label: "Buy me a coffee", href: "https://buymeacoffee.com/sebazistan", here: false,
+      newTab: true, kind: "coffee" }
   ],
 
   cornerKicker:  "Cycling network \u00b7 Toronto",
@@ -696,7 +698,11 @@ function writeWords() {
   el("brand").textContent = WORDS.brand;
   el("brand").href = WORDS.brandHref;
   el("nav").innerHTML = WORDS.nav.map(n =>
-    '<a href="' + n.href + '"' + (n.here ? ' class="is-here"' : '') + '>' + n.label + '</a>').join("");
+    '<a href="' + n.href + '"' +
+    (n.here ? ' class="is-here"' : '') +
+    (n.kind ? ' class="ht-' + n.kind + '"' : '') +
+    (n.newTab ? ' target="_blank" rel="noopener"' : '') +
+    '>' + n.label + '</a>').join("");
   el("cornerKicker").textContent = WORDS.cornerKicker;
   el("cornerTitle").textContent = WORDS.cornerTitle;
   writeTrailLinks();

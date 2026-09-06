@@ -143,6 +143,12 @@
   --cross-bg-hover:    rgba(52,112,178,.96);
   --cross-edge:        rgba(150,196,240,.45);
   --shot-height:       132px;   /* the picture at the top of a trail card */
+  /* Buy me a coffee. Their own yellow, warmed slightly to sit with the site's
+     amber rather than shout over it. */
+  --coffee-ink:        #ffdd55;
+  --coffee-ink-hover:  #ffe680;
+  --coffee-bg:         rgba(255,221,85,.07);
+  --coffee-edge:       rgba(255,221,85,.24);
   /* the picture behind the opening panel, and the veil that keeps its text
      readable. Subtle on purpose: enough to see what the trail looks like,
      not so much that the words fight it. */
@@ -1181,6 +1187,63 @@ body.page-trail{
 .tm-linkIcon{ width:1.15em; height:1.15em; flex:none; opacity:.75; }
 
 
+
+
+/* ══ BUY ME A COFFEE ══════════════════════════════════════════════════════
+   WHY THIS IS A LINK AND NOT THEIR WIDGET.
+
+   Buy Me a Coffee offer a drop-in script that floats a button over the page.
+   It is not used here, deliberately:
+
+     · it is a third-party script on all sixteen pages, and this site currently
+       loads NO external code at all — that is why it holds 55fps on a phone
+     · it floats a fixed button over the bottom-left corner, which on a trail
+       page is exactly where the readouts, the elevation graph and the new
+       waypoint arrows already are
+     · it loads their fonts and images, and sets cookies, on every visit from
+       everyone, whether or not anybody ever clicks it
+
+   A plain link costs nothing, cannot slow anything down, needs no cookie
+   notice, and lands on the same page their button would have opened. If the
+   widget is ever wanted instead, it is one <script> tag on each page — but
+   check what it does to the corner controls first.
+
+   The address lives in three places, all of them data rather than markup:
+   WORDS.bar.links in trail-engine.js, WORDS.nav in index.html, and the three
+   reading pages' own <nav>. Search for "buymeacoffee" to change it. */
+
+/* the item in the navigation bar — an offer, not another section */
+.tm-coffee, .ht-coffee{
+  color:var(--coffee-ink) !important;
+}
+.tm-coffee:hover, .ht-coffee:hover{ color:var(--coffee-ink-hover) !important; }
+
+/* the block at the foot of the About and Contact pages */
+.pt-support{
+  display:flex; gap:20px; align-items:flex-start;
+  margin:var(--read-gap) 0 0; padding:22px 24px;
+  border-radius:var(--panel-radius);
+  background:var(--coffee-bg); border:1px solid var(--coffee-edge);
+}
+.pt-support h2{
+  margin:0 0 7px; font:700 16px/1.25 var(--font-body); color:var(--text);
+}
+.pt-support p{
+  margin:0 0 15px; max-width:56ch;
+  font:400 13.5px/1.65 var(--font-body); color:var(--text-quiet);
+}
+.pt-cup{ width:34px; height:34px; flex:none; color:var(--coffee-ink); margin-top:2px; }
+.pt-coffee{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 17px; border-radius:999px; text-decoration:none;
+  font:700 11.5px/1 var(--font-body); letter-spacing:.1em; text-transform:uppercase;
+  color:#221a06; background:var(--coffee-ink);
+  transition:background var(--button-fade), transform var(--button-fade);
+}
+.pt-coffee:hover{ background:#fff; transform:translateY(-1px); }
+@media (max-width: 700px){
+  .pt-support{ flex-direction:column; gap:12px; padding:18px; }
+}
 
 /* ── the picture on a trail card ──────────────────────────────────────────
    A crop of that trail's own map — the same picture its page opens with, so

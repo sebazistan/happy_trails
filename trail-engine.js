@@ -729,7 +729,12 @@ const DEFAULT_WORDS = {
       { label: "Map",     href: "index.html",         here: false },
       { label: "Trails",  href: "trails.html",  here: true  },
       { label: "About",   href: "about.html",   here: false },
-      { label: "Contact", href: "contact.html", here: false }
+      { label: "Contact", href: "contact.html", here: false },
+      /* The support link is marked so the stylesheet can tint it — it is the
+         only item in the bar that leaves the site, and it should look like an
+         offer rather than another section. */
+      { label: "Buy me a coffee", href: "https://buymeacoffee.com/sebazistan", here: false,
+        newTab: true, kind: "coffee" }
     ]
   },
 
@@ -1110,7 +1115,10 @@ function writeBar() {
   brand.textContent = WORDS.bar.brand;
   brand.href = WORDS.bar.brandHref;
   el("barNav").innerHTML = WORDS.bar.links.map(link =>
-    '<a href="' + link.href + '"' + (link.here ? ' class="tm-here" aria-current="page"' : '') +
+    '<a href="' + link.href + '"' +
+    (link.here ? ' class="tm-here" aria-current="page"' : '') +
+    (link.kind ? ' class="tm-' + link.kind + '"' : '') +
+    (link.newTab ? ' target="_blank" rel="noopener"' : '') +
     '>' + link.label + '</a>').join("");
 }
 
