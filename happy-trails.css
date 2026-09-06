@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 2.3
+   version 2.4
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -153,8 +153,6 @@
   /* Buy me a coffee. Their own yellow, warmed slightly to sit with the site's
      amber rather than shout over it. */
   --over-veil-ink:     #f2f0ea;   /* title text over the top veil */
-  /* the halo that keeps that text readable over pale artwork too */
-  --over-veil-shadow:  0 1px 2px rgba(12,14,16,.75), 0 0 12px rgba(12,14,16,.55);
   --over-veil-kicker:  #e0a323;
   --coffee-nav:        #e8503a;   /* in the white bar — the site's orange   */
   --coffee-nav-hover:  #c0392b;
@@ -1255,21 +1253,19 @@ body.page-trail{
    So over a veil they go light. The map page has no veil there and keeps its
    dark ink.
 
-   Light ink alone is not enough, though. The veil is deliberately subtle, and
-   what shows through it is the artwork — which is pale paper, and pale paper
-   is exactly what light ink disappears into. The title therefore carries its
-   own shadow: a tight dark one for the edge of each letter and a wide soft one
-   that darkens the paper immediately around the word. This is what every map
-   in the world does with a label it cannot choose the background for, and it
-   is why the title stays readable whether the map beneath it happens to be
-   parkland, water or an empty grid. */
+   NO DROP SHADOW. These carried one for a while — a tight dark halo, the trick
+   every map uses on a label it cannot choose the background for. It did make
+   the words hold up over pale artwork, and it looked like a compromise: soft
+   edges on type this size read as a smudge rather than as depth. They are set
+   in flat colour now. If a particular trail's artwork ever swallows the title,
+   the fix is to darken the veil under it (--screen-veil-corner) rather than to
+   put the shadow back — the background is the thing that is wrong in that
+   case, not the letters. */
 body.page-trail #tm-brand h1{
   color:var(--over-veil-ink);
-  text-shadow:var(--over-veil-shadow);
 }
 body.page-trail #tm-brand .tm-kicker{
   color:var(--over-veil-kicker);
-  text-shadow:var(--over-veil-shadow);
 }
 body.page-trail #tm-links a{
   color:var(--over-veil-ink);
