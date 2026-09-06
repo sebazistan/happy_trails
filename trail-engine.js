@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 2.0
+   version 2.2
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -496,10 +496,17 @@ const DEFAULTS = {
   /* ── THE PANELS AND THE LAYERS ──────────────────────────────────────────
      Two buttons on the left-hand rail, both opening the same panel. */
 
-  legendFolder: "legend/",     // where the legend's little drawings live, one
-                               // SVG per row, named after the row's `swatch`
-                               // below — legend/trails.svg and so on.
+  iconFolder: "icons/",        // EVERY drawing on the site lives here: the
+                               // legend's swatches, one SVG per row named
+                               // after the row's `swatch` below, and the coins
+                               // and gauges on a wishful card, named for their
+                               // value — cost-high.svg, priority-low.svg.
+                               // There used to be a separate legend/ folder,
+                               // which only made anyone adding a new kind of
+                               // drawing guess which of the two it belonged in.
                                // IT MUST END IN A SLASH.
+  legendFolder: "",            // kept so that a page which still names one is
+                               // honoured; empty means "use iconFolder".
                                //
                                // The Happy Trails map reads this same folder.
                                // Keep one copy of it beside both pages, or a
@@ -533,6 +540,24 @@ const DEFAULTS = {
                                // those open things, these only move you along.
   stepperSmooth: true,         // glide to the next stop rather than jumping.
                                // Off is instant, which some people prefer.
+
+  linkToStops: true,           // EVERY STOP GETS AN ADDRESS OF ITS OWN.
+                               // don.html#half-mile-bridge opens the Don at
+                               // that stop with its card up; walking past a
+                               // stop rewrites the address to name it, so the
+                               // link to where you are is always in the bar.
+                               // The name is made from the stop's title, or
+                               // set per waypoint with `slug`.
+  linkNameEveryMs: 250,        // how often, at most, the address is checked
+                               // against where the walk has got to. See the
+                               // note beside followTheWalk: doing it every
+                               // frame is measurably expensive and no more
+                               // correct.
+  linkArriveAfterMs: 260,      // how long to let the page settle before
+                               // jumping to a stop named in the address. The
+                               // page's height is measured from the artwork,
+                               // and the jump is a fraction of that height, so
+                               // arriving too early lands in the wrong place.
   showLegend: true,            // the LEGEND button and its panel
   showLayers: true,            // the LAYERS button and its panel
   openPanelAtStart: null,      // "legend", "layers", or null to start closed
@@ -728,6 +753,7 @@ const DEFAULT_WORDS = {
     links: [
       { label: "Map",     href: "index.html",         here: false },
       { label: "Trails",  href: "trails.html",  here: true  },
+      { label: "Wishful", href: "wishful.html", here: false },
       { label: "About",   href: "about.html",   here: false },
       { label: "Contact", href: "contact.html", here: false },
       /* The support link is marked so the stylesheet can tint it — it is the
@@ -784,6 +810,15 @@ const DEFAULT_WORDS = {
   /* the small labels under the numbers */
   distance:      "Distance",
   elevation:     "Elevation",
+  /* the two facts a wishful stop carries, and the three values each of
+     them can take. Written out rather than shown only as a picture: the
+     coin and the dial are quick to read, the words are unambiguous, and
+     a screen reader has only the words. */
+  cost:          "Cost",
+  priority:      "Priority",
+  level_low:     "Low",
+  level_medium:  "Medium",
+  level_high:    "High",
   ascent:        "Ascent",
   netChange:     "Net change",     /* replaces "Ascent" on a downhill trail */
   complete:      "Complete",
@@ -1369,7 +1404,16 @@ function placeWaypoints() {
     const here = pointAt(distance);
     placed.push({
       title: w.title, text: w.text, metres: w.metres,
+      /* THE NAME THIS STOP HAS IN A URL. Written from the title unless the
+         waypoint states one, so a stop is linkable without anyone having to
+         think about it — and stating one is how you keep an old link working
+         after retitling a stop. */
+      slug: w.slug || slugify(w.title),
       kind: w.kind || "real",                 // "wishful" puts it on that layer
+      /* WHAT IT WOULD TAKE, and how badly it is wanted. "low", "medium" or
+         "high", and only ever set on a wishful stop — a stop that already
+         exists costs nothing to build and cannot be a priority to build. */
+      cost: w.cost || "", priority: w.priority || "",
       mapLink: w.mapLink || "",               // the button at the foot of the card
       media: w.media || w.photo || null,      // one file, or a list of them
       marker: node,
@@ -1378,6 +1422,17 @@ function placeWaypoints() {
   });
   placed.sort((a, b) => a.fraction - b.fraction);
   return placed;
+}
+
+/* A title, as it appears in a URL: lower case, words joined by hyphens, and
+   nothing in it that a browser would have to encode. Two stops on the SAME
+   trail with the same title would collide — the console says so at build time
+   rather than leaving one of them unreachable. */
+function slugify(text) {
+  return String(text || "").toLowerCase()
+    .replace(/[\u2018\u2019']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "stop";
 }
 
 /* ── step 4: heights, worked out from the waypoints ────────────────────── */
@@ -1594,7 +1649,7 @@ function start() {
      rather than the broken-image mark. */
   function legendRows() {
     return '<ul class="tm-legend">' + WORDS.legend.map(row =>
-      '<li><img class="tm-sw" alt="" src="' + SETTINGS.legendFolder + row.swatch +
+      '<li><img class="tm-sw" alt="" src="' + (SETTINGS.legendFolder || SETTINGS.iconFolder) + row.swatch +
       '.svg" data-swatch="' + row.swatch + '"><span>' + row.label +
       "</span></li>").join("") + "</ul>";
   }
@@ -1955,6 +2010,26 @@ function start() {
            "</div>";
   }
 
+  /* The coin and the gauge, with their words. Both files live in
+     SETTINGS.iconFolder and are named for their value — cost-high.svg,
+     priority-low.svg — so adding a fourth level later is a file, not a rule. */
+  const LEVELS = { low: 1, medium: 2, high: 3 };
+  function judgementRow(s) {
+    if (s.kind !== "wishful") return "";
+    const bits = [];
+    const one = (what, level) => {
+      if (!LEVELS[level]) return;
+      bits.push('<span class="tm-judge is-' + what + ' is-' + level + '">' +
+        '<img src="' + SETTINGS.iconFolder + what + "-" + level + '.svg" alt="" ' +
+        'width="48" height="48">' +
+        '<span class="tm-judgeText"><small>' + WORDS[what] + "</small><b>" +
+        WORDS["level_" + level] + "</b></span></span>");
+    };
+    one("cost", s.cost);
+    one("priority", s.priority);
+    return bits.length ? '<div class="tm-judgement">' + bits.join("") + "</div>" : "";
+  }
+
   /* text may be one string (blank lines start new paragraphs) or a list */
   function paragraphsFor(stop) {
     const given = Array.isArray(stop.text) ? stop.text : String(stop.text || "").split(/\n\s*\n/);
@@ -2006,7 +2081,18 @@ function start() {
           " <span>" + WORDS.outOf + " " + String(stops.length).padStart(2, "0") + "</span></div>" +
           '<div class="tm-slideCaption"></div>' +
         "</div>" +
-        "<h2>" + s.title + "</h2>" +
+        /* WISHFUL STOPS CARRY TWO MORE FACTS. What it would cost to build and
+           how badly it is wanted — a coin and a dial, because the reader takes
+           both in without reading them, and the words are there underneath for
+           anyone who wants the exact value or is using a screen reader. A stop
+           that already exists shows neither: it costs nothing to build.
+
+           They sit BESIDE the title rather than under it. As a band of their
+           own they were the loudest thing on the card and pushed the words
+           down; on the title's line they are what they should be — two figures
+           in the margin of a heading. */
+        '<div class="tm-titleRow"><h2>' + s.title + "</h2>" + judgementRow(s) +
+        "</div>" +
         '<div class="tm-textwindow"><div class="tm-textpages">' + paragraphsFor(s) + "</div></div>" +
         '<div class="tm-pager">' +
           '<button class="tm-prevpage" type="button" title="' + WORDS.previousPage +
@@ -2410,6 +2496,9 @@ function start() {
 
   /* ── the loop: scroll position in, map position out ──────────────────── */
   let wanted = 0, shown = 0, ticking = false, lastFrame = 0, reading = false;
+  /* which stop the address currently names, and the thing that keeps it
+     current. Left as a no-op when linking is off. */
+  let named = -1, followTheWalk = () => {};
 
   /* What the last frame worked out, so this frame can skip the parts of the
      drawing that have not moved. See draw(). */
@@ -2774,6 +2863,7 @@ function start() {
     if (Math.abs(left) < 0.00004 || stillWanted) shown = wanted;
     else shown += left * (1 - Math.pow(1 - SETTINGS.followLag, gap / 16.7));
     draw(shown, gap);
+    followTheWalk();
     // keep going while the map is still catching up OR a card is mid-fade
     if (shown !== wanted || cardsMoving) requestAnimationFrame(frame);
     else ticking = false;
@@ -2842,9 +2932,10 @@ function start() {
     const here = live.indexOf(at);
     const want = live[here + direction];
     if (want === undefined) return;
-    window.scrollTo({ top: pageAtStop(want),
-                      behavior: SETTINGS.stepperSmooth ? "smooth" : "auto" });
-    openCard(want);
+    /* the same journey a link makes, so there is one piece of code that means
+       "go and stand at this stop" — it scrolls, opens the card, turns the
+       wishful layer on if the stop needs it, and claims the address */
+    goToStop(want, SETTINGS.stepperSmooth);
   }
 
   /* An arrow with nothing beyond it is disabled rather than hidden: the pair
@@ -2867,6 +2958,100 @@ function start() {
     addEventListener("scroll", refreshStepper, { passive: true });
     stepperNeedsRefresh = refreshStepper;
   }
+
+  /* ── A LINK TO ONE STOP ──────────────────────────────────────────────────
+     Until now a trail had exactly one address, and there was no way to send
+     anyone to a particular place on it — you could only say "open the Don and
+     scroll to about a fifth of the way down". Every stop now has a name of its
+     own in the URL:
+
+         don.html#half-mile-bridge
+
+     Arriving with one of those scrolls straight to that stop and opens its
+     card. Walking or stepping past a stop quietly rewrites the address to
+     match, so the link to wherever you are is always in the address bar and
+     always copyable — with replaceState, not pushState, because a walk down a
+     trail should leave ONE entry in the back button, not one per waypoint.
+
+     A WISHFUL STOP TURNS ITS LAYER ON. A link to something that is not built
+     is exactly the link most worth sending, and it would otherwise land on a
+     page where that stop is switched off — the reader would arrive at an empty
+     stretch of trail with no idea what they had been sent to look at. */
+  function stopNamed(name) {
+    const want = String(name || "").replace(/^#/, "").toLowerCase();
+    if (!want) return -1;
+    return stops.findIndex(s => s.slug === want);
+  }
+
+  function nameInAddress(i) {
+    if (!SETTINGS.linkToStops || i < 0 || !stops[i]) return;
+    const want = "#" + stops[i].slug;
+    if (location.hash === want) return;
+    try { history.replaceState(null, "", want); } catch (e) { /* file:// says no */ }
+  }
+
+  function goToStop(i, smooth) {
+    if (i < 0 || !stops[i]) return false;
+    if (stops[i].kind === "wishful" && !wishfulOn) {
+      wishfulOn = true;
+      applyLayers();
+      if (buildPanels) buildPanels();     // the switch redraws as on
+    }
+    window.scrollTo({ top: pageAtStop(i), behavior: smooth ? "smooth" : "auto" });
+    openCard(i);
+    named = i;                    // claim it, so the loop agrees rather than fights
+    nameInAddress(i);
+    return true;
+  }
+
+  if (SETTINGS.linkToStops) {
+    /* THE ADDRESS WE ARRIVED ON, read now and kept.
+
+       Not read later, when the jump happens. The jump has to wait for the page
+       to settle — its height is measured from the artwork and pageAtStop() is a
+       fraction of that height — and during that wait the drawing loop is
+       already running, already deciding that the nearest stop to the top of the
+       page is the first one, and already rewriting the address to say so. Ask
+       for location.hash after that and you get the answer the page just made
+       up, so every link landed on stop one. */
+    const arrivedOn = location.hash;
+    /* and nothing rewrites the address until the arrival has happened */
+    let settled = !arrivedOn;
+
+    const arriveAt = () => {
+      const i = stopNamed(arrivedOn);
+      requestAnimationFrame(() => { if (i >= 0) goToStop(i, false); settled = true; });
+    };
+    if (arrivedOn) setTimeout(arriveAt, SETTINGS.linkArriveAfterMs);
+    // and if someone edits the address, or follows a link to this same page
+    addEventListener("hashchange", () => {
+      const i = stopNamed(location.hash);
+      if (i >= 0) goToStop(i, true);
+    });
+    /* Walking past a stop names it in the address. This is driven from the
+       drawing loop rather than from the scroll event, and the difference
+       matters: `shown` is the position the map is DRAWN at, and it eases
+       towards the scroll rather than snapping to it, so a scroll event fires
+       with a reading that is still one frame behind. Wired to the event, a
+       deliberate jump to a stop was immediately overwritten by the stale
+       reading of where the page had been a moment earlier — the card was
+       right and the address in the bar was wrong. */
+    /* NOT ON EVERY FRAME. nearestStop() builds two arrays each time it is
+       asked — the live stops, and the distances to them — and doing that sixty
+       times a second to keep a URL up to date cost about five frames a second
+       on a phone, in garbage collection, for a value nobody can read that
+       fast. Four times a second is faster than anyone scrolls past a
+       waypoint. */
+    let nextLook = 0;
+    followTheWalk = () => {
+      if (!settled) return;
+      const now = Date.now();
+      if (now < nextLook) return;
+      nextLook = now + SETTINGS.linkNameEveryMs;
+      const { at } = nearestStop();
+      if (at >= 0 && at !== named) { named = at; nameInAddress(at); }
+    };
+  }
   /* A late-arriving web font changes how many lines the text takes and so how
      tall the cards are. Measure again once the fonts have settled. */
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeRail);
@@ -2887,7 +3072,9 @@ function start() {
     where: () => clamp(shown * pageSpan - walkFrom, 0, 1),
     scrollAt: () => shown,
     stages: { pageSpan, walkFrom, walkTo, pulledOut },
-    cardState, openCard, closeCard, draw
+    cardState, openCard, closeCard, draw,
+    // linking: TRAIL.slugs() lists what this trail's stops are called in a URL
+    slugs: () => stops.map(s => s.slug), goToStop, stopNamed
   };
 
   /* ── the coordinate reader (optional; press E) ───────────────────────── */

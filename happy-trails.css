@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 2.5
+   version 2.7
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -115,6 +115,10 @@
   --wishful:           #8e5bd0;
   --wishful-edge:      rgba(158,110,222,.62);
   --wishful-panel:     rgba(31,22,44,.66);
+  /* the same two, lighter, for a note that sits INSIDE a dark card —
+     see .tm-judgement. A dark panel on a dark card reads as a hole. */
+  --wishful-panel-soft:rgba(255,255,255,.055);
+  --wishful-edge-soft: rgba(158,110,222,.34);
   --wishful-kicker:    #c39bf0;   /* on the dark panel, where pale reads */
   /* THE SAME PURPLE THE WISHFUL TRAILS THEMSELVES ARE DRAWN IN.
      The pale lavender above is right on a dark panel and wrong over the
@@ -1025,6 +1029,50 @@ body.page-trail{
   font:600 10px/1 var(--font-body); letter-spacing:.14em; text-transform:uppercase;
   color:var(--text-faint); font-variant-numeric:tabular-nums;
 }
+/* ══ WHAT IT WOULD COST, AND HOW BADLY IT IS WANTED ═══════════════════════
+   Two facts that only a wishful stop has, sitting between its title and its
+   text — above the words rather than below them, because they are the first
+   thing anyone comparing one proposal with another wants to know, and because
+   the card's text scrolls in pages while this does not.
+
+   Each is a picture and a word: a Canadian coin for the cost and a dial for
+   the priority, with the value spelled out beside it. The picture is what you
+   read at a glance across twelve cards; the word is what makes it certain, and
+   is all a screen reader has. Neither is left to colour alone — the coins
+   differ in size and in edge, and the dial's needle differs in ANGLE. */
+/* THE TITLE AND THE TWO FIGURES SHARE A LINE.
+   The title takes what it needs and the figures take what is left, which on a
+   narrow card means they drop underneath — a heading squeezed to two words so
+   that a badge can stay beside it is the wrong way round. */
+.tm-titleRow{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:14px; flex-wrap:wrap;
+}
+.tm-titleRow h2{ flex:1 1 auto; min-width:min(100%, 11ch); }
+.tm-judgement{
+  display:flex; gap:12px; flex-wrap:wrap; flex:0 0 auto;
+  margin:2px 0 0; padding:6px 9px;
+  border:1px solid var(--wishful-edge-soft); border-radius:10px;
+  /* lighter than the card it sits on rather than darker: this is a note in the
+     margin, and a dark panel inside a dark card reads as a hole in it */
+  background:var(--wishful-panel-soft);
+}
+.tm-judge{ display:flex; align-items:center; gap:7px; }
+.tm-judge img{
+  width:21px; height:21px; display:block; flex:0 0 auto;
+  /* the dial and the coins both carry a soft shadow so they sit ON the panel
+     rather than looking pasted onto it */
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));
+  transition:transform var(--button-fade);
+}
+.tm-judge:hover img{ transform:scale(1.12) rotate(-4deg); }
+.tm-judgeText{ display:flex; flex-direction:column; gap:2px; }
+.tm-judgeText small{
+  font:600 7.5px/1 var(--font-body); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--text-quiet);
+}
+.tm-judgeText b{ font:600 10.5px/1 var(--font-body); color:var(--text); }
+
 .tm-card .tm-facts{
   margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-edge);
   /* flex-end so the link button sits on the same baseline as the numbers
@@ -2112,6 +2160,299 @@ body.page-text main{
 }
 .pt-foot a{ color:var(--text-quiet); text-decoration:none; }
 .pt-foot a:hover{ color:var(--bar-here); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE WISHFUL THINKING PAGE — body.page-wishful
+   ═══════════════════════════════════════════════════════════════════════════
+   A reading page with a control panel on top of it. It borrows the reading
+   pages' head, footer and card shape, and adds the only thing it really needs
+   of its own: two sliders and a sort, and cards that rearrange under them.
+
+   THE NUMBERS FOR THIS PAGE, in one block as everywhere else. */
+body.page-wishful{
+  --wt-card-min:       300px;  /* narrower than this and a card gets two columns
+                                  of nothing; wider and three never fit         */
+  --wt-gap:            16px;
+  --wt-shot-height:    150px;  /* the picture at the top of a card              */
+  --wt-radius:         14px;
+  --wt-move:           340ms;  /* how long a card takes to arrive or leave      */
+  --wt-track:          6px;    /* the thickness of a slider's groove            */
+  --wt-thumb:          22px;
+  --wt-panel:          rgba(255,255,255,.035);
+
+  /* the three levels, wherever they are shown as colour. The cost colours are
+     the coins' own metals so the slider and the icons agree; the priority
+     colours are the gauge's three zones, for the same reason. */
+  --wt-low:            #c8804a;
+  --wt-medium:         #c9ccd2;
+  --wt-high:           #d9ab48;
+  --wt-pri-low:        #4ecf4e;
+  --wt-pri-medium:     #e6e2d8;
+  --wt-pri-high:       #e8503a;
+}
+
+/* ── THE CONTROLS ──────────────────────────────────────────────────────── */
+.wt-controls{
+  margin:26px 0 24px; padding:20px 22px 16px;
+  border:1px solid var(--panel-edge); border-radius:var(--panel-radius);
+  background:var(--wt-panel);
+}
+.wt-sliders{
+  display:grid; gap:26px 40px;
+  grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+}
+.wt-slider label{
+  display:flex; align-items:baseline; gap:10px;
+  font:600 10px/1 var(--font-body); letter-spacing:.2em; text-transform:uppercase;
+  color:var(--text-quiet);
+}
+/* the value the slider is currently at, said in words beside its name. A
+   slider with no readout is a slider you have to guess at. */
+.wt-slider label b{
+  font:600 13px/1 var(--font-body); letter-spacing:0; text-transform:none;
+  color:var(--text);
+}
+
+/* THE SLIDER ITSELF.
+   Ranges are one of the few controls browsers will not style consistently, so
+   the track and the thumb are written out for both engines. The thumb takes
+   the colour of the level it is sitting on — which is the same colour as the
+   coin or the gauge zone that level uses on the cards, so moving the slider to
+   "high" turns it the colour of the things it is about to show. */
+.wt-slider input[type=range]{
+  -webkit-appearance:none; appearance:none;
+  width:100%; margin:12px 0 6px; background:transparent; cursor:pointer;
+}
+.wt-slider input[type=range]:focus{ outline:none; }
+.wt-slider input[type=range]:focus-visible{
+  outline:2px solid var(--accent-soft); outline-offset:6px; border-radius:4px;
+}
+.wt-slider input[type=range]::-webkit-slider-runnable-track{
+  height:var(--wt-track); border-radius:999px;
+  background:linear-gradient(to right, rgba(255,255,255,.10), rgba(255,255,255,.22));
+}
+.wt-slider input[type=range]::-moz-range-track{
+  height:var(--wt-track); border-radius:999px;
+  background:linear-gradient(to right, rgba(255,255,255,.10), rgba(255,255,255,.22));
+}
+.wt-slider input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none;
+  width:var(--wt-thumb); height:var(--wt-thumb); border-radius:50%;
+  margin-top:calc((var(--wt-track) - var(--wt-thumb)) / 2);
+  background:var(--text); border:2px solid rgba(0,0,0,.45);
+  box-shadow:0 2px 6px rgba(0,0,0,.5);
+  transition:background var(--button-fade), transform var(--button-fade);
+}
+.wt-slider input[type=range]::-moz-range-thumb{
+  width:var(--wt-thumb); height:var(--wt-thumb); border-radius:50%;
+  background:var(--text); border:2px solid rgba(0,0,0,.45);
+  box-shadow:0 2px 6px rgba(0,0,0,.5);
+  transition:background var(--button-fade), transform var(--button-fade);
+}
+.wt-slider input[type=range]:hover::-webkit-slider-thumb{ transform:scale(1.14); }
+.wt-slider input[type=range]:hover::-moz-range-thumb{ transform:scale(1.14); }
+.wt-slider input[type=range]:active::-webkit-slider-thumb{ transform:scale(1.22); }
+
+/* the thumb wears the level it is on — written twice because neither engine
+   will accept the other's selector in the same rule */
+#wt-cost[data-level=low]::-webkit-slider-thumb{ background:var(--wt-low); }
+#wt-cost[data-level=medium]::-webkit-slider-thumb{ background:var(--wt-medium); }
+#wt-cost[data-level=high]::-webkit-slider-thumb{ background:var(--wt-high); }
+#wt-cost[data-level=low]::-moz-range-thumb{ background:var(--wt-low); }
+#wt-cost[data-level=medium]::-moz-range-thumb{ background:var(--wt-medium); }
+#wt-cost[data-level=high]::-moz-range-thumb{ background:var(--wt-high); }
+#wt-priority[data-level=low]::-webkit-slider-thumb{ background:var(--wt-pri-low); }
+#wt-priority[data-level=medium]::-webkit-slider-thumb{ background:var(--wt-pri-medium); }
+#wt-priority[data-level=high]::-webkit-slider-thumb{ background:var(--wt-pri-high); }
+#wt-priority[data-level=low]::-moz-range-thumb{ background:var(--wt-pri-low); }
+#wt-priority[data-level=medium]::-moz-range-thumb{ background:var(--wt-pri-medium); }
+#wt-priority[data-level=high]::-moz-range-thumb{ background:var(--wt-pri-high); }
+
+/* THE FOUR STOPS ARE BUTTONS.
+   They began as labels — the slider said what its positions meant, and people
+   clicked them anyway, because a word under a slider that names a value looks
+   like a thing you can pick. So they are what they look like. Clicking one
+   sends the thumb to it, travelling rather than jumping, so the connection
+   between the word and the control is visible.
+
+   They sit lower than the labels did, which is the room the hover state needs
+   to land in without touching the groove above it. */
+.wt-ticks{
+  display:flex; justify-content:space-between;
+  margin-top:8px;
+}
+.wt-ticks button{
+  font:600 9.5px/1 var(--font-body); letter-spacing:.1em; text-transform:uppercase;
+  color:var(--text-faint); background:transparent; border:1px solid transparent;
+  padding:6px 9px; margin:0 -9px; border-radius:999px; cursor:pointer;
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade), transform var(--button-fade);
+}
+.wt-ticks button:hover{
+  color:var(--text); background:rgba(255,255,255,.08);
+  border-color:var(--panel-edge); transform:translateY(-1px);
+}
+.wt-ticks button:active{ transform:translateY(0); }
+.wt-ticks button:focus-visible{
+  outline:2px solid var(--accent-soft); outline-offset:1px;
+}
+/* the stop the slider is currently on */
+.wt-ticks button.is-on{ color:var(--text); }
+
+/* ── SORT, AND RESET ───────────────────────────────────────────────────── */
+.wt-sortRow{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  margin-top:20px; padding-top:16px; border-top:1px solid var(--panel-edge);
+}
+.wt-sortLabel{
+  font:600 10px/1 var(--font-body); letter-spacing:.2em; text-transform:uppercase;
+  color:var(--text-quiet);
+}
+.wt-sort{ display:flex; gap:6px; flex-wrap:wrap; }
+.wt-sort button, .wt-reset{
+  font:600 11px/1 var(--font-body); letter-spacing:.06em;
+  padding:8px 13px; border-radius:999px; cursor:pointer;
+  color:var(--text-quiet); background:transparent;
+  border:1px solid var(--panel-edge);
+  transition:color var(--button-fade), background var(--button-fade),
+             border-color var(--button-fade), transform var(--button-fade);
+}
+.wt-sort button:hover, .wt-reset:hover{
+  color:var(--text); border-color:var(--accent-soft); transform:translateY(-1px);
+}
+.wt-sort button:active, .wt-reset:active{ transform:translateY(0); }
+/* A shortcut lights up when the sliders are where it would put them, however
+   they got there — dragged, typed or clicked. It is a reading of the state,
+   not a record of what was pressed, so it can never disagree with the sliders
+   the way a remembered "current tab" can. */
+.wt-sort button.is-on{
+  color:#1d2124; background:var(--accent); border-color:transparent;
+}
+.wt-reset{ margin-left:auto; }
+.wt-count{
+  margin:14px 0 0; font:500 12px/1 var(--font-body); color:var(--text-faint);
+}
+
+/* ── THE LIST ──────────────────────────────────────────────────────────── */
+/* A grid rather than a flow, and the cards are re-ORDERED rather than moved:
+   the script writes a CSS `order` on each one. Nothing is destroyed and
+   rebuilt, so pictures stay loaded, focus stays where it was, and a card can
+   fade rather than blink. */
+.wt-list{
+  display:grid; gap:var(--wt-gap);
+  grid-template-columns:repeat(auto-fill, minmax(var(--wt-card-min), 1fr));
+}
+.wt-card{
+  display:flex; flex-direction:column; position:relative;
+  border:1px solid var(--panel-edge); border-radius:var(--wt-radius);
+  background:var(--panel-bg); overflow:hidden;
+  opacity:0; transform:translateY(10px) scale(.985);
+  transition:opacity var(--wt-move) var(--panel-ease),
+             transform var(--wt-move) var(--panel-ease),
+             border-color var(--button-fade);
+}
+.wt-card.is-in{ opacity:1; transform:none; }
+/* A CARD THAT IS FILTERED OUT LEAVES THE LAYOUT.
+   This rule is the fix for the holes in the grid. The script also sets the
+   `hidden` attribute, and `hidden` alone did nothing here: the browser's own
+   [hidden]{display:none} is a single attribute selector, and .wt-card above
+   sets display:flex with a class — which wins. So every filtered-out card kept
+   its cell in the grid, invisible and one column wide, and the ones still
+   showing were pushed into whatever spaces were left. */
+.wt-card.is-out, .wt-card[hidden]{ display:none !important; }
+.wt-card:hover{ border-color:var(--accent-soft); }
+.wt-shot{
+  height:var(--wt-shot-height); background-size:cover; background-position:center;
+  border-bottom:1px solid var(--panel-edge);
+  transition:transform 520ms var(--panel-ease);
+}
+/* the picture leans in a little when the card is pointed at. Small on purpose:
+   it should register as the card noticing you, not as an animation. */
+.wt-card:hover .wt-shot{ transform:scale(1.04); }
+.wt-body{ padding:15px 16px 16px; display:flex; flex-direction:column; flex:1; }
+
+/* WHICH TRAIL THIS IS ON. The first thing on the card, because a proposal
+   means nothing until you know where it is. */
+.wt-on{
+  font:600 9.5px/1 var(--font-body); letter-spacing:.18em; text-transform:uppercase;
+  color:var(--wishful-kicker); margin-bottom:7px;
+}
+.wt-card h3{ margin:0 0 7px; font:600 17px/1.25 var(--font-display); }
+.wt-card h3 a{ color:var(--text); text-decoration:none; }
+/* the whole card is the link. The <a> is the only thing that carries the
+   address; this overlay is what makes the rest of the card clickable, which
+   is why nothing else inside may sit above it — see .wt-go below. */
+.wt-card h3 a::after{ content:""; position:absolute; inset:0; }
+.wt-card h3 a:hover{ color:var(--accent); }
+.wt-card p{
+  margin:0 0 14px; font:400 13px/1.6 var(--font-body); color:var(--text-quiet);
+}
+
+/* ── THE COIN AND THE DIAL ─────────────────────────────────────────────── */
+.wt-marks{
+  display:flex; gap:16px; flex-wrap:wrap; margin:auto 0 12px;
+  padding-top:12px; border-top:1px solid var(--panel-edge);
+}
+.wt-mark{ display:flex; align-items:center; gap:8px; }
+.wt-mark img{
+  width:28px; height:28px; display:block;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));
+  transition:transform 420ms var(--panel-ease);
+}
+/* the coin turns and the dial leans when the card is pointed at — one gesture
+   each, and they are staggered so it reads as a response rather than a twitch */
+.wt-card:hover .wt-mark.is-cost img{ transform:rotate(-12deg) scale(1.12); }
+.wt-card:hover .wt-mark.is-priority img{ transform:scale(1.12); transition-delay:70ms; }
+.wt-mark span{ display:flex; flex-direction:column; gap:2px; }
+.wt-mark small{
+  font:600 8.5px/1 var(--font-body); letter-spacing:.16em; text-transform:uppercase;
+  color:var(--text-faint);
+}
+.wt-mark b{ font:600 12px/1 var(--font-body); color:var(--text); }
+
+/* ── THE BUTTON ────────────────────────────────────────────────────────── */
+/* A LABEL, NOT A CONTROL — pointer-events:none for the same reason as .pt-go
+   on the trails page: it carries a transform on hover, a transform makes a new
+   stacking context, and that context would lift it above the card's own link
+   overlay and swallow the click on the one part of the card that says
+   "click me". */
+.wt-go{
+  pointer-events:none; align-self:flex-start;
+  display:inline-flex; align-items:center; gap:8px;
+  font:600 11px/1 var(--font-body); letter-spacing:.06em;
+  padding:9px 14px; border-radius:999px;
+  color:var(--wishful-kicker); background:var(--wishful-panel);
+  border:1px solid var(--wishful-edge);
+  transition:background var(--button-fade), color var(--button-fade),
+             border-color var(--button-fade);
+}
+.wt-go span{ transition:transform var(--button-fade); }
+.wt-card:hover .wt-go{
+  color:#1d0f24; background:var(--route-line-wish); border-color:transparent;
+}
+.wt-card:hover .wt-go span{ transform:translateX(4px); }
+
+/* ── WHEN NOTHING MATCHES ──────────────────────────────────────────────── */
+.wt-empty{
+  margin:30px 0; padding:26px; text-align:center;
+  border:1px dashed var(--panel-edge); border-radius:var(--panel-radius);
+  font:400 14px/1.7 var(--font-body); color:var(--text-quiet);
+}
+.wt-linkish{
+  font:inherit; color:var(--accent); background:none; border:0; padding:0;
+  cursor:pointer; text-decoration:underline; text-underline-offset:3px;
+}
+.wt-linkish:hover{ color:var(--text); }
+
+/* Somebody who has asked not to be moved about gets the filtering without the
+   choreography — the cards still appear and disappear, they simply do it at
+   once. */
+@media (prefers-reduced-motion: reduce){
+  .wt-card, .wt-shot, .wt-mark img, .wt-go, .wt-go span{
+    transition-duration:1ms !important; transition-delay:0ms !important;
+  }
+}
 
 /* ═══ ⑤  SMALL SCREENS ═════════════════════════════════════════════════════
    Last in the file so these win. The page-specific blocks that follow were

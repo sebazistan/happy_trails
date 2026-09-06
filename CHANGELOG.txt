@@ -1,0 +1,399 @@
+HAPPY TRAILS — CHANGELOG
+════════════════════════════════════════════════════════════════════════════
+
+This history used to live at the top of beltline.html, because for a long time
+that was the only finished page and every change landed on it. It does not live
+there any more: beltline.html is generated from trails_data.py like every other
+trail page, and a generated file is the wrong place to keep a record — the next
+build throws it away.
+
+So it is here, in the release folder, beside VERSION.txt. The numbering below is
+the Beltline page's own, which is what the entries were written against; the
+folder's version (site-assets-v1.x) is on VERSION.txt.
+
+VERSION HISTORY
+  8.5  THE BELTLINE IS NO LONGER A SPECIAL CASE. It was a hand-written page —
+       the same page as the other eleven, but maintained separately, so every
+       change to the shared template had to be made twice and its three wishful
+       stops had to be listed a second time for the Wishful thinking page to
+       find them. There was a check that refused to build if those two lists
+       disagreed; the check worked, and it was a symptom. A list that has to be
+       guarded against itself should not be two lists.
+       Everything that makes the Beltline itself — its words, its photographs,
+       its videos, its text, its heights — is in trails_data.py now, and
+       make_pages.py writes its page exactly as it writes the others: where a
+       trail supplies real content the generator uses it, and where it does not
+       the generator invents a placeholder. The regenerated page was checked
+       against the hand-written one waypoint by waypoint, including every
+       caption and every measured position along the route, and is identical.
+       Two things about it still differ and both are now stated in its entry
+       rather than assumed in four scripts: artwork="beltline" (a railpath is
+       not a river, so make_beltline.py draws it) and real=True.
+       DO NOT EDIT beltline.html. Edit its entry in trails_data.py.
+       On a waypoint card, cost and priority moved from a band of their own to
+       the title's line, smaller, on a panel lighter than the card rather than
+       darker — as a band they were the loudest thing on the card, and a dark
+       panel inside a dark card reads as a hole in it.
+  8.4  EVERY STOP NOW HAS AN ADDRESS OF ITS OWN.
+       beltline.html#moore-crossing opens this page at that stop with its
+       card up, and turns the Wishful thinking layer on if the stop needs
+       it — a link to something that is not built is exactly the link most
+       worth sending, and it used to land on a page where the thing it was
+       about was switched off. Walking or stepping past a stop rewrites
+       the address to name it, so the link to where you are is always in
+       the bar. replaceState rather than pushState, so a walk down a trail
+       leaves ONE entry in the back button rather than one per waypoint.
+       A WISHFUL STOP CARRIES TWO NEW FACTS: what it would cost to build
+       and how badly it is wanted, each low, medium or high, each shown as
+       a picture and a word — a Canadian coin for the cost, a dial for the
+       priority. The three coins differ in size and edge as well as metal,
+       and the three dials differ in the ANGLE of the needle, so neither
+       depends on colour alone.
+       All the site's drawings are in icons/ now. There was a legend/
+       folder, and adding a second kind of drawing would have meant
+       guessing which of two folders it belonged in.
+       images/ is "trail link images"/, and the new "wishful link images"/
+       holds one picture per proposal.
+  8.3  the corner title and the type-and-length line above it no longer
+       carry a drop shadow. It was there to hold them up over pale
+       artwork, and it did, but a soft edge on type that size reads as a
+       smudge rather than as depth. They are flat colour now. If a trail's
+       artwork ever swallows the title, the veil under it is the thing to
+       darken.
+  8.2  Six changes, most of them elsewhere but all of them here too, since
+       the stylesheet and the engine are shared.
+       On a WISHFUL trail the Wishful thinking switch is now locked on and
+       greyed: it hides the stops that are proposed rather than built, and
+       on a trail where every stop is proposed it could only blank the page.
+       The type-and-length line on those pages is the trails' own purple
+       (#e84fff) instead of a pale lavender that vanished against the map.
+       THE TRAILS NOW ALL RUN DOWNHILL AND DOWN THE PAGE. The Lower Don was
+       walked from the harbour up to the forks, so its first stop sat at the
+       bottom of the drawing and the journey went up the screen while the
+       reader scrolled down. Reversing it turned up three more doing the
+       same thing — the East Don, Etobicoke Creek and Highland Creek — and
+       a fourth, the Humber, whose stops were right but whose description
+       said the opposite. All five now read the way the page does. Two of
+       them are descents, which is what the negative elevation readout was
+       built for and the first time anything has used it.
+       The pictures on the trails page and behind these opening cards are
+       no longer crops of the map. They are drawn as a view along the trail
+       from eye height — the photograph that will replace them — because
+       the map was already on screen twice and a third copy said nothing.
+       A wishful trail's picture has no path in it, only a worn line
+       through the grass, which is the honest thing for it to show.
+       The opening card is wider and deeper so that picture can be seen.
+       The waypoint pin on the map was still the old red accent, sitting
+       on top of the green ring the artwork draws underneath it. It is the
+       route's colour now, which makes it purple on a wishful trail
+       without this being written down twice.
+  8.1  Four small things, three of them on other pages but all of them in
+       the one stylesheet this page shares.
+       The Buy me a coffee link in the white bar is now the site's orange
+       (#e8503a) rather than the brand's yellow, which was close enough to
+       white to be hard to read up there. On the dark panel, where the
+       yellow reads perfectly well, it stays yellow — two variables,
+       --coffee-nav and --coffee-ink, so the two places can differ.
+       The corner title, kicker and buttons on a trail page are now drawn
+       in light ink over the top veil. The veil was never ON TOP of them —
+       it sits at z-index 1 and the interface at 3 — but dark ink on a
+       darkened band reads exactly like a covered title, which is what it
+       looked like and why it was reported.
+       (The other two, on trails.html: the Open the trail buttons work
+       again, and the columns now follow the number of trails.)
+  8.0  PART of a larger set of changes — see the note that came with this
+       build for what is done and what is not.
+       Done here: the trail line and the elevation line are now the same
+       green the trails are drawn in on the main map (#4ecf4e), because
+       they are the same fact drawn twice. A wishful trail is purple
+       (#e84fff) throughout instead — one class, body.trail-wishful, set
+       from SETTINGS.trailKind. The red accent now has one clearly marked
+       home at the top of happy-trails.css.
+       Two arrows above the readouts step from waypoint to waypoint,
+       greying out at each end, skipping any stop the Wishful thinking
+       switch is currently hiding. Wishful thinking now starts OFF.
+       Type and length share one line above the title. A short, light
+       veil at the top of the map matches the heavier one at the bottom.
+       The corner buttons carry icons — a back arrow, a download arrow, an
+       external-link mark — and Download now offers THIS trail's drawing,
+       filled in from SETTINGS.mapFile. Wikipedia and Google maps appear
+       only when their links are set, which for most trails is not yet.
+       The × on a waypoint card is properly centred: the glyph carries
+       empty space beneath it, so the grid was centring the box rather
+       than the ink.
+  7.3  the artwork is redrawn, and it now has a wishful layer of its own.
+       The demo drawing — mountains, contours, Lake Verrier — has gone.
+       This one is drawn as what the Beltline IS: a RAILPATH. That means
+       it looks unlike the nine river and corridor trails on purpose. A
+       former rail alignment runs almost straight, with long easy curves
+       rather than meanders, because that is what trains need; it cuts
+       across the street grid instead of following a valley; and it is
+       interrupted by the roads it once bridged. So: straight west to east
+       across midtown, past the severance at Allan Rd, through the
+       cemetery, then down into the Don valley alongside Mud Creek to the
+       Brick Works — which is also why the trail loses 75 m.
+       Three purple proposed crossings, one at each wishful stop.
+       NOTHING ELSE CHANGED. All thirteen waypoints keep the marker names
+       they always had (#wp-landing … #wp-hut), so every word, photograph
+       and video still points exactly where it did.
+  7.2  the Wishful thinking switch now also shows and hides a LAYER IN THE
+       ARTWORK — the routes that do not exist yet, drawn like the trail but
+       shorter and in purple: the bridge that would close a gap, the link
+       that would join two valleys. SETTINGS.wishfulLayer names the group
+       to look for and defaults to "#wishful", so an Illustrator layer
+       named "wishful" works with no setting at all.
+       A proposal and the stop that explains it now appear and disappear
+       together, which is the point of the layer: what the trail IS, and
+       what it COULD be, one switch apart.
+       THIS PAGE'S ARTWORK HAS NO SUCH GROUP YET — it is still the demo
+       drawing. Nothing is looked for twice and nothing breaks; add a
+       "wishful" layer to the real Beltline drawing and it starts working
+       with no code change. All nine placeholder trails have one.
+  7.1  every map drawing now lives in maps/ — the two that were loose in
+       the root have joined the nine placeholder ones. Only two things
+       ever pointed at them (the main map's "Download map" link and a note
+       in this header), because the drawing a page actually shows is
+       inlined into the page itself; the file in maps/ is the source you
+       edit and re-paste.
+       satellite.jpg is gone, along with everything that pointed at it. It
+       was a render of the demo terrain rather than a photograph of
+       anywhere, so it was never going to survive the real artwork. The
+       LAYER still works — set satelliteImage in a trail's settings and
+       that trail grows the switch again. With it gone the layers panel is
+       down to one switch, which takes the full width of the panel.
+  7.0  this page is now DATA, not machinery. Everything about how a trail
+       page works moved into trail-engine.js, which every trail shares —
+       so a visitor downloads it once for the whole site, and a fix made
+       there is a fix on all ten trails at the same time. The engine also
+       writes the interface, so ten pages cannot drift into ten slightly
+       different navigation bars.
+       Every SETTING and every shared WORD moved with it, into DEFAULTS.
+       A trail page now lists only what is different about it: this one is
+       six settings and seven lines of words. That is why the file went
+       from 1251 lines to a few hundred plus its artwork. The annotations
+       did not go anywhere — they are in trail-engine.js, where they are
+       read once instead of ten times.
+       The pictures and video now come from media/beltline/ rather than
+       from the Webflow CDN, so the site no longer breaks the day it moves
+       host. THEY ARE NOT DOWNLOADED YET — this workspace has no outbound
+       network. Run media/beltline/download.ps1 once and the folder fills
+       itself; until then every picture falls back to the placeholder,
+       which is what the page does for any missing file.
+       Elevation gain shows as a NEGATIVE number on a trail that ends
+       lower than it starts, with the label changing to match — this trail
+       drops 75 m end to end and the ascent figure had been a permanent
+       zero. Videos are no longer fetched ahead on a metered connection.
+       The page keeps its own <title> rather than having it overwritten.
+  6.1  the first card now ENTERS rather than being uncovered. It gets the
+       same entrance as every other card — the quick fade and the short
+       rise into place — over the same stretch of scroll (cardFade), timed
+       to land exactly as the darkening finishes leaving. The trick is
+       that it multiplies into the CARD's own value rather than into the
+       layer holding the cards: the rise is worked out from that value, so
+       doing it there brings the rise along with the fade. Fading the
+       column, as 6.0 did, flattened both into a slow dissolve.
+       The wait between that card landing and the map beginning to move is
+       halved — 0.076 of a walk to 0.038. openingHold and openingLeavesBy
+       do this together: their product is the panel's exit, which is
+       unchanged at 0.094, and what is left over is the pause.
+       "Scroll for more" now shows at every screen size, not only on a
+       phone. Doing that turned up a quiet old bug: --card-chrome already
+       counted the line's height inside the short-window block, which is
+       not width-scoped — so a desktop window under 720px tall had been
+       giving up 40px of picture for a line it was not showing. The
+       arithmetic and the page now agree.
+  6.0  the first waypoint card now arrives WITH the opening panel's exit
+       rather than after it — see cardsArriveWith, and the note in 5.9
+       below for why the previous arrangement made it disappear entirely.
+       Also a tidy-up: the settings block said colours lived in
+       trail-map-v4.0.css, a file that has not existed for several
+       versions; the description of how the scroll is divided still said
+       the opening screen "fades" and still mentioned a progress bar that
+       was taken out in 4.7; and the stylesheet carried two rules for
+       things no page produces (.tm-control on a trail page — the zoom
+       controls belong to the map page and are .ht-control — and
+       .tm-button.tm-active, which nothing has set for a long time).
+       Checked and found clean: no unused setting, no unused word, no
+       unreachable function, no orphaned id.
+  5.9  the opening panel TRAVELS UP and off the top as you scroll rather
+       than dissolving where it stands. It is the first thing the page
+       does, so it is also the page showing you what it wants from you;
+       and it takes its own darkening with it, uncovering the map from the
+       bottom up. The darkening now thins to nothing before the panel's
+       own bottom edge, so no hard line sweeps up the map as it leaves.
+       The first card fades up through the back half of that movement, so
+       it has arrived by the time the darkening has — cardsArriveWith.
+       It has to hang off the PANEL and not off the walk starting: the
+       first waypoint sits at the trailhead, so its own stretch of scroll
+       is over within a moment of the walk beginning. 5.9 held the
+       interface back until after the walk began, which did not delay the
+       first card so much as delete it — its window had closed before the
+       layer holding it was ever switched on, and it was never seen at all.
+       "Scroll for more" at the foot of a card, on phones only, where the
+       card fills the screen and a reader can reasonably think the page
+       has stopped being a scroll. It is paid for in --card-chrome, so the
+       picture gives back exactly the height the line takes and the card
+       still fits its column.
+       A phone held on its side now gets a "turn your phone upright"
+       screen instead of a broken layout: a short, wide window has no room
+       for the map and a waypoint at once, and the card ends up taller
+       than the space it has. Purely a media query — orientation, height,
+       width and a coarse pointer — so a laptop with a short window is
+       never caught by it.
+       AND THE SCROLL ITSELF. On a phone the address bar slides away the
+       moment you scroll, and the window grows by 60-100px. The page was
+       "1250 screenfuls" tall, so it re-measured itself mid-gesture and
+       grew by about 1100px in one frame — and since progress along the
+       trail is your position as a SHARE of the page, the walk lurched
+       BACKWARDS by 1.3% exactly as you started. It is now measured once,
+       in pixels: same test, the page does not move at all and the residual
+       shift is 0.1%. A real resize still re-measures; an address bar is
+       told from a rotation by size. See lockTheScroll().
+       The other half of that complaint was a band of bare ground at the
+       foot of the screen. That was not the address bar: the route starts
+       near the bottom edge of the artwork, so centring the walking point
+       put the edge of the paper on screen — 361px of it at the start of
+       the walk, and more as the address bar retracted. The view now stops
+       at the edge of the paper and lets the walking point sit off centre
+       instead, as any map does when you drag it into its corner. Measured
+       across the whole walk, at every screen size: zero.
+  5.8  the rail of buttons no longer sits across the waypoint card on a
+       narrow screen. The card is full width there and fills nearly the
+       whole column, so the two cannot share the space; the card now takes
+       it and is simply laid over the rail, the way a sheet covers what is
+       under it. Nothing fades and nothing blinks — for the two thirds of
+       the walk with no card up the buttons are where they always were.
+       The rail is also lowered far enough that no card can cut a button
+       in half, and by how much is MEASURED at startup rather than typed
+       in: the cards are anchored to the bottom of their column, so a
+       shorter card starts further down, and it is the lowest of those top
+       edges the rail has to clear. Change the words or the pictures and
+       it re-measures itself. See placeRail() and
+       SETTINGS.railBelowCardsOnPhone.
+       The panel keeps the top layer, so one you have opened is never
+       buried by a card arriving under it, and its own x still closes it.
+  5.7  closer in and slower: zoomWalking is 1.25 and zoomWalkingPhone 0.82,
+       and because zooming in alone would only make the map travel faster
+       for the same flick of a thumb, the page grew with it — pageHeight
+       1250 rather than 900, so there is half again as much scrolling
+       between one waypoint and the next.
+       A phone now shows each card for less of the walk than a laptop
+       does: cardVisibleForPhone, with cardLeadPhone and cardFadePhone
+       beside it. On a laptop the card sits in a column next to the map
+       and you can read it and watch the route at once; on a phone it
+       covers the screen, so the same figure meant spending the walk
+       looking at a card. A card is now up for about a third of the walk
+       on a phone instead of about two thirds. Nothing changed on desktop.
+       flattenWidth is 3600 to match the artwork's own width, since the
+       deeper zoom would otherwise have been blowing the flat picture up
+       past its size.
+  5.6  the file names have lost their numbers — this is beltline.html now,
+       beside index.html, trails.html, about.html and contact.html, so a
+       link never has to be rewritten when a version changes. The version
+       lives in this header and in SETTINGS.version instead.
+       The page now OPENS standing at the trailhead: the fly-in is gone
+       (zoomOutAtStart), and with it the stretch of scroll it used. The
+       opening words sit in the same box the finish used to use, with no
+       blur behind them, and the walk cannot start until that box has
+       completely gone. At the other end the pull-back is longer, eased
+       more gently and blended by ratio rather than by difference, which
+       is what makes it read as one steady movement; the closing panel and
+       the blur behind it are gone, so the page finishes on the whole map
+       with nothing over it.
+       And it is markedly faster on a phone. Three things were costing
+       most of the frames: the frosted glass behind the card and the
+       panels, which is a full blur of the moving map on every frame and
+       is now off on phones; the full-screen blur at each end, now off
+       everywhere by default; and the artwork itself, every contour line
+       of which was re-traced from its outline on every frame. That last
+       one is now flattened into a single picture in the background, a
+       moment after the page loads, and the picture is what moves. On a
+       throttled mid-range phone the walk went from about 10 frames a
+       second to about 40. The per-frame arithmetic was tightened as
+       well: line weights and chip sizes are only rewritten when the zoom
+       actually changes, the climb total is added up once instead of
+       every frame, the elevation line is extended rather than rebuilt,
+       and a readout is only written when its number has changed.
+  5.5  a turning ring over a video while it is still filling its buffer,
+       and videos near the card you are looking at are fetched ahead so
+       they do not stutter on first play. A layer group holding a single
+       switch takes the full width of the panel.
+  5.4  this page is now The Beltline rather than a demo: its words, its
+       pictures and its stops come from the Beltline write-up. It shares
+       one stylesheet with the rest of the site, and the main map's
+       Beltline button opens it. The map artwork is still the demo one —
+       swap maps/beltline-map.svg for the real drawing when it is ready.
+  5.3  a closed panel was still catching clicks: at opacity 0 it stayed a
+       solid pane over the map, swallowing clicks meant for the waypoints
+       beneath it. The `hidden` attribute had been set all along but does
+       nothing against a rule that gives the element a display of its own.
+       Also: the legend now reads the SAME legend/ folder as the Happy Trails
+       map, using the icons exported from that map's Illustrator file, so
+       a symbol means the same thing on both pages and is drawn once. A
+       missing icon says so in the console instead of leaving a silent gap.
+  5.2  a "Google maps" button beside the facts at the foot of a card,
+       shown only when that waypoint has a link; a caption under the
+       pictures that changes with the slide, beside the waypoint number;
+       the circles in the artwork are now drawn small, so the rings you
+       see are the ones the page draws and they show over the satellite
+       view as well as the printed map
+  5.1  the legend's little drawings are real files in a legend/ folder, one
+       SVG each, so you can redraw any of them without touching the code;
+       the page now draws its own waypoint markers on the route rather than
+       relying on the circles in the artwork, so they appear over the
+       satellite view too
+  5.0  waypoint circles now sit exactly on the route — they had been placed
+       on the straight line through the curve's anchors, which drifted from
+       the curve itself by up to 17 map units on the tighter bends; their
+       spacing is deliberately uneven; a second kind of waypoint, "wishful
+       thinking", drawn in purple for stops that are proposed rather than
+       built; a LEGEND and a LAYERS panel on a fixed left-hand rail, with
+       switches for the wishful-thinking stops and for a satellite view
+       rendered from the same terrain as the contours
+  4.9  say how long the trail is and the page works the scale out for
+       itself: SETTINGS.trailLength takes the walk's real length in
+       kilometres, and every distance on the page follows from it.
+       metresPerPixel is still there for anyone who would rather give the
+       scale directly.
+  4.8  a bigger map — 3600x2400 map units instead of 2400x1600 — with a
+       longer route, so the ten waypoints are evenly spread instead of
+       bunched in the middle; white dots on the elevation graph marking
+       where each waypoint falls, taken from the same waypoint list the
+       cards are built from; the waypoint card is a little more
+       see-through with less blur behind it
+  4.7  the site's navigation bar across the top, shared with the Happy
+       Trails map but shallower; three link buttons under the corner title
+       that hide themselves when they have nowhere to point; a bigger north
+       arrow; a round dot on the elevation graph instead of a flat oval;
+       the scroll bar across the top and the Coordinates button removed
+       (the E key still opens the coordinate reader); pictures and video
+       now come from SETTINGS.mediaFolder
+  4.6  layout on a single footing: the screen is now described once, at the
+       top of the stylesheet, as a top band, a bottom band and a card
+       column, and every element is placed against those instead of
+       carrying its own offset. Move an edge and everything that leans on
+       it moves too. Nothing looks different.
+  4.5  ten waypoints and real photographs; the north arrow moved out of the
+       artwork and into the page so it stays in the corner; the page now
+       matches the map's own paper colour and the gradient across the top
+       is gone; a missing picture or video falls back to a placeholder
+  4.4  bigger cards; a before/after slider you can drag, as one of the
+       kinds of picture a card can hold; the map is blurred behind the
+       opening and closing screens and sharpens as you scroll away
+  4.3  bigger cards; the picture area is 4:3 and crops anything you put in
+       it to fill; several pictures become a carousel; video is supported,
+       muted and looping; long text is broken into pages with arrows
+       instead of a scrollbar
+  4.2  the opening zoom-in and closing zoom-out are slower, and each now
+       gets the scroll to itself: the walk does not begin until the zoom-in
+       has finished, and the zoom-out does not begin until the progress bar
+       reads 100%. Remaining loose numbers moved into SETTINGS.
+  4.1  waypoint cards show for a short, adjustable stretch and can be
+       closed with × and re-opened by clicking the waypoint on the map;
+       the walk no longer starts until the opening screen has gone, and
+       the closing screen waits for a little extra scrolling past the end
+  4.0  settings, words and waypoints hoisted to the top; styling moved to
+       its own file; elevation now comes from the waypoints only
+  3.0  route read from a named path in an Illustrator SVG
+  2.0  map as a flat image with a clicked route
+  1.0  real map tiles (Leaflet) and latitude/longitude

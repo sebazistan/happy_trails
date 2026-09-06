@@ -2,7 +2,7 @@
 <html lang="en">
 <!-- ═══════════════════════════════════════════════════════════════════════════
      HAPPY TRAILS — interactive map
-     version 4.3
+     version 4.4
 
      A pan-and-zoom map built from one Illustrator file, where every layer can
      be switched on and off independently.
@@ -45,6 +45,9 @@
      Everything between ④ and ⑤ is the engine and needs no edits.
 
      VERSION HISTORY
+       4.4  a Wishful link in the navigation bar, between Trails and About,
+            and every page carries analytics.js — which counts nothing until
+            one line in that file names a provider.
        4.3  the how-to line along the bottom is hidden on a phone. It is written
             for a mouse — the wheel, and click to zoom out — so two of its three
             sentences describe something a phone reader does not have, and the
@@ -135,6 +138,9 @@
 <meta name="twitter:title" content="Happy Trails — every multi-use trail in the GTA">
 <meta name="twitter:description" content="A hand-drawn map of every multi-use trail in the Greater Toronto Area, the routes that connect them, and the gaps that still need closing.">
 <meta name="twitter:image" content="https://www.huzzahdesign.com/happy-trails/social/site.png">
+<!-- Counting visits. Inert until analytics.js names a provider —
+     one file, one line, every page. -->
+<script src="analytics.js" defer></script>
 </head>
 <body class="page-map">
 
@@ -230,7 +236,7 @@
 
 const SETTINGS = {
 
-  version: "4.3",              // printed in the bottom-right corner
+  version: "4.4",              // printed in the bottom-right corner
 
   /* ── THE ARTWORK ────────────────────────────────────────────────────── */
 
@@ -339,10 +345,15 @@ const SETTINGS = {
 
   /* ── EXTRAS ─────────────────────────────────────────────────────────── */
 
-  legendFolder: "legend/",     // where the legend's little drawings come from:
+  legendFolder: "icons/",      // where the legend's little drawings come from:
                                // one SVG per row, named after the row's
                                // `swatch` in WORDS.legend, so a row asking for
-                               // "trails" reads legend/trails.svg.
+                               // "trails" reads icons/trails.svg.
+                               // This was legend/. Every drawing on the site —
+                               // these, and the coins and gauges a wishful stop
+                               // carries — is in icons/ now, because two folders
+                               // of drawings only made anyone adding a third
+                               // kind guess which one it went in.
                                // MUST END IN A SLASH.
                                //
                                // The trail map reads this same folder, which is
@@ -388,6 +399,7 @@ const WORDS = {
   nav: [                                        // the links along the top
     { label: "Map",     href: "index.html",         here: true  },
     { label: "Trails",  href: "trails.html",  here: false },
+    { label: "Wishful", href: "wishful.html", here: false },
     { label: "About",   href: "about.html",   here: false },
     { label: "Contact", href: "contact.html", here: false },
     { label: "Buy me a coffee", short: "Coffee",
