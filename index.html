@@ -2,7 +2,7 @@
 <html lang="en">
 <!-- ═══════════════════════════════════════════════════════════════════════════
      HAPPY TRAILS — interactive map
-     version 4.1
+     version 4.2
 
      A pan-and-zoom map built from one Illustrator file, where every layer can
      be switched on and off independently.
@@ -45,6 +45,25 @@
      Everything between ④ and ⑤ is the engine and needs no edits.
 
      VERSION HISTORY
+       4.2  the pink highlight over a wishful route no longer comes on with the
+            Wishful thinking switch. It belongs to the button, the way it does
+            for the ten built routes: the switch draws the proposed lines, and
+            pointing at a route's button picks that one out of them. The switch
+            had been listing each wishful route's own highlight layer alongside
+            the lines, so both were lit at once and the button had nothing left
+            to do.
+            Two smaller faults fell out of the same place. The hover code asked
+            whether Trails or Main Routes was on before lighting ANY route —
+            true for the ten built ones, meaningless for a wishful one, whose
+            button belongs to Wishful thinking; it now asks the route itself.
+            And on leaving a button it checked only Main Routes before putting
+            the layer away, so a route held on by any other switch would have
+            been hidden by a passing pointer. Which switch is holding a route
+            on is now worked out from LAYER_GROUPS rather than written down —
+            writing it down is how this went wrong in the first place.
+            The two purple buttons had both been measured at their routes'
+            southern tips, six pixels apart, so one label sat across the other.
+            Etobicoke Crk S has moved up its own line.
        4.1  a closed panel was still catching clicks: at opacity 0 it stayed a
             solid pane over a third of the window, swallowing switch clicks and
             map drags alike. The `hidden` attribute had been set all along but
@@ -204,7 +223,7 @@
 
 const SETTINGS = {
 
-  version: "4.1",              // printed in the bottom-right corner
+  version: "4.2",              // printed in the bottom-right corner
 
   /* ── THE ARTWORK ────────────────────────────────────────────────────── */
 
@@ -506,8 +525,14 @@ const WISHFUL_NEEDS = ["Wishful Thinking"];
 const WISHFUL_ROUTES = [
   { label: "Mimico Creek",    layer: "wishful-mimico",
     x: 2244, y: 1644, href: "mimico.html",           needs: WISHFUL_NEEDS, purple: true },
+  /* Moved up its own line from y 1638. Both wishful routes end at the lake,
+     and both buttons had been measured at their southern tips — six pixels
+     apart vertically, which put one label straight through the other. This
+     point is still ON the line, a quarter of the way down it, and far enough
+     from Mimico's that the two names can be read. If a third wishful route is
+     added near here, check the same thing. */
   { label: "Etobicoke Crk S", layer: "wishful-etobicoke-crk-south",
-    x: 1912, y: 1638, href: "etobicoke-south.html",  needs: WISHFUL_NEEDS, purple: true }
+    x: 1912, y: 1264, href: "etobicoke-south.html",  needs: WISHFUL_NEEDS, purple: true }
 ];
 
 /* every button on the map, built and wishful together */
@@ -540,13 +565,22 @@ const LAYER_GROUPS = [
         artwork: ["connections"] },
 
       /* This switch owns everything that is proposed rather than built: the
-         wishful sections drawn on the built trails, the wishful ROUTES that
-         exist only as a proposal, and their names. Their purple buttons come
-         and go with it too — see `needs` in WISHFUL_ROUTES above. */
+         wishful sections drawn on the built trails, the trails that exist only
+         as a proposal, and their names. Their purple buttons come and go with
+         it too — see `needs` in WISHFUL_ROUTES above.
+
+         WHAT IT DOES NOT OWN is the pink highlight over a wishful route. It
+         used to: the switch listed each wishful route's own layer alongside
+         these, so turning Wishful thinking on lit both of them at full strength
+         and there was nothing left for the button to do. A built route works
+         the other way — the Trails layer draws the line, and the thick pink
+         indicator belongs to the button you point at — and a wishful route
+         should not be the exception. The lines themselves are inside
+         "wishful-thinking" already, so they still appear with the switch; only
+         the highlight waits for the pointer now. */
       { label: "Wishful Thinking", on: false,
         note: "Proposed rather than built",
-        artwork: ["wishful-thinking", "trails-wishful-thinking"]
-                   .concat(WISHFUL_ROUTES.map(r => r.layer)) },
+        artwork: ["wishful-thinking", "trails-wishful-thinking"] },
 
       /* One switch for all ten routes. Point at a single route's button and
          just that one fades up; this shows the whole set at once. */
@@ -678,9 +712,23 @@ const mix   = (a, b, t) => a + (b - a) * t;
 /* the artwork's own size, read from its viewBox */
 let mapW = 0, mapH = 0, mapSvg = null;
 
-/* the label of the switch that turns on every named route at once, so the
-   hover highlight can ask whether it is already doing the job */
-const ROUTES_SWITCH = "Main Routes";
+/* A ROUTE, BY THE NAME OF ITS LAYER. The hover code is handed a layer name and
+   needs to know two things about it: which switches have to be on for its
+   button to be reachable, and which switch — if any — is already drawing it,
+   so that leaving the button does not put away something the switch had turned
+   on. Both answers live in the route's own entry, which is what this finds. */
+const ROUTE_BY_LAYER = new Map(ALL_ROUTES.map(r => [r.layer, r]));
+
+/* Which switch, if any, holds this route's highlight on by itself. Asked of
+   LAYER_GROUPS rather than written down, because writing it down is how the
+   wishful routes came to be lit by a switch AND by the pointer at the same
+   time. Add a route's layer to a switch later and this follows. */
+function switchHolding(layer) {
+  for (const group of LAYER_GROUPS)
+    for (const sw of group.switches)
+      if ((sw.artwork || []).indexOf(layer) !== -1) return sw.label;
+  return null;
+}
 
 /* every switchable piece of artwork, by name */
 const artworkGroups = new Map();
@@ -996,12 +1044,21 @@ function lightRoute(name) {
   // reach a hidden button in practice, but this is the rule stated once rather
   // than left to depend on that — turn Trails and Main Routes both off and no
   // route can be lit by any means.
-  if (name && !ROUTE_NEEDS.some(s => switchState.get(s) === true)) name = null;
+  // ASK THE ROUTE, not the built routes' switches. This checked Trails and
+  // Main Routes for every route there was, which is right for the ten built
+  // ones and meaningless for a wishful one — its button belongs to Wishful
+  // thinking. Each route states what it needs; this reads it.
+  if (name) {
+    const r = ROUTE_BY_LAYER.get(name);
+    if (r && !needsAreMet(r)) name = null;
+  }
   if (litRoute === name) return;
   if (litRoute) {
     const was = artworkGroups.get(litRoute);
-    // only put it away if the switch is not holding it on
-    if (was && switchState.get(ROUTES_SWITCH) !== true) was.style.display = "none";
+    // only put it away if a switch is not holding it on — and which switch
+    // that is depends on the route, which is what switchHolding() answers
+    const holder = switchHolding(litRoute);
+    if (was && !(holder && switchState.get(holder) === true)) was.style.display = "none";
     if (was) was.style.opacity = "";
   }
   litRoute = name;
