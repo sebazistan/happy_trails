@@ -52,7 +52,7 @@
     <a href="trails.html" class="is-here" aria-current="page">Trails</a>
     <a href="about.html">About</a>
     <a href="contact.html">Contact</a>
-    <a class="ht-coffee" href="https://buymeacoffee.com/sebazistan" target="_blank" rel="noopener">Buy me a coffee</a>
+    <a class="ht-coffee" href="https://buymeacoffee.com/sebazistan" target="_blank" rel="noopener"><span class="nav-full">Buy me a coffee</span><span class="nav-short">Coffee</span></a>
   </nav>
 </header>
 
@@ -79,6 +79,9 @@
       <div class="pt-go">Open the trail →</div>
     </div>
     <div class="pt-card is-soon">
+      <!-- a drawn stand-in, not a missing picture: dashed, the way every map
+           marks a route that is not there yet. images/soon.png -->
+      <div class="pt-shot is-soon" style="background-image:url('images/soon.png')"></div>
       <div class="pt-meta">Railpath</div>
       <h3>West Toronto Railpath</h3>
       <p>A short, well-used path along an active rail corridor in the west end, with an extension south long promised.</p>
@@ -144,28 +147,6 @@
 
 
   <section class="pt-group">
-    <h2 class="pt-groupTitle">Wishful thinking</h2>
-    <p class="pt-groupNote">Trails that do not exist. Each one is a route the
-      city could have, drawn as if it did — which is the point: a gap is easier
-      to argue about once you can see what would fill it.</p>
-    <div class="pt-cards">
-    <div class="pt-card is-wishful">
-      <div class="pt-shot" style="background-image:url('images/mimico.png')"></div>
-      <div class="pt-meta">Wishful · 13.5 km</div>
-      <h3><a class="pt-open" href="mimico.html">Mimico Creek</a></h3>
-      <p>A creek that runs the whole way from the airport lands to the lake with no continuous trail beside it. This is what one would look like.</p>
-      <div class="pt-go">Open the trail →</div>
-    </div>
-    <div class="pt-card is-wishful">
-      <div class="pt-shot" style="background-image:url('images/etobicoke-south.png')"></div>
-      <div class="pt-meta">Wishful · 8.7 km</div>
-      <h3><a class="pt-open" href="etobicoke-south.html">Etobicoke Creek South</a></h3>
-      <p>The southern half of Etobicoke Creek, from the QEW down to Marie Curtis Park — the piece that would finish the creek route.</p>
-      <div class="pt-go">Open the trail →</div>
-    </div>
-    </div>
-  </section>
-  <section class="pt-group">
     <h2 class="pt-groupTitle">Waterfront</h2>
     <div class="pt-cards">
     <div class="pt-card">
@@ -201,13 +182,36 @@
     </div>
   </section>
 
+  <!-- WISHFUL THINKING GOES LAST, and there is only one of it.
+       There used to be two groups with this name: this one, and a single card
+       further up pointing at the main map's Wishful Thinking layer — written
+       before either wishful trail had a page of its own. The card said, at
+       card length, what the note below says in a sentence, so the note has
+       taken over its one useful part and the card has gone.
+
+       Last on the page is where this belongs: everything above is a trail you
+       can ride today, and the reader should reach the end of what exists
+       before being shown what does not. -->
   <section class="pt-group">
     <h2 class="pt-groupTitle">Wishful thinking</h2>
+    <p class="pt-groupNote">Trails that do not exist. Each one is a route the
+      city could have, drawn as if it did — which is the point: a gap is easier
+      to argue about once you can see what would fill it. There are more of
+      them than have pages: switch the Wishful thinking layer on from the
+      <a href="index.html">main map</a> to see every one.</p>
     <div class="pt-cards">
-    <div class="pt-card">
-      <div class="pt-meta">Proposed</div>
-      <h3><a class="pt-open" href="index.html">The routes that aren't there yet</a></h3>
-      <p>Bridges, bypasses and links that would turn a set of separate trails into a network. Switch the Wishful Thinking layer on from the main map to see where they would go.</p>
+    <div class="pt-card is-wishful">
+      <div class="pt-shot" style="background-image:url('images/mimico.png')"></div>
+      <div class="pt-meta">Wishful · 13.5 km</div>
+      <h3><a class="pt-open" href="mimico.html">Mimico Creek</a></h3>
+      <p>A creek that runs the whole way from the airport lands to the lake with no continuous trail beside it. This is what one would look like.</p>
+      <div class="pt-go">Open the trail →</div>
+    </div>
+    <div class="pt-card is-wishful">
+      <div class="pt-shot" style="background-image:url('images/etobicoke-south.png')"></div>
+      <div class="pt-meta">Wishful · 8.7 km</div>
+      <h3><a class="pt-open" href="etobicoke-south.html">Etobicoke Creek South</a></h3>
+      <p>The southern half of Etobicoke Creek, from the QEW down to Marie Curtis Park — the piece that would finish the creek route.</p>
       <div class="pt-go">Open the trail →</div>
     </div>
     </div>

@@ -733,7 +733,8 @@ const DEFAULT_WORDS = {
       /* The support link is marked so the stylesheet can tint it — it is the
          only item in the bar that leaves the site, and it should look like an
          offer rather than another section. */
-      { label: "Buy me a coffee", href: "https://buymeacoffee.com/sebazistan", here: false,
+      { label: "Buy me a coffee", short: "Coffee",
+        href: "https://buymeacoffee.com/sebazistan", here: false,
         newTab: true, kind: "coffee" }
     ]
   },
@@ -851,6 +852,9 @@ const DEFAULT_WORDS = {
   layersNote:   "Switch parts of the map on and off.",
   layerWishful:      "Wishful thinking",
   layerWishfulNote:  "Stops that are proposed rather than built",
+  /* what that row says instead on a wishful trail, where the switch is
+     locked on because there is nothing for it to hide. */
+  layerWishfulLocked:"This whole trail is proposed",
   layerSatellite:      "Satellite view",
   layerSatelliteNote:  "Aerial imagery in place of the drawn map",
   closePanel:   "Close",
@@ -1118,8 +1122,14 @@ function writeBar() {
     '<a href="' + link.href + '"' +
     (link.here ? ' class="tm-here" aria-current="page"' : '') +
     (link.kind ? ' class="tm-' + link.kind + '"' : '') +
-    (link.newTab ? ' target="_blank" rel="noopener"' : '') +
-    '>' + link.label + '</a>').join("");
+    (link.newTab ? ' target="_blank" rel="noopener"' : '') + '>' +
+    /* A link with a `short` form is written twice — the stylesheet shows one
+       of them and hides the other, because which one fits is a question about
+       the width of the window, and CSS is the only thing that knows that. */
+    (link.short ? '<span class="nav-full">' + link.label + '</span>' +
+               '<span class="nav-short">' + link.short + '</span>'
+             : link.label) +
+    '</a>').join("");
 }
 
 /* The row of link buttons under the corner title. A link with no href is
@@ -1571,6 +1581,7 @@ function start() {
      contents. Pressing the button of the section already showing closes it. */
   let openPanel = null;                       // "legend", "layers" or null
   const anyWishful = stops.some(s => s.kind === "wishful");
+  const wishfulLocked = SETTINGS.trailKind === "wishful";
 
   const panelFor = {
     legend: { title: WORDS.legendTitle, note: WORDS.legendNote, body: legendRows },
@@ -1604,16 +1615,31 @@ function start() {
 
   function layerSwitches() {
     const rows = [];
+    /* ON A WISHFUL TRAIL THE SWITCH IS LOCKED ON.
+       It hides the stops that are proposed rather than built — a distinction
+       that means something on a real trail with a proposed extension, and
+       nothing at all here, where the entire route is proposed. Switching it
+       off would blank part of a page whose whole subject is the part it
+       blanked. So the row still appears, because taking it away would make
+       the panel differ between trails for no visible reason, but it appears
+       greyed out and cannot be pressed. */
     if (anyWishful) rows.push(switchRow("wishful", WORDS.layerWishful,
-                                        WORDS.layerWishfulNote, wishfulOn));
+                                        wishfulLocked ? WORDS.layerWishfulLocked
+                                                      : WORDS.layerWishfulNote,
+                                        wishfulOn, wishfulLocked));
     if (SETTINGS.satelliteImage && satelliteOk)
       rows.push(switchRow("satellite", WORDS.layerSatellite,
                           WORDS.layerSatelliteNote, satelliteOn));
     return '<div class="tm-switches">' + rows.join("") + "</div>";
   }
 
-  function switchRow(name, label, note, on) {
-    return '<button class="tm-switch' + (on ? " is-on" : "") + '" type="button" ' +
+  /* `locked` draws the row as a statement rather than a control: greyed, and
+     disabled, which is what stops the click — the handler below never runs on
+     a disabled button, so there is no second place to remember this. */
+  function switchRow(name, label, note, on, locked) {
+    return '<button class="tm-switch' + (on ? " is-on" : "") +
+           (locked ? " is-locked" : "") + '" type="button" ' +
+           (locked ? "disabled " : "") +
            'data-layer="' + name + '" role="switch" aria-checked="' + on + '">' +
            '<span class="tm-track"><span class="tm-knobby"></span></span>' +
            '<span class="tm-switchText"><b>' + label + "</b><small>" + note +
@@ -1818,7 +1844,10 @@ function start() {
   el("layersBtn").title = WORDS.layersName;
   el("panelClose").title = WORDS.closePanel;
 
-  wishfulOn   = SETTINGS.wishfulOn !== false;
+  /* A wishful trail shows all of itself: the switch that would hide part
+     of it is locked on, so the setting that would start it off is ignored
+     rather than quietly leaving stops hidden with no way to get them back. */
+  wishfulOn   = (SETTINGS.trailKind === "wishful") || SETTINGS.wishfulOn !== false;
   satelliteOn = SETTINGS.satelliteOn === true;
   applyLayers();
   if (SETTINGS.openPanelAtStart) showPanel(SETTINGS.openPanelAtStart);

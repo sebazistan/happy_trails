@@ -364,7 +364,8 @@ const WORDS = {
     { label: "Trails",  href: "trails.html",  here: false },
     { label: "About",   href: "about.html",   here: false },
     { label: "Contact", href: "contact.html", here: false },
-    { label: "Buy me a coffee", href: "https://buymeacoffee.com/sebazistan", here: false,
+    { label: "Buy me a coffee", short: "Coffee",
+      href: "https://buymeacoffee.com/sebazistan", here: false,
       newTab: true, kind: "coffee" }
   ],
 
@@ -701,8 +702,14 @@ function writeWords() {
     '<a href="' + n.href + '"' +
     (n.here ? ' class="is-here"' : '') +
     (n.kind ? ' class="ht-' + n.kind + '"' : '') +
-    (n.newTab ? ' target="_blank" rel="noopener"' : '') +
-    '>' + n.label + '</a>').join("");
+    (n.newTab ? ' target="_blank" rel="noopener"' : '') + '>' +
+    /* A link with a `short` form is written twice — the stylesheet shows one
+       of them and hides the other, because which one fits is a question about
+       the width of the window, and CSS is the only thing that knows that. */
+    (n.short ? '<span class="nav-full">' + n.label + '</span>' +
+               '<span class="nav-short">' + n.short + '</span>'
+             : n.label) +
+    '</a>').join("");
   el("cornerKicker").textContent = WORDS.cornerKicker;
   el("cornerTitle").textContent = WORDS.cornerTitle;
   writeTrailLinks();

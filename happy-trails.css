@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 2.0
+   version 2.3
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -115,7 +115,14 @@
   --wishful:           #8e5bd0;
   --wishful-edge:      rgba(158,110,222,.62);
   --wishful-panel:     rgba(31,22,44,.66);
-  --wishful-kicker:    #c39bf0;
+  --wishful-kicker:    #c39bf0;   /* on the dark panel, where pale reads */
+  /* THE SAME PURPLE THE WISHFUL TRAILS THEMSELVES ARE DRAWN IN.
+     The pale lavender above is right on a dark panel and wrong over the
+     map, where the background is the artwork's own light paper and a pale
+     tint of anything simply disappears. The type-and-length line over the
+     map takes this one instead: it is the trail's own colour, so the line
+     naming the trail and the line drawn on the map now agree. */
+  --wishful-kicker-ink:#e84fff;
 
   /* TYPE */
   --font-body:         "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -145,15 +152,26 @@
   --shot-height:       132px;   /* the picture at the top of a trail card */
   /* Buy me a coffee. Their own yellow, warmed slightly to sit with the site's
      amber rather than shout over it. */
-  --coffee-ink:        #ffdd55;
+  --over-veil-ink:     #f2f0ea;   /* title text over the top veil */
+  /* the halo that keeps that text readable over pale artwork too */
+  --over-veil-shadow:  0 1px 2px rgba(12,14,16,.75), 0 0 12px rgba(12,14,16,.55);
+  --over-veil-kicker:  #e0a323;
+  --coffee-nav:        #e8503a;   /* in the white bar — the site's orange   */
+  --coffee-nav-hover:  #c0392b;
+  --coffee-ink:        #ffdd55;   /* on the dark panel — their own yellow   */
   --coffee-ink-hover:  #ffe680;
   --coffee-bg:         rgba(255,221,85,.07);
   --coffee-edge:       rgba(255,221,85,.24);
   /* the picture behind the opening panel, and the veil that keeps its text
      readable. Subtle on purpose: enough to see what the trail looks like,
      not so much that the words fight it. */
-  --opening-veil:      .74;
-  --opening-veil-top:  .60;
+  --opening-veil:      .66;
+  --opening-veil-top:  .46;
+  /* how much clear picture there is above the kicker and below the hint. The
+     panel's own padding surrounds the WORDS; this is picture with nothing on
+     it at all, and it is the difference between a photograph you can see and a
+     dark background you assume is one. */
+  --opening-picture:   clamp(22px, 4.5vh, 54px);
   /* the "scroll for more" line at the foot of a card, on a phone */
   --more-size:         10px;
   --more-gap:          7px;
@@ -444,7 +462,15 @@ body.page-trail{
   transform:translateY(-50%);
   border-radius:50%; box-sizing:border-box;
   background:#fff;
-  border:var(--marker-ring, 4px) solid var(--accent);
+  /* THE PIN IS PART OF THE ROUTE, so it is the route's colour — green on a
+     built trail, purple on a wishful one, both of which fall out of
+     --route-line without this rule knowing which it is.
+
+     It was the site's red accent, left over from when the route was red too.
+     Once the route went green the pin stayed behind, and since the artwork
+     draws its own ring underneath at the route colour, every waypoint on every
+     trail was a red ring sitting on top of a green one. */
+  border:var(--marker-ring, 4px) solid var(--route-line);
   box-shadow:0 1px 5px rgba(0,0,0,.45);
 }
 .tm-label.tm-wishful .tm-pin{
@@ -721,6 +747,22 @@ body.page-trail{
 .ht-switch.is-on .ht-knobby{
   transform:translateX(calc(var(--switch-width) - var(--switch-height)));
 }
+/* A SWITCH THAT IS NOT A CONTROL.
+   On a wishful trail the Wishful thinking switch has nothing to hide — the
+   whole route is proposed — so the engine renders it locked on. It keeps its
+   place in the panel, because a panel that gains and loses rows between trails
+   is harder to read than one that always looks the same, but it is plainly not
+   pressable: dimmed, the ordinary pointer rather than the hand, and no hover.
+
+   The dimming is on the row rather than on each part of it, so the track, the
+   knob and both lines of text fade together and the row still reads as one
+   thing. `disabled` on the button is what actually prevents the press; this is
+   only what says so. */
+.tm-switch.is-locked{
+  opacity:.45; cursor:default;
+}
+.tm-switch.is-locked:hover{ background:rgba(255,255,255,.045); }
+
 .tm-switchText b{
   display:block; font:600 12.5px/1.25 var(--font-body); color:var(--text);
 }
@@ -1157,7 +1199,20 @@ body.page-trail{
   background-size:cover, cover;
   background-position:center, center;
 }
-#tm-opening .tm-box{ max-width:600px; padding:clamp(26px,4.4vw,44px) clamp(24px,4vw,46px); }
+/* THE PICTURE NEEDS ROOM OF ITS OWN.
+   The trail's photograph is this panel's background, so every part of it that
+   is not behind a word is the only part you actually look at. The panel is
+   therefore wider than the words need and padded top and bottom by more than
+   they need, which buys a clear band of picture above the kicker and below the
+   scroll hint. The text block itself stays the same width it was — it is
+   capped at 50ch — so widening the panel widens the picture, not the line
+   length, which would have made it harder to read rather than easier. */
+#tm-opening .tm-box{
+  max-width:680px;
+  padding:calc(clamp(26px,4.4vw,44px) + var(--opening-picture))
+          clamp(24px,4vw,46px)
+          calc(clamp(26px,4.4vw,44px) + var(--opening-picture));
+}
 #tm-closing h2{ margin:0 0 10px; font:600 clamp(22px,3.4vw,34px)/1.15 var(--font-display); }
 #tm-closing .tm-row{ display:flex; gap:28px; justify-content:center; margin-top:22px; }
 
@@ -1189,6 +1244,40 @@ body.page-trail{
 
 
 
+
+/* ── the corner title, over the new top veil ──────────────────────────────
+   The veil at the top of a trail page sits UNDER the interface (shade is
+   z-index 1, the interface 3) — that part was always right. What was wrong is
+   that the title and kicker are dark ink, chosen back when there was nothing
+   but pale paper behind them. Dark ink on a darkened band reads as the veil
+   being ON TOP of the text, which is what it looked like.
+
+   So over a veil they go light. The map page has no veil there and keeps its
+   dark ink.
+
+   Light ink alone is not enough, though. The veil is deliberately subtle, and
+   what shows through it is the artwork — which is pale paper, and pale paper
+   is exactly what light ink disappears into. The title therefore carries its
+   own shadow: a tight dark one for the edge of each letter and a wide soft one
+   that darkens the paper immediately around the word. This is what every map
+   in the world does with a label it cannot choose the background for, and it
+   is why the title stays readable whether the map beneath it happens to be
+   parkland, water or an empty grid. */
+body.page-trail #tm-brand h1{
+  color:var(--over-veil-ink);
+  text-shadow:var(--over-veil-shadow);
+}
+body.page-trail #tm-brand .tm-kicker{
+  color:var(--over-veil-kicker);
+  text-shadow:var(--over-veil-shadow);
+}
+body.page-trail #tm-links a{
+  color:var(--over-veil-ink);
+  background:rgba(20,24,28,.42); border-color:rgba(255,255,255,.22);
+}
+body.page-trail #tm-links a:hover{ background:rgba(20,24,28,.62); }
+body.page-trail.trail-wishful #tm-brand .tm-kicker{ color:var(--wishful-kicker-ink); }
+
 /* ══ BUY ME A COFFEE ══════════════════════════════════════════════════════
    WHY THIS IS A LINK AND NOT THEIR WIDGET.
 
@@ -1212,11 +1301,31 @@ body.page-trail{
    WORDS.bar.links in trail-engine.js, WORDS.nav in index.html, and the three
    reading pages' own <nav>. Search for "buymeacoffee" to change it. */
 
-/* the item in the navigation bar — an offer, not another section */
+/* The item in the navigation bar. NOT the yellow used on the button below:
+   the bar is white, and Buy Me a Coffee's yellow on white is close to
+   unreadable. It takes the site's own orange instead — the same one the
+   current page's link uses — so it stays legible and stays in the family.
+   The button in the support block keeps the yellow, because there it sits on
+   a dark panel where the yellow is both legible and recognisably theirs. */
 .tm-coffee, .ht-coffee{
-  color:var(--coffee-ink) !important;
+  color:var(--coffee-nav) !important;
 }
-.tm-coffee:hover, .ht-coffee:hover{ color:var(--coffee-ink-hover) !important; }
+.tm-coffee:hover, .ht-coffee:hover{ color:var(--coffee-nav-hover) !important; }
+
+/* THE LONG NAME AND THE SHORT ONE. "Buy me a coffee" is five words in a bar
+   that already holds four links, and on a 420px phone the last of them ran off
+   the right-hand edge — the bar does not wrap, and it should not: a navigation
+   bar that becomes two lines pushes the whole page down.
+
+   So the link is written twice and one of them is always hidden. Above 700px
+   the full name shows; below it, just "Coffee", which says the same thing in a
+   fifth of the room. Any link given a `short` in its settings gets the same
+   treatment — nothing here names the coffee link in particular. */
+.nav-short{ display:none; }
+@media (max-width: 700px){
+  .nav-full{ display:none; }
+  .nav-short{ display:inline; }
+}
 
 /* the block at the foot of the About and Contact pages */
 .pt-support{
@@ -1267,6 +1376,16 @@ body.page-trail{
   margin:-4px 0 14px; max-width:60ch;
   font:400 13.5px/1.6 var(--font-body); color:var(--text-quiet);
 }
+/* A link inside that note. Nothing else on the site is a link in running text,
+   so without this it came out in the browser's own blue with the browser's own
+   underline — the one piece of the page that looked like it belonged to a
+   different website. */
+.pt-groupNote a{
+  color:var(--accent); text-decoration:none;
+  border-bottom:1px solid currentColor; padding-bottom:1px;
+  transition:color var(--button-fade);
+}
+.pt-groupNote a:hover{ color:var(--text); }
 
 /* ── WHERE ONE TRAIL MEETS ANOTHER ────────────────────────────────────────
    A button on the map at each junction, so you can follow the network rather
@@ -1303,7 +1422,8 @@ body.trail-wishful{
 }
 body.trail-wishful #tm-walker .tm-dot{ background:var(--route-line-wish); }
 body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
-body.trail-wishful #tm-brand .tm-kicker{ color:var(--wishful-kicker); }
+/* (the kicker's colour is set with the rest of the over-the-veil ink above —
+   it was set twice, and the weaker of the two never applied) */
 
 /* ── the waypoint stepper ─────────────────────────────────────────────────
    Two arrows just above the readouts that step from one waypoint to the next.
@@ -1840,24 +1960,30 @@ body.page-text main{
   margin:0 0 14px; font:700 10.5px/1 var(--font-body);
   letter-spacing:.18em; text-transform:uppercase; color:var(--accent-soft);
 }
-/* TWO COLUMNS AT LEAST, always. auto-fit with a minimum width drops to one
-   column as soon as the window is narrower than twice that minimum, which on a
-   tablet left a single very wide column of stubby cards. Asking for two
-   explicitly and letting them be as narrow as they need to be is the right way
-   round: the layout is stated, and the card copes.
+/* ── HOW MANY COLUMNS ─────────────────────────────────────────────────────
+   Two at most, ever — three made the cards too small to read and the pictures
+   too small to be worth having. But a group holding ONE trail gives that trail
+   the full width, because a lone card in a two-column grid leaves an obvious
+   hole beside it.
 
-   Above --two-col-until the columns are sized by content as before, so a wide
-   window still gets three or four. */
+   The count is asked of the DOM rather than written down per section, so
+   adding trails later needs no CSS: `:has(> :nth-child(2))` is true only when
+   a second card exists. One rule covers every group, now and later. */
 .pt-cards{
   display:grid; gap:14px;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
+  grid-template-columns:1fr;                    /* one trail: full width */
 }
-@media (min-width: 900px){
-  /* auto-FILL, not auto-fit. auto-fit collapses the empty tracks, so a group
-     with one trail in it stretched that single card across the whole page —
-     which read as a different, more important kind of card rather than as a
-     short list. auto-fill keeps the tracks, so one card is card-sized. */
-  .pt-cards{ grid-template-columns:repeat(auto-fill, minmax(var(--card-min), 1fr)); }
+.pt-cards:has(> :nth-child(2)){
+  grid-template-columns:repeat(2, minmax(0, 1fr));   /* two or more: two columns */
+}
+
+/* On a phone, two of anything is one too many. Two columns of a 420px screen
+   leaves each card about 180px wide — narrower than the picture inside it
+   wants to be, and the trail names start breaking mid-word. "Two columns
+   maximum" is a ceiling, not a floor, so below 700px the ceiling comes down
+   to one and the rule above stops applying. */
+@media (max-width: 700px){
+  .pt-cards, .pt-cards:has(> :nth-child(2)){ grid-template-columns:1fr; }
 }
 .pt-card{
   display:flex; flex-direction:column;
@@ -1895,7 +2021,17 @@ body.page-text main{
    NOT an <a> — the whole card is already the link (see the stretched overlay
    above) — so it is a button-shaped label that the card's own link activates,
    which is what keeps one anchor inside another from happening. */
+/* pointer-events:none is not decoration — it is the FIX for a real bug.
+   The whole card is the link (a stretched overlay on .pt-open). This button is
+   a LABEL for that link, not a control of its own. Without this it swallowed
+   the click: it carries a hover transform, a transform makes a new stacking
+   context, and a new stacking context lifted it above the overlay — but only
+   while the pointer was on it. So the card worked everywhere except on the one
+   part of it that said "Open the trail", and any static inspection of the
+   stacking showed nothing wrong, because the transform is not applied until
+   the cursor arrives. */
 .pt-card .pt-go{
+  pointer-events:none;
   margin-top:15px; align-self:flex-start;
   display:inline-flex; align-items:center; gap:7px;
   padding:9px 15px; border-radius:999px;
@@ -2182,4 +2318,23 @@ body.page-text main{
 }
 @media (prefers-reduced-motion: reduce){
   #ht-panel, .ht-switch, .ht-control, .ht-pin, .ht-railBtn{ transition-duration:.01ms; }
+}
+
+
+/* Below 480px, and LAST in the file on purpose: the 700px
+   block above also sets these variables, and between two :root rules of equal
+   weight the later one wins. Below 480px the short name alone is not enough — five links, a brand and the
+   page's own margins still add up to more than the window, and the bar spills
+   off the right-hand edge. So at that size the bar gives up the last of its
+   comfort: tighter letter-spacing, smaller type, narrower gaps and less padding
+   at the ends. Nothing is dropped — every section stays reachable, which is the
+   point of the bar; it just stops being spacious. */
+@media (max-width: 480px){
+  :root{
+    --bar-pad:        10px;
+    --bar-brand-size: 14px;
+    --bar-link-size:  9.5px;
+    --bar-link-gap:   9px;
+  }
+  #ht-nav a, #tm-barNav a{ letter-spacing:.05em; }
 }
