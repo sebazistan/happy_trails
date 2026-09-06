@@ -4,7 +4,7 @@
 <html lang="en">
 <!-- ═══════════════════════════════════════════════════════════════════════════
      THE BELTLINE — a trail page
-     version 7.3
+     version 8.0
 
      A map that pans along a route as you scroll, keeping the point you are
      "standing on" in the centre of the screen.
@@ -30,6 +30,26 @@
      Everything between ③ and ④ is the engine and needs no edits.
 
      VERSION HISTORY
+       8.0  PART of a larger set of changes — see the note that came with this
+            build for what is done and what is not.
+            Done here: the trail line and the elevation line are now the same
+            green the trails are drawn in on the main map (#4ecf4e), because
+            they are the same fact drawn twice. A wishful trail is purple
+            (#e84fff) throughout instead — one class, body.trail-wishful, set
+            from SETTINGS.trailKind. The red accent now has one clearly marked
+            home at the top of happy-trails.css.
+            Two arrows above the readouts step from waypoint to waypoint,
+            greying out at each end, skipping any stop the Wishful thinking
+            switch is currently hiding. Wishful thinking now starts OFF.
+            Type and length share one line above the title. A short, light
+            veil at the top of the map matches the heavier one at the bottom.
+            The corner buttons carry icons — a back arrow, a download arrow, an
+            external-link mark — and Download now offers THIS trail's drawing,
+            filled in from SETTINGS.mapFile. Wikipedia and Google maps appear
+            only when their links are set, which for most trails is not yet.
+            The × on a waypoint card is properly centred: the glyph carries
+            empty space beneath it, so the grid was centring the box rather
+            than the ink.
        7.3  the artwork is redrawn, and it now has a wishful layer of its own.
             The demo drawing — mountains, contours, Lake Verrier — has gone.
             This one is drawn as what the Beltline IS: a RAILPATH. That means
@@ -354,16 +374,18 @@
    this page alone.                                                          */
 
 const SETTINGS = {
-  version:        "7.3",       // shown in the top-right corner
+  version:        "8.0",       // shown in the top-right corner
   trailLength:    10.2,        // km end to end; every distance follows from it
   mediaFolder:    "media/beltline/",
+  mapFile:        "maps/beltline-map.svg",   // what Download offers
+  trailImage:     "images/beltline.png",
 };
 
 /* Only the words that name this trail. "Waypoint", "Elevation", "Scroll for
    more" and the rest are shared — see DEFAULT_WORDS in trail-engine.js. */
 
 const WORDS = {
-  cornerKicker:  "Type: Railpath<br>Length: 10.2 km",
+  cornerKicker:  "Type: Railpath &nbsp;·&nbsp; Length: 10.2 km",
   cornerTitle:   "The Beltline",
   openingKicker: "10.2 km · Toronto",
   openingTitle:  "The Beltline, end to end",

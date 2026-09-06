@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 1.7
+   version 2.0
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -85,6 +85,21 @@
 
   /* COLOURS */
   --accent-soft:       #e0a323;
+
+  /* ── THE TRAIL COLOURS ────────────────────────────────────────────────
+     The line you walk along, and the line on the elevation graph, are drawn
+     in the same green the trails are drawn in on the main map — so a route
+     means the same colour wherever you meet it.
+
+     A WISHFUL trail — one that does not exist yet — is purple instead, all
+     the way through: its route, its elevation line, its readouts and its
+     kicker. That is switched on by one class, body.trail-wishful, near the
+     bottom of this file; a page opts in with SETTINGS.trailKind = "wishful".
+     Nothing else has to change. */
+  --route-line:        #4ecf4e;   /* built trails, on the map and the graph */
+  --route-line-wish:   #e84fff;   /* trails that are only proposed          */
+  --route-glow:        rgba(78,207,78,.55);
+  --route-glow-wish:   rgba(232,79,255,.55);
   --text:              #f4f2ee;
   --text-quiet:        #a9a49c;
   --text-faint:        rgba(255,255,255,.45);
@@ -114,6 +129,25 @@
   --arrow-size:        32px;
   --band-bottom:       calc(var(--readout-row) + var(--readout-gap) + var(--profile-height) + var(--readout-drop));
   --caption-fade:      .22s;
+  /* the waypoint stepper, bottom left */
+  --stepper-size:      34px;
+  --stepper-gap:        8px;
+  --stepper-drop:      10px;   /* how far above the readouts it sits */
+  --stepper-bg:        rgba(255,255,255,.10);
+  --stepper-bg-hover:  rgba(255,255,255,.22);
+  --stepper-edge:      rgba(255,255,255,.16);
+  --stepper-ink:       rgba(255,255,255,.78);
+  --stepper-off:       .28;    /* opacity when there is nowhere to go */
+  /* the button where one trail meets another */
+  --cross-bg:          rgba(38,86,140,.86);
+  --cross-bg-hover:    rgba(52,112,178,.96);
+  --cross-edge:        rgba(150,196,240,.45);
+  --shot-height:       132px;   /* the picture at the top of a trail card */
+  /* the picture behind the opening panel, and the veil that keeps its text
+     readable. Subtle on purpose: enough to see what the trail looks like,
+     not so much that the words fight it. */
+  --opening-veil:      .74;
+  --opening-veil-top:  .60;
   /* the "scroll for more" line at the foot of a card, on a phone */
   --more-size:         10px;
   --more-gap:          7px;
@@ -181,15 +215,20 @@
      panel travels up and off, and without this its bottom edge would sweep up
      the map as a hard horizontal line. Below this point there is no veil, so
      there is no edge to see. */
+  --screen-veil-corner: .30;   /* at the very top, where the title is */
   --screen-veil-ends:  86%;
   --scroll-length:     900vh;
   --shade-bottom:      .55;
   --shade-edges:       .20;
-  --shade-top:         0;
+  /* A short, light version of the bottom band, so the corner title has
+     something to sit on. Deliberately much weaker than the bottom — that one
+     carries readouts over a busy map, this one only has to lift a heading. */
+  --shade-top:         .30;
+  --shade-top-depth:   13%;
   --text-turn:         .3s;
   --trail-ahead:       rgba(60,45,25,.55);
   --trail-outline:     rgba(255,255,255,.55);
-  --trail-walked:      var(--accent);
+  --trail-walked:      var(--route-line);
   --walker-ring:       76px;
   --walker-size:       16px;
   --walker-speed:      2.4s;
@@ -208,7 +247,18 @@
      These are the defaults; section ② below changes them per page. They are
      kept together rather than scattered so it is obvious which values are
      page-dependent and which are the whole site's.                         */
-  --accent:            #c0392b;   /* map page: #e8503a */
+  /* ╔══════════════════════════════════════════════════════════════════════╗
+     ║  THE ACCENT COLOUR — CHANGE IT HERE AND NOWHERE ELSE                 ║
+     ║                                                                      ║
+     ║  This red is the site's one accent: the walking point, the active    ║
+     ║  navigation link, the route buttons on the main map, every hover.    ║
+     ║  Everything that uses it says var(--accent), so this line and the    ║
+     ║  map-page override 20-odd lines below are the only two places a red  ║
+     ║  is written down. Change both and the whole site changes.            ║
+     ║                                                                      ║
+     ║  NOT the trail line — that is --route-line, below, and it is green.  ║
+     ╚══════════════════════════════════════════════════════════════════════╝ */
+  --accent:            #c0392b;   /* map page: #e8503a — see body.page-map */
   --map-edge-shadow:   none;   /* map page: 0 0 90px rgba(0,0,0,.55) */
   --over-map-ink:      #2c2418;   /* map page: #f4f2ee */
   --over-map-kicker:   #94661a;   /* map page: #e0a323 */
@@ -430,7 +480,7 @@ body.page-trail{
   background:
     radial-gradient(125% 95% at 50% 45%, rgba(0,0,0,0) 42%, rgba(0,0,0,var(--shade-edges)) 100%),
     linear-gradient(to bottom,
-      rgba(0,0,0,var(--shade-top)), rgba(0,0,0,0) 24%,
+      rgba(0,0,0,var(--shade-top)), rgba(0,0,0,0) var(--shade-top-depth),
       rgba(0,0,0,0) 60%, rgba(0,0,0,var(--shade-bottom)));
 }
 
@@ -475,6 +525,7 @@ body.page-trail{
 #tm-links a{
   pointer-events:auto; cursor:pointer;
   font:600 var(--trail-link-size)/1 var(--font-body);
+  display:inline-flex; align-items:center; gap:5px;
   letter-spacing:.11em; text-transform:uppercase; text-decoration:none;
   color:var(--over-map-ink);
   background:rgba(255,255,255,.62); border:1px solid rgba(60,45,25,.28);
@@ -730,7 +781,11 @@ body.page-trail{
   position:absolute; top:10px; right:10px; z-index:2;
   width:28px; height:28px; padding:0; border-radius:50%;
   display:grid; place-items:center; cursor:pointer;
-  font:400 18px/1 var(--font-body); color:var(--text);
+  /* The × is drawn with a lot of empty space under it in most fonts, so a
+     glyph centred by the grid still sits low. line-height:0 takes the font's
+     own vertical metrics out of the sum and lets place-items centre the ink
+     itself. */
+  font:400 18px/0 var(--font-body); color:var(--text);
   background:rgba(8,10,12,.55); border:1px solid var(--panel-edge);
   backdrop-filter:blur(6px);
   transition:background var(--close-fade), color var(--close-fade), transform var(--close-fade);
@@ -983,9 +1038,14 @@ body.page-trail{
 #tm-profile svg{ width:100%; height:100%; display:block; overflow:visible; }
 #tm-profile .tm-under{ fill:rgba(255,255,255,.10); }
 #tm-profile .tm-whole{ fill:none; stroke:var(--profile-line); stroke-width:1.5; vector-effect:non-scaling-stroke; }
+/* The walked part of the elevation graph is the same colour as the trail on
+   the map — the two are the same fact drawn twice, so they should not be two
+   different colours. --route-glow is the halo under it, kept as its own
+   variable because a drop-shadow cannot take a bare colour variable and an
+   alpha in one go. */
 #tm-profile .tm-walked{
-  fill:none; stroke:var(--accent); stroke-width:2.5; vector-effect:non-scaling-stroke;
-  filter:drop-shadow(0 0 5px rgba(192,57,43,.75));
+  fill:none; stroke:var(--route-line); stroke-width:2.5; vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 0 5px var(--route-glow));
 }
 #tm-profile .tm-cursor{ stroke:rgba(255,255,255,.5); stroke-width:1; vector-effect:non-scaling-stroke; stroke-dasharray:2 3; }
 /* The dot marking where you are on the graph.
@@ -1036,8 +1096,13 @@ body.page-trail{
      rest of the visit. The closing screen never moves and never needs one. */
   will-change:transform, opacity;
   background:
+    /* Lighter at the very top than in the middle. The corner title sits up
+       there in dark ink chosen for pale paper, and a veil at full strength
+       under it left the trail's name barely readable — the panel's own
+       darkening was fighting the page's own heading. */
     linear-gradient(to bottom,
-      rgba(6,8,10,var(--screen-veil-edge)) 0%,
+      rgba(6,8,10,var(--screen-veil-corner)) 0%,
+      rgba(6,8,10,var(--screen-veil-edge)) 34%,
       rgba(6,8,10,var(--screen-veil-edge)) 55%,
       rgba(6,8,10,0) var(--screen-veil-ends)),
     radial-gradient(70% 55% at 50% 42%,
@@ -1073,6 +1138,19 @@ body.page-trail{
 }
 /* The opening box holds a heading rather than a line of totals, so it needs
    more room across and a little less air inside than the closing one did. */
+/* A trail's own picture behind its opening panel. The veil is a gradient
+   rather than a flat wash — lighter at the top where the kicker sits, heavier
+   lower down where the paragraph is — so the picture is most visible exactly
+   where there is least text over it. */
+#tm-opening .tm-box.tm-hasImage{
+  background-image:
+    linear-gradient(to bottom,
+      rgba(10,12,14,var(--opening-veil-top)),
+      rgba(10,12,14,var(--opening-veil))),
+    var(--opening-image);
+  background-size:cover, cover;
+  background-position:center, center;
+}
 #tm-opening .tm-box{ max-width:600px; padding:clamp(26px,4.4vw,44px) clamp(24px,4vw,46px); }
 #tm-closing h2{ margin:0 0 10px; font:600 clamp(22px,3.4vw,34px)/1.15 var(--font-display); }
 #tm-closing .tm-row{ display:flex; gap:28px; justify-content:center; margin-top:22px; }
@@ -1098,6 +1176,100 @@ body.page-trail{
    twelve cards you cannot see. Measured at about eight frames a second on a
    phone. The opening screen's arrow still bobs: there is only one of it. */
 .tm-more svg{ opacity:.75; }
+
+/* the little glyph on a corner link — what the button DOES, not where it goes */
+.tm-linkIcon{ width:1.15em; height:1.15em; flex:none; opacity:.75; }
+
+
+
+/* ── the picture on a trail card ──────────────────────────────────────────
+   A crop of that trail's own map — the same picture its page opens with, so
+   arriving there looks like the thing you clicked. It is a background rather
+   than an <img> because it is decoration, not content: the card already says
+   in words what trail this is. */
+.pt-shot{
+  height:var(--shot-height); margin:-18px -18px 14px;
+  border-radius:var(--panel-radius) var(--panel-radius) 0 0;
+  background-size:cover; background-position:center;
+  background-color:rgba(255,255,255,.04);
+}
+
+/* ── a wishful trail on the trails page ──────────────────────────────────
+   Purple where the others are amber, so the two kinds are told apart before
+   the words are read. */
+.pt-card.is-wishful .pt-meta{ color:var(--wishful-kicker); }
+.pt-card.is-wishful .pt-go{ background:var(--route-line-wish); color:#1a0c1f; }
+.pt-card.is-wishful:hover .pt-go{ background:#fff; }
+.pt-groupNote{
+  margin:-4px 0 14px; max-width:60ch;
+  font:400 13.5px/1.6 var(--font-body); color:var(--text-quiet);
+}
+
+/* ── WHERE ONE TRAIL MEETS ANOTHER ────────────────────────────────────────
+   A button on the map at each junction, so you can follow the network rather
+   than having to go back to the main map between trails. Blue, so it is
+   plainly neither a waypoint (which is the accent colour) nor a wishful
+   section (purple) — a third kind of thing, which is what it is.
+
+   The circles these hang off are drawn BESIDE the route in the artwork, not
+   on it, so a crossing button can never end up under a waypoint button. */
+.tm-crossing .tm-cross{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 11px 5px 8px; border-radius:999px;
+  text-decoration:none; white-space:nowrap;
+  font:600 10px/1 var(--font-body); letter-spacing:.1em; text-transform:uppercase;
+  color:#eaf2fb; background:var(--cross-bg); border:1px solid var(--cross-edge);
+  box-shadow:var(--button-shadow);
+  transition:background var(--button-fade), color var(--button-fade);
+}
+.tm-crossing .tm-cross svg{ width:14px; height:14px; opacity:.9; }
+.tm-crossing .tm-cross:hover{ background:var(--cross-bg-hover); color:#fff; }
+
+/* ── A WISHFUL TRAIL ──────────────────────────────────────────────────────
+   A trail that does not exist yet is a KIND, not a variant: purple where a
+   built trail is green, and consistently so — the route on the map, the line
+   on the elevation graph, the kicker over the title, the walking point. One
+   class does all of it, put on <body> by the engine when a page sets
+   SETTINGS.trailKind = "wishful". Everything below is a colour swap and
+   nothing else, which is what keeps the two kinds behaving identically. */
+body.trail-wishful{
+  --route-line:  var(--route-line-wish);
+  --route-glow:  var(--route-glow-wish);
+  --trail-walked: var(--route-line-wish);
+  --accent-soft: var(--wishful-kicker);
+}
+body.trail-wishful #tm-walker .tm-dot{ background:var(--route-line-wish); }
+body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
+body.trail-wishful #tm-brand .tm-kicker{ color:var(--wishful-kicker); }
+
+/* ── the waypoint stepper ─────────────────────────────────────────────────
+   Two arrows just above the readouts that step from one waypoint to the next.
+   Grey rather than accent-coloured, and smaller than the rail buttons, on
+   purpose: the rail buttons open panels, these only move you along, and the
+   map is the thing meant to hold your attention. An arrow with nowhere to go
+   is disabled rather than hidden, so the pair keeps its shape and the state
+   reads as "you are at the end" rather than as something breaking. */
+#tm-stepper{
+  position:absolute; z-index:4;
+  /* it belongs to the walk: the engine fades it with the readouts, so it is
+     not sitting there offering to step through a trail you have not started */
+  transition:opacity var(--button-fade);
+  left:var(--edge-gap);
+  bottom:calc(var(--band-bottom) + var(--stepper-drop));
+  display:flex; gap:var(--stepper-gap);
+}
+.tm-step{
+  width:var(--stepper-size); height:var(--stepper-size);
+  display:grid; place-items:center; padding:0; cursor:pointer;
+  border-radius:50%; color:var(--stepper-ink);
+  background:var(--stepper-bg); border:1px solid var(--stepper-edge);
+  transition:background var(--button-fade), color var(--button-fade),
+             opacity var(--button-fade);
+}
+.tm-step svg{ width:56%; height:56%; }
+.tm-step:hover:not(:disabled){ background:var(--stepper-bg-hover); color:#fff; }
+.tm-step:disabled{ opacity:var(--stepper-off); cursor:default; }
+.tm-step:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
 /* ── the invisible column you actually scroll ────────────────────────── */
 #tm-scroller{ position:relative; z-index:2; height:var(--scroll-length); pointer-events:none; }
@@ -1605,9 +1777,24 @@ body.page-text main{
   margin:0 0 14px; font:700 10.5px/1 var(--font-body);
   letter-spacing:.18em; text-transform:uppercase; color:var(--accent-soft);
 }
+/* TWO COLUMNS AT LEAST, always. auto-fit with a minimum width drops to one
+   column as soon as the window is narrower than twice that minimum, which on a
+   tablet left a single very wide column of stubby cards. Asking for two
+   explicitly and letting them be as narrow as they need to be is the right way
+   round: the layout is stated, and the card copes.
+
+   Above --two-col-until the columns are sized by content as before, so a wide
+   window still gets three or four. */
 .pt-cards{
   display:grid; gap:14px;
-  grid-template-columns:repeat(auto-fit, minmax(var(--card-min), 1fr));
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 900px){
+  /* auto-FILL, not auto-fit. auto-fit collapses the empty tracks, so a group
+     with one trail in it stretched that single card across the whole page —
+     which read as a different, more important kind of card rather than as a
+     short list. auto-fill keeps the tracks, so one card is card-sized. */
+  .pt-cards{ grid-template-columns:repeat(auto-fill, minmax(var(--card-min), 1fr)); }
 }
 .pt-card{
   display:flex; flex-direction:column;
@@ -1638,13 +1825,42 @@ body.page-text main{
   color:var(--over-map-kicker); margin-bottom:9px;
 }
 .pt-card p{ margin:0; font:400 13.5px/1.65 var(--font-body); color:var(--text-quiet); }
+/* ── OPEN THE TRAIL ───────────────────────────────────────────────────────
+   The one thing a card is for. It was a line of small caps that read as a
+   caption; it is now a filled button, because the reference links beside it
+   are secondary and the card should say which of the three matters. It is
+   NOT an <a> — the whole card is already the link (see the stretched overlay
+   above) — so it is a button-shaped label that the card's own link activates,
+   which is what keeps one anchor inside another from happening. */
 .pt-card .pt-go{
-  margin-top:13px; font:600 10px/1 var(--font-body);
-  letter-spacing:.14em; text-transform:uppercase; color:var(--bar-here);
+  margin-top:15px; align-self:flex-start;
+  display:inline-flex; align-items:center; gap:7px;
+  padding:9px 15px; border-radius:999px;
+  font:700 11px/1 var(--font-body); letter-spacing:.12em; text-transform:uppercase;
+  color:#12161a; background:var(--accent-soft);
+  border:1px solid transparent;
+  transition:background var(--button-fade), transform var(--button-fade);
 }
+.pt-card:hover .pt-go{ background:#fff; transform:translateX(2px); }
+
+/* The reference links are deliberately quieter than that button: they are
+   somewhere else to go, not the thing this card is offering. */
+.pt-links{
+  margin-top:11px; display:flex; flex-wrap:wrap; gap:14px;
+  font:500 11px/1 var(--font-body);
+}
+.pt-links a{
+  color:var(--text-faint); text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,.16); padding-bottom:2px;
+}
+.pt-links a:hover{ color:var(--text); border-bottom-color:currentColor; }
 /* a trail with no page of its own yet: still listed, but plainly not a link */
 .pt-card.is-soon{ opacity:.62; }
-.pt-card.is-soon .pt-go{ color:var(--text-faint); }
+/* a trail with no page yet keeps the shape but not the invitation */
+.pt-card.is-soon .pt-go{
+  color:var(--text-faint); background:transparent;
+  border-color:var(--panel-edge);
+}
 
 /* the small link buttons under a trail's name, matching the map pages' */
 .pt-links{ display:flex; flex-wrap:wrap; gap:var(--trail-link-gap); margin-top:13px; }

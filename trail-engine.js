@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 1.0
+   version 2.0
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -527,10 +527,44 @@ const DEFAULTS = {
                                // have opened is never covered by an arriving
                                // card. Close the card with its x to reach the
                                // buttons again.
+  showStepper: true,           // the two arrows above the readouts that jump
+                               // from one waypoint to the next. Quieter than
+                               // the legend and layers buttons on purpose:
+                               // those open things, these only move you along.
+  stepperSmooth: true,         // glide to the next stop rather than jumping.
+                               // Off is instant, which some people prefer.
   showLegend: true,            // the LEGEND button and its panel
   showLayers: true,            // the LAYERS button and its panel
   openPanelAtStart: null,      // "legend", "layers", or null to start closed
 
+  trailKind: "built",          // "built" or "wishful". A WISHFUL TRAIL is one
+                               // that does not exist yet — Mimico Creek, say.
+                               // It is a kind of its own, not a variant: it is
+                               // purple throughout rather than green, it says
+                               // so on its own page and on the trails page,
+                               // and the main map gives it a purple button on
+                               // the Wishful thinking switch. Setting this puts
+                               // body.trail-wishful on the page and the
+                               // stylesheet does the rest.
+  crossings: true,             // Show a button wherever this trail meets
+                               // another one. The places come from the page's
+                               // CROSSINGS list; each is anchored to a small
+                               // circle in the artwork (#link-1, #link-2 …)
+                               // drawn deliberately BESIDE the route, so a
+                               // crossing button can never land under a
+                               // waypoint button.
+  crossingMark: "#link-",      // what those circles are called in the drawing
+  trailImage: "",              // A picture of this trail, shown behind the
+                               // opening panel — the same one the trails page
+                               // uses on its card, so arriving here looks like
+                               // the thing you clicked. A veil goes over it
+                               // (see --opening-veil) because the panel's text
+                               // has to stay readable over whatever it is.
+                               // Empty leaves the panel plain, as before.
+  mapFile: "",                 // the drawing this page shows, for the Download
+                               // button — e.g. "maps/beltline-map.svg". Empty
+                               // means the button has nothing to offer and is
+                               // left off, like any other unset link.
   wishfulLayer: "#wishful",    // A GROUP IN YOUR ARTWORK holding the routes
                                // that do not exist yet — the bridge that would
                                // close a gap, the connection that would join
@@ -549,7 +583,7 @@ const DEFAULTS = {
                                // A page whose artwork has no such group is
                                // unaffected; nothing is looked for twice and
                                // nothing breaks.
-  wishfulOn: true,             // whether the wishful-thinking waypoints start
+  wishfulOn: false,            // whether the wishful-thinking waypoints start
                                // switched on. Off hides their cards, their
                                // circles on the map, their name chips and their
                                // dots on the elevation graph — everything.
@@ -677,7 +711,10 @@ const DEFAULT_WORDS = {
 
   /* The two lines above the title. A line break in the kicker is written as
      <br>, which is why this is one string rather than two settings. */
-  cornerKicker:  "Type: Railpath<br>Length: 10.2 km",
+  /* Type and length on ONE line, separated rather than stacked: two short
+     facts about the same thing read better side by side, and it gives the
+     title back a line of height at the top of the screen. */
+  cornerKicker:  "Type: Railpath &nbsp;·&nbsp; Length: 10.2 km",
   cornerTitle:   "The Beltline",
 
   /* ── THE NAVIGATION BAR ─────────────────────────────────────────────────
@@ -705,13 +742,22 @@ const DEFAULT_WORDS = {
        download: true   offers the file for saving rather than opening it
        newTab:   true   opens in a new tab, which is what you want for
                         anything leaving the site                           */
+  /* The buttons under the corner title. A link with no href is not written at
+     all, so the two reference links below simply do not appear on a trail that
+     has not been given them — which is most of them, for now.
+
+     `icon` says what the button DOES: "back" goes before the label because
+     that is the direction it means, "download" and "external" go after,
+     because they describe where the label leads.
+
+     DOWNLOAD is special: leave its href empty and it is filled in from
+     SETTINGS.mapFile, so every trail offers its OWN drawing without the URL
+     being written out twice. */
   trailLinks: [
-    { label: "Main map",     href: "index.html" },
-    { label: "Download",     href: "https://cdn.prod.website-files.com/62e49ab216c2b10748052c8c/6424ae6502189d4d58b28386_beltline_1_1.jpg",
-      newTab: true },
-    { label: "Wikipedia",    href: "https://en.wikipedia.org/wiki/Beltline_Trail", newTab: true },
-    { label: "Google maps",  href: "https://www.google.com/maps/dir/43.6948874,-79.4652451/43.6810265,-79.3687185/",
-      newTab: true }
+    { label: "Main map",     href: "index.html",  icon: "back" },
+    { label: "Download",     href: "",            icon: "download", download: true },
+    { label: "Wikipedia",    href: "",            icon: "external", newTab: true },
+    { label: "Google maps",  href: "",            icon: "external", newTab: true }
   ],
 
   openingKicker: "10.2 km · Toronto",
@@ -719,6 +765,8 @@ const DEFAULT_WORDS = {
   openingBody:   "A mixed-use trail along the path of the former Toronto Belt Line Railway, which ran for about seventy years. Scroll to walk it from the west end to the Brickworks — the map moves under you, and each stop arrives as you reach it.",
   openingHint:   "Scroll to begin",
   scrollHint:    "Scroll for more",   /* under the card, on a phone only */
+  previousStop:  "Previous waypoint",
+  nextStop:      "Next waypoint",
   turnPhone:     "Turn your phone upright",
   turnPhoneWhy:  "This trail is walked by scrolling, and there is not enough "
                + "room to show the map and a waypoint at once on a screen this "
@@ -790,7 +838,7 @@ const DEFAULT_WORDS = {
     { swatch: "river",              label: "River" },
     { swatch: "golf",               label: "Golf course" },
     { swatch: "waypoint",           label: "Waypoint" },
-    { swatch: "waypoint-wishful",   label: "Wishful thinking \u2014 proposed, not built" }
+    { swatch: "waypoint-wishful",   label: "Wishful thinking" }
   ],
 
   layersName:   "Layers",
@@ -835,6 +883,10 @@ function buildThePage() {
   stage.innerHTML = INTERFACE;
   while (stage.firstChild) document.body.insertBefore(stage.firstChild, artwork);
   document.body.classList.add("page-trail");
+  /* A wishful trail is purple throughout. One class carries it — see
+     body.trail-wishful in happy-trails.css — so nothing here has to know
+     which colour anything is. */
+  if (SETTINGS.trailKind === "wishful") document.body.classList.add("trail-wishful");
 }
 
 var INTERFACE = "\n<!-- the site's navigation bar. It owns the top of the window; the map and the\n     interface both begin underneath it. Its words are in WORDS.bar. -->\n<header id=\"tm-bar\">\n  <a id=\"tm-barBrand\" href=\"#\"></a>\n  <nav id=\"tm-barNav\"></nav>\n</header>\n\n<!-- the map and everything drawn on it -->\n<div id=\"tm-stage\">\n  <div id=\"tm-world\">\n    <!-- the artwork is inserted here when the page loads -->\n    <svg id=\"tm-trail\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path id=\"tm-trailOutline\" fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailAhead\"   fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailWalked\"  fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n    </svg>\n    <div id=\"tm-labels\"></div>\n  </div>\n</div>\n<div id=\"tm-shade\"></div>\n\n<!-- the interface that sits over the map -->\n<div id=\"tm-ui\">\n\n  <header id=\"tm-topbar\">\n    <div id=\"tm-brand\">\n      <div class=\"tm-kicker\" id=\"tm-cornerKicker\"></div>\n      <h1 id=\"tm-cornerTitle\"></h1>\n      <!-- filled in from WORDS.trailLinks; empty if none of them has an href -->\n      <div id=\"tm-links\"></div>\n    </div>\n    <div id=\"tm-topright\">\n      <span id=\"tm-version\"></span>\n    </div>\n  </header>\n\n  <!-- THE LEFT RAIL\n       The compass and the two panel buttons live in one fixed column. This is\n       the fix for the panels coming adrift: the buttons are pinned to the\n       window and never move, whatever is open. There is only ever ONE panel,\n       which slides out beside the rail and swaps its contents, so a button can\n       never end up detached from the thing it opens. -->\n  <div id=\"tm-rail\">\n  <div id=\"tm-compass\" role=\"img\">\n    <!-- the arrow is drawn to fill its 24\u00d724 box, so --compass-arrow in the\n         stylesheet is the size you actually see -->\n    <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 1.5 L20 22 L12 17.4 L4 22 Z\"/></svg>\n    <span id=\"tm-north\"></span>\n  </div>\n\n    <button class=\"tm-railBtn\" id=\"tm-legendBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linecap=\"round\">\n        <path d=\"M4 7h3M4 12h3M4 17h3M11 7h9M11 12h9M11 17h9\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n\n    <button class=\"tm-railBtn\" id=\"tm-layersBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linejoin=\"round\">\n        <path d=\"M12 3 21 8l-9 5-9-5 9-5Z\"/><path d=\"M3 13l9 5 9-5\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n  </div>\n\n  <!-- the one panel both buttons open -->\n  <aside id=\"tm-panel\" hidden>\n    <header id=\"tm-panelTop\">\n      <h2 id=\"tm-panelTitle\"></h2>\n      <button class=\"tm-close\" id=\"tm-panelClose\" type=\"button\">&times;</button>\n    </header>\n    <div id=\"tm-panelNote\"></div>\n    <div id=\"tm-panelBody\"></div>\n  </aside>\n\n  <div id=\"tm-cards\"></div>\n\n  <div id=\"tm-readouts\">\n    <div id=\"tm-numbers\">\n      <div class=\"tm-readout\" id=\"tm-boxDistance\"><small></small><b id=\"tm-valDistance\">0</b></div>\n      <div class=\"tm-readout\" id=\"tm-boxElevation\"><small></small><b id=\"tm-valElevation\">0</b></div>\n      <div class=\"tm-readout tm-optional\" id=\"tm-boxAscent\"><small></small><b id=\"tm-valAscent\">0</b></div>\n      <div class=\"tm-gap\"></div>\n      <div class=\"tm-readout\" id=\"tm-boxComplete\"><small></small><b id=\"tm-valComplete\">0</b></div>\n    </div>\n    <div id=\"tm-profile\"></div>\n  </div>\n\n  <section id=\"tm-opening\">\n    <!-- the same panel the finish used to use: one .tm-box, so the two ends of\n         the page are visibly the same object and share their styling -->\n    <div class=\"tm-box\">\n      <div class=\"tm-kicker\" id=\"tm-openingKicker\"></div>\n      <h2 id=\"tm-openingTitle\"></h2>\n      <p id=\"tm-openingBody\"></p>\n      <div id=\"tm-hint\">\n        <span id=\"tm-openingHint\"></span>\n        <svg width=\"20\" height=\"26\" viewBox=\"0 0 20 26\" fill=\"none\" stroke=\"currentColor\"\n             stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 3v18M4 15l6 6 6-6\"/></svg>\n      </div>\n    </div>\n  </section>\n\n  <section id=\"tm-closing\">\n    <div class=\"tm-box\">\n      <h2 id=\"tm-closingTitle\"></h2>\n      <p id=\"tm-closingBody\"></p>\n      <div class=\"tm-row\">\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel1\"></small><b id=\"tm-closingTotal\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel2\"></small><b id=\"tm-closingAscent\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel3\"></small><b id=\"tm-closingHigh\">\u2014</b></div>\n      </div>\n    </div>\n  </section>\n</div>\n\n<!-- Shown only on a phone held on its side. A short, wide window has no room\n     for both the map and a waypoint at once: the card ends up taller than the\n     space it has, so its picture and its title are pushed off the top of the\n     screen. Rather than serve a broken layout, the page asks for the one it\n     was built for. Purely a stylesheet decision \u2014 see the orientation media\n     query \u2014 so it costs nothing on every other screen and cannot get out of\n     step with any state the page is holding. -->\n<div id=\"tm-turn\">\n  <div class=\"tm-box\">\n    <!-- a phone stood upright, with an arrow turning it that way -->\n    <svg width=\"52\" height=\"52\" viewBox=\"0 0 32 32\" fill=\"none\" stroke=\"currentColor\"\n         stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\n      <rect x=\"11\" y=\"10\" width=\"10\" height=\"18\" rx=\"2.5\"/>\n      <line x1=\"14.4\" y1=\"25\" x2=\"17.6\" y2=\"25\"/>\n      <path d=\"M5.5 13.5 A11.5 11.5 0 0 1 26.5 13.5\"/>\n      <polyline points=\"9.6,9.6 5.5,13.6 1.6,9.4\"/>\n    </svg>\n    <h2 id=\"tm-turnTitle\"></h2>\n    <p id=\"tm-turnWhy\"></p>\n  </div>\n</div>\n\n<div id=\"tm-scroller\"></div>\n\n<!-- optional helper: press E to read coordinates off the map -->\n<div id=\"tm-reader\">\n  <div id=\"tm-coords\">\u2014</div>\n  <div id=\"tm-readerPanel\">\n    <h3 id=\"tm-readerTitle\"></h3>\n    <p id=\"tm-readerHelp\"></p>\n    <textarea id=\"tm-readerOut\" spellcheck=\"false\" readonly></textarea>\n    <div id=\"tm-readerButtons\">\n      <button class=\"tm-button\" id=\"tm-copyButton\" type=\"button\">Copy</button>\n      <button class=\"tm-button\" id=\"tm-clearButton\" type=\"button\">Clear</button>\n    </div>\n  </div>\n</div>\n\n<div id=\"tm-problem\"><p id=\"tm-problemText\"></p></div>";
@@ -966,6 +1018,8 @@ let climbedTo = [];             // uphill metres from the start to each point of
    disagree with the switch the reader can see. */
 let wishfulOn   = true;
 let wishfulArt  = null;         // the group in the artwork, once it is found
+let stepperNeedsRefresh = null; // set once the stepper exists, called when the
+                                // set of reachable stops changes
 let satelliteOn = false;
 let satelliteOk = true;          // false once the picture has failed to load
 let applyLayers = () => {};      // filled in once the page is built
@@ -981,7 +1035,34 @@ function giveUp(message) {
   el("problemText").innerHTML = message;
 }
 
-/* ── put the words on the page ─────────────────────────────────────────── */
+/* ── the waypoint stepper ─────────────────────────────────────────────────
+   Two arrows that jump to the previous and next waypoint. Deliberately quieter
+   than the legend and layers buttons beside them: those open things, these
+   only move you along, and the map is the thing you are meant to be looking
+   at. An arrow greys out when there is nothing that way to go to.
+
+   Which stops count depends on the Wishful thinking switch — a stop that is
+   not on the map should not be somewhere the arrows can take you. */
+function buildStepper() {
+  if (!SETTINGS.showStepper) return;
+  const box = document.createElement("div");
+  box.id = "tm-stepper";
+  box.innerHTML =
+    '<button class="tm-step" id="tm-stepBack" type="button" aria-label="' +
+      WORDS.previousStop + '" title="' + WORDS.previousStop + '">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"' +
+      ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M15 5 8 12l7 7"/></svg></button>' +
+    '<button class="tm-step" id="tm-stepOn" type="button" aria-label="' +
+      WORDS.nextStop + '" title="' + WORDS.nextStop + '">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"' +
+      ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M9 5l7 7-7 7"/></svg></button>';
+  const readouts = el("readouts");
+  readouts.parentNode.insertBefore(box, readouts);
+}
+
+/* put the words on the page */
 function writeWords() {
   /* Only if the page asked for it. The <title> in the head is what a search
      engine and a link preview read, it is per-page already, and it is written
@@ -996,6 +1077,12 @@ function writeWords() {
   set("openingTitle",  WORDS.openingTitle);
   set("openingBody",   WORDS.openingBody);
   set("openingHint",   WORDS.openingHint);
+  /* the picture behind the opening panel, if this trail has one */
+  if (SETTINGS.trailImage) {
+    const box = el("opening").querySelector(".tm-box");
+    box.classList.add("tm-hasImage");
+    box.style.setProperty("--opening-image", 'url("' + SETTINGS.trailImage + '")');
+  }
   set("turnTitle",     WORDS.turnPhone);
   set("turnWhy",       WORDS.turnPhoneWhy);
   set("closingTitle",  WORDS.closingTitle);
@@ -1030,13 +1117,40 @@ function writeBar() {
 /* The row of link buttons under the corner title. A link with no href is
    simply not written, so the row empties itself and the stylesheet's
    #tm-links:empty rule takes it off the page. */
+const ICONS = {
+  /* A little glyph saying what the button will DO, which is different from
+     what it points at: going back, saving a file, leaving the site. Drawn at
+     24x24 and scaled by the stylesheet so they all match the text beside them.
+     "back" sits before its label because that is the direction it means; the
+     other two sit after, because they describe where the label leads. */
+  back:     '<path d="M15 5 8 12l7 7"/>',
+  download: '<path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/>',
+  external: '<path d="M14 5h5v5"/><path d="M19 5l-8 8"/>' +
+            '<path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"/>'
+};
+const icon = name => !ICONS[name] ? "" :
+  '<svg class="tm-linkIcon" viewBox="0 0 24 24" aria-hidden="true" fill="none"' +
+  ' stroke="currentColor" stroke-width="2" stroke-linecap="round"' +
+  ' stroke-linejoin="round">' + ICONS[name] + '</svg>';
+
 function writeTrailLinks() {
-  const wanted = WORDS.trailLinks.filter(link => link && link.href);
+  /* The DOWNLOAD button offers the drawing this page is actually showing, so
+     it is filled in from SETTINGS.mapFile rather than being written out again
+     in every page's words. A page with no mapFile has nothing to offer and the
+     button is dropped, exactly like any other link with no href. */
+  const links = WORDS.trailLinks.map(link => {
+    if (link && link.icon === "download" && !link.href) {
+      return Object.assign({}, link, { href: SETTINGS.mapFile || "" });
+    }
+    return link;
+  });
+  const wanted = links.filter(link => link && link.href);
   el("links").innerHTML = wanted.map(link =>
     '<a href="' + link.href + '"' +
     (link.download ? ' download' : '') +
     (link.newTab ? ' target="_blank" rel="noopener"' : '') +
-    '>' + link.label + '</a>').join("");
+    '>' + (link.icon === "back" ? icon("back") : "") + link.label +
+    (link.icon && link.icon !== "back" ? icon(link.icon) : "") + '</a>').join("");
   // With no buttons the row takes no space, so the top band closes up by the
   // height it had been reserving for them and the cards move up to suit.
   if (!wanted.length) document.documentElement.style.setProperty("--title-links", "0px");
@@ -1409,6 +1523,38 @@ function start() {
   });
   const walker = addChip("walker", '<div class="tm-ring"></div><div class="tm-dot"></div>');
 
+  /* ── where this trail meets another ────────────────────────────────────
+     A network is trails that join up, so the page should let you follow one
+     into the next. Each crossing is a small circle in the drawing — put there
+     off to one side of the route on purpose, so it can never sit underneath a
+     waypoint and leave two buttons in one place — and this turns each into a
+     link to that trail's page.
+
+     A crossing named in the page but missing from the drawing is skipped and
+     said so in the console, rather than being placed at 0,0 where it would
+     look like a bug in the map. */
+  (PAGE.CROSSINGS || []).forEach((cross, n) => {
+    if (!SETTINGS.crossings) return;
+    const mark = mapSvg && mapSvg.querySelector(SETTINGS.crossingMark + (n + 1));
+    if (!mark) {
+      console.warn('The crossing "' + cross.label + '" has no ' +
+                   SETTINGS.crossingMark + (n + 1) + " circle in the artwork, " +
+                   "so it has not been placed.");
+      return;
+    }
+    const box = mark.getBBox();
+    const node = addChip("", '<a class="tm-cross" href="' + cross.href + '">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"' +
+      ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M9 7H6a4 4 0 0 0 0 8h3"/><path d="M15 7h3a4 4 0 0 1 0 8h-3"/>' +
+      '<path d="M8 11h8"/></svg>' +
+      '<span>' + cross.label + "</span></a>");
+    node.classList.add("tm-crossing");
+    node.style.left = (box.x + box.width / 2) + "px";
+    node.style.top  = (box.y + box.height / 2) + "px";
+    chips.push(node);        // so it holds its size as the map zooms
+  });
+
   /* ── THE LEFT RAIL AND ITS ONE PANEL ─────────────────────────────────────
      What went wrong on the Happy Trails map: each panel had its own tab
      clipped to its edge, so the tabs slid about as panels opened and closed
@@ -1508,6 +1654,8 @@ function start() {
        belong to this switch as much as the purple waypoints do: a proposal and
        the stop that explains it should never be visible without each other. */
     if (wishfulArt) wishfulArt.style.display = wishfulOn ? "" : "none";
+    // the arrows can only reach stops that are on the map
+    if (stepperNeedsRefresh) stepperNeedsRefresh();
 
     // the satellite view: show the photograph, hide the printed map over it
     const printed = mapSvg && SETTINGS.satelliteHides
@@ -2558,7 +2706,15 @@ function start() {
        dissolve and swallow its rise. The cards fade themselves — see
        `entrance` above — so the column only has to clear away at the finish. */
     el("cards").style.opacity = (1 - endFade).toFixed(3);
-    el("readouts").style.opacity = (started * (1 - endFade)).toFixed(3);
+    const uiFade = (started * (1 - endFade)).toFixed(3);
+    el("readouts").style.opacity = uiFade;
+    /* the stepper is part of the walk's furniture, so it arrives and leaves
+       with the readouts rather than sitting over the opening panel */
+    const stepper = el("stepper");
+    if (stepper) {
+      stepper.style.opacity = uiFade;
+      stepper.style.pointerEvents = +uiFade > 0.5 ? "auto" : "none";
+    }
     /* The shading over the map exists to make the readouts legible against it.
        With the readouts gone at the finish it is just a stain across a picture
        that is meant to be seen plainly, so it goes with them. */
@@ -2613,6 +2769,67 @@ function start() {
      card heights and whether any of this applies at all. */
   placeRail();
   addEventListener("resize", placeRail);
+
+  /* ── the stepper's behaviour ────────────────────────────────────────────
+     Which stops it can reach depends on the Wishful thinking switch: a stop
+     that is not drawn on the map should not be somewhere an arrow can take
+     you. liveStops() is therefore asked fresh each time rather than cached,
+     because the switch can be thrown at any moment. */
+  function liveStops() {
+    return stops.map((s, i) => i).filter(i => onALiveLayer(stops[i]));
+  }
+
+  /* Where the page has to be scrolled for a given stop to be the one you are
+     standing at. The walk occupies its own stretch of the page — see the five
+     stages — so a stop's fraction has to be placed inside that stretch, not
+     against the whole document. */
+  function pageAtStop(i) {
+    const at = (walkFrom + stops[i].fraction) / pageSpan;
+    return Math.round(at * (document.documentElement.scrollHeight - window.innerHeight));
+  }
+
+  /* The stop the walk is currently at or has most recently passed. */
+  function nearestStop() {
+    const p = clamp(shown * pageSpan - walkFrom, 0, 1);
+    const live = liveStops();
+    let best = -1, gap = Infinity;
+    live.forEach(i => {
+      const d = Math.abs(stops[i].fraction - p);
+      if (d < gap) { gap = d; best = i; }
+    });
+    return { at: best, live: live };
+  }
+
+  function stepTo(direction) {
+    const { at, live } = nearestStop();
+    const here = live.indexOf(at);
+    const want = live[here + direction];
+    if (want === undefined) return;
+    window.scrollTo({ top: pageAtStop(want),
+                      behavior: SETTINGS.stepperSmooth ? "smooth" : "auto" });
+    openCard(want);
+  }
+
+  /* An arrow with nothing beyond it is disabled rather than hidden: the pair
+     keeps its shape, and a control that greys out says "you are at the end"
+     where one that vanishes just looks broken. */
+  function refreshStepper() {
+    const back = el("stepBack"), on = el("stepOn");
+    if (!back || !on) return;
+    const { at, live } = nearestStop();
+    const here = live.indexOf(at);
+    back.disabled = here <= 0;
+    on.disabled   = here < 0 || here >= live.length - 1;
+  }
+
+  if (SETTINGS.showStepper) {
+    const back = el("stepBack"), on = el("stepOn");
+    if (back) back.addEventListener("click", () => stepTo(-1));
+    if (on)   on.addEventListener("click", () => stepTo(1));
+    refreshStepper();
+    addEventListener("scroll", refreshStepper, { passive: true });
+    stepperNeedsRefresh = refreshStepper;
+  }
   /* A late-arriving web font changes how many lines the text takes and so how
      tall the cards are. Measure again once the fonts have settled. */
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeRail);
@@ -2722,6 +2939,7 @@ function start() {
 /* ── go ────────────────────────────────────────────────────────────────── */
 function begin() {
   writeWords();
+  buildStepper();
   loadArtwork(start);
 }
 /* The artwork template sits at the bottom of the trail page, so nothing can
