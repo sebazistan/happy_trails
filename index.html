@@ -288,10 +288,10 @@ const SETTINGS = {
                                // back. A touch longer than the move itself.
   pressMs: 180,                // how long the button holds its pressed look
 
-  clickZoomsOut: true,         // a plain click on the map zooms out one step,
+  clickZoomsOut: false,         // a plain click on the map zooms out one step,
                                // the way the Webflow version behaves. Clicks on
                                // pins and buttons are ignored.
-  doubleClickZoomsIn: false,   // leave this false while clickZoomsOut is true,
+  doubleClickZoomsIn: true,   // leave this false while clickZoomsOut is true,
                                // or a double-click fires two zoom-outs first.
 
   dragThreshold: 4,            // pixels of movement before a press counts as a
@@ -501,7 +501,7 @@ const LAYER_GROUPS = [
         note: "Built and open, with their bridges",
         artwork: ["trails", "trails-bridge", "trails-label"] },
 
-      { label: "Unpaved", on: false,
+      { label: "Unpaved", on: true,
         note: "Gravel and dirt surfaces, with their names",
         artwork: ["trails-unpaved", "trails-unpaved-label"] },
 
