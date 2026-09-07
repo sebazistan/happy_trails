@@ -12,6 +12,45 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 10.0  A WAYPOINT CARD CAN BE OPENED BIG. A second button in the card's top
+       corner, beside the ×, puts that one waypoint in the middle of the
+       screen at about three times the size, over a veil, with the walk held
+       still behind it. Press it again, press Escape, click the veil or close
+       the card and everything goes back.
+
+       IT TURNS ON ITS SIDE TO DO IT. A card with its picture above its words
+       cannot be made bigger on a normal screen — the height runs out first,
+       and a 4:3 picture wide enough to be worth looking at is taller than the
+       window once the text is under it. Laid out sideways, the height that was
+       being spent on words goes to the picture and the words take the space
+       beside it, which is where a wide screen has room going spare. The
+       picture keeps its 4:3 exactly (the card's height is set to whatever
+       makes that true) and goes from 538x301 to 844x632 on a 1440 screen —
+       3.3 times the area. Most waypoints stop being paged at all: three pages
+       of text become one.
+
+       THE PAGE DOES NOT SCROLL WHILE IT IS OPEN. Scrolling this page is
+       walking the trail, and the smallest scroll would carry the card being
+       read off the screen. The wheel, the scrolling keys and anything else are
+       all refused — but the page is NOT given overflow:hidden, which takes the
+       scrollbar away and makes the map jump fifteen pixels sideways at the
+       exact moment the card is trying to move smoothly.
+
+       THE CHANGE IS ANIMATED, not snapped: the contents fade out over 130ms,
+       the shape changes and the text is re-broken into pages while there is
+       nothing to see, and the panel itself travels between the two sizes over
+       260ms with the words coming back as it arrives. Somebody who has asked
+       their computer for less movement gets the bigger card at once instead.
+
+       DESKTOP ONLY, and not a small desktop window either: under 1100px wide
+       or 620px tall the picture and the words cannot sit side by side and the
+       big view would be no improvement, so the button is not offered.
+
+       A CARD ALWAYS OPENS SMALL — closing one puts the view back, so the next
+       card to appear is the ordinary one beside the map. The exception is a
+       proposal arrived at from the Wishful thinking page: that is a link to
+       one particular idea, and it opens showing it properly.
+
   9.2  THE CAPTION NEVER DROPS BELOW THE TITLE. When a waypoint title and the
        picture's caption are too long to share a line — "Bridge over Dufferin
        St." beside "The trail through the houses" — it is the TITLE that moves

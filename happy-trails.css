@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 3.4
+   version 3.5
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -216,6 +216,53 @@
      ANYTHING ADDED TO A CARD HAS TO BE ADDED HERE TOO, or the card grows past
      the bottom of its column and starts overhanging the screen. */
   --card-chrome:       300px;
+  /* ── THE EXPANDED CARD ──────────────────────────────────────────────────
+     The button beside the × swaps a waypoint card between the small view that
+     sits beside the map and a large one in the middle of the screen, over a
+     veil. Everything about that larger view is here.
+
+     WHY IT IS LAID OUT SIDEWAYS. A card with its picture on top and its words
+     underneath cannot be made bigger on a normal screen: the height is the
+     thing that runs out first, and a 4:3 picture wide enough to be worth
+     looking at is taller than the window once the text is under it. Turned on
+     its side, the height that was being spent on words goes to the picture and
+     the words take the space beside it — which is where a wide screen has room
+     to spare. The picture roughly triples in area and the text gets enough
+     lines that most waypoints stop being paged at all.
+
+     The card's height follows from that: it is exactly the height that makes
+     the picture 4:3, so --big-shape and --card-media are two ways of writing
+     the same number and have to be changed together. */
+  --big-media-part:    .64;    /* the share of the card's width the picture takes.
+                                  Raising it makes the picture bigger AND the card
+                                  taller, since the height follows from it. */
+  --big-shape:         calc(var(--big-media-part) * 3 / 4);  /* card height ÷ card width, tied to --card-media above */
+  --big-gap-top:       26px;   /* clear of the site's bar */
+  --big-gap-bottom:    26px;
+  --big-side-gap:      clamp(18px, 3.5vw, 60px);
+  /* The widest it may be, then whatever the window can actually give it. The
+     18px is the scrollbar, which 100vw counts and the window does not have —
+     without it the card is a scrollbar's width too wide and the picture is a
+     little short of 4:3. The last line is the case nobody sees until they try
+     it: a wide, SHORT window, where the height decides the width instead. */
+  --big-card-width:    min(1400px,
+                           calc(100vw - var(--big-side-gap) * 2 - 18px),
+                           calc((100vh - var(--bar-height) - var(--big-gap-top)
+                                 - var(--big-gap-bottom)) / var(--big-shape)));
+  /* The panel beside the picture. Its TOP is deeper than the rest because in
+     the big view the two round buttons sit over this panel rather than over a
+     photograph, and the waypoint's caption is right-aligned on the first line
+     — without the clearance the two meet in the same corner. 10px is where the
+     buttons start, --card-btn is how tall they are, and the last 10px is the
+     gap under them. */
+  --big-inner-pad:     calc(10px + var(--card-btn) + 10px) 30px 28px;
+  --big-text-lines:    30;     /* a ceiling, not a promise — the engine still
+                                  gives the text only the lines that fit */
+  --big-veil:          rgba(6,8,11,.78);
+  --big-veil-fade:     .24s;   /* the veil coming up behind the card */
+  --big-fade:          .13s;   /* the card's contents going out, and back in */
+  --big-glide:         .26s;   /* the panel travelling between the two sizes */
+  --card-btn:          28px;   /* the round buttons in a card's top corner */
   --card-lean:         .1;
   --card-lift:         50%;
   --card-line:         1.65;
@@ -903,10 +950,11 @@ body.page-trail{
   background:var(--wishful-kicker); border-color:rgba(0,0,0,.5);
 }
 
-/* the × that closes a card. It sits over the photo, top right. */
-.tm-close{
+/* the × that closes a card, and the button that expands it. They sit over the
+   photo, top right, and are the same object with different contents. */
+.tm-close, .tm-grow{
   position:absolute; top:10px; right:10px; z-index:2;
-  width:28px; height:28px; padding:0; border-radius:50%;
+  width:var(--card-btn); height:var(--card-btn); padding:0; border-radius:50%;
   display:grid; place-items:center; cursor:pointer;
   /* The × is drawn with a lot of empty space under it in most fonts, so a
      glyph centred by the grid still sits low. line-height:0 takes the font's
@@ -916,9 +964,48 @@ body.page-trail{
   background:rgba(8,10,12,.55); border:1px solid var(--panel-edge);
   backdrop-filter:blur(6px);
   transition:background var(--close-fade), color var(--close-fade), transform var(--close-fade);
-}.tm-close:hover,
+}.tm-close:hover, .tm-grow:hover,
 .ht-close:hover{ background:var(--accent); border-color:transparent; transform:scale(1.08); }
-.tm-close:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:2px; }
+.tm-close:focus-visible,
+.tm-grow:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:2px; }
+
+/* ── THE EXPAND BUTTON ────────────────────────────────────────────────────
+   It sits immediately left of the ×, so the two read as one pair of controls
+   in the corner. Two paths live inside it — arrows pointing out, arrows
+   pointing in — and which one is drawn depends on the state of the column, so
+   the button never has to be rewritten in JavaScript.
+
+   ON A DESKTOP ONLY, and not on a small desktop window either. The big view
+   puts the picture and the words side by side, and under about 1100px there is
+   not enough width for that to be an improvement; under 620px of height the
+   card would be taller than the window. Rather than degrade the large view
+   into something no better than the small one, the button is simply not
+   offered — which is also why nothing about the small card depends on it. */
+.tm-grow{ right:calc(10px + var(--card-btn) + 8px); display:none; }
+.tm-grow svg{ width:15px; height:15px; }
+.tm-grow .tm-shrinkIcon{ display:none; }
+#tm-cards.is-big .tm-grow .tm-growIcon{ display:none; }
+#tm-cards.is-big .tm-grow .tm-shrinkIcon{ display:block; }
+@media (min-width:1100px) and (min-height:620px) and (hover:hover){
+  .tm-grow{ display:grid; }
+}
+
+/* ── THE VEIL BEHIND AN EXPANDED CARD ─────────────────────────────────────
+   Everything the card is no longer sharing the screen with goes behind it: the
+   map, the readouts, the rail, the panel. It is inside the interface layer,
+   which sits above the map and below the site's bar, so the bar stays lit and
+   the way out of the page is never dimmed.
+
+   It also catches the clicks. While it is up the map cannot be dragged and the
+   layer switches cannot be reached, which is the point: the walk is standing
+   still, and anything that would move it is out of reach until the card is put
+   back. Clicking the veil itself puts the card back. */
+#tm-cardveil{
+  position:fixed; inset:0; z-index:6;
+  background:var(--big-veil); opacity:0; pointer-events:none;
+  transition:opacity var(--big-veil-fade) ease;
+}
+#tm-cardveil.is-on{ opacity:1; pointer-events:auto; cursor:zoom-out; }
 
 /* ── the picture area ─────────────────────────────────────────────────────
    A fixed-shape window (--card-media) holding one or more slides. Every
@@ -1278,6 +1365,69 @@ body.page-trail{
   display:block; font:500 9.5px/1 var(--font-body); letter-spacing:.14em;
   text-transform:uppercase; color:var(--text-faint); margin-bottom:5px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   THE EXPANDED CARD
+   ═══════════════════════════════════════════════════════════════════════
+   One class, on the column, turns the small card beside the map into a large
+   one in the middle of the screen. Everything below is the difference between
+   the two; anything not mentioned here is the same card it always was, which
+   is why a wishful card, a video, a before/after slider and the pager all
+   arrive in the big view working without knowing about it.
+
+   The engine adds .is-big — see setBig() in trail-engine.js — and holds the
+   page still while it is there. The numbers are all in the variables block,
+   under THE EXPANDED CARD. */
+
+/* THE COLUMN becomes a centred box with the window's margins.
+   z-index 8 lifts it over the veil at 6; margin-left was already auto, and
+   margin-right:auto is what moves it off the right-hand edge to the middle. */
+#tm-cards.is-big{
+  z-index:8;
+  top:var(--big-gap-top); bottom:var(--big-gap-bottom);
+  left:var(--big-side-gap); right:var(--big-side-gap);
+  max-width:var(--big-card-width); margin-right:auto;
+  /* the ceiling on how many lines of text the engine may use in here */
+  --card-text-lines:var(--big-text-lines);
+}
+
+/* THE CARD turns on its side, and takes the height that makes its picture
+   4:3. min() keeps it inside the column on a short window; there the picture
+   is cropped a little rather than the card hanging off the screen. */
+#tm-cards.is-big .tm-card{
+  display:flex; flex-direction:row; align-items:stretch;
+  height:min(100%, calc(var(--big-card-width) * var(--big-shape)));
+}
+
+/* THE PICTURE takes its share of the width and the whole of the height. The
+   aspect ratio and the height cap that shape it in the small card are both
+   turned off: in here the card's own height is doing that job, and leaving
+   them on would fight it. */
+#tm-cards.is-big .tm-media{
+  flex:0 0 calc(var(--big-media-part) * 100%);
+  aspect-ratio:auto; height:auto; max-height:none;
+}
+
+/* THE WORDS take what is left, centred down the side of the picture. min-width
+   is the flexbox trap: without it a long unbroken word in a title would push
+   the text column wider than its share and squeeze the picture. */
+#tm-cards.is-big .tm-inner{
+  flex:1 1 auto; min-width:0;
+  display:flex; flex-direction:column; justify-content:center;
+  padding:var(--big-inner-pad);
+}
+
+/* THE CONTENTS GOING OUT AND COMING BACK.
+   The card changes shape while its contents are invisible, so nothing is seen
+   reflowing — the picture jumping from the top of the card to the side of it,
+   the text repaginating from three pages to one. What IS seen is the panel
+   itself travelling between the two sizes, which the engine animates.
+
+   The card's own opacity is not touched here: that belongs to the walk, which
+   writes it every frame, and a transition on it would fight the scroll. */
+.tm-card .tm-media, .tm-card .tm-inner{ transition:opacity var(--big-fade) ease; }
+.tm-card.is-changing .tm-media,
+.tm-card.is-changing .tm-inner{ opacity:0; }
 
 /* ── readouts and elevation profile along the bottom ─────────────────────
    This is the bottom band. Its three parts — the row of numbers, the gap, the
@@ -2826,6 +2976,11 @@ body.page-wishful{
 }
 @media (prefers-reduced-motion:reduce){
   #tm-hint svg, #tm-walker .tm-ring{ animation:none; }
+  /* The card still changes size — that is the whole point of the button — but
+     it stops travelling and fading to get there. The travelling is set by the
+     engine, which asks this same question itself; these two are the fades. */
+  .tm-card .tm-media, .tm-card .tm-inner{ transition-duration:1ms; }
+  #tm-cardveil{ transition-duration:1ms; }
 }
 @media (max-width: 700px){
   body.page-map{

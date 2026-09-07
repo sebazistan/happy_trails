@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 2.6
+   version 2.7
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -404,6 +404,41 @@ const DEFAULTS = {
      times, and it cost a row of a card whose scarcest thing is room for the
      words. What replaced it is simply that the cards are bigger. */
   cardsCanBeClosed: true,      // show the × in the corner of every card
+
+  /* ── THE EXPANDED CARD ──────────────────────────────────────────────────
+     The button beside the × swaps the card between the small view beside the
+     map and a large one in the middle of the screen: the picture on the left
+     at the same 4:3 it always had, only about three times the area, and the
+     words beside it with enough lines that most waypoints stop being paged.
+
+     WHILE IT IS OPEN THE PAGE DOES NOT SCROLL. The walk is the scroll, and a
+     reader looking closely at one waypoint is not walking — worse, the scroll
+     would carry the card away underneath them. So the page is held where it
+     is until the card is put back or closed, and the veil takes the clicks
+     that would otherwise reach the map.
+
+     A CARD ALWAYS OPENS SMALL. Closing one puts the view back, so the next
+     one to appear is the ordinary card beside the map rather than something
+     that fills the screen without being asked. The single exception is a
+     proposal arrived at from the Wishful thinking page, which is a link to
+     one particular idea and opens showing it properly. */
+  cardCanGrow: true,           // offer the button at all
+  cardGrowsFrom: 1100,         // the narrowest window that gets it, in pixels.
+                               // Under this the picture and the words cannot
+                               // sit side by side and the big view would be no
+                               // improvement, so it is not offered. Matches the
+                               // media query in the stylesheet.
+  cardGrowsAbove: 620,         // and the shortest window, for the same reason
+  cardGrowFadeMs: 130,         // the contents fading out before the change
+  cardGrowMs: 260,             // the panel travelling between the two sizes.
+                               // Both are in the stylesheet as well (--big-fade
+                               // and --big-glide) and have to agree.
+  bigOnArrival: "wishful",     // which deep links open expanded:
+                               //   "wishful"  a link to a proposal — which is
+                               //              what the Wishful thinking page
+                               //              hands over
+                               //   true       every link to a waypoint
+                               //   false      never
   cardsReopenOnClick: true,    // clicking a waypoint on the map opens its card
                                // again, wherever the scroll happens to be. It
                                // gives way on its own once the walk reaches the
@@ -830,6 +865,8 @@ const DEFAULT_WORDS = {
 
   /* on the waypoint cards */
   closeCard:     "Close",          /* the × button's tooltip and screen-reader name */
+  growCard:      "See this waypoint bigger",  /* the button beside the × */
+  shrinkCard:    "Back to the map",           /* the same button, once it is */
   openCard:      "Open this waypoint",   /* tooltip on a waypoint chip */
   waypoint:      "Waypoint",
   outOf:         "of",
@@ -944,7 +981,7 @@ function buildThePage() {
   if (SETTINGS.trailKind === "wishful") document.body.classList.add("trail-wishful");
 }
 
-var INTERFACE = "\n<!-- the site's navigation bar. It owns the top of the window; the map and the\n     interface both begin underneath it. Its words are in WORDS.bar. -->\n<header id=\"tm-bar\">\n  <a id=\"tm-barBrand\" href=\"#\"></a>\n  <nav id=\"tm-barNav\"></nav>\n</header>\n\n<!-- the map and everything drawn on it -->\n<div id=\"tm-stage\">\n  <div id=\"tm-world\">\n    <!-- the artwork is inserted here when the page loads -->\n    <svg id=\"tm-trail\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path id=\"tm-trailOutline\" fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailAhead\"   fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailWalked\"  fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n    </svg>\n    <div id=\"tm-labels\"></div>\n  </div>\n</div>\n<div id=\"tm-shade\"></div>\n\n<!-- the interface that sits over the map -->\n<div id=\"tm-ui\">\n\n  <header id=\"tm-topbar\">\n    <div id=\"tm-brand\">\n      <div class=\"tm-kicker\" id=\"tm-cornerKicker\"></div>\n      <h1 id=\"tm-cornerTitle\"></h1>\n      <!-- filled in from WORDS.trailLinks; empty if none of them has an href -->\n      <div id=\"tm-links\"></div>\n    </div>\n    <div id=\"tm-topright\">\n      <span id=\"tm-version\"></span>\n    </div>\n  </header>\n\n  <!-- THE LEFT RAIL\n       The compass and the two panel buttons live in one fixed column. This is\n       the fix for the panels coming adrift: the buttons are pinned to the\n       window and never move, whatever is open. There is only ever ONE panel,\n       which slides out beside the rail and swaps its contents, so a button can\n       never end up detached from the thing it opens. -->\n  <div id=\"tm-rail\">\n  <div id=\"tm-compass\" role=\"img\">\n    <!-- the arrow is drawn to fill its 24\u00d724 box, so --compass-arrow in the\n         stylesheet is the size you actually see -->\n    <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 1.5 L20 22 L12 17.4 L4 22 Z\"/></svg>\n    <span id=\"tm-north\"></span>\n  </div>\n\n    <button class=\"tm-railBtn\" id=\"tm-legendBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linecap=\"round\">\n        <path d=\"M4 7h3M4 12h3M4 17h3M11 7h9M11 12h9M11 17h9\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n\n    <button class=\"tm-railBtn\" id=\"tm-layersBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linejoin=\"round\">\n        <path d=\"M12 3 21 8l-9 5-9-5 9-5Z\"/><path d=\"M3 13l9 5 9-5\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n  </div>\n\n  <!-- the one panel both buttons open -->\n  <aside id=\"tm-panel\" hidden>\n    <header id=\"tm-panelTop\">\n      <h2 id=\"tm-panelTitle\"></h2>\n      <button class=\"tm-close\" id=\"tm-panelClose\" type=\"button\">&times;</button>\n    </header>\n    <div id=\"tm-panelNote\"></div>\n    <div id=\"tm-panelBody\"></div>\n  </aside>\n\n  <div id=\"tm-cards\"></div>\n\n  <div id=\"tm-readouts\">\n    <div id=\"tm-numbers\">\n      <div class=\"tm-readout\" id=\"tm-boxDistance\"><small></small><b id=\"tm-valDistance\">0</b></div>\n      <div class=\"tm-readout\" id=\"tm-boxElevation\"><small></small><b id=\"tm-valElevation\">0</b></div>\n      <div class=\"tm-readout tm-optional\" id=\"tm-boxAscent\"><small></small><b id=\"tm-valAscent\">0</b></div>\n      <div class=\"tm-gap\"></div>\n      <div class=\"tm-readout\" id=\"tm-boxComplete\"><small></small><b id=\"tm-valComplete\">0</b></div>\n    </div>\n    <div id=\"tm-profile\"></div>\n  </div>\n\n  <section id=\"tm-opening\">\n    <!-- the same panel the finish used to use: one .tm-box, so the two ends of\n         the page are visibly the same object and share their styling -->\n    <div class=\"tm-box\">\n      <div class=\"tm-kicker\" id=\"tm-openingKicker\"></div>\n      <h2 id=\"tm-openingTitle\"></h2>\n      <p id=\"tm-openingBody\"></p>\n      <div id=\"tm-hint\">\n        <span id=\"tm-openingHint\"></span>\n        <svg width=\"20\" height=\"26\" viewBox=\"0 0 20 26\" fill=\"none\" stroke=\"currentColor\"\n             stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 3v18M4 15l6 6 6-6\"/></svg>\n      </div>\n    </div>\n  </section>\n\n  <section id=\"tm-closing\">\n    <div class=\"tm-box\">\n      <h2 id=\"tm-closingTitle\"></h2>\n      <p id=\"tm-closingBody\"></p>\n      <div class=\"tm-row\">\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel1\"></small><b id=\"tm-closingTotal\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel2\"></small><b id=\"tm-closingAscent\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel3\"></small><b id=\"tm-closingHigh\">\u2014</b></div>\n      </div>\n    </div>\n  </section>\n</div>\n\n<!-- Shown only on a phone held on its side. A short, wide window has no room\n     for both the map and a waypoint at once: the card ends up taller than the\n     space it has, so its picture and its title are pushed off the top of the\n     screen. Rather than serve a broken layout, the page asks for the one it\n     was built for. Purely a stylesheet decision \u2014 see the orientation media\n     query \u2014 so it costs nothing on every other screen and cannot get out of\n     step with any state the page is holding. -->\n<div id=\"tm-turn\">\n  <div class=\"tm-box\">\n    <!-- a phone stood upright, with an arrow turning it that way -->\n    <svg width=\"52\" height=\"52\" viewBox=\"0 0 32 32\" fill=\"none\" stroke=\"currentColor\"\n         stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\n      <rect x=\"11\" y=\"10\" width=\"10\" height=\"18\" rx=\"2.5\"/>\n      <line x1=\"14.4\" y1=\"25\" x2=\"17.6\" y2=\"25\"/>\n      <path d=\"M5.5 13.5 A11.5 11.5 0 0 1 26.5 13.5\"/>\n      <polyline points=\"9.6,9.6 5.5,13.6 1.6,9.4\"/>\n    </svg>\n    <h2 id=\"tm-turnTitle\"></h2>\n    <p id=\"tm-turnWhy\"></p>\n  </div>\n</div>\n\n<div id=\"tm-scroller\"></div>\n\n<!-- optional helper: press E to read coordinates off the map -->\n<div id=\"tm-reader\">\n  <div id=\"tm-coords\">\u2014</div>\n  <div id=\"tm-readerPanel\">\n    <h3 id=\"tm-readerTitle\"></h3>\n    <p id=\"tm-readerHelp\"></p>\n    <textarea id=\"tm-readerOut\" spellcheck=\"false\" readonly></textarea>\n    <div id=\"tm-readerButtons\">\n      <button class=\"tm-button\" id=\"tm-copyButton\" type=\"button\">Copy</button>\n      <button class=\"tm-button\" id=\"tm-clearButton\" type=\"button\">Clear</button>\n    </div>\n  </div>\n</div>\n\n<div id=\"tm-problem\"><p id=\"tm-problemText\"></p></div>";
+var INTERFACE = "\n<!-- the site's navigation bar. It owns the top of the window; the map and the\n     interface both begin underneath it. Its words are in WORDS.bar. -->\n<header id=\"tm-bar\">\n  <a id=\"tm-barBrand\" href=\"#\"></a>\n  <nav id=\"tm-barNav\"></nav>\n</header>\n\n<!-- the map and everything drawn on it -->\n<div id=\"tm-stage\">\n  <div id=\"tm-world\">\n    <!-- the artwork is inserted here when the page loads -->\n    <svg id=\"tm-trail\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path id=\"tm-trailOutline\" fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailAhead\"   fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailWalked\"  fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n    </svg>\n    <div id=\"tm-labels\"></div>\n  </div>\n</div>\n<div id=\"tm-shade\"></div>\n\n<!-- the interface that sits over the map -->\n<div id=\"tm-ui\">\n\n  <header id=\"tm-topbar\">\n    <div id=\"tm-brand\">\n      <div class=\"tm-kicker\" id=\"tm-cornerKicker\"></div>\n      <h1 id=\"tm-cornerTitle\"></h1>\n      <!-- filled in from WORDS.trailLinks; empty if none of them has an href -->\n      <div id=\"tm-links\"></div>\n    </div>\n    <div id=\"tm-topright\">\n      <span id=\"tm-version\"></span>\n    </div>\n  </header>\n\n  <!-- THE LEFT RAIL\n       The compass and the two panel buttons live in one fixed column. This is\n       the fix for the panels coming adrift: the buttons are pinned to the\n       window and never move, whatever is open. There is only ever ONE panel,\n       which slides out beside the rail and swaps its contents, so a button can\n       never end up detached from the thing it opens. -->\n  <div id=\"tm-rail\">\n  <div id=\"tm-compass\" role=\"img\">\n    <!-- the arrow is drawn to fill its 24\u00d724 box, so --compass-arrow in the\n         stylesheet is the size you actually see -->\n    <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 1.5 L20 22 L12 17.4 L4 22 Z\"/></svg>\n    <span id=\"tm-north\"></span>\n  </div>\n\n    <button class=\"tm-railBtn\" id=\"tm-legendBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linecap=\"round\">\n        <path d=\"M4 7h3M4 12h3M4 17h3M11 7h9M11 12h9M11 17h9\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n\n    <button class=\"tm-railBtn\" id=\"tm-layersBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linejoin=\"round\">\n        <path d=\"M12 3 21 8l-9 5-9-5 9-5Z\"/><path d=\"M3 13l9 5 9-5\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n  </div>\n\n  <!-- the one panel both buttons open -->\n  <aside id=\"tm-panel\" hidden>\n    <header id=\"tm-panelTop\">\n      <h2 id=\"tm-panelTitle\"></h2>\n      <button class=\"tm-close\" id=\"tm-panelClose\" type=\"button\">&times;</button>\n    </header>\n    <div id=\"tm-panelNote\"></div>\n    <div id=\"tm-panelBody\"></div>\n  </aside>\n\n  <!-- the veil behind an expanded waypoint card. It is inside the interface\n       layer so it covers the map, the readouts, the rail and the panel, and\n       stops short of the site's bar, which stays lit. Clicking it puts the\n       card back. -->\n  <div id=\"tm-cardveil\"></div>\n\n  <div id=\"tm-cards\"></div>\n\n  <div id=\"tm-readouts\">\n    <div id=\"tm-numbers\">\n      <div class=\"tm-readout\" id=\"tm-boxDistance\"><small></small><b id=\"tm-valDistance\">0</b></div>\n      <div class=\"tm-readout\" id=\"tm-boxElevation\"><small></small><b id=\"tm-valElevation\">0</b></div>\n      <div class=\"tm-readout tm-optional\" id=\"tm-boxAscent\"><small></small><b id=\"tm-valAscent\">0</b></div>\n      <div class=\"tm-gap\"></div>\n      <div class=\"tm-readout\" id=\"tm-boxComplete\"><small></small><b id=\"tm-valComplete\">0</b></div>\n    </div>\n    <div id=\"tm-profile\"></div>\n  </div>\n\n  <section id=\"tm-opening\">\n    <!-- the same panel the finish used to use: one .tm-box, so the two ends of\n         the page are visibly the same object and share their styling -->\n    <div class=\"tm-box\">\n      <div class=\"tm-kicker\" id=\"tm-openingKicker\"></div>\n      <h2 id=\"tm-openingTitle\"></h2>\n      <p id=\"tm-openingBody\"></p>\n      <div id=\"tm-hint\">\n        <span id=\"tm-openingHint\"></span>\n        <svg width=\"20\" height=\"26\" viewBox=\"0 0 20 26\" fill=\"none\" stroke=\"currentColor\"\n             stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 3v18M4 15l6 6 6-6\"/></svg>\n      </div>\n    </div>\n  </section>\n\n  <section id=\"tm-closing\">\n    <div class=\"tm-box\">\n      <h2 id=\"tm-closingTitle\"></h2>\n      <p id=\"tm-closingBody\"></p>\n      <div class=\"tm-row\">\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel1\"></small><b id=\"tm-closingTotal\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel2\"></small><b id=\"tm-closingAscent\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel3\"></small><b id=\"tm-closingHigh\">\u2014</b></div>\n      </div>\n    </div>\n  </section>\n</div>\n\n<!-- Shown only on a phone held on its side. A short, wide window has no room\n     for both the map and a waypoint at once: the card ends up taller than the\n     space it has, so its picture and its title are pushed off the top of the\n     screen. Rather than serve a broken layout, the page asks for the one it\n     was built for. Purely a stylesheet decision \u2014 see the orientation media\n     query \u2014 so it costs nothing on every other screen and cannot get out of\n     step with any state the page is holding. -->\n<div id=\"tm-turn\">\n  <div class=\"tm-box\">\n    <!-- a phone stood upright, with an arrow turning it that way -->\n    <svg width=\"52\" height=\"52\" viewBox=\"0 0 32 32\" fill=\"none\" stroke=\"currentColor\"\n         stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\n      <rect x=\"11\" y=\"10\" width=\"10\" height=\"18\" rx=\"2.5\"/>\n      <line x1=\"14.4\" y1=\"25\" x2=\"17.6\" y2=\"25\"/>\n      <path d=\"M5.5 13.5 A11.5 11.5 0 0 1 26.5 13.5\"/>\n      <polyline points=\"9.6,9.6 5.5,13.6 1.6,9.4\"/>\n    </svg>\n    <h2 id=\"tm-turnTitle\"></h2>\n    <p id=\"tm-turnWhy\"></p>\n  </div>\n</div>\n\n<div id=\"tm-scroller\"></div>\n\n<!-- optional helper: press E to read coordinates off the map -->\n<div id=\"tm-reader\">\n  <div id=\"tm-coords\">\u2014</div>\n  <div id=\"tm-readerPanel\">\n    <h3 id=\"tm-readerTitle\"></h3>\n    <p id=\"tm-readerHelp\"></p>\n    <textarea id=\"tm-readerOut\" spellcheck=\"false\" readonly></textarea>\n    <div id=\"tm-readerButtons\">\n      <button class=\"tm-button\" id=\"tm-copyButton\" type=\"button\">Copy</button>\n      <button class=\"tm-button\" id=\"tm-clearButton\" type=\"button\">Clear</button>\n    </div>\n  </div>\n</div>\n\n<div id=\"tm-problem\"><p id=\"tm-problemText\"></p></div>";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ══  THE ENGINE  ══  No edits needed past this point.
@@ -2159,6 +2196,21 @@ function start() {
           '" aria-label="' + WORDS.closeCard + '">&times;</button>'
         : "") +
 
+      /* THE EXPAND BUTTON, immediately left of the ×. Both arrow crosses are
+         drawn into it and the stylesheet shows whichever one is right, so the
+         button never has to be redrawn — only its label changes, which is the
+         part a screen reader needs. It is hidden entirely on anything smaller
+         than a desktop window: see .tm-grow in the stylesheet. */
+      (SETTINGS.cardCanGrow
+        ? '<button class="tm-grow" type="button" aria-pressed="false" title="' +
+          WORDS.growCard + '" aria-label="' + WORDS.growCard + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" ' +
+          'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<path class="tm-growIcon" d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6"/>' +
+          '<path class="tm-shrinkIcon" d="M3 9h6V3M21 9h-6V3M3 15h6v6M21 15h-6v6"/>' +
+          "</svg></button>"
+        : "") +
+
       '<div class="tm-media">' +
         '<div class="tm-track">' + slides.map(slideHtml).join("") + "</div>" +
         /* THE WAYPOINT NUMBER SITS ON THE PICTURE, top left. It was a row of
@@ -2227,6 +2279,9 @@ function start() {
 
     if (SETTINGS.cardsCanBeClosed) {
       card.querySelector(".tm-close").addEventListener("click", () => closeCard(i));
+    }
+    if (SETTINGS.cardCanGrow) {
+      card.querySelector(".tm-grow").addEventListener("click", () => setBig(!bigOn, i));
     }
     if (many) {
       card.querySelector(".is-prev").addEventListener("click", () => showSlide(card, card.slideAt - 1));
@@ -2420,6 +2475,32 @@ function start() {
     return el("cards").clientHeight;
   }
 
+  /* THE SAME QUESTION, ASKED OF AN EXPANDED CARD.
+     In the big view the card is not as tall as its column — its height is set
+     by the stylesheet, to whatever makes the picture 4:3 — and the words are
+     beside the picture rather than under it. So the room for the text is not
+     "the column minus the card" but "the panel beside the picture, minus
+     everything else in it": the title, the pager, the facts row, and the
+     panel's own padding.
+
+     Measured from the children rather than from scrollHeight, because the
+     panel centres what is in it: a panel with room to spare reports a
+     scrollHeight equal to its own height, which would say there is no room
+     left exactly when there is the most.                                    */
+  function roomBesideThePicture(card, win) {
+    const inner = card.querySelector(".tm-inner");
+    const box = getComputedStyle(inner);
+    let taken = 0;
+    Array.prototype.forEach.call(inner.children, kid => {
+      if (kid === win) return;
+      const edges = getComputedStyle(kid);
+      taken += kid.getBoundingClientRect().height +
+               parseFloat(edges.marginTop) + parseFloat(edges.marginBottom);
+    });
+    return inner.clientHeight - parseFloat(box.paddingTop) -
+           parseFloat(box.paddingBottom) - taken;
+  }
+
   function measurePages(card) {
     const win   = card.querySelector(".tm-textwindow");
     const pages = card.querySelector(".tm-textpages");
@@ -2431,7 +2512,19 @@ function start() {
     const wanted = parseFloat(getComputedStyle(card).getPropertyValue("--card-text-lines")) || 6;
     let lines = wanted;
 
-    if (SETTINGS.cardFitsWindow) {
+    if (el("cards").classList.contains("is-big")) {
+      /* THE BIG VIEW. The card's height is already decided, so the question
+         is only how much of the panel beside the picture is left once the
+         title, the pager and the facts have taken theirs. It is usually
+         enough that a waypoint which was three pages becomes one. */
+      const hadPager = pager.classList.contains("is-on");
+      pager.classList.add("is-on");                  // measure the worst case
+      win.style.height = "0px";
+      const spare = roomBesideThePicture(card, win);
+      pager.classList.toggle("is-on", hadPager);
+      lines = clamp(Math.floor(spare / lineHeight), SETTINGS.cardMinLines, wanted);
+
+    } else if (SETTINGS.cardFitsWindow) {
       // Measure the card with no text at all and the arrows showing — the
       // worst case — then give the text whatever room is left over. This is
       // what stops a tall picture pushing the card down over the readouts on
@@ -2495,6 +2588,11 @@ function start() {
   function closeCard(i) {
     cardState[i].closed = true;
     cardState[i].held = false;
+    // A CARD ALWAYS COMES BACK SMALL. Closing one puts the view back at the
+    // same time, so the next card to appear is the ordinary one beside the
+    // map. Quietly: the card is fading away over the same moment, and an
+    // expensive-looking shrink underneath a fade reads as a glitch.
+    if (bigOn) setBig(false, i, true);
     wake();
   }
 
@@ -2508,6 +2606,175 @@ function start() {
     });
     wake();
   }
+
+  /* ══ THE EXPANDED CARD ═══════════════════════════════════════════════════
+     The button beside the × puts one waypoint in the middle of the screen at
+     about three times the size, over a veil, with the walk held still behind
+     it. The layout is entirely in the stylesheet — see THE EXPANDED CARD
+     there — and everything below is the handful of things a stylesheet
+     cannot do: deciding when to offer it, holding the page still, and moving
+     the panel between the two sizes rather than letting it jump.
+
+     WHY THE MOVE IS DONE HERE AND NOT IN CSS. The two views are different
+     layouts, not different sizes: the picture is above the words in one and
+     beside them in the other, and the text is re-broken into pages for the
+     new shape. None of that can be interpolated. So the change happens while
+     the contents are invisible — 130 milliseconds of fade, which is short
+     enough to read as one movement — and what IS animated is the panel
+     itself, from the box it had to the box it will have. The measurement of
+     both boxes is the only reason this is in JavaScript at all.            */
+  const veil = el("cardveil");
+  const GLIDE_EASE = "cubic-bezier(.22,.61,.36,1)";
+  let bigOn = false, bigAt = -1, heldAt = 0, changing = 0, gliding = 0;
+
+  /* Whether this window is worth offering the big view on at all. It has to
+     agree with the media query on .tm-grow in the stylesheet: the button is
+     hidden below these sizes, and this is what stops anything else — a link
+     arriving from the Wishful thinking page, say — opening a view the window
+     cannot hold. */
+  const roomToGrow = () =>
+    SETTINGS.cardCanGrow &&
+    window.innerWidth  >= SETTINGS.cardGrowsFrom &&
+    window.innerHeight >= SETTINGS.cardGrowsAbove;
+
+  /* Asked every time rather than once, because it can be changed while the
+     page is open. Somebody who has asked their computer for less movement
+     still gets the bigger card — they simply get it at once, without the
+     panel travelling across the screen to arrive at it. */
+  const wantsStillness = () =>
+    window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* Move the panel from the box it had to the box it now has.
+     It is pinned to the window for the length of the move — position:fixed,
+     with the four measurements written on it — so that it is out of the
+     column's way while the column itself is changing shape underneath. Only
+     the properties this sets are cleared afterwards: the drawing loop writes
+     opacity and --card-nudge on the same element every frame, and wiping the
+     style outright would take the card's own visibility with it. */
+  function glide(card, from, to) {
+    const s = card.style;
+    const mine = ["position", "margin", "transform", "left", "top",
+                  "width", "height", "transition"];
+    const letGo = () => mine.forEach(p => s.removeProperty(p));
+
+    letGo();
+    s.transition = "none";
+    s.position = "fixed"; s.margin = "0"; s.transform = "none";
+    s.left = from.left + "px"; s.top = from.top + "px";
+    s.width = from.width + "px"; s.height = from.height + "px";
+    void card.offsetWidth;              // start the move from there, not here
+
+    s.transition = ["left", "top", "width", "height"]
+      .map(p => p + " " + SETTINGS.cardGrowMs + "ms " + GLIDE_EASE).join(", ");
+    s.left = to.left + "px"; s.top = to.top + "px";
+    s.width = to.width + "px"; s.height = to.height + "px";
+
+    /* The contents come back before the panel has quite finished arriving.
+       The easing puts most of the distance in the first half, so by then it is
+       within a few pixels of home, and waiting for the last of it makes the
+       whole thing feel slow for no gain. */
+    clearTimeout(gliding);
+    setTimeout(() => card.classList.remove("is-changing"),
+               Math.round(SETTINGS.cardGrowMs * 0.6));
+    gliding = setTimeout(() => { letGo(); wake(); }, SETTINGS.cardGrowMs);
+  }
+
+  /* on: true to expand, false to put it back.
+     i:  which card. Left out, it is whichever one is expanded.
+     quiet: change without the fade or the move — used when the card is being
+            closed anyway, so the two do not animate over each other. */
+  function setBig(on, i, quiet) {
+    if (typeof i !== "number" || i < 0) i = bigAt >= 0 ? bigAt : frontCard;
+    const card = cards[i];
+    if (!card || on === bigOn) return;
+    if (on && !roomToGrow()) return;
+
+    bigOn = on;
+    bigAt = on ? i : -1;
+    heldAt = window.scrollY;            // where the walk is left standing
+    veil.classList.toggle("is-on", on);
+    if (on) {
+      openCard(i);                      // it stays put, whatever the scroll says
+      /* The last reading of the scroll, taken now. From here until the card is
+         put back nothing else will take one — see nudge — and a link that
+         jumped to this waypoint a moment ago has only just changed it, so
+         without this line the map would be left drawing the place the reader
+         came from rather than the one they asked for. */
+      wanted = scrolled();
+    }
+
+    const button = card.querySelector(".tm-grow");
+    if (button) {
+      button.setAttribute("aria-pressed", on ? "true" : "false");
+      button.title = on ? WORDS.shrinkCard : WORDS.growCard;
+      button.setAttribute("aria-label", button.title);
+    }
+
+    if (quiet || wantsStillness()) {
+      el("cards").classList.toggle("is-big", on);
+      card.classList.remove("is-changing");
+      cards.forEach(measurePages);
+      wake();
+      return;
+    }
+
+    // 1. the contents go out
+    card.classList.add("is-changing");
+    clearTimeout(changing);
+    changing = setTimeout(() => {
+      // 2. the shape changes while there is nothing to see changing, and the
+      //    text is re-broken into pages against the size it is about to have
+      const from = card.getBoundingClientRect();
+      el("cards").classList.toggle("is-big", on);
+      cards.forEach(measurePages);
+      const to = card.getBoundingClientRect();
+      // 3. and the panel travels from the one to the other
+      glide(card, from, to);
+      wake();
+    }, SETTINGS.cardGrowFadeMs);
+  }
+
+  /* ── HOLDING THE WALK STILL WHILE A CARD IS OPEN ────────────────────────
+     Scrolling this page is walking the trail, and someone reading one
+     waypoint closely is not walking: left alone, the smallest scroll would
+     carry the card they are reading off the screen. So while the big view is
+     up, everything that scrolls a page is refused.
+
+     The page is NOT given overflow:hidden, which is the usual way to do this.
+     That takes the scrollbar away, and the window is fifteen pixels wider for
+     as long as it is gone — so the map, which is sized to the window, jumps
+     sideways at the exact moment the card is trying to move smoothly. Turning
+     away the input instead leaves the layout alone.
+
+     Three refusals, because there are three ways to scroll: the wheel, the
+     keys, and anything else at all — a middle-click drag, a trackpad gesture,
+     a browser's own find-on-page — which the last one catches by simply
+     putting the page back where it was.                                     */
+  const SCROLL_KEYS = [" ", "PageUp", "PageDown", "Home", "End",
+                       "ArrowUp", "ArrowDown"];
+  addEventListener("wheel", e => { if (bigOn) e.preventDefault(); },
+                   { passive: false });
+  addEventListener("touchmove", e => { if (bigOn) e.preventDefault(); },
+                   { passive: false });
+  addEventListener("keydown", e => {
+    if (!bigOn) return;
+    if (e.key === "Escape") { setBig(false); return; }
+    // not the arrows inside the card itself — the before/after slider is
+    // worked with them, and it is on the screen
+    const inTheCard = e.target && e.target.closest && e.target.closest(".tm-card");
+    if (!inTheCard && SCROLL_KEYS.indexOf(e.key) >= 0) e.preventDefault();
+  });
+  addEventListener("scroll", () => {
+    if (bigOn && Math.abs(window.scrollY - heldAt) > 1) window.scrollTo(0, heldAt);
+  }, { passive: true });
+
+  // clicking the veil is the other way out, and the one people try first
+  veil.addEventListener("click", () => setBig(false));
+
+  /* A window that has become too small for the big view puts it back rather
+     than leaving a card wider than the screen. The card measurements that
+     follow a resize are the ordinary ones, further down. */
+  addEventListener("resize", () => { if (bigOn && !roomToGrow()) setBig(false, -1, true); });
 
   /* elevation strip */
   // GRAPH_W and GRAPH_H are just the graph's own drawing box — it is stretched
@@ -2995,6 +3262,10 @@ function start() {
 
   function nudge() {
     if (reading) return;
+    // an expanded card holds the walk where it is: the page is not supposed to
+    // move, and anything that does slip past the three refusals above is put
+    // back a frame later, so following it here would only make the map twitch
+    if (bigOn) return;
     wanted = scrolled();
     wake();
   }
@@ -3136,15 +3407,38 @@ function start() {
     /* and nothing rewrites the address until the arrival has happened */
     let settled = !arrivedOn;
 
+    /* ARRIVING FROM THE WISHFUL THINKING PAGE.
+       That page is a list of proposals, and each one links to the waypoint it
+       belongs to. Somebody who followed one of those links came to look at
+       that single idea, not to walk the trail — so it opens in the big view,
+       already showing the picture at size, rather than as a small card at the
+       side of a map they did not ask for. bigOnArrival decides which links
+       count: "wishful" is the one journey there is, but "true" opens every
+       deep link expanded and "false" turns it off. A window too small for the
+       big view simply gets the ordinary card — see roomToGrow. */
+    const shouldArriveBig = i =>
+      SETTINGS.bigOnArrival === true ||
+      (SETTINGS.bigOnArrival === "wishful" && stops[i] && stops[i].kind === "wishful");
+
     const arriveAt = () => {
       const i = stopNamed(arrivedOn);
-      requestAnimationFrame(() => { if (i >= 0) goToStop(i, false); settled = true; });
+      requestAnimationFrame(() => {
+        if (i >= 0) goToStop(i, false);
+        if (i >= 0 && shouldArriveBig(i)) setBig(true, i, true);
+        settled = true;
+      });
     };
     if (arrivedOn) setTimeout(arriveAt, SETTINGS.linkArriveAfterMs);
     // and if someone edits the address, or follows a link to this same page
     addEventListener("hashchange", () => {
       const i = stopNamed(location.hash);
-      if (i >= 0) goToStop(i, true);
+      if (i < 0) return;
+      const big = shouldArriveBig(i);
+      /* A jump rather than a glide when the card is about to fill the screen:
+         a smooth scroll is still travelling when the view locks, and the lock
+         would put the page back where the scroll started. */
+      goToStop(i, !big);
+      if (big) setBig(true, i, true);
     });
     /* Walking past a stop names it in the address. This is driven from the
        drawing loop rather than from the scroll event, and the difference
