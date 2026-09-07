@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 99.13 16">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke-dasharray: 2 12;
+        stroke-linejoin: bevel;
+        stroke-width: 8px;
+      }
+
+      .cls-1, .cls-2 {
+        stroke: #a8a8a8;
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        fill: none;
+      }
+
+      .cls-2 {
+        stroke-width: 2px;
+      }
+
+      .cls-2, .cls-3 {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .cls-3 {
+        stroke: #878787;
+        stroke-width: 16px;
+      }
+    </style>
+  </defs>
+  <g id="legend">
+    <g id="rail">
+      <line class="cls-3" x1="8" y1="8" x2="91.13" y2="8"/>
+      <line class="cls-2" x1="8" y1="8" x2="91.13" y2="8"/>
+      <line class="cls-1" x1="8" y1="8" x2="91.13" y2="8"/>
+    </g>
+  </g>
+</svg>

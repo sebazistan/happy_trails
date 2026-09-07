@@ -1,0 +1,17 @@
+# The built site. Made fresh from the sources on every push, so committing it
+# would mean two versions of every page and a merge conflict in a 830 KB file
+# the first time two changes met.
+_site/
+
+# Working files the artwork step leaves behind while converting an .ai
+artwork/_layers/
+artwork/trails/_layers-*/
+artwork/**/_one-layer.pdf
+
+# The measured route-button positions: an output, written by every build.
+# artwork/pin-nudges.json IS committed — those are decisions, not measurements.
+artwork/pins.json
+
+__pycache__/
+*.pyc
+.DS_Store

@@ -12,6 +12,40 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+  8.7  MORE ROOM FOR THE WORDS, and the pictures the same size.
+       A card on a 1400x900 screen was showing THREE lines of text at a time —
+       the minimum the engine will go to — and turning a stop's words into four
+       pages. It shows eight now, in two pages, and the photograph is one pixel
+       shorter than it was. The room came from three places:
+         · the card column started below the corner title even on a wide screen
+           where the two cannot touch — the title ends around x=330 and the card
+           is capped at 540px against the right edge. Past 1000px it now starts
+           near the top of the map, which is 80 pixels.
+         · the scroll hint had a rule above it, twelve pixels of air either side
+           and a line of its own, costing 41 pixels — nearly two lines of the
+           text it sat under. It has no rule and much less air; the facts row
+           above it already draws a line, and a second one four millimetres
+           below the first was drawing a box around nothing.
+         · a few pixels each off the paddings, the title's margin, the pager and
+           the facts row.
+       --card-text-lines went from 7 to 10, or the extra room would have been
+       left empty on a tall screen.
+       LINKS WORK INSIDE A STOP'S TEXT, and the Beltline has four of them as
+       worked examples. Underlined rather than only coloured, because over a
+       photograph the card's background is not reliably dark; a link leaving the
+       site gets a small ↗ drawn in the text, so it prints and scales.
+       WAYPOINT AUTO-LOAD is a new switch in the layers panel, on by default.
+       Off, nothing opens by itself and a stop opens when you tap it — which is
+       the better way to LOOK at the map, since nothing covers it unless you ask.
+       It is one term in one expression in the drawing loop, because everything
+       about a card was already written in terms of "how much should this be
+       showing".
+       THE STEPPER ARROWS ARE VISIBLE ON A PHONE. The card is full width there
+       and is deliberately laid over the rail, which buried the one control that
+       is needed exactly when a card is up — greyed and unreachable for the whole
+       walk. The arrows now sit above the card in its bottom-left corner, and the
+       scroll hint has moved to the right to give them the lane. Eighteen pixels,
+       which is the whole price of having both.
   8.6  The Wishful thinking page stops moving when it should not.
        THE SCROLLBAR NO LONGER SHIFTS THE PAGE. Filtering twelve cards down to
        one made the page short enough not to need a scrollbar, the scrollbar

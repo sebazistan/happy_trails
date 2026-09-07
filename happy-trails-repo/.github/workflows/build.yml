@@ -1,0 +1,98 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  HAPPY TRAILS — build the site and publish it
+# ═══════════════════════════════════════════════════════════════════════════
+#
+#  WHAT THIS DOES, and why it exists
+#    Edit anything in this repository — the trail data, a photograph, the
+#    Illustrator file — commit it, and about ninety seconds later the site is
+#    rebuilt and live. Nothing is built on your computer and nothing built is
+#    committed: the repository holds only the sources, and the site is made
+#    fresh from them every time.
+#
+#    That matters more than the convenience. Two things had already gone stale
+#    when this was written — a page missing its link preview because it had
+#    been regenerated after the step that adds one, and a map still drawn in
+#    the previous month's colours — and neither showed any sign of being wrong.
+#    Anything built by hand, in steps, eventually drifts. Anything built by one
+#    command from one source cannot.
+#
+#  BEFORE IT WILL WORK, once:
+#    Settings ▸ Pages ▸ Build and deployment ▸ Source: GitHub Actions
+#    That is the whole setup. No keys, no tokens, no branch to keep clean.
+#
+#  IF IT FAILS
+#    The Actions tab shows which step stopped and why. A mistake in the trail
+#    data fails at "Build the site" with a Python traceback naming the line; a
+#    broken link or a renamed stop fails at "Check it" with a sentence saying
+#    what points where. In both cases NOTHING IS PUBLISHED — the site that is
+#    live stays live until a build passes.
+
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+  # and a button in the Actions tab, for when you want a rebuild without a
+  # change to push — after editing this file, say
+  workflow_dispatch:
+
+# Only what publishing needs. `id-token` is what lets the deploy step prove to
+# Pages that it is this workflow in this repository, so no secret is stored.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One build at a time. Two pushes a minute apart would otherwise race, and the
+# site would end up as whichever finished last rather than whichever was newer.
+# `cancel-in-progress: false` lets the first one finish rather than abandoning a
+# half-done deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # cairosvg draws through the real Cairo library, and pdftocairo (from
+      # poppler) is what turns each Illustrator layer into an SVG. Neither is a
+      # Python package, so neither arrives with pip.
+      - name: Install the drawing tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            poppler-utils libcairo2 libpango-1.0-0 libgdk-pixbuf-2.0-0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install the Python libraries
+        run: pip install -r requirements.txt
+
+      - name: Build the site
+        run: python3 build.py
+
+      # The site is only published if it survives this. Every check is there
+      # because the thing it looks for has actually happened once.
+      - name: Check it
+        run: python3 build/check.py
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 2.8
+   version 2.9
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -175,9 +175,9 @@
      dark background you assume is one. */
   --opening-picture:   clamp(22px, 4.5vh, 54px);
   /* the "scroll for more" line at the foot of a card, on a phone */
-  --more-size:         10px;
+  --more-size:         9.5px;
   --more-gap:          7px;
-  --more-top:          12px;
+  --more-top:          9px;
   /* the "turn your phone" screen */
   --turn-veil:         rgba(8,10,12,.92);
   --caption-size:      11px;
@@ -188,10 +188,16 @@
      left of the column, so this number is how the card is kept inside it.
      ANYTHING ADDED TO A CARD HAS TO BE ADDED HERE TOO, or the card grows past
      the bottom of its column and starts overhanging the screen. */
-  --more-height:        40px;  /* what the "scroll for more" line at the foot
+  --more-height:        19px;  /* what the "scroll for more" line at the foot
                                   of a card costs, counted into --card-chrome
                                   below because the line is always shown */
-  --card-chrome:       calc(278px + var(--more-height));
+  /* WHAT A CARD IS, APART FROM ITS TEXT: the picture's cap is the column
+     height minus this. Measured, not guessed — 233px of it is real chrome
+     (padding, the count row, the title, the pager, the facts) and the rest
+     is the room held back for the words. Raising the held-back part is
+     what turns a taller column into more lines rather than a taller
+     photograph. */
+  --card-chrome:       calc(300px + var(--more-height));
   --card-lean:         .1;
   --card-lift:         50%;
   --card-line:         1.65;
@@ -200,11 +206,23 @@
   --card-panel:        rgba(18,20,23,.66);
   --card-radius:       18px;
   --card-sit:          50%;
-  --card-text-lines:   7;
+  --card-text-lines:   10;   /* the most lines a card will show at once.
+                               The engine shows fewer on a short window —
+                               see cardFitsWindow — so this is a ceiling,
+                               not a promise. It was 7, which on a tall
+                               screen left the card ending well above the
+                               readouts with the text still in pages. */
   --card-title:        24px;
   --card-width:        min(540px, 44vw);
   --close-fade:        .15s;
-  --column-height:     calc(100vh - var(--bar-height) - var(--band-top) - var(--band-bottom));
+  /* the room a card has: everything between where its column starts and
+     the readouts at the foot of the screen */
+  --column-height:     calc(100vh - var(--bar-height) - var(--card-top) - var(--band-bottom));
+  /* how much is kept clear above the card. On a narrow screen the card is
+     full width and this has to clear the corner title; on a wide one it
+     does not, and the responsive block near the end of this file cuts it
+     right down. */
+  --card-top:          var(--band-top);
   --dot-off:           rgba(255,255,255,.42);
   --dot-on:            #fff;
   --dot-size:          6px;
@@ -807,9 +825,18 @@ body.page-trail{
    is left over on the left, holding it against the right edge. Lift the cap
    (--card-width:none, which is what a phone does) and the column simply fills
    the width between the two margins. */
+/* THE COLUMN THE CARD LIVES IN.
+   It starts below the top band because on a narrow screen the card is full
+   width and would otherwise cover the corner title. On a WIDE screen it would
+   not: the title ends around x=330 and the card starts past the middle of the
+   window, so the two cannot touch, and reserving the title's height for the
+   card there costs it 80 pixels of height for nothing. --card-top is that
+   reservation, and the responsive block at the foot of this file is where it
+   is set: the full band on narrow screens, a much smaller clearance on wide
+   ones. Every pixel it saves goes to the text. */
 #tm-cards{
   position:absolute;
-  top:var(--band-top); bottom:var(--band-bottom);
+  top:var(--card-top, var(--band-top)); bottom:var(--band-bottom);
   left:var(--edge-gap); right:var(--edge-gap);
   width:auto; max-width:var(--card-width); margin-left:auto;
 }
@@ -997,14 +1024,14 @@ body.page-trail{
 }
 .tm-dot.is-on{ background:var(--dot-on); transform:scale(1.25); }
 
-.tm-card .tm-inner{ padding:17px 21px 20px; }
+.tm-card .tm-inner{ padding:14px 20px 15px; }
 /* The waypoint number on the left, the current picture's caption on the right.
    baseline alignment keeps the two lines of type sitting on the same line even
    though they are different sizes; the caption is allowed to wrap under itself
    rather than push the number about. */
 .tm-card .tm-countRow{
   display:flex; align-items:baseline; justify-content:space-between;
-  gap:14px; margin-bottom:9px;
+  gap:14px; margin-bottom:6px;
 }
 .tm-card .tm-count{
   flex:0 0 auto;
@@ -1024,7 +1051,39 @@ body.page-trail{
 .tm-card .tm-slideCaption.tm-fading{ opacity:0; }
 .tm-card.tm-wishful .tm-count{ color:var(--wishful-kicker); }
 .tm-card .tm-count span{ color:var(--text-quiet); letter-spacing:.1em; font-weight:500; }
-.tm-card h2{ margin:0 0 9px; font:600 var(--card-title)/1.2 var(--font-display); letter-spacing:-.01em; }
+/* ── A LINK INSIDE A CARD'S TEXT ─────────────────────────────────────────
+   The only running text on the site that can carry links, so this is the only
+   place they need a look. Underlined rather than coloured alone: over a
+   photograph the card's background is not reliably dark, and an underline
+   survives that where a colour does not. It thickens under the pointer instead
+   of changing colour, which is a steadier cue and one that does not depend on
+   being able to tell the two colours apart.
+
+   A link leaving the site gets a small outward arrow after it, drawn in the
+   text rather than added as an image — so it prints, it scales with the type,
+   and it costs no request. Anything pointing at another page of this site is
+   left plain, which is what the rule below keys on. */
+.tm-textpages a{
+  color:var(--accent-soft);
+  text-decoration:underline;
+  text-decoration-thickness:1px;
+  text-underline-offset:3px;
+  transition:color var(--button-fade), text-decoration-thickness var(--button-fade);
+}
+.tm-textpages a:hover{
+  color:var(--text);
+  text-decoration-thickness:2px;
+}
+.tm-textpages a:focus-visible{
+  outline:2px solid var(--accent-soft); outline-offset:2px; border-radius:2px;
+}
+.tm-textpages a[target="_blank"]::after{
+  content:"\2197";              /* ↗ */
+  font-size:.82em; margin-left:.15em; text-decoration:none;
+  display:inline-block; vertical-align:.05em;
+}
+
+.tm-card h2{ margin:0 0 6px; font:600 var(--card-title)/1.2 var(--font-display); letter-spacing:-.01em; }
 /* ── the body text, in pages ──────────────────────────────────────────────
    The window is a whole number of lines tall and hides everything past it;
    the block inside slides up one page at a time. No scrollbar, so nothing in
@@ -1037,7 +1096,7 @@ body.page-trail{
    never slices one in half. */
 .tm-card p + p{ margin-top:calc(var(--card-body) * var(--card-line)); }
 
-.tm-pager{ display:none; align-items:center; gap:10px; margin-top:11px; }
+.tm-pager{ display:none; align-items:center; gap:10px; margin-top:8px; }
 .tm-pager.is-on{ display:flex; }
 .tm-pager button{
   width:26px; height:26px; border-radius:50%; cursor:pointer;
@@ -1097,7 +1156,7 @@ body.page-trail{
 .tm-judgeText b{ font:600 10.5px/1 var(--font-body); color:var(--text); }
 
 .tm-card .tm-facts{
-  margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-edge);
+  margin-top:11px; padding-top:10px; border-top:1px solid var(--panel-edge);
   /* flex-end so the link button sits on the same baseline as the numbers
      beside it rather than stretching to the full height of the row */
   display:flex; gap:20px; align-items:flex-end;
@@ -1290,15 +1349,18 @@ body.page-trail{
    passing through. This says otherwise, at every screen size — the height it
    takes is paid for in --card-chrome, so the picture above gives back exactly
    what the line costs and the card still fits its column. */
+/* IT USED TO COST 41 PIXELS: twelve above, a rule, twelve below, and the line
+   itself. That is nearly two lines of the text it sits under, spent on a hint.
+   It has no rule and much less air now — the facts row above it already draws
+   a line, and a second one four millimetres below the first was drawing a box
+   around nothing. */
 .tm-more{
   display:flex;
   margin-top:var(--more-top);
-  padding-top:var(--more-top);
-  border-top:1px solid var(--panel-edge);
   align-items:center; justify-content:center; gap:var(--more-gap);
   font:600 var(--more-size)/1 var(--font-body);
   letter-spacing:.22em; text-transform:uppercase;
-  color:var(--text-quiet);
+  color:var(--text-faint);
 }
 /* No animation on this arrow, deliberately. There are thirteen cards in the
    page and every one of them holds one of these, so an "infinite" animation
@@ -2497,6 +2559,22 @@ body.page-wishful{
   }
 }
 
+/* ── WHERE THE CARD MAY START, ON A WIDE SCREEN ──────────────────────────
+   The card column normally begins below the corner title, because on a narrow
+   screen the card is full width and would cover it. Past 1000px it cannot: the
+   title ends around x=330 and the card is capped at 540px against the right
+   edge, so there is always clear space between them. Reserving the title's
+   full height there cost the card about 80 pixels — and a card that is
+   80 pixels shorter is three fewer lines of text.
+
+   Kept as a variable rather than a different `top` so that the height the
+   engine measures for fitting the text agrees with where the card actually
+   is. Two places disagreeing about that is how a card ends up overhanging the
+   readouts. */
+@media (min-width: 1000px){
+  body.page-trail{ --card-top: calc(var(--title-pad) + 10px); }
+}
+
 /* ═══ ⑤  SMALL SCREENS ═════════════════════════════════════════════════════
    Last in the file so these win. The page-specific blocks that follow were
    each written for one page and are scoped to it, so the two map pages cannot
@@ -2607,6 +2685,30 @@ body.page-wishful{
      never buried by a card arriving underneath it. */
   body.page-trail #tm-cards{ z-index:6; }
   body.page-trail #tm-panel{ z-index:7; }
+  /* THE STEPPER IS THE ONE THING THE CARD MAY NOT COVER.
+     Everything else on the rail opens a panel, and a panel is no use while a
+     card fills the screen. The stepper is the opposite: it is how you get from
+     this card to the next one, so it is needed exactly when a card is up — and
+     it was underneath, greyed and unreachable, for the whole of the walk.
+
+     It goes over the card rather than beside it because there is nowhere
+     beside it: the card is full width here. It lands on the card's bottom-left
+     corner, where the only thing under it is the centred scroll hint's empty
+     left end, and it carries its own background so it reads as sitting on top
+     rather than as part of the card. */
+  body.page-trail #tm-stepper{ z-index:8; }
+  /* and the card's last row keeps out of its way. The scroll hint was centred
+     across the full width, which put its left half under the arrows; it moves
+     to the right and the arrows get the left end of the row to themselves.
+     The row is also given the arrows' own height, so the pair sits IN it
+     rather than across the facts above it — 18 pixels, which is the whole
+     price of having both. */
+  .tm-more{
+    justify-content:flex-end;
+    min-height:var(--stepper-size);
+    align-items:center;
+    padding-left:calc(var(--stepper-size) * 2 + var(--stepper-gap) + 12px);
+  }
   .tm-card .tm-inner{ padding:14px 16px 16px; }
   .tm-close{ width:34px; height:34px; font-size:20px; }   /* easier to hit with a thumb */
   .tm-card h2{ font-size:19px; }
@@ -2625,7 +2727,7 @@ body.page-wishful{
     --title-links:    30px;
     --readout-drop:   14px;   /* and the numbers sit closer to the edge       */
     --profile-height: 40px;   /* a shallower elevation graph                  */
-    --card-chrome:   calc(264px + var(--more-height));  /* tighter padding, but
+    --card-chrome:   calc(264px + var(--stepper-size));  /* tighter padding, but
                                  the hint still has to be paid for            */
     --card-media-min: 116px;  /* and the picture may go a little smaller here
                                  before the card is allowed to overhang       */

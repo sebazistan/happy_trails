@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 2.2
+   version 2.3
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -534,6 +534,13 @@ const DEFAULTS = {
                                // have opened is never covered by an arriving
                                // card. Close the card with its x to reach the
                                // buttons again.
+  autoLoadSwitch: true,        // show the Waypoint auto-load row in the
+                               // layers panel. The switch itself starts ON:
+                               // a first-time reader should see the page do
+                               // what it does. Turning this setting off
+                               // removes the row and leaves auto-load on
+                               // permanently.
+
   showStepper: true,           // the two arrows above the readouts that jump
                                // from one waypoint to the next. Quieter than
                                // the legend and layers buttons on purpose:
@@ -886,6 +893,14 @@ const DEFAULT_WORDS = {
   layersTitle:  "Layers",
   layersNote:   "Switch parts of the map on and off.",
   layerWishful:      "Wishful thinking",
+  /* the switch that decides whether a card opens by itself. Its note says
+     what the switch is doing NOW rather than what pressing it would do —
+     a switch already tells you that by being on or off, and a note that
+     changes when you press it is the clearest confirmation that it
+     worked. */
+  layerAutoLoad:     "Waypoint auto-load",
+  layerAutoLoadOn:   "Stops open as you reach them",
+  layerAutoLoadOff:  "Tap a waypoint to open it",
   layerWishfulNote:  "Stops that are proposed rather than built",
   /* what that row says instead on a wishful trail, where the switch is
      locked on because there is nothing for it to hide. */
@@ -1061,6 +1076,13 @@ let climbedTo = [];             // uphill metres from the start to each point of
    underneath — reads these rather than keeping its own copy, so they can never
    disagree with the switch the reader can see. */
 let wishfulOn   = true;
+/* WHETHER A CARD OPENS BY ITSELF as the walk reaches its waypoint. On, the
+   page reads itself to you; off, it is a map with twelve things on it that
+   you open when you want them. Off is the better way to LOOK at the map —
+   nothing covers it unless you ask — which is why it is a switch and not a
+   setting: it is a preference about what you are doing right now, not about
+   the trail. */
+let autoLoadOn  = true;
 let wishfulArt  = null;         // the group in the artwork, once it is found
 let stepperNeedsRefresh = null; // set once the stepper exists, called when the
                                 // set of reachable stops changes
@@ -1682,6 +1704,15 @@ function start() {
                                         wishfulLocked ? WORDS.layerWishfulLocked
                                                       : WORDS.layerWishfulNote,
                                         wishfulOn, wishfulLocked));
+    /* Always shown, on every trail, and always the last row: it is about how
+       the page behaves rather than about what is drawn on the map, so it does
+       not belong among the layers that switch artwork on and off — but it is
+       what a reader who wants the page to stop moving will come looking for,
+       and the layers panel is where they will look. */
+    if (SETTINGS.autoLoadSwitch)
+      rows.push(switchRow("autoload", WORDS.layerAutoLoad,
+                          autoLoadOn ? WORDS.layerAutoLoadOn : WORDS.layerAutoLoadOff,
+                          autoLoadOn));
     if (SETTINGS.satelliteImage && satelliteOk)
       rows.push(switchRow("satellite", WORDS.layerSatellite,
                           WORDS.layerSatelliteNote, satelliteOn));
@@ -1882,6 +1913,16 @@ function start() {
     if (!sw) return;
     if (sw.dataset.layer === "wishful")   wishfulOn = !wishfulOn;
     if (sw.dataset.layer === "satellite") satelliteOn = !satelliteOn;
+    if (sw.dataset.layer === "autoload") {
+      autoLoadOn = !autoLoadOn;
+      /* Switching it OFF puts away whatever is on screen — otherwise the card
+         you were looking at stays up, and the switch appears not to have done
+         anything until you scroll. Switching it ON opens nothing: the walk
+         will do that at the next waypoint, which is the behaviour being
+         turned back on. */
+      if (!autoLoadOn) cardState.forEach(state => { state.held = false; state.closed = true; });
+      wake();
+    }
     applyLayers();
     buildPanels();
     nudge();
@@ -1891,8 +1932,13 @@ function start() {
   });
 
   el("legendBtn").hidden = !SETTINGS.showLegend;
+  /* The layers button used to be hidden on a trail with no wishful stops and
+     no satellite image, because there was nothing in the panel. There always
+     is now — Waypoint auto-load is on every trail — so the button goes only if
+     the panel would genuinely be empty. */
   el("layersBtn").hidden = !SETTINGS.showLayers ||
-                           (!anyWishful && !SETTINGS.satelliteImage);
+                           (!anyWishful && !SETTINGS.satelliteImage &&
+                            !SETTINGS.autoLoadSwitch);
   el("legendBtn").querySelector(".tm-railName").textContent = WORDS.legendName;
   el("layersBtn").querySelector(".tm-railName").textContent = WORDS.layersName;
   el("legendBtn").title = WORDS.legendName;
@@ -2400,6 +2446,9 @@ function start() {
     cardState.forEach((state, k) => {
       state.held = (k === i);          // only ever one card held open
       if (k === i) state.closed = false;
+      // With auto-load off nothing else will ever re-close these, and a card
+      // left un-closed would fade back in the moment the held one let go.
+      else if (!autoLoadOn) state.closed = true;
     });
     wake();
   }
@@ -2687,8 +2736,14 @@ function start() {
       return v;
     });
 
-    // a card being held open by a click gives way once the walk reaches another
-    if (arriving >= 0) cardState.forEach((state, i) => { if (i !== arriving) state.held = false; });
+    /* A card held open by a click gives way once the walk reaches another —
+       but only while cards open by themselves. With auto-load off there is no
+       "reaching another": the walk opens nothing, so a card you opened stays
+       until you close it or open a different one. Closing it on arrival at a
+       stop that is not going to open would have made cards vanish as you
+       scrolled, for no visible reason. */
+    if (arriving >= 0 && autoLoadOn)
+      cardState.forEach((state, i) => { if (i !== arriving) state.held = false; });
 
     cardsMoving = false;
     cardState.forEach((state, i) => {
@@ -2728,8 +2783,15 @@ function start() {
     const entrance = SETTINGS.firstCardEnters
                    ? ramp(veilGoneAt - fadeOver, veilGoneAt, down) : 1;
 
+    /* WITH AUTO-LOAD OFF, byScroll is worth nothing: a card is shown only if
+       something opened it. That is the whole of the switch — one term in one
+       expression — because everything else about a card, its fade, its place
+       in the column, its closing, was already written in terms of "how much
+       should this be showing", and this only ever answers that question. */
     const shownAt = cardState.map((state, i) =>
-      onALiveLayer(stops[i]) ? (state.held ? 1 : byScroll[i]) * state.shownness * entrance : 0);
+      onALiveLayer(stops[i])
+        ? (state.held ? 1 : (autoLoadOn ? byScroll[i] : 0)) * state.shownness * entrance
+        : 0);
 
     // only one card is ever on screen: a held one wins, else the strongest
     let front = -1, strongest = 0;

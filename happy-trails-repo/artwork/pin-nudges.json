@@ -1,0 +1,4 @@
+{
+  "_why": "Measured positions that a person has corrected. The measurement puts each route's button on its own line, which is right; it cannot know that two buttons have landed on top of one another. Delete an entry and the measured position comes back.",
+  "wishful-etobicoke-crk-south": [1912, 1264]
+}

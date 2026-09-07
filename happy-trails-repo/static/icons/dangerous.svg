@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 91.13 8">
+  <defs>
+    <style>
+      .Dangerous_Connections {
+        fill: none;
+        stroke: #ff3600;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 8px;
+      }
+    </style>
+  </defs>
+  <g id="legend">
+    <line id="dangerous" class="Dangerous_Connections" x1="4" y1="4" x2="87.13" y2="4"/>
+  </g>
+</svg>

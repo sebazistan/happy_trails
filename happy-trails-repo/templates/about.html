@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     HAPPY TRAILS — ABOUT
+     version 1.0
+
+     A reading page. It shares the navigation bar and the whole palette with
+     the map pages through happy-trails.css; everything else it needs lives in
+     that file's section ④, under body.page-text.
+
+     There is no script here on purpose. The map pages need one; a page of
+     words does not, and the less there is the less there is to go wrong.
+
+     TO EDIT: the words are the words. Change them in place.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>About — Happy Trails</title>
+<meta name="description" content="Why this map exists, how it is drawn, and what it is for.">
+<link rel="stylesheet" href="happy-trails.css">
+<!-- how this page looks when someone shares the link, and in a browser tab.
+     The image is 1200x630, which is the shape every one of them crops to.
+     The addresses have to be absolute: a relative og:image is ignored by most
+     scrapers, so a preview that looks right locally comes out blank in Slack.
+     They are all built from BASE in make_meta.py — change it there. -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="favicon-180.png">
+<meta name="theme-color" content="#1d2124">
+<link rel="canonical" href="https://www.huzzahdesign.com/happy-trails/about.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Happy Trails">
+<meta property="og:title" content="About — Happy Trails">
+<meta property="og:description" content="Why this map exists, how it is drawn, and what it is for.">
+<meta property="og:url" content="https://www.huzzahdesign.com/happy-trails/about.html">
+<meta property="og:image" content="https://www.huzzahdesign.com/happy-trails/social/site.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About — Happy Trails">
+<meta name="twitter:description" content="Why this map exists, how it is drawn, and what it is for.">
+<meta name="twitter:image" content="https://www.huzzahdesign.com/happy-trails/social/site.png">
+<!-- Counting visits. Inert until analytics.js names a provider —
+     one file, one line, every page. -->
+<script src="analytics.js" defer></script>
+</head>
+<body class="page-text">
+
+<!-- the same bar as every other page on the site -->
+<header id="ht-bar">
+  <a id="ht-brand" href="index.html">Happy Trails</a>
+  <nav id="ht-nav">
+    <a href="index.html">Map</a>
+    <a href="trails.html">Trails</a>
+    <a href="wishful.html">Wishful</a>
+    <a href="about.html" class="is-here" aria-current="page">About</a>
+    <a href="contact.html">Contact</a>
+    <a class="ht-coffee" href="https://buymeacoffee.com/sebazistan" target="_blank" rel="noopener"><span class="nav-full">Buy me a coffee</span><span class="nav-short">Coffee</span></a>
+  </nav>
+</header>
+
+<main>
+  <div class="pt-head">
+    <div class="pt-kicker">About the project</div>
+    <h1>What is Happy Trails?</h1>
+    <p class="pt-lede">Happy Trails presents Toronto's multi-use trails in the
+      style of a subway map. It is not meant to replace a conventional map; it
+      is meant to make plain where the trails are, where they stop, and why.
+      Once the shape of the network is legible, the places it could grow become
+      obvious.</p>
+  </div>
+
+  <figure class="pt-figure">
+    <img src="https://cdn.prod.website-files.com/62e49ab216c2b10748052c8c/6962aa7dde18b03c41681d72_bridge2.jpg" alt="" loading="lazy">
+    <figcaption>The Humber Bay Arch Bridge, built in 1994 — the kind of bold
+      thinking the next stretch of the network will need.</figcaption>
+  </figure>
+
+  <section class="pt-section">
+    <h2>What are the multi-use trails of the GTA?</h2>
+    <p>The Greater Toronto Area has roughly 400 kilometres of multi-use trail and about 240 kilometres of bike lane. Multi-use trails are paved, separated from traffic, and open to walkers, joggers, cyclists and wheelchairs alike.</p>
+    <p>Most of them exist in ravines and along hydro corridors — the land that was never suitable for building on. The Beltline follows a defunct railway; the Waterfront Trail follows the lake. Both have had real investment recently.</p>
+    <p>This project is about trails, not bike lanes. Trails are for recreation and exercise as much as transport, and they are underused, largely because the network is broken into pieces by development, highways, railways and — more than people expect — golf courses, which take up over 2,000 acres in the GTA and keep the public out of riparian land.</p>
+  </section>
+  <section class="pt-section">
+    <h2>Why not just use Google Maps?</h2>
+    <p>Google Maps is a poor guide for a cyclist here: trails missing, trails mislabelled, and paths marked that you cannot actually ride. Mount Pleasant Cemetery is the clearest example — what is drawn there does not match what you can do on the ground.</p>
+    <figure class="pt-figure"><img src="https://cdn.prod.website-files.com/62e49ab216c2b10748052c8c/696274d6dc6712cded92186b_Screenshot%202026-01-10%20103922.png" alt="" loading="lazy">
+      <figcaption>What Google shows in the cemetery, and what is actually there.</figcaption></figure>
+  </section>
+  <section class="pt-section">
+    <h2>What about the Toronto Cycling Map?</h2>
+    <p>The official cycling map marks the trails clearly in orange and is a real improvement on Google. But it is a static PDF rather than something you can interrogate — Montréal's equivalent is far better in that respect — and neither of them explains why the network is in pieces.</p>
+  </section>
+  <section class="pt-section">
+    <h2>The goal</h2>
+    <p>Happy Trails is a map and an infographic at once, meant to be readable whether you ride every day or have never been on a trail. Beyond showing where the trails are, it shows what stops them joining up, and proposes what would fix it.</p>
+    <p>That is what the <strong>Wishful Thinking</strong> layer is for: switch it on from the main map and the proposed connections appear alongside the built ones.</p>
+  </section>
+  <section class="pt-section">
+    <h2>What the future holds</h2>
+    <p>Getting to a coherent network means undoing a century of encroachment into the ravines. Some of it is straightforward: eleven of the eighteen golf courses in the city are city-owned, and could simply be required to permit a bypass.</p>
+    <p>Bigger projects are already moving — the East Don River trail, and the rehabilitation of the Meadoway across Scarborough. The proposals in Wishful Thinking are ambitious, but none of them is fanciful. They are what a city that took active transport seriously would build.</p>
+    <p>Awareness lags well behind what is already on the ground. A good deal of the network is better than people think it is, and getting more people onto it matters as much as extending it.</p>
+    <figure class="pt-figure"><img src="https://cdn.prod.website-files.com/62e49ab216c2b10748052c8c/6963c34a8c61d07bf80f6d7b_meadow%20(49).jpg" alt="" loading="lazy">
+      <figcaption>The Meadoway — a hydro corridor being turned into meadow and trail.</figcaption></figure>
+  </section>
+  <section class="pt-section">
+    <h2>The trails in 2026</h2>
+    <p>The trails grew out of informal walking paths, and were built neighbourhood by neighbourhood rather than as a network. That is why the design, the signage and the accessibility are so inconsistent from one stretch to the next.</p>
+    <p>The network is now at the point where the remaining obstacles are the big ones — highways, railways, golf courses. Clearing them is what turns a collection of trails into something worth more than the sum of its parts.</p>
+  </section>
+  <section class="pt-section">
+    <h2>Who am I?</h2>
+    <p>Someone who cycles a lot, got frustrated with the maps and with the state of some of the trails, and made this. Toronto is entirely capable of world-class trail infrastructure: beautiful, accessible, and joined up.</p>
+    <p>If you want to get in touch, <a href="contact.html">the contact page</a> is the place.</p>
+  </section>
+
+
+  <!-- A single, quiet ask. It sits at the FOOT of the page rather than the top
+       because the page should give something before it asks for anything, and
+       it is one link rather than a widget: see the note in happy-trails.css. -->
+  <section class="pt-support">
+    <svg class="pt-cup" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9Z"/><path d="M17 10h1.6a2.4 2.4 0 0 1 0 4.8H17"/><path d="M8 3v2.2M11.5 2.6v2.6M15 3v2.2"/></svg>
+    <div>
+      <h2>Buy me a coffee</h2>
+      <p>This map is drawn by hand and given away. If it has been useful — if it found you a route, or settled an argument about a missing bridge — you can put something in the tin.</p>
+      <a class="pt-coffee" href="https://buymeacoffee.com/sebazistan" target="_blank" rel="noopener">
+        Buy me a coffee</a>
+    </div>
+  </section>
+
+  <footer class="pt-foot">
+    <span>Happy Trails — the multi-use trails of the Greater Toronto Area.</span>
+    <span><a href="index.html">Main map</a> · <a href="contact.html">Get in touch</a></span>
+  </footer>
+</main>
+
+</body>
+</html>
