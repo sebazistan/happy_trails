@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 3.5
+   version 3.6
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -183,28 +183,10 @@
   /* the "turn your phone" screen */
   --turn-veil:         rgba(8,10,12,.92);
   --caption-size:      11px;
-  /* HOW FAR THE CAPTION RIDES UP. It shares a line with the waypoint title
-     and the two are aligned by their tops rather than their baselines, which
-     is most of the move; this is the last few pixels on top of that, so the
-     small italic sits nearer the photograph it describes than the heading it
-     sits beside. Three pixels is about a quarter of its own cap height —
-     enough to read as belonging upwards, not enough to break the alignment.
-     Past about six it stops looking level with the title at all; 0 leaves it
-     exactly level. */
-  --caption-lift:      3px;
-  /* THE LEAST SPACE ALLOWED BETWEEN THE TITLE AND THE CAPTION beside it. It is
-     also the point at which they stop sharing a line: a title and a caption
-     that cannot both fit with this much between them are not squeezed together,
-     the title drops to a line of its own underneath instead. So this is not
-     only a gap, it is the definition of "too close" — 16px let "Bridge over
-     Dufferin St." finish two pixels from "The trail through the houses", which
-     read as one run-on line. Raising it makes more cards break onto two lines;
-     lowering it packs more onto one. */
-  --caption-gap:       26px;
-  /* THE MOST OF A LINE A CAPTION MAY TAKE, beside the waypoint title. Past
-     this it is not a caption any more, it is a sentence, and it wraps under
-     itself rather than pushing the title down to nothing. */
-  --caption-share:     52%;
+  /* THE MOST OF THE PICTURE A CAPTION MAY COVER. Past this it is not a
+     caption any more, it is a sentence lying across the photograph, so it
+     wraps under itself instead of running the whole width. */
+  --caption-share:     56%;
   --card-blur:         10px;
   --card-body:         14px;   /* the paragraphs inside a card. Every tenth
                                  of a millimetre off this is another line of
@@ -249,15 +231,31 @@
                            calc(100vw - var(--big-side-gap) * 2 - 18px),
                            calc((100vh - var(--bar-height) - var(--big-gap-top)
                                  - var(--big-gap-bottom)) / var(--big-shape)));
-  /* The panel beside the picture. Its TOP is deeper than the rest because in
-     the big view the two round buttons sit over this panel rather than over a
-     photograph, and the waypoint's caption is right-aligned on the first line
-     — without the clearance the two meet in the same corner. 10px is where the
-     buttons start, --card-btn is how tall they are, and the last 10px is the
-     gap under them. */
-  --big-inner-pad:     calc(10px + var(--card-btn) + 10px) 30px 28px;
+  --big-inner-pad:     28px 30px;
+  /* HOW MUCH OF THE TITLE'S LINE IS LEFT FOR THE BUTTONS. In the big view the
+     × and the expand button sit over this panel rather than over a photograph,
+     and the title now starts at the top of it — so the title is kept out of
+     their corner rather than the whole panel being pushed down past them,
+     which cost a line of text on every card to protect the two or three with
+     a title long enough to reach. Two buttons wide, plus the gaps. */
+  --big-title-inset:   calc(var(--card-btn) * 2 + 34px);
   --big-text-lines:    30;     /* a ceiling, not a promise — the engine still
                                   gives the text only the lines that fit */
+  /* ── THE COVER OVER A PAGE STILL FINDING ITS WAYPOINT ───────────────────
+     Somebody arriving from the Wishful thinking page asked for one waypoint,
+     and the page cannot honour that until it has built its map and measured
+     its own height. This is what is shown meanwhile, in the paper colour the
+     page is already sitting on so that putting it up is invisible and only
+     taking it down is seen. The ring is dark ink on that paper: the panels'
+     own text colours are all light, and none of them would be readable here.
+     --arrive-fade has to agree with arriveFadeMs in trail-engine.js. */
+  --arrive-fade:       .24s;
+  --load-ring:         34px;
+  --load-weight:       3px;
+  --load-track:        rgba(20,24,28,.16);
+  --load-lit:          rgba(20,24,28,.62);
+  --load-word:         rgba(20,24,28,.52);
+  --load-speed:        .9s;
   --big-veil:          rgba(6,8,11,.78);
   --big-veil-fade:     .24s;   /* the veil coming up behind the card */
   --big-fade:          .13s;   /* the card's contents going out, and back in */
@@ -1139,15 +1137,12 @@ body.page-trail{
 .tm-dot.is-on{ background:var(--dot-on); transform:scale(1.25); }
 
 .tm-card .tm-inner{ padding:14px 20px 15px; }
-/* The waypoint number on the left, the current picture's caption on the right.
-   baseline alignment keeps the two lines of type sitting on the same line even
-   though they are different sizes; the caption is allowed to wrap under itself
-   rather than push the number about. */
 /* ── THE STAMP ON THE PICTURE ─────────────────────────────────────────────
-   The waypoint number and the current picture's caption, over the top-left of
-   the photograph. They were a row between the picture and the title, which
-   cost 21 pixels and put two small grey things in the way of a heading. Here
-   they cost nothing and the title starts where the picture stops.
+   The waypoint number, over the top-left of the photograph. It was a row
+   between the picture and the title, which cost 21 pixels and put a small
+   grey thing in the way of a heading. Here it costs nothing and the title
+   starts where the picture stops. The picture's caption sits in the opposite
+   corner, below, and is dressed to match.
 
    Over a photograph nothing can be relied on for contrast, so both carry a
    shadow and the whole corner is darkened a little underneath them — enough
@@ -1167,75 +1162,44 @@ body.page-trail{
   color:#f0c246;
   text-shadow:0 1px 5px rgba(0,0,0,.9);
 }
-/* the caption for whichever picture is showing. It is emptied and refilled by
-   the engine; .tm-fading is on while the words are being changed, which is
-   what turns the swap into a fade rather than a jump. Empty means no caption
-   for that picture, and it simply takes no room. */
+/* ── THE PICTURE'S CAPTION ────────────────────────────────────────────────
+   The opposite corner from the waypoint number, and the same treatment: a
+   shadow under the letters and a wash of dark behind them, so it reads over a
+   bright sky as easily as over a dark one. The wash fades out to the left
+   rather than banding across the picture.
+
+   ON THE PICTURE, WHICH IS WHERE IT BELONGS, and where it costs the words
+   below it nothing at all. It used to share the waypoint title's line, which
+   worked but had to be defended: a long title and a long caption fought for
+   the same line, and the card had to reserve room for the longest caption it
+   might show so that paging through the pictures did not move the title. None
+   of that is needed once the caption is on the thing it describes.
+
+   It is emptied and refilled by the engine as the pictures change; .tm-fading
+   is on while the words are being swapped, which turns the change into a fade
+   rather than a jump. Empty means no caption for that picture, and an empty
+   box has no padding to show — the wash goes with the words.
+
+   pointer-events:none so it never takes a click meant for the picture's own
+   arrows, which reach almost this far on a small card. */
 .tm-card .tm-slideCaption{
-  /* 0 0 auto: it is as wide as its words and never squeezed. Squeezing it is
-     what used to make it wrap into two lines and shove the title about; now a
-     caption too wide to share the line simply takes the line.
-
-     --caption-room is set on the card by the engine and holds the width of the
-     LONGEST caption that card has, so that paging from one picture to the next
-     never changes whether the title fits beside it. It is a floor, not a
-     width: a short caption still sits flush right inside it. Cards with one
-     caption never set it, and fall back to nothing. */
-  flex:0 0 auto; text-align:right;
-  min-width:min(var(--caption-room, 0px), var(--caption-share));
+  position:absolute; right:0; bottom:0; z-index:1;
   max-width:min(100%, var(--caption-share));
+  padding:7px 12px 9px 30px;
+  text-align:right;
   font:400 var(--caption-size)/1.4 var(--font-body);
-  color:var(--text-quiet); font-style:italic;
+  color:rgba(255,255,255,.88); font-style:italic;
+  text-shadow:0 1px 5px rgba(0,0,0,.9);
+  background:linear-gradient(to left, rgba(8,10,12,.55), rgba(8,10,12,0));
+  pointer-events:none;
   transition:opacity var(--caption-fade) ease;
-  /* LIFTED TOWARDS THE PICTURE. A negative top margin rather than a smaller
-     padding on the card, because the title must not move — only the caption,
-     which reads as the picture's own note when it sits close under its edge.
-     Nothing follows it on this line, so the pull cannot drag anything else up
-     with it. */
-  margin-top:calc(var(--caption-lift) * -1);
 }
-/* THE TITLE AND THE CAPTION SHARE A LINE, UNTIL THEY CANNOT.
-   ─────────────────────────────────────────────────────────────────────────
-   WHEN THEY FIT  the title sits at the left and the caption at the right, on
-   one line, and the caption costs no height at all.
-
-   WHEN THEY DO NOT FIT  the caption keeps the top right corner — under the
-   photograph it describes, which is where it belongs — and THE TITLE MOVES
-   DOWN onto a line of its own beneath it. The caption never drops below the
-   title. "Bridge over Dufferin St." with "The trail through the houses" is
-   the case this is for: two pixels apart on a wide screen, touching on a
-   narrow one.
-
-   HOW, in one line of CSS: row-reverse. The caption is written FIRST in the
-   markup (see trail-engine.js) and this lays the row out from the right, so
-   the caption lands in the right-hand corner and the title fills what is
-   left. Flex wraps in source order, so when a line will not hold both it is
-   the second thing written — the title — that moves to the next line. Putting
-   the title first and hoping would drop the caption instead, which is the one
-   thing that must not happen.
-
-   A title on a line of its own still grows to the full width, so its text
-   starts at the left edge like every other title; nothing about it looks like
-   it has been indented or centred.
-
-   ALIGNED BY THEIR TOPS, not their baselines. On a baseline the small italic
-   sits at the foot of a 24px line and reads as a footnote to the heading; by
-   the top it lines up with the cap-height of the title and reads as a label on
-   the picture, which is what it is. The two type sizes have nearly the same
-   space above their capitals, so tops of the boxes and tops of the letters
-   come out within a pixel of each other. */
-.tm-titleRow{
-  display:flex; flex-direction:row-reverse; flex-wrap:wrap;
-  align-items:flex-start;
-  /* across: the least that may separate them, and what decides the break.
-     down: almost nothing, because the two lines are already a caption and the
-     heading it sits above. */
-  column-gap:var(--caption-gap); row-gap:2px;
-}
-/* Takes the rest of the line beside the caption, and the whole of it when the
-   caption has pushed it onto its own. min-width:0 so that a long word inside a
-   title shrinks the box rather than pushing out of the card. */
-.tm-titleRow h2{ flex:1 1 auto; min-width:0; }
+.tm-card .tm-slideCaption:empty{ padding:0; background:none; }
+/* A card with several pictures has a row of dots along the foot of the
+   picture, dead centre. A long caption on a narrow card would reach them, so
+   where there are dots the caption sits one line higher — still in the
+   corner, and clear of them. */
+.tm-media:has(.tm-dots) .tm-slideCaption{ bottom:18px; }
 .tm-card .tm-slideCaption.tm-fading{ opacity:0; }
 .tm-card.tm-wishful .tm-count{ color:#f2a8ff; }
 .tm-card .tm-count span{ color:rgba(255,255,255,.7); letter-spacing:.1em; font-weight:500; }
@@ -1408,14 +1372,31 @@ body.page-trail{
   aspect-ratio:auto; height:auto; max-height:none;
 }
 
-/* THE WORDS take what is left, centred down the side of the picture. min-width
-   is the flexbox trap: without it a long unbroken word in a title would push
-   the text column wider than its share and squeeze the picture. */
+/* THE WORDS take what is left, laid out the way the small card lays them out:
+   the title at the top, the facts along the bottom, and the text filling
+   whatever is between. Centring the whole lot as one block — which is what it
+   did at first — left a band of empty panel under the facts on a short entry
+   and gave the words less room than the card actually had.
+
+   A GRID, not a column of flex items, and the reason is the measuring. The
+   text window's height is set in pixels by the engine, from how many whole
+   lines fit; if the row it sits in grew or shrank with that height, the engine
+   would be measuring a box that its own answer had just changed. Here the
+   middle row takes all the leftover height (1fr) whatever the window inside it
+   is doing, so the question "how much room is there" has one answer.
+
+   min-width:0 is the flexbox trap on the way in: without it a long unbroken
+   word in a title pushes this panel wider than its share and squeezes the
+   picture. */
 #tm-cards.is-big .tm-inner{
   flex:1 1 auto; min-width:0;
-  display:flex; flex-direction:column; justify-content:center;
+  display:grid; grid-template-rows:auto 1fr; grid-auto-rows:auto;
   padding:var(--big-inner-pad);
 }
+/* the title stops short of the two buttons in the corner above it. A title
+   long enough to need the room wraps to a second line, which is below them
+   and can run the full width. */
+#tm-cards.is-big .tm-inner > h2{ padding-right:var(--big-title-inset); }
 
 /* THE CONTENTS GOING OUT AND COMING BACK.
    The card changes shape while its contents are invisible, so nothing is seen
@@ -1868,6 +1849,38 @@ body.tm-reading #tm-ui, body.tm-reading #tm-shade, body.tm-reading #tm-labels{
   padding:8px 12px; border-radius:10px;
   background:var(--panel); border:1px solid var(--panel-edge); backdrop-filter:blur(10px);
   font:600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ── THE COVER, WHILE A LINK TO ONE WAYPOINT IS BEING FOUND ───────────────
+   Under the site's bar, over everything else, and only ever up when the
+   address names a waypoint. The engine puts it up before the map is drawn and
+   takes it down when the page is standing at the waypoint — see uncover().
+   The ring is the same one the videos use while they buffer, at a size that
+   suits a whole page rather than a corner of a picture. */
+#tm-loading{
+  position:fixed; inset:var(--bar-height) 0 0 0; z-index:39;
+  display:none; place-items:center; align-content:center;
+  justify-items:center; gap:15px;
+  background:var(--backdrop);
+  transition:opacity var(--arrive-fade) ease;
+}
+#tm-loading.is-on{ display:grid; }
+#tm-loading.is-going{ opacity:0; }
+.tm-loadRing{
+  width:var(--load-ring); height:var(--load-ring); border-radius:50%;
+  border:var(--load-weight) solid var(--load-track);
+  border-top-color:var(--load-lit);
+  animation:tm-spin var(--load-speed) linear infinite;
+}
+#tm-loadingWord{
+  margin:0; color:var(--load-word);
+  font:600 10.5px/1 var(--font-body); letter-spacing:.18em; text-transform:uppercase;
+}
+/* A turning ring is the one animation on this page nobody can opt out of —
+   it is the only thing saying the page has not stalled — but it can be
+   slowed to something that does not flicker at the edge of vision. */
+@media (prefers-reduced-motion: reduce){
+  .tm-loadRing{ animation-duration:2.4s; }
 }
 
 /* ── the "something went wrong" screen ───────────────────────────────── */

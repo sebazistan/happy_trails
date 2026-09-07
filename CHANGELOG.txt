@@ -12,6 +12,36 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 10.1  THE PICTURE'S CAPTION IS ON THE PICTURE, in the bottom right corner,
+       dressed like the waypoint number in the top left: a shadow under the
+       letters and a wash of dark behind them, so it reads over a bright sky
+       as easily as over a dark one. On a card with several pictures it sits
+       one line higher, clear of the row of dots.
+       Everything that used to keep it and the waypoint title from colliding
+       is gone with it — the shared line, the reserved width for the longest
+       caption a card might show, the rule about which of the two drops. A
+       caption on the thing it describes needs none of it, and the words below
+       get the line back.
+
+       THE BIG CARD IS LAID OUT LIKE THE SMALL ONE: title at the top of the
+       panel, elevation and distance along the bottom, and the text filling
+       everything between. It used to centre the three as one block, which
+       left a band of empty panel under the facts and gave the words less room
+       than the card actually had. The title stops short of the two buttons in
+       the corner rather than the whole panel being pushed down past them,
+       which cost a line on every card to protect the two or three with a
+       title long enough to reach.
+
+       A LINK TO ONE WAYPOINT NO LONGER SHOWS YOU THE TRAIL IT IS ON. Following
+       a proposal from the Wishful thinking page meant watching the trail open
+       at its beginning and travel to the waypoint, because the page cannot
+       honour the address until it has built its map and measured its own
+       height. Now a plain cover with a turning ring is held over that, and the
+       page underneath is set standing at the waypoint rather than walking to
+       it. The cover comes down when there is something worth looking at — and
+       after seven seconds regardless, because a cover that outlives what it is
+       covering is worse than no cover.
+
  10.0  A WAYPOINT CARD CAN BE OPENED BIG. A second button in the card's top
        corner, beside the ×, puts that one waypoint in the middle of the
        screen at about three times the size, over a veil, with the walk held

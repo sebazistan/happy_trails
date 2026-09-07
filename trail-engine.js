@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 2.7
+   version 2.8
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -433,6 +433,16 @@ const DEFAULTS = {
   cardGrowMs: 260,             // the panel travelling between the two sizes.
                                // Both are in the stylesheet as well (--big-fade
                                // and --big-glide) and have to agree.
+  /* THE COVER OVER A PAGE THAT IS STILL FINDING ITS WAYPOINT. A link naming a
+     waypoint cannot be honoured until the map is built and the page has
+     measured its own height, and every bit of that is otherwise visible: the
+     trail opens at its beginning, then travels to the waypoint while you
+     watch. So a plain cover with a turning ring is held over it, and taken
+     down the moment the page is standing where it was asked to stand.
+     arriveGiveUpMs is the backstop — a cover that outlives what it is covering
+     is worse than no cover, so after this it comes down regardless. */
+  arriveFadeMs: 240,           // how long the cover takes to fade away
+  arriveGiveUpMs: 7000,        // and the longest it may ever stay up
   bigOnArrival: "wishful",     // which deep links open expanded:
                                //   "wishful"  a link to a proposal — which is
                                //              what the Wishful thinking page
@@ -865,6 +875,9 @@ const DEFAULT_WORDS = {
 
   /* on the waypoint cards */
   closeCard:     "Close",          /* the × button's tooltip and screen-reader name */
+  arriving:      "Finding this waypoint",     /* under the ring, while a link
+                                                 to one waypoint is being
+                                                 found. Empty for no words. */
   growCard:      "See this waypoint bigger",  /* the button beside the × */
   shrinkCard:    "Back to the map",           /* the same button, once it is */
   openCard:      "Open this waypoint",   /* tooltip on a waypoint chip */
@@ -975,13 +988,24 @@ function buildThePage() {
   stage.innerHTML = INTERFACE;
   while (stage.firstChild) document.body.insertBefore(stage.firstChild, artwork);
   document.body.classList.add("page-trail");
+  /* THE COVER GOES UP BEFORE ANYTHING IS DRAWN, and only when the address
+     names a waypoint. From here until the page is standing at that waypoint —
+     map built, height measured, scroll jumped, card open — there is nothing to
+     see but the trail arriving at somewhere nobody asked for. Put up here, at
+     the moment the interface is written, rather than later: later is after the
+     first paint. */
+  if (location.hash.length > 1) {
+    var cover = document.getElementById("tm-loading");
+    if (cover) cover.classList.add("is-on");
+    setTimeout(uncover, SETTINGS.arriveGiveUpMs);
+  }
   /* A wishful trail is purple throughout. One class carries it — see
      body.trail-wishful in happy-trails.css — so nothing here has to know
      which colour anything is. */
   if (SETTINGS.trailKind === "wishful") document.body.classList.add("trail-wishful");
 }
 
-var INTERFACE = "\n<!-- the site's navigation bar. It owns the top of the window; the map and the\n     interface both begin underneath it. Its words are in WORDS.bar. -->\n<header id=\"tm-bar\">\n  <a id=\"tm-barBrand\" href=\"#\"></a>\n  <nav id=\"tm-barNav\"></nav>\n</header>\n\n<!-- the map and everything drawn on it -->\n<div id=\"tm-stage\">\n  <div id=\"tm-world\">\n    <!-- the artwork is inserted here when the page loads -->\n    <svg id=\"tm-trail\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path id=\"tm-trailOutline\" fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailAhead\"   fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailWalked\"  fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n    </svg>\n    <div id=\"tm-labels\"></div>\n  </div>\n</div>\n<div id=\"tm-shade\"></div>\n\n<!-- the interface that sits over the map -->\n<div id=\"tm-ui\">\n\n  <header id=\"tm-topbar\">\n    <div id=\"tm-brand\">\n      <div class=\"tm-kicker\" id=\"tm-cornerKicker\"></div>\n      <h1 id=\"tm-cornerTitle\"></h1>\n      <!-- filled in from WORDS.trailLinks; empty if none of them has an href -->\n      <div id=\"tm-links\"></div>\n    </div>\n    <div id=\"tm-topright\">\n      <span id=\"tm-version\"></span>\n    </div>\n  </header>\n\n  <!-- THE LEFT RAIL\n       The compass and the two panel buttons live in one fixed column. This is\n       the fix for the panels coming adrift: the buttons are pinned to the\n       window and never move, whatever is open. There is only ever ONE panel,\n       which slides out beside the rail and swaps its contents, so a button can\n       never end up detached from the thing it opens. -->\n  <div id=\"tm-rail\">\n  <div id=\"tm-compass\" role=\"img\">\n    <!-- the arrow is drawn to fill its 24\u00d724 box, so --compass-arrow in the\n         stylesheet is the size you actually see -->\n    <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 1.5 L20 22 L12 17.4 L4 22 Z\"/></svg>\n    <span id=\"tm-north\"></span>\n  </div>\n\n    <button class=\"tm-railBtn\" id=\"tm-legendBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linecap=\"round\">\n        <path d=\"M4 7h3M4 12h3M4 17h3M11 7h9M11 12h9M11 17h9\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n\n    <button class=\"tm-railBtn\" id=\"tm-layersBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linejoin=\"round\">\n        <path d=\"M12 3 21 8l-9 5-9-5 9-5Z\"/><path d=\"M3 13l9 5 9-5\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n  </div>\n\n  <!-- the one panel both buttons open -->\n  <aside id=\"tm-panel\" hidden>\n    <header id=\"tm-panelTop\">\n      <h2 id=\"tm-panelTitle\"></h2>\n      <button class=\"tm-close\" id=\"tm-panelClose\" type=\"button\">&times;</button>\n    </header>\n    <div id=\"tm-panelNote\"></div>\n    <div id=\"tm-panelBody\"></div>\n  </aside>\n\n  <!-- the veil behind an expanded waypoint card. It is inside the interface\n       layer so it covers the map, the readouts, the rail and the panel, and\n       stops short of the site's bar, which stays lit. Clicking it puts the\n       card back. -->\n  <div id=\"tm-cardveil\"></div>\n\n  <div id=\"tm-cards\"></div>\n\n  <div id=\"tm-readouts\">\n    <div id=\"tm-numbers\">\n      <div class=\"tm-readout\" id=\"tm-boxDistance\"><small></small><b id=\"tm-valDistance\">0</b></div>\n      <div class=\"tm-readout\" id=\"tm-boxElevation\"><small></small><b id=\"tm-valElevation\">0</b></div>\n      <div class=\"tm-readout tm-optional\" id=\"tm-boxAscent\"><small></small><b id=\"tm-valAscent\">0</b></div>\n      <div class=\"tm-gap\"></div>\n      <div class=\"tm-readout\" id=\"tm-boxComplete\"><small></small><b id=\"tm-valComplete\">0</b></div>\n    </div>\n    <div id=\"tm-profile\"></div>\n  </div>\n\n  <section id=\"tm-opening\">\n    <!-- the same panel the finish used to use: one .tm-box, so the two ends of\n         the page are visibly the same object and share their styling -->\n    <div class=\"tm-box\">\n      <div class=\"tm-kicker\" id=\"tm-openingKicker\"></div>\n      <h2 id=\"tm-openingTitle\"></h2>\n      <p id=\"tm-openingBody\"></p>\n      <div id=\"tm-hint\">\n        <span id=\"tm-openingHint\"></span>\n        <svg width=\"20\" height=\"26\" viewBox=\"0 0 20 26\" fill=\"none\" stroke=\"currentColor\"\n             stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 3v18M4 15l6 6 6-6\"/></svg>\n      </div>\n    </div>\n  </section>\n\n  <section id=\"tm-closing\">\n    <div class=\"tm-box\">\n      <h2 id=\"tm-closingTitle\"></h2>\n      <p id=\"tm-closingBody\"></p>\n      <div class=\"tm-row\">\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel1\"></small><b id=\"tm-closingTotal\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel2\"></small><b id=\"tm-closingAscent\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel3\"></small><b id=\"tm-closingHigh\">\u2014</b></div>\n      </div>\n    </div>\n  </section>\n</div>\n\n<!-- Shown only on a phone held on its side. A short, wide window has no room\n     for both the map and a waypoint at once: the card ends up taller than the\n     space it has, so its picture and its title are pushed off the top of the\n     screen. Rather than serve a broken layout, the page asks for the one it\n     was built for. Purely a stylesheet decision \u2014 see the orientation media\n     query \u2014 so it costs nothing on every other screen and cannot get out of\n     step with any state the page is holding. -->\n<div id=\"tm-turn\">\n  <div class=\"tm-box\">\n    <!-- a phone stood upright, with an arrow turning it that way -->\n    <svg width=\"52\" height=\"52\" viewBox=\"0 0 32 32\" fill=\"none\" stroke=\"currentColor\"\n         stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\n      <rect x=\"11\" y=\"10\" width=\"10\" height=\"18\" rx=\"2.5\"/>\n      <line x1=\"14.4\" y1=\"25\" x2=\"17.6\" y2=\"25\"/>\n      <path d=\"M5.5 13.5 A11.5 11.5 0 0 1 26.5 13.5\"/>\n      <polyline points=\"9.6,9.6 5.5,13.6 1.6,9.4\"/>\n    </svg>\n    <h2 id=\"tm-turnTitle\"></h2>\n    <p id=\"tm-turnWhy\"></p>\n  </div>\n</div>\n\n<div id=\"tm-scroller\"></div>\n\n<!-- optional helper: press E to read coordinates off the map -->\n<div id=\"tm-reader\">\n  <div id=\"tm-coords\">\u2014</div>\n  <div id=\"tm-readerPanel\">\n    <h3 id=\"tm-readerTitle\"></h3>\n    <p id=\"tm-readerHelp\"></p>\n    <textarea id=\"tm-readerOut\" spellcheck=\"false\" readonly></textarea>\n    <div id=\"tm-readerButtons\">\n      <button class=\"tm-button\" id=\"tm-copyButton\" type=\"button\">Copy</button>\n      <button class=\"tm-button\" id=\"tm-clearButton\" type=\"button\">Clear</button>\n    </div>\n  </div>\n</div>\n\n<div id=\"tm-problem\"><p id=\"tm-problemText\"></p></div>";
+var INTERFACE = "\n<!-- the site's navigation bar. It owns the top of the window; the map and the\n     interface both begin underneath it. Its words are in WORDS.bar. -->\n<header id=\"tm-bar\">\n  <a id=\"tm-barBrand\" href=\"#\"></a>\n  <nav id=\"tm-barNav\"></nav>\n</header>\n\n<!-- the map and everything drawn on it -->\n<div id=\"tm-stage\">\n  <div id=\"tm-world\">\n    <!-- the artwork is inserted here when the page loads -->\n    <svg id=\"tm-trail\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path id=\"tm-trailOutline\" fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailAhead\"   fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n      <path id=\"tm-trailWalked\"  fill=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\n    </svg>\n    <div id=\"tm-labels\"></div>\n  </div>\n</div>\n<div id=\"tm-shade\"></div>\n\n<!-- the interface that sits over the map -->\n<div id=\"tm-ui\">\n\n  <header id=\"tm-topbar\">\n    <div id=\"tm-brand\">\n      <div class=\"tm-kicker\" id=\"tm-cornerKicker\"></div>\n      <h1 id=\"tm-cornerTitle\"></h1>\n      <!-- filled in from WORDS.trailLinks; empty if none of them has an href -->\n      <div id=\"tm-links\"></div>\n    </div>\n    <div id=\"tm-topright\">\n      <span id=\"tm-version\"></span>\n    </div>\n  </header>\n\n  <!-- THE LEFT RAIL\n       The compass and the two panel buttons live in one fixed column. This is\n       the fix for the panels coming adrift: the buttons are pinned to the\n       window and never move, whatever is open. There is only ever ONE panel,\n       which slides out beside the rail and swaps its contents, so a button can\n       never end up detached from the thing it opens. -->\n  <div id=\"tm-rail\">\n  <div id=\"tm-compass\" role=\"img\">\n    <!-- the arrow is drawn to fill its 24\u00d724 box, so --compass-arrow in the\n         stylesheet is the size you actually see -->\n    <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 1.5 L20 22 L12 17.4 L4 22 Z\"/></svg>\n    <span id=\"tm-north\"></span>\n  </div>\n\n    <button class=\"tm-railBtn\" id=\"tm-legendBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linecap=\"round\">\n        <path d=\"M4 7h3M4 12h3M4 17h3M11 7h9M11 12h9M11 17h9\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n\n    <button class=\"tm-railBtn\" id=\"tm-layersBtn\" type=\"button\" aria-expanded=\"false\"\n            aria-controls=\"tm-panel\">\n      <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\"\n           stroke-width=\"1.9\" stroke-linejoin=\"round\">\n        <path d=\"M12 3 21 8l-9 5-9-5 9-5Z\"/><path d=\"M3 13l9 5 9-5\"/>\n      </svg>\n      <span class=\"tm-railName\"></span>\n    </button>\n  </div>\n\n  <!-- the one panel both buttons open -->\n  <aside id=\"tm-panel\" hidden>\n    <header id=\"tm-panelTop\">\n      <h2 id=\"tm-panelTitle\"></h2>\n      <button class=\"tm-close\" id=\"tm-panelClose\" type=\"button\">&times;</button>\n    </header>\n    <div id=\"tm-panelNote\"></div>\n    <div id=\"tm-panelBody\"></div>\n  </aside>\n\n  <!-- the veil behind an expanded waypoint card. It is inside the interface\n       layer so it covers the map, the readouts, the rail and the panel, and\n       stops short of the site's bar, which stays lit. Clicking it puts the\n       card back. -->\n  <div id=\"tm-cardveil\"></div>\n\n  <div id=\"tm-cards\"></div>\n\n  <div id=\"tm-readouts\">\n    <div id=\"tm-numbers\">\n      <div class=\"tm-readout\" id=\"tm-boxDistance\"><small></small><b id=\"tm-valDistance\">0</b></div>\n      <div class=\"tm-readout\" id=\"tm-boxElevation\"><small></small><b id=\"tm-valElevation\">0</b></div>\n      <div class=\"tm-readout tm-optional\" id=\"tm-boxAscent\"><small></small><b id=\"tm-valAscent\">0</b></div>\n      <div class=\"tm-gap\"></div>\n      <div class=\"tm-readout\" id=\"tm-boxComplete\"><small></small><b id=\"tm-valComplete\">0</b></div>\n    </div>\n    <div id=\"tm-profile\"></div>\n  </div>\n\n  <section id=\"tm-opening\">\n    <!-- the same panel the finish used to use: one .tm-box, so the two ends of\n         the page are visibly the same object and share their styling -->\n    <div class=\"tm-box\">\n      <div class=\"tm-kicker\" id=\"tm-openingKicker\"></div>\n      <h2 id=\"tm-openingTitle\"></h2>\n      <p id=\"tm-openingBody\"></p>\n      <div id=\"tm-hint\">\n        <span id=\"tm-openingHint\"></span>\n        <svg width=\"20\" height=\"26\" viewBox=\"0 0 20 26\" fill=\"none\" stroke=\"currentColor\"\n             stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 3v18M4 15l6 6 6-6\"/></svg>\n      </div>\n    </div>\n  </section>\n\n  <section id=\"tm-closing\">\n    <div class=\"tm-box\">\n      <h2 id=\"tm-closingTitle\"></h2>\n      <p id=\"tm-closingBody\"></p>\n      <div class=\"tm-row\">\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel1\"></small><b id=\"tm-closingTotal\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel2\"></small><b id=\"tm-closingAscent\">\u2014</b></div>\n        <div class=\"tm-readout\"><small id=\"tm-closingLabel3\"></small><b id=\"tm-closingHigh\">\u2014</b></div>\n      </div>\n    </div>\n  </section>\n</div>\n\n<!-- Shown only on a phone held on its side. A short, wide window has no room\n     for both the map and a waypoint at once: the card ends up taller than the\n     space it has, so its picture and its title are pushed off the top of the\n     screen. Rather than serve a broken layout, the page asks for the one it\n     was built for. Purely a stylesheet decision \u2014 see the orientation media\n     query \u2014 so it costs nothing on every other screen and cannot get out of\n     step with any state the page is holding. -->\n<div id=\"tm-turn\">\n  <div class=\"tm-box\">\n    <!-- a phone stood upright, with an arrow turning it that way -->\n    <svg width=\"52\" height=\"52\" viewBox=\"0 0 32 32\" fill=\"none\" stroke=\"currentColor\"\n         stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\n      <rect x=\"11\" y=\"10\" width=\"10\" height=\"18\" rx=\"2.5\"/>\n      <line x1=\"14.4\" y1=\"25\" x2=\"17.6\" y2=\"25\"/>\n      <path d=\"M5.5 13.5 A11.5 11.5 0 0 1 26.5 13.5\"/>\n      <polyline points=\"9.6,9.6 5.5,13.6 1.6,9.4\"/>\n    </svg>\n    <h2 id=\"tm-turnTitle\"></h2>\n    <p id=\"tm-turnWhy\"></p>\n  </div>\n</div>\n\n<div id=\"tm-scroller\"></div>\n\n<!-- optional helper: press E to read coordinates off the map -->\n<div id=\"tm-reader\">\n  <div id=\"tm-coords\">\u2014</div>\n  <div id=\"tm-readerPanel\">\n    <h3 id=\"tm-readerTitle\"></h3>\n    <p id=\"tm-readerHelp\"></p>\n    <textarea id=\"tm-readerOut\" spellcheck=\"false\" readonly></textarea>\n    <div id=\"tm-readerButtons\">\n      <button class=\"tm-button\" id=\"tm-copyButton\" type=\"button\">Copy</button>\n      <button class=\"tm-button\" id=\"tm-clearButton\" type=\"button\">Clear</button>\n    </div>\n  </div>\n</div>\n\n<!-- WHAT SOMEBODY FOLLOWING A LINK TO ONE WAYPOINT SEES WHILE THE PAGE FINDS\n     IT. A link from the Wishful thinking page is a link to one idea, but the\n     page it lands on has to build its map, measure its own height and only\n     then jump to the right place — and all of that is visible: the trail\n     opens at its beginning and travels to the waypoint while you watch. This\n     covers that. It is only ever shown when the address names a waypoint, and\n     it goes as soon as the page is standing where it was asked to stand. -->\n<div id=\"tm-loading\">\n  <div class=\"tm-loadRing\"></div>\n  <p id=\"tm-loadingWord\"></p>\n</div>\n\n<div id=\"tm-problem\"><p id=\"tm-problemText\"></p></div>";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ══  THE ENGINE  ══  No edits needed past this point.
@@ -1132,6 +1156,20 @@ const onALiveLayer = stop => !(stop.kind === "wishful" && !wishfulOn);
 function giveUp(message) {
   el("problem").classList.add("tm-open");
   el("problemText").innerHTML = message;
+  uncover();          // whatever went wrong, it must be readable
+}
+
+/* TAKE THE COVER DOWN. Called the moment the page is standing where it was
+   asked to stand — and by everything that could mean it never will: a trail
+   whose artwork would not load, an address naming a waypoint that no longer
+   exists, and a plain timer, because a cover that outlives what it is covering
+   is worse than never having put one up. */
+function uncover() {
+  const cover = el("loading");
+  if (!cover || !cover.classList.contains("is-on")) return;
+  cover.classList.add("is-going");
+  setTimeout(() => cover.classList.remove("is-on", "is-going"),
+             SETTINGS.arriveFadeMs);
 }
 
 /* ── the waypoint stepper ─────────────────────────────────────────────────
@@ -1182,6 +1220,7 @@ function writeWords() {
     box.classList.add("tm-hasImage");
     box.style.setProperty("--opening-image", 'url("' + SETTINGS.trailImage + '")');
   }
+  set("loadingWord",   WORDS.arriving);
   set("turnTitle",     WORDS.turnPhone);
   set("turnWhy",       WORDS.turnPhoneWhy);
   set("closingTitle",  WORDS.closingTitle);
@@ -2057,58 +2096,6 @@ function start() {
     });
   }
 
-  /* ── ROOM FOR THE LONGEST CAPTION, NOT THE ONE SHOWING ─────────────────
-     A card's captions change as you page through its pictures, and they are
-     not all the same length. The caption shares a line with the title until
-     the two will not fit, at which point the title drops below it — so
-     without this, paging from a short caption to a long one on the same card
-     would jerk the title, and everything under it, down a line and back up
-     again. The words changing is the point; the layout moving is not.
-
-     So the caption is given a floor as wide as the WIDEST of that card's
-     captions. Every picture on the card then lays out the same way: either
-     they all share the line or the title sits under all of them, decided once
-     by the longest. Short captions still sit flush right inside that room,
-     because the text is right-aligned, so nothing looks padded.
-
-     MEASURED ON A CANVAS, not in the page. The cards are built before any of
-     them is shown, and a hidden element has no width to read; a canvas will
-     measure text in a given font without the text being anywhere. It is also
-     free of layout, so doing this for every card costs nothing at load.
-
-     The floor is handed to the stylesheet as a custom property rather than
-     set as a width, so the rule that caps a caption at part of the line stays
-     in the stylesheet with every other measurement. */
-  const captionRuler = document.createElement("canvas").getContext("2d");
-
-  function holdRoomForTheLongestCaption(card) {
-    const box = card.querySelector(".tm-slideCaption");
-    const written = (card.captions || []).filter(Boolean);
-    // one caption, or none, cannot disagree with itself
-    if (!box || written.length < 2) return;
-    const style = getComputedStyle(box);
-    captionRuler.font = style.fontStyle + " " + style.fontWeight + " " +
-                        style.fontSize + " " + style.fontFamily;
-    let widest = 0;
-    written.forEach(t => {
-      widest = Math.max(widest, captionRuler.measureText(t).width);
-    });
-    // a pixel or two of slack: a canvas and the page round letter spacing
-    // differently, and a floor a hair too low would let the longest caption
-    // wrap inside its own box, which is the thing being avoided
-    card.style.setProperty("--caption-room", Math.ceil(widest + 2) + "px");
-  }
-
-  /* If the page is still loading the fonts it asks for, every measurement
-     above was taken in a fallback face and the widest caption may not be the
-     one that ends up widest. Measuring again once the real fonts are in is one
-     pass over the cards and settles it. */
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => {
-      document.querySelectorAll(".tm-card").forEach(holdRoomForTheLongestCaption);
-    });
-  }
-
   function slideHtml(m) {
     if (m.kind === "compare") {
       // "after" underneath, "before" on top and clipped — the handle moves the
@@ -2221,6 +2208,13 @@ function start() {
           '<div class="tm-count">' + WORDS.waypoint + " " + String(i + 1).padStart(2, "0") +
           " <span>" + WORDS.outOf + " " + String(stops.length).padStart(2, "0") + "</span></div>" +
         "</div>" +
+        /* AND THE PICTURE'S CAPTION SITS IN THE OPPOSITE CORNER, bottom right,
+           with the same treatment: a shadow and a wash of dark behind it, so
+           it can be read over a bright sky as easily as over a dark one. It
+           belongs to the picture, so it lives on the picture — and it costs
+           the words below not one pixel, which is the other half of why it is
+           here. The engine empties and refills it as the pictures change. */
+        '<div class="tm-slideCaption"></div>' +
         (many
           ? '<button class="tm-media-arrow is-prev" type="button" title="' + WORDS.previousPicture +
             '" aria-label="' + WORDS.previousPicture + '">&lsaquo;</button>' +
@@ -2234,27 +2228,12 @@ function start() {
       "</div>" +
 
       '<div class="tm-inner">' +
-        /* THE TITLE AND THE PICTURE'S CAPTION SHARE A LINE — the caption below
-           the picture and over to the right, where it was, but without a row of
-           its own to sit in. On a heading's line it costs nothing and reads as
-           what it is: a note about the picture above, set beside the name of
-           the place.
-
-           THE CAPTION IS WRITTEN FIRST, AND MOVED TO THE RIGHT BY THE
-           STYLESHEET (the row is laid out in reverse). That is deliberate, and
-           it is not only about the picture: when the two are too long to share
-           a line — "Bridge over Dufferin St." beside "The trail through the
-           houses" — the second one written is the one that drops to a line of
-           its own, and it must be the TITLE that drops. The caption keeps the
-           corner under the photograph it belongs to, and the heading moves
-           down to make room for it.
-
-           It reads correctly out loud in this order too: the picture, then the
-           picture's caption, then the heading of the section below it. */
-        '<div class="tm-titleRow">' +
-          '<div class="tm-slideCaption"></div>' +
-          "<h2>" + s.title + "</h2>" +
-        "</div>" +
+        /* THE TITLE, on its own line and at the top of the panel. It used to
+           share this line with the picture's caption, which is now on the
+           picture where it belongs — so the whole apparatus that kept the two
+           of them from colliding, and the width the card had to reserve for
+           the longest caption it might show, are gone with it. */
+        "<h2>" + s.title + "</h2>" +
         '<div class="tm-textwindow"><div class="tm-textpages">' + paragraphsFor(s) + "</div></div>" +
         '<div class="tm-pager">' +
           '<button class="tm-prevpage" type="button" title="' + WORDS.previousPage +
@@ -2271,7 +2250,6 @@ function start() {
     // one caption per slide, in the same order as the pictures
     card.captions = slides.map(m => m.caption || "");
     card.querySelector(".tm-slideCaption").textContent = card.captions[0] || "";
-    holdRoomForTheLongestCaption(card);
     card.slideAt = 0;                      // which picture is showing
     card.pageAt = 0;                       // which page of text is showing
     card.pageCount = 1;
@@ -3423,9 +3401,23 @@ function start() {
     const arriveAt = () => {
       const i = stopNamed(arrivedOn);
       requestAnimationFrame(() => {
-        if (i >= 0) goToStop(i, false);
-        if (i >= 0 && shouldArriveBig(i)) setBig(true, i, true);
+        if (i >= 0) {
+          goToStop(i, false);
+          if (shouldArriveBig(i)) setBig(true, i, true);
+          /* STANDING THERE, NOT TRAVELLING THERE. The map eases towards
+             wherever the scroll says, a frame at a time — which is what makes
+             the walk a walk, and which here would mean watching the trail
+             hurry from its beginning to the waypoint that was asked for. So
+             the eased position is set equal to the asked-for one and the map
+             is drawn once: the page opens already standing at the waypoint. */
+          shown = wanted;
+          draw(shown, 0);
+        }
         settled = true;
+        /* and now there is something worth looking at, so the cover comes off.
+           A frame later, so that what is uncovered is this drawing and not the
+           one before it. */
+        requestAnimationFrame(uncover);
       });
     };
     if (arrivedOn) setTimeout(arriveAt, SETTINGS.linkArriveAfterMs);
@@ -3570,6 +3562,12 @@ function start() {
     else if (key === "z") { marks.pop(); drawMarks(); }
     else if (key === "c") { marks = []; drawMarks(); }
   });
+
+  /* If there was no waypoint to find — the address names nothing, or this
+     trail does not give its stops addresses at all — then nothing is going to
+     take the cover down later, and the page is already showing what it means
+     to show. */
+  if (!SETTINGS.linkToStops || location.hash.length < 2) uncover();
 }
 
 /* ── go ────────────────────────────────────────────────────────────────── */
