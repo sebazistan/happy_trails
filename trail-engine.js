@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 2.4
+   version 2.5
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -2109,17 +2109,13 @@ function start() {
 
       '<div class="tm-media">' +
         '<div class="tm-track">' + slides.map(slideHtml).join("") + "</div>" +
-        /* THE WAYPOINT NUMBER SITS ON THE PICTURE, top left, and the caption
-           for whichever picture is showing sits under it. Both were a row of
-           their own between the picture and the title, which cost 21 pixels of
-           a card whose scarcest thing is room for words — and put two small
-           grey things between a photograph and the heading that names it.
-           Over the picture they cost nothing, and the title now begins the
-           moment the picture ends. */
+        /* THE WAYPOINT NUMBER SITS ON THE PICTURE, top left. It was a row of
+           its own between the picture and the title, which cost 21 pixels of a
+           card whose scarcest thing is room for words. Over the picture it
+           costs nothing. */
         '<div class="tm-stamp">' +
           '<div class="tm-count">' + WORDS.waypoint + " " + String(i + 1).padStart(2, "0") +
           " <span>" + WORDS.outOf + " " + String(stops.length).padStart(2, "0") + "</span></div>" +
-          '<div class="tm-slideCaption"></div>' +
         "</div>" +
         (many
           ? '<button class="tm-media-arrow is-prev" type="button" title="' + WORDS.previousPicture +
@@ -2134,7 +2130,16 @@ function start() {
       "</div>" +
 
       '<div class="tm-inner">' +
-        "<h2>" + s.title + "</h2>" +
+        /* THE TITLE AND THE PICTURE'S CAPTION SHARE A LINE — the caption below
+           the picture and over to the right, where it was, but without a row of
+           its own to sit in. On a heading's line it costs nothing and reads as
+           what it is: a note about the picture above, set beside the name of
+           the place. A long one wraps under the title rather than squeezing
+           it, which is the right way round. */
+        '<div class="tm-titleRow">' +
+          "<h2>" + s.title + "</h2>" +
+          '<div class="tm-slideCaption"></div>' +
+        "</div>" +
         '<div class="tm-textwindow"><div class="tm-textpages">' + paragraphsFor(s) + "</div></div>" +
         '<div class="tm-pager">' +
           '<button class="tm-prevpage" type="button" title="' + WORDS.previousPage +

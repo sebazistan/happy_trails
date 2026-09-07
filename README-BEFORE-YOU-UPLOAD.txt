@@ -1,7 +1,7 @@
 UPLOAD THE CONTENTS, NOT THE FOLDER
 ════════════════════════════════════════════════════════════════════════════
 
-Unzipping gives you a folder called site-assets-v2.4. GitHub must end up with
+Unzipping gives you a folder called site-assets-v2.5. GitHub must end up with
 index.html at the TOP of the repository — not inside a folder.
 
   RIGHT   open site-assets-v2.4, select everything inside it, drag that
@@ -16,7 +16,7 @@ HOW TO TELL WHICH VERSION IS LIVE
 
   Visit   happytrailstoronto.com/version.txt
 
-It says one line: the version, and when it was built. If it says 2.4 the upload
+It says one line: the version, and when it was built. If it says 2.5 the upload
 landed and anything you are still seeing is your browser's cache — reload with
 Cmd+Shift+R (Mac) or Ctrl+F5 (Windows). If it is missing or says an older
 number, the files did not land at the top of the repository.

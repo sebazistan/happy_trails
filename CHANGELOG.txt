@@ -12,6 +12,16 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+  9.0  The picture's caption is back below the picture and over to the right,
+       where it was. The waypoint number stays stamped on the photograph.
+       It shares the title's line rather than having a row of its own, so it
+       costs nothing on a wide card: the title takes what it needs and the
+       caption takes what is left. A caption long enough to squeeze the title
+       wraps underneath instead — a heading cut to two words so that a note can
+       stay beside it is the wrong way round.
+       Ten lines of text in one page on a desktop, unchanged. On a phone the
+       caption's line costs one of the six, which is the honest price of having
+       it back.
   8.9  THE CARD IS MOSTLY WORDS NOW. On a 1400x900 screen a stop showed three
        lines over four pages two versions ago, eight over two pages last
        version, and TEN IN ONE PAGE here — the Allan Rd entry is read straight
