@@ -12,6 +12,17 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+  8.8  A trail page's layer switches are one per row at every size.
+       They were in two columns, which is right for the main map's panel — a
+       dozen switches that would otherwise run off the bottom of a phone — and
+       wrong for a trail page, which has two or three. Two columns made them a
+       pair of narrow boxes with their names broken across lines, side by side,
+       for a panel that was no shorter for it.
+       The notes under each name come back on a phone as a result. They were
+       dropped there as the price of fitting the main map's dozen into two
+       columns; a trail page has the room now, and it needs them — "Tap a
+       waypoint to open it" is the only place that says what Waypoint auto-load
+       does. A phone on its side still loses them: there is no height to spare.
   8.7  MORE ROOM FOR THE WORDS, and the pictures the same size.
        A card on a 1400x900 screen was showing THREE lines of text at a time —
        the minimum the engine will go to — and turning a stop's words into four

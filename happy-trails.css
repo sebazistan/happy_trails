@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 2.9
+   version 3.0
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -78,7 +78,12 @@
   /* THE LEGEND AND THE LAYER SWITCHES */
   --swatch-width:      44px;
   --swatch-height:     20px;
-  --switch-columns:    2;
+  --switch-columns:    2;   /* THE MAIN MAP'S layer panel only. A trail
+                              page's switches are one per row at every
+                              size — it has two or three of them, and in
+                              two columns they were a pair of narrow boxes
+                              with their names broken across lines for a
+                              panel that was no shorter for it. */
   --switch-off:        rgba(255,255,255,.20);
   --switch-slide:      .22s;
   --switch-gap:        7px;
@@ -752,19 +757,28 @@ body.page-trail{
 }
 
 /* ── the layer switches ─────────────────────────────────────────────────── */
+/* ONE PER ROW, ALWAYS, ON A TRAIL PAGE.
+   The main map's panel holds a dozen switches and genuinely needs two columns
+   or the list runs off the bottom of a phone. A trail page has two or three.
+   In two columns those became a pair of narrow boxes with their names broken
+   across lines, side by side, for no reason — the panel was as tall either
+   way. Full width also means the switch and its note read as one line of
+   English rather than as a cell in a table.
+
+   This is why the count is a variable rather than a number written in each
+   rule: the two panels want different answers and the difference is stated
+   once, here. */
 .tm-switches{
   display:grid; gap:var(--switch-gap);
-  grid-template-columns:repeat(var(--switch-columns), minmax(0, 1fr));
+  grid-template-columns:1fr;
 }
-/* A group holding a single switch gives it the whole width rather than half of
-   it with an empty hole beside it — which is what the Beltline's Layers panel
-   is whenever only one layer is available. `1 / -1` means "first grid line to
-   last", so it holds whatever --switch-columns is set to and needs no change
-   if the column count ever does.
-   Swap :only-child for :last-child:nth-child(odd) below if you would also like
-   the last switch of an odd-numbered group to stretch across. */
-.ht-switches > .ht-switch:only-child,
-.tm-switches > .tm-switch:only-child{
+/* On the MAIN MAP, a group holding a single switch gives it the whole width
+   rather than half of it with an empty hole beside it. `1 / -1` means "first
+   grid line to last", so it holds whatever --switch-columns is set to and needs
+   no change if the column count ever does.
+   Swap :only-child for :last-child:nth-child(odd) if you would also like the
+   last switch of an odd-numbered group to stretch across. */
+.ht-switches > .ht-switch:only-child{
   grid-column: 1 / -1;
 }
 .tm-switch{
@@ -2593,8 +2607,15 @@ body.page-wishful{
        is what identifies it; the note only ever expanded on that.
    Between them the whole set fits on a phone screen without scrolling.      */
 @media (max-width: 700px){
+  /* the main map's panel only — a trail page's switches are one per row at
+     every size, see .tm-switches */
   :root{ --switch-columns: 2; --switch-gap: 6px; }
-  .ht-switchText small, .tm-switchText small{ display:none; }
+  /* THE NOTES GO ON THE MAIN MAP AND STAY ON A TRAIL PAGE.
+     Dropping them was the price of fitting a dozen switches into two columns
+     on a phone. A trail page has two or three, one per row, and there is room
+     — so it keeps them, and it needs them: "Tap a waypoint to open it" is the
+     only place that says what Waypoint auto-load does. */
+  .ht-switchText small{ display:none; }
   .ht-switch, .tm-switch{ padding:9px 10px; gap:8px; }
   .ht-switchText b, .tm-switchText b{ font-size:11.5px; line-height:1.2; }
   /* the switch itself shrinks a little so two fit side by side */
@@ -2613,6 +2634,8 @@ body.page-wishful{
 /* the same again for a short, wide window — a phone on its side, mostly */
 @media (max-height: 560px){
   :root{ --switch-columns: 2; }
+  /* a phone on its side has almost no height, so here even a trail page's
+     notes go — the panel would not fit otherwise */
   .ht-switchText small, .tm-switchText small{ display:none; }
 }
 

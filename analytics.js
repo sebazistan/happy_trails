@@ -38,9 +38,9 @@ const SETTINGS = {
   /* "" | "plausible" | "goatcounter" | "cloudflare"  */
   provider:     "",
 
-  /* plausible — the domain as registered with them, e.g. "huzzahdesign.com".
-     Self-hosting? change host too. */
-  domain:       "www.huzzahdesign.com",
+  /* plausible — the domain as registered with them. Self-hosting? change
+     plausibleHost too. */
+  domain:       "happytrailstoronto.com",
   plausibleHost:"https://plausible.io",
 
   /* goatcounter — the whole endpoint they give you */

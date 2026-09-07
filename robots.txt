@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.huzzahdesign.com/happy-trails/sitemap.xml
+Sitemap: https://happytrailstoronto.com/sitemap.xml
