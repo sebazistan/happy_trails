@@ -1,7 +1,0 @@
-# Everything the build needs. Pinned to major versions: a build that quietly
-# starts producing different output because a library moved on is worse than
-# one that fails.
-pikepdf>=8,<10        # reads the layers out of an Illustrator .ai file
-cairosvg>=2.7,<3      # renders SVG to PNG for the pictures and the previews
-pillow>=10,<12        # measures those PNGs
-numpy>=1.26,<3        # finds the drawn pixel nearest a route's centre
