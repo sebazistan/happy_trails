@@ -1,0 +1,23 @@
+ONLY THE FILES THAT CHANGED SINCE v2.1
+════════════════════════════════════════════════════════════════════════════
+
+29 files instead of 254, and 1.6 MB instead of 8.9. Everything left out is
+byte for byte what is already on the site — mostly the pictures, which are
+7.3 MB of the 8.9 and almost never change.
+
+USE THIS ONLY IF v2.1 IS WHAT IS CURRENTLY LIVE. If you are not sure, or if
+you skipped a version, upload the full site-assets-v2.2 instead. Uploading
+this on top of an older version leaves you with a mixture, and the mixture
+will mostly work, which is the worst way for it to be wrong.
+
+Drop these in the same place as the others, keeping the folders: two of them
+live in maps/ and social/ and belong there, not at the top level.
+
+WHAT CHANGED, AND WHY
+  every .html          the site's address changed, so the link previews,
+                       the canonical addresses and the sitemap all had to
+  happy-trails.css     the layers palette, the card spacing, the links
+  trail-engine.js      the auto-load switch, the stepper on a phone
+  maps/beltline-map.svg   was still drawn in the old purple
+  social/beltline.png     follows from that map
+  CNAME, .nojekyll     new — see README-BEFORE-YOU-UPLOAD.txt
