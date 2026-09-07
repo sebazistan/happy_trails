@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 2.5
+   version 2.6
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -2020,6 +2020,58 @@ function start() {
     });
   }
 
+  /* ── ROOM FOR THE LONGEST CAPTION, NOT THE ONE SHOWING ─────────────────
+     A card's captions change as you page through its pictures, and they are
+     not all the same length. The caption shares a line with the title until
+     the two will not fit, at which point the title drops below it — so
+     without this, paging from a short caption to a long one on the same card
+     would jerk the title, and everything under it, down a line and back up
+     again. The words changing is the point; the layout moving is not.
+
+     So the caption is given a floor as wide as the WIDEST of that card's
+     captions. Every picture on the card then lays out the same way: either
+     they all share the line or the title sits under all of them, decided once
+     by the longest. Short captions still sit flush right inside that room,
+     because the text is right-aligned, so nothing looks padded.
+
+     MEASURED ON A CANVAS, not in the page. The cards are built before any of
+     them is shown, and a hidden element has no width to read; a canvas will
+     measure text in a given font without the text being anywhere. It is also
+     free of layout, so doing this for every card costs nothing at load.
+
+     The floor is handed to the stylesheet as a custom property rather than
+     set as a width, so the rule that caps a caption at part of the line stays
+     in the stylesheet with every other measurement. */
+  const captionRuler = document.createElement("canvas").getContext("2d");
+
+  function holdRoomForTheLongestCaption(card) {
+    const box = card.querySelector(".tm-slideCaption");
+    const written = (card.captions || []).filter(Boolean);
+    // one caption, or none, cannot disagree with itself
+    if (!box || written.length < 2) return;
+    const style = getComputedStyle(box);
+    captionRuler.font = style.fontStyle + " " + style.fontWeight + " " +
+                        style.fontSize + " " + style.fontFamily;
+    let widest = 0;
+    written.forEach(t => {
+      widest = Math.max(widest, captionRuler.measureText(t).width);
+    });
+    // a pixel or two of slack: a canvas and the page round letter spacing
+    // differently, and a floor a hair too low would let the longest caption
+    // wrap inside its own box, which is the thing being avoided
+    card.style.setProperty("--caption-room", Math.ceil(widest + 2) + "px");
+  }
+
+  /* If the page is still loading the fonts it asks for, every measurement
+     above was taken in a fallback face and the widest caption may not be the
+     one that ends up widest. Measuring again once the real fonts are in is one
+     pass over the cards and settles it. */
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      document.querySelectorAll(".tm-card").forEach(holdRoomForTheLongestCaption);
+    });
+  }
+
   function slideHtml(m) {
     if (m.kind === "compare") {
       // "after" underneath, "before" on top and clipped — the handle moves the
@@ -2134,11 +2186,22 @@ function start() {
            the picture and over to the right, where it was, but without a row of
            its own to sit in. On a heading's line it costs nothing and reads as
            what it is: a note about the picture above, set beside the name of
-           the place. A long one wraps under the title rather than squeezing
-           it, which is the right way round. */
+           the place.
+
+           THE CAPTION IS WRITTEN FIRST, AND MOVED TO THE RIGHT BY THE
+           STYLESHEET (the row is laid out in reverse). That is deliberate, and
+           it is not only about the picture: when the two are too long to share
+           a line — "Bridge over Dufferin St." beside "The trail through the
+           houses" — the second one written is the one that drops to a line of
+           its own, and it must be the TITLE that drops. The caption keeps the
+           corner under the photograph it belongs to, and the heading moves
+           down to make room for it.
+
+           It reads correctly out loud in this order too: the picture, then the
+           picture's caption, then the heading of the section below it. */
         '<div class="tm-titleRow">' +
-          "<h2>" + s.title + "</h2>" +
           '<div class="tm-slideCaption"></div>' +
+          "<h2>" + s.title + "</h2>" +
         "</div>" +
         '<div class="tm-textwindow"><div class="tm-textpages">' + paragraphsFor(s) + "</div></div>" +
         '<div class="tm-pager">' +
@@ -2156,6 +2219,7 @@ function start() {
     // one caption per slide, in the same order as the pictures
     card.captions = slides.map(m => m.caption || "");
     card.querySelector(".tm-slideCaption").textContent = card.captions[0] || "";
+    holdRoomForTheLongestCaption(card);
     card.slideAt = 0;                      // which picture is showing
     card.pageAt = 0;                       // which page of text is showing
     card.pageCount = 1;

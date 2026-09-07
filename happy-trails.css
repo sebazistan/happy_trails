@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 3.3
+   version 3.4
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -192,6 +192,19 @@
      Past about six it stops looking level with the title at all; 0 leaves it
      exactly level. */
   --caption-lift:      3px;
+  /* THE LEAST SPACE ALLOWED BETWEEN THE TITLE AND THE CAPTION beside it. It is
+     also the point at which they stop sharing a line: a title and a caption
+     that cannot both fit with this much between them are not squeezed together,
+     the title drops to a line of its own underneath instead. So this is not
+     only a gap, it is the definition of "too close" — 16px let "Bridge over
+     Dufferin St." finish two pixels from "The trail through the houses", which
+     read as one run-on line. Raising it makes more cards break onto two lines;
+     lowering it packs more onto one. */
+  --caption-gap:       26px;
+  /* THE MOST OF A LINE A CAPTION MAY TAKE, beside the waypoint title. Past
+     this it is not a caption any more, it is a sentence, and it wraps under
+     itself rather than pushing the title down to nothing. */
+  --caption-share:     52%;
   --card-blur:         10px;
   --card-body:         14px;   /* the paragraphs inside a card. Every tenth
                                  of a millimetre off this is another line of
@@ -1072,7 +1085,18 @@ body.page-trail{
    what turns the swap into a fade rather than a jump. Empty means no caption
    for that picture, and it simply takes no room. */
 .tm-card .tm-slideCaption{
-  flex:0 1 auto; min-width:0; text-align:right;
+  /* 0 0 auto: it is as wide as its words and never squeezed. Squeezing it is
+     what used to make it wrap into two lines and shove the title about; now a
+     caption too wide to share the line simply takes the line.
+
+     --caption-room is set on the card by the engine and holds the width of the
+     LONGEST caption that card has, so that paging from one picture to the next
+     never changes whether the title fits beside it. It is a floor, not a
+     width: a short caption still sits flush right inside it. Cards with one
+     caption never set it, and fall back to nothing. */
+  flex:0 0 auto; text-align:right;
+  min-width:min(var(--caption-room, 0px), var(--caption-share));
+  max-width:min(100%, var(--caption-share));
   font:400 var(--caption-size)/1.4 var(--font-body);
   color:var(--text-quiet); font-style:italic;
   transition:opacity var(--caption-fade) ease;
@@ -1083,10 +1107,29 @@ body.page-trail{
      with it. */
   margin-top:calc(var(--caption-lift) * -1);
 }
-/* THE TITLE AND THE CAPTION SHARE A LINE. The title takes what it needs and
-   the caption takes what is left; a caption long enough to squeeze the title
-   wraps onto its own line underneath instead, because a heading cut to two
-   words so that a note can stay beside it is the wrong way round.
+/* THE TITLE AND THE CAPTION SHARE A LINE, UNTIL THEY CANNOT.
+   ─────────────────────────────────────────────────────────────────────────
+   WHEN THEY FIT  the title sits at the left and the caption at the right, on
+   one line, and the caption costs no height at all.
+
+   WHEN THEY DO NOT FIT  the caption keeps the top right corner — under the
+   photograph it describes, which is where it belongs — and THE TITLE MOVES
+   DOWN onto a line of its own beneath it. The caption never drops below the
+   title. "Bridge over Dufferin St." with "The trail through the houses" is
+   the case this is for: two pixels apart on a wide screen, touching on a
+   narrow one.
+
+   HOW, in one line of CSS: row-reverse. The caption is written FIRST in the
+   markup (see trail-engine.js) and this lays the row out from the right, so
+   the caption lands in the right-hand corner and the title fills what is
+   left. Flex wraps in source order, so when a line will not hold both it is
+   the second thing written — the title — that moves to the next line. Putting
+   the title first and hoping would drop the caption instead, which is the one
+   thing that must not happen.
+
+   A title on a line of its own still grows to the full width, so its text
+   starts at the left edge like every other title; nothing about it looks like
+   it has been indented or centred.
 
    ALIGNED BY THEIR TOPS, not their baselines. On a baseline the small italic
    sits at the foot of a 24px line and reads as a footnote to the heading; by
@@ -1095,10 +1138,17 @@ body.page-trail{
    space above their capitals, so tops of the boxes and tops of the letters
    come out within a pixel of each other. */
 .tm-titleRow{
-  display:flex; align-items:flex-start; justify-content:space-between;
-  gap:16px; flex-wrap:wrap;
+  display:flex; flex-direction:row-reverse; flex-wrap:wrap;
+  align-items:flex-start;
+  /* across: the least that may separate them, and what decides the break.
+     down: almost nothing, because the two lines are already a caption and the
+     heading it sits above. */
+  column-gap:var(--caption-gap); row-gap:2px;
 }
-.tm-titleRow h2{ flex:1 1 auto; min-width:min(100%, 10ch); }
+/* Takes the rest of the line beside the caption, and the whole of it when the
+   caption has pushed it onto its own. min-width:0 so that a long word inside a
+   title shrinks the box rather than pushing out of the card. */
+.tm-titleRow h2{ flex:1 1 auto; min-width:0; }
 .tm-card .tm-slideCaption.tm-fading{ opacity:0; }
 .tm-card.tm-wishful .tm-count{ color:#f2a8ff; }
 .tm-card .tm-count span{ color:rgba(255,255,255,.7); letter-spacing:.1em; font-weight:500; }

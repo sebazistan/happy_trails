@@ -12,6 +12,19 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+  9.2  THE CAPTION NEVER DROPS BELOW THE TITLE. When a waypoint title and the
+       picture's caption are too long to share a line — "Bridge over Dufferin
+       St." beside "The trail through the houses" — it is the TITLE that moves
+       down onto a line of its own, and the caption keeps the corner under the
+       photograph it belongs to. Before, the caption fell underneath the title
+       and out to the left, which read as a stray line of text.
+       They are also never allowed to finish closer than --caption-gap (26px)
+       apart. Two pixels between them was what made the Dufferin card look like
+       one run-on line; anything tighter than the gap now breaks instead.
+       And the room kept for the caption is measured from the LONGEST caption
+       on that card, not the one showing, so paging through a card's pictures
+       never jerks the title down a line and back up again.
+
   9.1  The caption is aligned with the TOP of the waypoint title rather than
        its baseline, and lifted three pixels further still, so it sits close
        under the bottom edge of the photograph and reads as a note on the
