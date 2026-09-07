@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 3.6
+   version 3.7
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -183,10 +183,32 @@
   /* the "turn your phone" screen */
   --turn-veil:         rgba(8,10,12,.92);
   --caption-size:      11px;
-  /* THE MOST OF THE PICTURE A CAPTION MAY COVER. Past this it is not a
-     caption any more, it is a sentence lying across the photograph, so it
-     wraps under itself instead of running the whole width. */
-  --caption-share:     56%;
+  /* HOW FAR THE CAPTION RIDES UP. It shares a line with the waypoint title
+     and the two are aligned by their tops rather than their baselines, which
+     is most of the move; this is the last few pixels on top of that, so the
+     small italic sits nearer the photograph it describes than the heading it
+     sits beside. Three pixels is about a quarter of its own cap height —
+     enough to read as belonging upwards, not enough to break the alignment.
+     Past about six it stops looking level with the title at all; 0 leaves it
+     exactly level. */
+  --caption-lift:      3px;
+  /* THE LEAST SPACE ALLOWED BETWEEN THE TITLE AND THE CAPTION beside it. It is
+     also the point at which they stop sharing a line: a title and a caption
+     that cannot both fit with this much between them are not squeezed together,
+     the title drops to a line of its own underneath instead. So this is not
+     only a gap, it is the definition of "too close" — 16px let "Bridge over
+     Dufferin St." finish two pixels from "The trail through the houses", which
+     read as one run-on line. Raising it makes more cards break onto two lines;
+     lowering it packs more onto one. */
+  --caption-gap:       26px;
+  /* THE MOST OF A LINE A CAPTION MAY TAKE, beside the waypoint title. Past
+     this it is not a caption any more, it is a sentence, and it wraps under
+     itself rather than pushing the title down to nothing. */
+  --caption-share:     52%;
+  /* And the most of the PICTURE it may cover, which is the other place it
+     sits: in the big view it is written across the photograph's bottom right
+     corner instead of beside the title. */
+  --caption-picture-share: 56%;
   --card-blur:         10px;
   --card-body:         14px;   /* the paragraphs inside a card. Every tenth
                                  of a millimetre off this is another line of
@@ -1162,29 +1184,107 @@ body.page-trail{
   color:#f0c246;
   text-shadow:0 1px 5px rgba(0,0,0,.9);
 }
-/* ── THE PICTURE'S CAPTION ────────────────────────────────────────────────
-   The opposite corner from the waypoint number, and the same treatment: a
-   shadow under the letters and a wash of dark behind them, so it reads over a
-   bright sky as easily as over a dark one. The wash fades out to the left
-   rather than banding across the picture.
+/* ══ THE PICTURE'S CAPTION, IN TWO PLACES ═════════════════════════════════
+   THE SAME WORDS SIT IN TWO DIFFERENT PLACES depending on how big the card
+   is, so they are written into the card twice and the stylesheet shows
+   whichever one belongs. The engine fills both — see how the captions are
+   handed out in trail-engine.js — so neither can go stale.
 
-   ON THE PICTURE, WHICH IS WHERE IT BELONGS, and where it costs the words
-   below it nothing at all. It used to share the waypoint title's line, which
-   worked but had to be defended: a long title and a long caption fought for
-   the same line, and the card had to reserve room for the longest caption it
-   might show so that paging through the pictures did not move the title. None
-   of that is needed once the caption is on the thing it describes.
+   IN THE SMALL CARD it sits below the picture and beside the title, where it
+   has always been: on a heading's line it costs the words underneath nothing.
+   That is the block below.
 
-   It is emptied and refilled by the engine as the pictures change; .tm-fading
-   is on while the words are being swapped, which turns the change into a fade
-   rather than a jump. Empty means no caption for that picture, and an empty
-   box has no padding to show — the wash goes with the words.
+   IN THE BIG CARD it is written across the bottom right of the photograph
+   itself, dressed like the waypoint number in the opposite corner — a shadow
+   under the letters and a wash of dark behind them, so it reads over a bright
+   sky as easily as over a dark one. There is room for it there, the picture
+   is large enough to carry it, and the panel beside it keeps its whole height
+   for the words. */
 
-   pointer-events:none so it never takes a click meant for the picture's own
-   arrows, which reach almost this far on a small card. */
-.tm-card .tm-slideCaption{
-  position:absolute; right:0; bottom:0; z-index:1;
+/* the caption for whichever picture is showing. It is emptied and refilled by
+   the engine; .tm-fading is on while the words are being changed, which is
+   what turns the swap into a fade rather than a jump. Empty means no caption
+   for that picture, and it simply takes no room. */
+.tm-card .tm-inner .tm-slideCaption{
+  /* 0 0 auto: it is as wide as its words and never squeezed. Squeezing it is
+     what used to make it wrap into two lines and shove the title about; now a
+     caption too wide to share the line simply takes the line.
+
+     --caption-room is set on the card by the engine and holds the width of the
+     LONGEST caption that card has, so that paging from one picture to the next
+     never changes whether the title fits beside it. It is a floor, not a
+     width: a short caption still sits flush right inside it. Cards with one
+     caption never set it, and fall back to nothing. */
+  flex:0 0 auto; text-align:right;
+  min-width:min(var(--caption-room, 0px), var(--caption-share));
   max-width:min(100%, var(--caption-share));
+  font:400 var(--caption-size)/1.4 var(--font-body);
+  color:var(--text-quiet); font-style:italic;
+  transition:opacity var(--caption-fade) ease;
+  /* LIFTED TOWARDS THE PICTURE. A negative top margin rather than a smaller
+     padding on the card, because the title must not move — only the caption,
+     which reads as the picture's own note when it sits close under its edge.
+     Nothing follows it on this line, so the pull cannot drag anything else up
+     with it. */
+  margin-top:calc(var(--caption-lift) * -1);
+}
+/* THE TITLE AND THE CAPTION SHARE A LINE, UNTIL THEY CANNOT.
+   ─────────────────────────────────────────────────────────────────────────
+   WHEN THEY FIT  the title sits at the left and the caption at the right, on
+   one line, and the caption costs no height at all.
+
+   WHEN THEY DO NOT FIT  the caption keeps the top right corner — under the
+   photograph it describes, which is where it belongs — and THE TITLE MOVES
+   DOWN onto a line of its own beneath it. The caption never drops below the
+   title. "Bridge over Dufferin St." with "The trail through the houses" is
+   the case this is for: two pixels apart on a wide screen, touching on a
+   narrow one.
+
+   HOW, in one line of CSS: row-reverse. The caption is written FIRST in the
+   markup (see trail-engine.js) and this lays the row out from the right, so
+   the caption lands in the right-hand corner and the title fills what is
+   left. Flex wraps in source order, so when a line will not hold both it is
+   the second thing written — the title — that moves to the next line. Putting
+   the title first and hoping would drop the caption instead, which is the one
+   thing that must not happen.
+
+   A title on a line of its own still grows to the full width, so its text
+   starts at the left edge like every other title; nothing about it looks like
+   it has been indented or centred.
+
+   ALIGNED BY THEIR TOPS, not their baselines. On a baseline the small italic
+   sits at the foot of a 24px line and reads as a footnote to the heading; by
+   the top it lines up with the cap-height of the title and reads as a label on
+   the picture, which is what it is. The two type sizes have nearly the same
+   space above their capitals, so tops of the boxes and tops of the letters
+   come out within a pixel of each other. */
+.tm-titleRow{
+  display:flex; flex-direction:row-reverse; flex-wrap:wrap;
+  align-items:flex-start;
+  /* across: the least that may separate them, and what decides the break.
+     down: almost nothing, because the two lines are already a caption and the
+     heading it sits above. */
+  column-gap:var(--caption-gap); row-gap:2px;
+}
+/* Takes the rest of the line beside the caption, and the whole of it when the
+   caption has pushed it onto its own. min-width:0 so that a long word inside a
+   title shrinks the box rather than pushing out of the card. */
+.tm-titleRow h2{ flex:1 1 auto; min-width:0; }
+/* ── AND THE ONE ON THE PICTURE ───────────────────────────────────────────
+   Off unless the card is expanded. The wash fades out to the left rather than
+   banding across the picture, and an empty caption takes neither padding nor
+   background: the wash goes with the words. pointer-events:none so it never
+   takes a click meant for the picture's own arrows.
+
+   It sits on the bottom edge, dots and all: a caption is a handful of words
+   and a card has three or four pictures at most, so in practice they never
+   meet — and holding the caption clear of dots that are not there costs every
+   card a line's worth of the corner. */
+.tm-media .tm-slideCaption{ display:none; }
+#tm-cards.is-big .tm-media .tm-slideCaption{
+  display:block;
+  position:absolute; right:0; bottom:0; z-index:1;
+  max-width:min(100%, var(--caption-picture-share));
   padding:7px 12px 9px 30px;
   text-align:right;
   font:400 var(--caption-size)/1.4 var(--font-body);
@@ -1194,12 +1294,9 @@ body.page-trail{
   pointer-events:none;
   transition:opacity var(--caption-fade) ease;
 }
-.tm-card .tm-slideCaption:empty{ padding:0; background:none; }
-/* A card with several pictures has a row of dots along the foot of the
-   picture, dead centre. A long caption on a narrow card would reach them, so
-   where there are dots the caption sits one line higher — still in the
-   corner, and clear of them. */
-.tm-media:has(.tm-dots) .tm-slideCaption{ bottom:18px; }
+#tm-cards.is-big .tm-media .tm-slideCaption:empty{ padding:0; background:none; }
+/* and the one beside the title goes, so the words are never in both places */
+#tm-cards.is-big .tm-inner .tm-slideCaption{ display:none; }
 .tm-card .tm-slideCaption.tm-fading{ opacity:0; }
 .tm-card.tm-wishful .tm-count{ color:#f2a8ff; }
 .tm-card .tm-count span{ color:rgba(255,255,255,.7); letter-spacing:.1em; font-weight:500; }
@@ -1396,7 +1493,7 @@ body.page-trail{
 /* the title stops short of the two buttons in the corner above it. A title
    long enough to need the room wraps to a second line, which is below them
    and can run the full width. */
-#tm-cards.is-big .tm-inner > h2{ padding-right:var(--big-title-inset); }
+#tm-cards.is-big .tm-inner > .tm-titleRow{ padding-right:var(--big-title-inset); }
 
 /* THE CONTENTS GOING OUT AND COMING BACK.
    The card changes shape while its contents are invisible, so nothing is seen

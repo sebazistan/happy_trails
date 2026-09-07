@@ -12,6 +12,21 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 10.2  THE CAPTION IS IN THE PLACE THAT SUITS THE CARD IT IS ON. In the small
+       card it is back below the picture and beside the title, exactly where it
+       was in 10.0 — the shared line, the top alignment, and the rule that a
+       title too long to sit beside it drops underneath rather than pushing it
+       away. Only the expanded card writes it across the photograph.
+       The words are written into the card twice and the stylesheet shows
+       whichever copy belongs; the engine fills both every time a picture
+       changes, so the hidden one can never go stale.
+
+       And on the photograph it now sits on the bottom edge rather than a line
+       above it. It was being held clear of the row of dots, which cost the
+       corner a line on every card to avoid a collision that needs both a very
+       long caption and a very narrow picture to happen at all — and in the
+       expanded view the picture is never narrow.
+
  10.1  THE PICTURE'S CAPTION IS ON THE PICTURE, in the bottom right corner,
        dressed like the waypoint number in the top left: a shadow under the
        letters and a wash of dark behind them, so it reads over a bright sky
