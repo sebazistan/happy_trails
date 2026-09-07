@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 2.3
+   version 2.4
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -399,13 +399,10 @@ const DEFAULTS = {
   cardCloseMs: 220,            // how long the × takes to fade a card away, and
                                // how long a card takes to come back when the
                                // waypoint is clicked. Milliseconds.
-  scrollHintOnPhone: true,     // On a phone the card fills the screen, and a
-                               // reader who has just met one can reasonably
-                               // think the page has stopped being a scroll. A
-                               // line at the foot of the card says otherwise.
-                               // It is never shown on a wide screen, where the
-                               // card sits beside the map and the map is
-                               // visibly still moving.
+  /* THE "SCROLL FOR MORE" LINE IS GONE. It said, at the foot of every card,
+     that the page was still a scroll — worth saying once and not thirteen
+     times, and it cost a row of a card whose scarcest thing is room for the
+     words. What replaced it is simply that the cards are bigger. */
   cardsCanBeClosed: true,      // show the × in the corner of every card
   cardsReopenOnClick: true,    // clicking a waypoint on the map opens its card
                                // again, wherever the scroll happens to be. It
@@ -803,7 +800,6 @@ const DEFAULT_WORDS = {
   openingTitle:  "The Beltline, end to end",
   openingBody:   "A mixed-use trail along the path of the former Toronto Belt Line Railway, which ran for about seventy years. Scroll to walk it from the west end to the Brickworks — the map moves under you, and each stop arrives as you reach it.",
   openingHint:   "Scroll to begin",
-  scrollHint:    "Scroll for more",   /* under the card, on a phone only */
   previousStop:  "Previous waypoint",
   nextStop:      "Next waypoint",
   turnPhone:     "Turn your phone upright",
@@ -2083,12 +2079,19 @@ function start() {
   }
 
   const cards = stops.map((s, i) => {
-    const facts = [];
+    const facts = [];   // empty entries are dropped before the row is written
     if (haveHeights) facts.push("<div><small>" + WORDS.elevation + "</small>" + Math.round(s.metres) + " " + WORDS.metres + "</div>");
     if (perMetre)    facts.push("<div><small>" + WORDS.fromStart + "</small>" + (s.distance * perMetre / 1000).toFixed(1) + " " + WORDS.km + "</div>");
     /* the link button sits in the same row as the facts, at the far end. A
        waypoint with no mapLink contributes nothing, so no button appears —
        there is no setting to remember to turn off. */
+    /* WISHFUL STOPS CARRY TWO MORE FACTS — what it would cost to build and how
+       badly it is wanted. They belong in this row and nowhere else: it is the
+       row of things that are true about this stop, and a coin and a dial are
+       two more of those. They had a panel of their own beside the title, which
+       made them the loudest thing on the card; here they read as what they
+       are, the third and fourth figures after Elevation and From start. */
+    facts.push(judgementRow(s));
     if (s.mapLink) facts.push(
       '<a class="tm-mapLink" href="' + s.mapLink + '" target="_blank" rel="noopener">' +
       WORDS.mapLink + "</a>");
@@ -2106,6 +2109,18 @@ function start() {
 
       '<div class="tm-media">' +
         '<div class="tm-track">' + slides.map(slideHtml).join("") + "</div>" +
+        /* THE WAYPOINT NUMBER SITS ON THE PICTURE, top left, and the caption
+           for whichever picture is showing sits under it. Both were a row of
+           their own between the picture and the title, which cost 21 pixels of
+           a card whose scarcest thing is room for words — and put two small
+           grey things between a photograph and the heading that names it.
+           Over the picture they cost nothing, and the title now begins the
+           moment the picture ends. */
+        '<div class="tm-stamp">' +
+          '<div class="tm-count">' + WORDS.waypoint + " " + String(i + 1).padStart(2, "0") +
+          " <span>" + WORDS.outOf + " " + String(stops.length).padStart(2, "0") + "</span></div>" +
+          '<div class="tm-slideCaption"></div>' +
+        "</div>" +
         (many
           ? '<button class="tm-media-arrow is-prev" type="button" title="' + WORDS.previousPicture +
             '" aria-label="' + WORDS.previousPicture + '">&lsaquo;</button>' +
@@ -2119,26 +2134,7 @@ function start() {
       "</div>" +
 
       '<div class="tm-inner">' +
-        /* the waypoint number on the left, the current picture's caption on
-           the right — one row, so a long caption wraps under itself rather
-           than pushing the number about */
-        '<div class="tm-countRow">' +
-          '<div class="tm-count">' + WORDS.waypoint + " " + String(i + 1).padStart(2, "0") +
-          " <span>" + WORDS.outOf + " " + String(stops.length).padStart(2, "0") + "</span></div>" +
-          '<div class="tm-slideCaption"></div>' +
-        "</div>" +
-        /* WISHFUL STOPS CARRY TWO MORE FACTS. What it would cost to build and
-           how badly it is wanted — a coin and a dial, because the reader takes
-           both in without reading them, and the words are there underneath for
-           anyone who wants the exact value or is using a screen reader. A stop
-           that already exists shows neither: it costs nothing to build.
-
-           They sit BESIDE the title rather than under it. As a band of their
-           own they were the loudest thing on the card and pushed the words
-           down; on the title's line they are what they should be — two figures
-           in the margin of a heading. */
-        '<div class="tm-titleRow"><h2>' + s.title + "</h2>" + judgementRow(s) +
-        "</div>" +
+        "<h2>" + s.title + "</h2>" +
         '<div class="tm-textwindow"><div class="tm-textpages">' + paragraphsFor(s) + "</div></div>" +
         '<div class="tm-pager">' +
           '<button class="tm-prevpage" type="button" title="' + WORDS.previousPage +
@@ -2147,17 +2143,8 @@ function start() {
           '" aria-label="' + WORDS.nextPage + '">&rsaquo;</button>' +
           '<span class="tm-pagecount"></span>' +
         "</div>" +
-        (facts.length ? '<div class="tm-facts">' + facts.join("") + "</div>" : "") +
-        /* Only ever seen on a phone — the stylesheet hides it on anything
-           wider, where the map is visible beside the card and is plainly
-           still moving. It sits INSIDE the card, after the facts, so it
-           flows with the content and cannot land on top of anything. */
-        (SETTINGS.scrollHintOnPhone
-          ? '<div class="tm-more"><span>' + WORDS.scrollHint + "</span>" +
-            '<svg width="14" height="16" viewBox="0 0 20 26" fill="none" stroke="currentColor"' +
-            ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-            '<path d="M10 3v18M4 15l6 6 6-6"/></svg></div>'
-          : "") +
+        (facts.filter(Boolean).length
+          ? '<div class="tm-facts">' + facts.filter(Boolean).join("") + "</div>" : "") +
       "</div>";
 
     el("cards").appendChild(card);

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 3.0
+   version 3.1
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -180,29 +180,20 @@
      dark background you assume is one. */
   --opening-picture:   clamp(22px, 4.5vh, 54px);
   /* the "scroll for more" line at the foot of a card, on a phone */
-  --more-size:         9.5px;
-  --more-gap:          7px;
-  --more-top:          9px;
   /* the "turn your phone" screen */
   --turn-veil:         rgba(8,10,12,.92);
   --caption-size:      11px;
   --card-blur:         10px;
-  --card-body:         15px;
+  --card-body:         14px;   /* the paragraphs inside a card. Every tenth
+                                 of a millimetre off this is another line of
+                                 text in the same card, which is the whole
+                                 reason it is a variable. */
   /* Everything in a card that is NOT the picture, added up: the padding, the
      heading, the text window, the pager, the facts. The picture takes what is
      left of the column, so this number is how the card is kept inside it.
      ANYTHING ADDED TO A CARD HAS TO BE ADDED HERE TOO, or the card grows past
      the bottom of its column and starts overhanging the screen. */
-  --more-height:        19px;  /* what the "scroll for more" line at the foot
-                                  of a card costs, counted into --card-chrome
-                                  below because the line is always shown */
-  /* WHAT A CARD IS, APART FROM ITS TEXT: the picture's cap is the column
-     height minus this. Measured, not guessed — 233px of it is real chrome
-     (padding, the count row, the title, the pager, the facts) and the rest
-     is the room held back for the words. Raising the held-back part is
-     what turns a taller column into more lines rather than a taller
-     photograph. */
-  --card-chrome:       calc(300px + var(--more-height));
+  --card-chrome:       300px;
   --card-lean:         .1;
   --card-lift:         50%;
   --card-line:         1.65;
@@ -1043,28 +1034,42 @@ body.page-trail{
    baseline alignment keeps the two lines of type sitting on the same line even
    though they are different sizes; the caption is allowed to wrap under itself
    rather than push the number about. */
-.tm-card .tm-countRow{
-  display:flex; align-items:baseline; justify-content:space-between;
-  gap:14px; margin-bottom:6px;
+/* ── THE STAMP ON THE PICTURE ─────────────────────────────────────────────
+   The waypoint number and the current picture's caption, over the top-left of
+   the photograph. They were a row between the picture and the title, which
+   cost 21 pixels and put two small grey things in the way of a heading. Here
+   they cost nothing and the title starts where the picture stops.
+
+   Over a photograph nothing can be relied on for contrast, so both carry a
+   shadow and the whole corner is darkened a little underneath them — enough
+   to read against a bright sky, not enough to look like a box. */
+.tm-stamp{
+  position:absolute; left:0; top:0; right:0;
+  padding:9px 12px 22px;
+  display:flex; flex-direction:column; gap:4px;
+  pointer-events:none;
+  background:linear-gradient(to bottom, rgba(8,10,12,.55), rgba(8,10,12,0));
 }
 .tm-card .tm-count{
   flex:0 0 auto;
   font:700 10px/1 var(--font-body); letter-spacing:.2em; text-transform:uppercase;
-  color:var(--accent-soft);
+  color:#f0c246;
+  text-shadow:0 1px 5px rgba(0,0,0,.9);
 }
 /* the caption for whichever picture is showing. It is emptied and refilled by
    the engine; .tm-fading is on while the words are being changed, which is
    what turns the swap into a fade rather than a jump. Empty means no caption
    for that picture, and it simply takes no room. */
 .tm-card .tm-slideCaption{
-  flex:1 1 auto; min-width:0; text-align:right;
-  font:400 var(--caption-size)/1.4 var(--font-body);
-  color:var(--text-quiet); font-style:italic;
+  max-width:min(62%, 260px);
+  font:400 var(--caption-size)/1.35 var(--font-body);
+  color:rgba(255,255,255,.82); font-style:italic;
+  text-shadow:0 1px 5px rgba(0,0,0,.85);
   transition:opacity var(--caption-fade) ease;
 }
 .tm-card .tm-slideCaption.tm-fading{ opacity:0; }
-.tm-card.tm-wishful .tm-count{ color:var(--wishful-kicker); }
-.tm-card .tm-count span{ color:var(--text-quiet); letter-spacing:.1em; font-weight:500; }
+.tm-card.tm-wishful .tm-count{ color:#f2a8ff; }
+.tm-card .tm-count span{ color:rgba(255,255,255,.7); letter-spacing:.1em; font-weight:500; }
 /* ── A LINK INSIDE A CARD'S TEXT ─────────────────────────────────────────
    The only running text on the site that can carry links, so this is the only
    place they need a look. Underlined rather than coloured alone: over a
@@ -1136,22 +1141,15 @@ body.page-trail{
    read at a glance across twelve cards; the word is what makes it certain, and
    is all a screen reader has. Neither is left to colour alone — the coins
    differ in size and in edge, and the dial's needle differs in ANGLE. */
-/* THE TITLE AND THE TWO FIGURES SHARE A LINE.
-   The title takes what it needs and the figures take what is left, which on a
-   narrow card means they drop underneath — a heading squeezed to two words so
-   that a badge can stay beside it is the wrong way round. */
-.tm-titleRow{
-  display:flex; align-items:flex-start; justify-content:space-between;
-  gap:14px; flex-wrap:wrap;
-}
-.tm-titleRow h2{ flex:1 1 auto; min-width:min(100%, 11ch); }
+/* WHAT IT WOULD COST, AND HOW BADLY IT IS WANTED — in the row of figures.
+   They had a panel of their own beside the title, which made them the loudest
+   thing on the card. They belong here: this is the row of things that are true
+   about this stop, and they are the third and fourth of them, after Elevation
+   and From start. No panel, no border — the row already has a rule above it,
+   and a box inside a box is one box too many. */
 .tm-judgement{
-  display:flex; gap:12px; flex-wrap:wrap; flex:0 0 auto;
-  margin:2px 0 0; padding:6px 9px;
-  border:1px solid var(--wishful-edge-soft); border-radius:10px;
-  /* lighter than the card it sits on rather than darker: this is a note in the
-     margin, and a dark panel inside a dark card reads as a hole in it */
-  background:var(--wishful-panel-soft);
+  display:flex; gap:14px; flex-wrap:wrap; flex:0 0 auto;
+  margin:0; padding:0; border:0; background:none;
 }
 .tm-judge{ display:flex; align-items:center; gap:7px; }
 .tm-judge img{
@@ -1357,31 +1355,6 @@ body.page-trail{
 }
 #tm-closing h2{ margin:0 0 10px; font:600 clamp(22px,3.4vw,34px)/1.15 var(--font-display); }
 #tm-closing .tm-row{ display:flex; gap:28px; justify-content:center; margin-top:22px; }
-
-/* ── "scroll for more", at the foot of a waypoint card ────────────────────
-   A card can read as a place the page has stopped rather than a place it is
-   passing through. This says otherwise, at every screen size — the height it
-   takes is paid for in --card-chrome, so the picture above gives back exactly
-   what the line costs and the card still fits its column. */
-/* IT USED TO COST 41 PIXELS: twelve above, a rule, twelve below, and the line
-   itself. That is nearly two lines of the text it sits under, spent on a hint.
-   It has no rule and much less air now — the facts row above it already draws
-   a line, and a second one four millimetres below the first was drawing a box
-   around nothing. */
-.tm-more{
-  display:flex;
-  margin-top:var(--more-top);
-  align-items:center; justify-content:center; gap:var(--more-gap);
-  font:600 var(--more-size)/1 var(--font-body);
-  letter-spacing:.22em; text-transform:uppercase;
-  color:var(--text-faint);
-}
-/* No animation on this arrow, deliberately. There are thirteen cards in the
-   page and every one of them holds one of these, so an "infinite" animation
-   here is thirteen animations running for the whole visit — including on the
-   twelve cards you cannot see. Measured at about eight frames a second on a
-   phone. The opening screen's arrow still bobs: there is only one of it. */
-.tm-more svg{ opacity:.75; }
 
 /* the little glyph on a corner link — what the button DOES, not where it goes */
 .tm-linkIcon{ width:1.15em; height:1.15em; flex:none; opacity:.75; }
@@ -2663,9 +2636,13 @@ body.page-wishful{
     --card-lift:   0%;      /*   rather than being centred                     */
     --card-lean:   0;       /* no extra rise: it has nowhere to rise from      */
 
-    /* the picture keeps its 4:3 shape on a phone; fewer lines of text show at
-       once so the whole card still fits above the readouts */
-    --card-text-lines:4;
+    /* THE CAP ON A PHONE. It was 4, from when the card's chrome took 100
+       pixels more than it does — the count row, the scroll hint, the wider
+       paddings. With those gone the card was finishing 52 pixels short of the
+       readouts with the text still cut into four pages, because the cap, not
+       the room, was the limit. The engine still shows fewer than this on a
+       short phone; it is a ceiling, not a promise. */
+    --card-text-lines:7;
     --arrow-size:28px;
   }
   /* ── frosted glass, and why a phone does not get it ──────────────────
@@ -2720,19 +2697,21 @@ body.page-wishful{
      left end, and it carries its own background so it reads as sitting on top
      rather than as part of the card. */
   body.page-trail #tm-stepper{ z-index:8; }
-  /* and the card's last row keeps out of its way. The scroll hint was centred
-     across the full width, which put its left half under the arrows; it moves
-     to the right and the arrows get the left end of the row to themselves.
-     The row is also given the arrows' own height, so the pair sits IN it
-     rather than across the facts above it — 18 pixels, which is the whole
-     price of having both. */
-  .tm-more{
-    justify-content:flex-end;
-    min-height:var(--stepper-size);
-    align-items:center;
-    padding-left:calc(var(--stepper-size) * 2 + var(--stepper-gap) + 12px);
-  }
-  .tm-card .tm-inner{ padding:14px 16px 16px; }
+  /* THE ARROWS LINE UP WITH THE CARD'S OWN LEFT EDGE, not with the screen's.
+     They are positioned from the window, so without this they sat against the
+     very edge of the card and hung over its rounded corner — beside the card's
+     content rather than in line with it. --edge-gap is where the card starts,
+     16px is its inner padding, and the sum is where every line of text in it
+     begins. */
+  body.page-trail #tm-stepper{ left:calc(var(--edge-gap) + 16px); }
+  /* THE BOTTOM PADDING HOLDS A STRIP CLEAR FOR THE STEPPER ARROWS, which
+     sit over the card on a phone. The scroll hint used to be that strip;
+     with it gone the card has to keep the space itself, or the arrows land
+     on the figures above them.
+     Written into the shorthand rather than as its own padding-bottom below
+     it: this shorthand resets all four sides, so a separate rule for one of
+     them is silently overwritten if it comes first — which it did. */
+  .tm-card .tm-inner{ padding:14px 16px calc(var(--stepper-size) + 14px); }
   .tm-close{ width:34px; height:34px; font-size:20px; }   /* easier to hit with a thumb */
   .tm-card h2{ font-size:19px; }
   .tm-card p{ font-size:13px; }
@@ -2750,12 +2729,17 @@ body.page-wishful{
     --title-links:    30px;
     --readout-drop:   14px;   /* and the numbers sit closer to the edge       */
     --profile-height: 40px;   /* a shallower elevation graph                  */
-    --card-chrome:   calc(264px + var(--stepper-size));  /* tighter padding, but
+    /* on a phone the card also holds a clear strip at the bottom for the
+       stepper arrows, which is why the stepper's own size is in here */
+    --card-chrome:   calc(272px + var(--stepper-size));  /* tighter padding, but
                                  the hint still has to be paid for            */
     --card-media-min: 116px;  /* and the picture may go a little smaller here
                                  before the card is allowed to overhang       */
   }
-  .tm-card .tm-inner{ padding:14px 18px 18px; }
+  /* NOT the shorthand: on a small phone this block applies as well as the
+     narrow-screen one above, comes later, and a shorthand here would reset
+     the bottom padding that is holding a strip clear for the stepper. */
+  .tm-card .tm-inner{ padding-top:14px; padding-left:18px; padding-right:18px; }
   .tm-card .tm-facts{ margin-top:10px; padding-top:9px; }
 }
 @media (prefers-reduced-motion:reduce){

@@ -12,6 +12,36 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+  8.9  THE CARD IS MOSTLY WORDS NOW. On a 1400x900 screen a stop showed three
+       lines over four pages two versions ago, eight over two pages last
+       version, and TEN IN ONE PAGE here — the Allan Rd entry is read straight
+       through with no arrows to press. The picture is bigger than it was, not
+       smaller.
+       The waypoint number and the picture's caption moved onto the top left of
+       the photograph. They were a row between the picture and the title, which
+       cost 21 pixels and put two small grey things between a photograph and
+       the heading that names it. Over the picture they cost nothing, and the
+       TITLE NOW BEGINS THE MOMENT THE PICTURE ENDS. Both carry a shadow and a
+       soft darkening under them, because over a photograph nothing can be
+       relied on for contrast.
+       Cost and priority moved into the row of figures, after From start. They
+       had a panel of their own beside the title, which made them the loudest
+       thing on the card; they are the third and fourth facts about a stop and
+       now read as that. No border — the row already has a rule above it, and a
+       box inside a box is one box too many.
+       "Scroll for more" is gone. It said, at the foot of every card, that the
+       page was still a scroll: worth saying once, not thirteen times, and it
+       cost a row of the thing the card is shortest of.
+       The paragraph text is a point smaller (15px to 14px), which is another
+       line and a half in the same card.
+       ON A PHONE the cap on how many lines may show was still 4, set when the
+       card's chrome took a hundred pixels more than it does — so the card was
+       finishing 52 pixels short of the readouts with the text still cut into
+       four pages, because the cap and not the room was the limit. It is 7 now,
+       and a stop reads in three pages rather than five.
+       The stepper arrows line up with the card's own left edge rather than the
+       screen's, and the card holds a clear strip at its foot for them. The
+       scroll hint used to be that strip.
   8.8  A trail page's layer switches are one per row at every size.
        They were in two columns, which is right for the main map's panel — a
        dozen switches that would otherwise run off the bottom of a phone — and
