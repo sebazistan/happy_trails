@@ -12,6 +12,15 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+  9.1  The caption is aligned with the TOP of the waypoint title rather than
+       its baseline, and lifted three pixels further still, so it sits close
+       under the bottom edge of the photograph and reads as a note on the
+       picture rather than a footnote to the heading. Sixteen pixels higher
+       than it was.
+       The title has not moved: the lift is a negative margin on the caption
+       alone, so the card holds the same ten lines of text it did before. The
+       distance is --caption-lift in the stylesheet's variable block.
+
   9.0  The picture's caption is back below the picture and over to the right,
        where it was. The waypoint number stays stamped on the photograph.
        It shares the title's line rather than having a row of its own, so it

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 3.2
+   version 3.3
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -183,6 +183,15 @@
   /* the "turn your phone" screen */
   --turn-veil:         rgba(8,10,12,.92);
   --caption-size:      11px;
+  /* HOW FAR THE CAPTION RIDES UP. It shares a line with the waypoint title
+     and the two are aligned by their tops rather than their baselines, which
+     is most of the move; this is the last few pixels on top of that, so the
+     small italic sits nearer the photograph it describes than the heading it
+     sits beside. Three pixels is about a quarter of its own cap height —
+     enough to read as belonging upwards, not enough to break the alignment.
+     Past about six it stops looking level with the title at all; 0 leaves it
+     exactly level. */
+  --caption-lift:      3px;
   --card-blur:         10px;
   --card-body:         14px;   /* the paragraphs inside a card. Every tenth
                                  of a millimetre off this is another line of
@@ -1067,13 +1076,26 @@ body.page-trail{
   font:400 var(--caption-size)/1.4 var(--font-body);
   color:var(--text-quiet); font-style:italic;
   transition:opacity var(--caption-fade) ease;
+  /* LIFTED TOWARDS THE PICTURE. A negative top margin rather than a smaller
+     padding on the card, because the title must not move — only the caption,
+     which reads as the picture's own note when it sits close under its edge.
+     Nothing follows it on this line, so the pull cannot drag anything else up
+     with it. */
+  margin-top:calc(var(--caption-lift) * -1);
 }
 /* THE TITLE AND THE CAPTION SHARE A LINE. The title takes what it needs and
    the caption takes what is left; a caption long enough to squeeze the title
    wraps onto its own line underneath instead, because a heading cut to two
-   words so that a note can stay beside it is the wrong way round. */
+   words so that a note can stay beside it is the wrong way round.
+
+   ALIGNED BY THEIR TOPS, not their baselines. On a baseline the small italic
+   sits at the foot of a 24px line and reads as a footnote to the heading; by
+   the top it lines up with the cap-height of the title and reads as a label on
+   the picture, which is what it is. The two type sizes have nearly the same
+   space above their capitals, so tops of the boxes and tops of the letters
+   come out within a pixel of each other. */
 .tm-titleRow{
-  display:flex; align-items:baseline; justify-content:space-between;
+  display:flex; align-items:flex-start; justify-content:space-between;
   gap:16px; flex-wrap:wrap;
 }
 .tm-titleRow h2{ flex:1 1 auto; min-width:min(100%, 10ch); }
