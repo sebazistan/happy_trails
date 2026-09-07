@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Happy Trails Handbook</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* ─────────────────────────────────────────────────────────────────────
+     The palette is the site's own: the paper the map is drawn on, the
+     green of a built trail, the magenta of one that is only proposed.
+     Every colour is declared here in the light set first, so the dark
+     set below only has to say what changes.
+     ───────────────────────────────────────────────────────────────── */
+  :root{
+    --paper:      #f4efe3;
+    --surface:    #fbf8f0;
+    --sunk:       #efe7d6;
+    --ink:        #1d211d;
+    --ink-quiet:  #5f6459;
+    --ink-faint:  #877f6d;
+    --rule:       #ded4c0;
+    --green:      #2c7a34;   /* a built trail */
+    --green-soft: #e4f0e0;
+    --magenta:    #9c1d97;   /* a proposal */
+    --magenta-soft:#f6e6f6;
+    --amber:      #8a6a12;
+    --amber-soft: #f7edd4;
+    --code-bg:    #191d1c;
+    --code-ink:   #e7e3d7;
+    --code-quiet: #8d968b;
+    --code-key:   #9dd39f;
+    --code-str:   #e5c07b;
+    --shadow:     0 1px 2px rgba(29,33,29,.06), 0 8px 24px rgba(29,33,29,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:      #151917;
+      --surface:    #1c2120;
+      --sunk:       #111514;
+      --ink:        #e6e2d7;
+      --ink-quiet:  #9aa298;
+      --ink-faint:  #7c8479;
+      --rule:       #2e3532;
+      --green:      #6ecf72;
+      --green-soft: #1d2a1e;
+      --magenta:    #f2a8ff;
+      --magenta-soft:#2a1c2b;
+      --amber:      #dcb45c;
+      --amber-soft: #2a2415;
+      --code-bg:    #101413;
+      --shadow:     0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:      #151917;
+    --surface:    #1c2120;
+    --sunk:       #111514;
+    --ink:        #e6e2d7;
+    --ink-quiet:  #9aa298;
+    --ink-faint:  #7c8479;
+    --rule:       #2e3532;
+    --green:      #6ecf72;
+    --green-soft: #1d2a1e;
+    --magenta:    #f2a8ff;
+    --magenta-soft:#2a1c2b;
+    --amber:      #dcb45c;
+    --amber-soft: #2a2415;
+    --code-bg:    #101413;
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:400 16px/1.65 "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ── the shell: a contents rail beside one column of text ───────────── */
+  .shell{
+    max-width:1180px; margin:0 auto; padding:0 22px 96px;
+    display:grid; grid-template-columns:1fr; gap:0;
+  }
+  @media (min-width:1040px){
+    .shell{ grid-template-columns:232px minmax(0,1fr); gap:56px; align-items:start; }
+    .rail{ position:sticky; top:28px; }
+  }
+
+  /* ── masthead ────────────────────────────────────────────────────────── */
+  .masthead{ grid-column:1/-1; padding:56px 0 34px; border-bottom:2px solid var(--ink); }
+  .eyebrow{
+    font:500 11px/1 "IBM Plex Mono", ui-monospace, monospace;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--green);
+    margin:0 0 14px;
+  }
+  h1{
+    font:700 clamp(34px,5vw,50px)/1.06 Literata, Georgia, "Times New Roman", serif;
+    letter-spacing:-.015em; margin:0 0 16px; text-wrap:balance;
+  }
+  .standfirst{
+    margin:0; max-width:62ch; font-size:17.5px; color:var(--ink-quiet);
+  }
+  .standfirst strong{ color:var(--ink); font-weight:600; }
+
+  /* ── the contents rail ───────────────────────────────────────────────── */
+  .rail{ padding:34px 0 0; }
+  .rail h2{
+    font:500 10.5px/1 "IBM Plex Mono", ui-monospace, monospace;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--ink-faint);
+    margin:0 0 14px;
+  }
+  .rail ol{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+  .rail a{
+    display:block; padding:5px 10px; border-radius:6px; text-decoration:none;
+    color:var(--ink-quiet); font-size:14px; border-left:2px solid transparent;
+  }
+  .rail a:hover{ color:var(--ink); background:var(--surface); border-left-color:var(--green); }
+  .rail a:focus-visible{ outline:2px solid var(--green); outline-offset:2px; }
+  .rail .rail-gap{ height:12px; }
+
+  /* ── the body column ─────────────────────────────────────────────────── */
+  main{ padding-top:34px; min-width:0; }
+  section{ margin:0 0 52px; scroll-margin-top:24px; }
+  h2.head{
+    font:600 27px/1.2 Literata, Georgia, serif; letter-spacing:-.01em;
+    margin:0 0 6px; text-wrap:balance;
+  }
+  h2.head .num{
+    font:500 13px/1 "IBM Plex Mono", ui-monospace, monospace;
+    color:var(--green); margin-right:10px; vertical-align:2px;
+  }
+  h3{
+    font:600 18px/1.3 Literata, Georgia, serif; margin:30px 0 8px;
+  }
+  p{ margin:0 0 14px; max-width:66ch; }
+  main a{ color:var(--green); text-decoration-thickness:1px; text-underline-offset:2px; }
+  ul, ol.steps{ max-width:66ch; padding-left:22px; }
+  li{ margin:0 0 7px; }
+  strong{ font-weight:600; }
+  em{ color:var(--ink-quiet); }
+
+  /* which file this job is done in */
+  .infile{
+    display:inline-flex; align-items:baseline; gap:9px; flex-wrap:wrap;
+    margin:0 0 18px; padding:7px 12px; border-radius:7px;
+    background:var(--surface); border:1px solid var(--rule); box-shadow:var(--shadow);
+    font:500 12.5px/1.4 "IBM Plex Mono", ui-monospace, monospace;
+  }
+  .infile b{
+    font:500 10px/1.4 "IBM Plex Mono", monospace; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-faint);
+  }
+  .infile span{ color:var(--ink); }
+
+  code{
+    font:500 .89em/1.5 "IBM Plex Mono", ui-monospace, monospace;
+    background:var(--sunk); padding:1px 5px; border-radius:4px;
+    overflow-wrap:anywhere;
+  }
+  pre{
+    margin:0 0 18px; padding:16px 18px; border-radius:9px;
+    background:var(--code-bg); color:var(--code-ink);
+    overflow-x:auto; box-shadow:var(--shadow);
+  }
+  pre code{
+    background:none; padding:0; font-size:13.2px; line-height:1.7; color:inherit;
+    white-space:pre;
+  }
+  pre .c{ color:var(--code-quiet); font-style:italic; }   /* a comment */
+  pre .k{ color:var(--code-key); }                        /* a field name */
+  pre .s{ color:var(--code-str); }                        /* a value */
+
+  /* callouts */
+  .note{
+    margin:0 0 18px; padding:13px 16px; border-radius:8px;
+    border-left:3px solid var(--amber); background:var(--amber-soft);
+    max-width:66ch;
+  }
+  .note.good{ border-left-color:var(--green); background:var(--green-soft); }
+  .note.wish{ border-left-color:var(--magenta); background:var(--magenta-soft); }
+  .note p{ margin:0; }
+  .note p + p{ margin-top:9px; }
+  .note b{
+    display:block; font:600 11px/1.5 "IBM Plex Mono", monospace;
+    letter-spacing:.13em; text-transform:uppercase; margin-bottom:5px;
+  }
+  .note b{ color:var(--amber); }
+  .note.good b{ color:var(--green); }
+  .note.wish b{ color:var(--magenta); }
+
+  /* the anatomy panel */
+  /* four parts, so two rows of two — never three across with one stranded */
+  .anatomy{ display:grid; gap:14px; margin:0 0 22px; grid-template-columns:1fr; }
+  @media (min-width:620px){ .anatomy{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .part{
+    padding:15px 16px; border-radius:9px; background:var(--surface);
+    border:1px solid var(--rule); box-shadow:var(--shadow);
+  }
+  .part h4{
+    margin:0 0 6px; font:500 12px/1.4 "IBM Plex Mono", monospace;
+    letter-spacing:.04em; color:var(--green);
+  }
+  .part p{ margin:0; font-size:14px; color:var(--ink-quiet); max-width:none; }
+
+  /* the file map */
+  table{ border-collapse:collapse; width:100%; margin:0 0 20px; font-size:14.5px; }
+  .scroller{ overflow-x:auto; margin:0 0 20px; }
+  .scroller table{ margin:0; min-width:520px; }
+  th, td{ text-align:left; padding:9px 14px 9px 0; border-bottom:1px solid var(--rule); vertical-align:top; }
+  th{
+    font:500 10.5px/1.5 "IBM Plex Mono", monospace; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-faint); white-space:nowrap;
+  }
+  td:first-child{
+    font:500 13px/1.6 "IBM Plex Mono", monospace; white-space:nowrap; color:var(--ink);
+  }
+  td{ color:var(--ink-quiet); }
+
+  .field td:first-child{ color:var(--green); }
+
+  hr{ border:0; border-top:1px solid var(--rule); margin:44px 0; }
+
+  .closer{
+    margin-top:52px; padding:22px 24px; border-radius:10px;
+    background:var(--surface); border:1px solid var(--rule); box-shadow:var(--shadow);
+  }
+  .closer h2{ margin:0 0 8px; font:600 19px/1.3 Literata, Georgia, serif; }
+  .closer p{ margin:0 0 10px; }
+  .closer p:last-child{ margin:0; }
+
+  @media (prefers-reduced-motion: reduce){ *{ scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <p class="eyebrow">happytrailstoronto.com · site version 3.0</p>
+    <h1>The Happy Trails Handbook</h1>
+    <p class="standfirst">Everything you are likely to want to change, and exactly where to change it.
+      Written for the way you work now: <strong>you edit the finished HTML files and upload them to GitHub.</strong>
+      No build step, no tools to install — a text editor and a browser are the whole kit.</p>
+  </header>
+
+  <nav class="rail" aria-label="Contents">
+    <h2>The jobs</h2>
+    <ol>
+      <li><a href="#anatomy">How it is put together</a></li>
+      <li><a href="#upload">Uploading, and knowing it worked</a></li>
+      <div class="rail-gap"></div>
+      <li><a href="#words">Change a waypoint's words</a></li>
+      <li><a href="#pictures">Add pictures and video</a></li>
+      <li><a href="#waypoint">Add a waypoint</a></li>
+      <li><a href="#proposal">Add a proposal</a></li>
+      <li><a href="#trail-settings">A trail's own settings</a></li>
+      <li><a href="#map">Replace a map</a></li>
+      <li><a href="#new-trail">Add a whole new trail</a></li>
+      <div class="rail-gap"></div>
+      <li><a href="#looks">Colours, sizes, behaviour</a></li>
+      <li><a href="#traps">The five traps</a></li>
+      <li><a href="#check">Check before you upload</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="anatomy">
+      <h2 class="head"><span class="num">01</span>How it is put together</h2>
+      <p>Every trail page is <strong>self-contained</strong>. Open <code>beltline.html</code> and everything
+        about the Beltline is in that one file: its settings, its words, its list of waypoints, and its map
+        drawing. Nothing about the Beltline lives anywhere else. That is why editing is easy — you never have
+        to work out which of twenty files to open.</p>
+
+      <div class="anatomy">
+        <div class="part">
+          <h4>SETTINGS</h4>
+          <p>The trail's facts: how long it is, which media folder its pictures come from, which map the
+            Download button hands over.</p>
+        </div>
+        <div class="part">
+          <h4>WORDS</h4>
+          <p>The corner title, and the text on the opening and closing screens.</p>
+        </div>
+        <div class="part">
+          <h4>WAYPOINTS</h4>
+          <p>One entry per stop: its title, its height, its pictures, its paragraphs. <em>This is the block
+            you will spend your time in.</em></p>
+        </div>
+        <div class="part">
+          <h4>&lt;template id="tm-artwork"&gt;</h4>
+          <p>The map itself, an SVG pasted in whole. It carries the route line and one small circle per
+            waypoint.</p>
+        </div>
+      </div>
+
+      <p>Two files are shared by every page and are never edited per-trail:
+        <code>trail-engine.js</code> (how a trail page behaves) and <code>happy-trails.css</code>
+        (how everything looks). Change one of those and all twelve trails change together.</p>
+
+      <h3>Where everything lives</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th>File or folder</th><th>What it is</th></tr></thead>
+          <tbody>
+            <tr><td>index.html</td><td>the main map, and the list of route buttons on it</td></tr>
+            <tr><td>trails.html</td><td>the trails index — one card per trail</td></tr>
+            <tr><td>wishful.html</td><td>the Wishful thinking page — one card per proposal, with the sliders</td></tr>
+            <tr><td>beltline.html <em>etc.</em></td><td>one page per trail, twelve of them</td></tr>
+            <tr><td>about.html, contact.html</td><td>the two reading pages</td></tr>
+            <tr><td>trail-engine.js</td><td>how every trail page behaves. Shared.</td></tr>
+            <tr><td>happy-trails.css</td><td>every colour, size and font on the site. Shared.</td></tr>
+            <tr><td>media/&lt;trail&gt;/</td><td>photographs and video, one folder per trail</td></tr>
+            <tr><td>maps/</td><td>the SVG each trail's Download button hands over</td></tr>
+            <tr><td>trail link images/</td><td>1000×560 pictures behind each trail's opening card and on trails.html</td></tr>
+            <tr><td>wishful link images/</td><td>1000×560 pictures on the Wishful thinking cards</td></tr>
+            <tr><td>icons/</td><td>the coins, the dials and the legend swatches</td></tr>
+            <tr><td>version.txt</td><td>which version is actually live. See below.</td></tr>
+            <tr><td>CNAME, .nojekyll</td><td>two invisible files GitHub needs. Never delete them.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="upload">
+      <h2 class="head"><span class="num">02</span>Uploading, and knowing it worked</h2>
+      <p>Three separate delays sit between your computer and the live site, and they are why a change can
+        seem not to have landed: <strong>the upload</strong> (your browser sending files to GitHub),
+        <strong>the deploy</strong> (GitHub publishing them — usually under a minute, occasionally several),
+        and <strong>your own browser's cache</strong>.</p>
+
+      <div class="note">
+        <b>The one mistake that costs an afternoon</b>
+        <p>Drag the <em>contents</em> of the folder into GitHub — the loose files and the folders inside it —
+          <strong>not the folder itself</strong>. Dragging the folder puts the whole site one level down,
+          at <code>/site-assets-v3.0/</code>, where nothing links to it. There is no error message anywhere;
+          the site simply carries on showing the previous version.</p>
+      </div>
+
+      <ol class="steps">
+        <li>Upload the files. GitHub's web uploader takes about 100 files per commit, so a full site needs
+          three or four passes; a changed-only set is one.</li>
+        <li>Wait for the deploy — the Actions tab shows it, and it is done when the dot turns green.</li>
+        <li>Visit <strong><code>happytrailstoronto.com/version.txt</code></strong>. It says, in one line,
+          which version is live. If it does not say what you just uploaded, the files did not land — go back
+          to the note above.</li>
+        <li>Then hard-refresh the page you changed: <code>Ctrl+Shift+R</code> on Windows,
+          <code>Cmd+Shift+R</code> on a Mac.</li>
+      </ol>
+
+      <div class="note good">
+        <b>Changed-only zips</b>
+        <p>Most changes touch two or three files. A changed-only set can be dropped straight in — GitHub
+          replaces the files with the same names and leaves the rest alone. Only use one if
+          <code>version.txt</code> currently shows the version it was built against.</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="words">
+      <h2 class="head"><span class="num">03</span>Change a waypoint's words</h2>
+      <p class="infile"><b>edit</b> <span>the trail's own page — e.g. beltline.html</span></p>
+
+      <p>Search the file for <code>const WAYPOINTS</code>. Everything below it, to the closing
+        <code>];</code>, is the list of stops. Find the one you want by its title and change the text.
+        Each entry looks like this:</p>
+
+<pre><code><span class="c">// one waypoint on the Beltline</span>
+{
+  <span class="k">marker</span>: <span class="s">"#wp-moraine"</span>,          <span class="c">// which circle in the drawing it sits on</span>
+  <span class="k">title</span>:  <span class="s">"Allan Rd"</span>,
+  <span class="k">metres</span>: 86,                     <span class="c">// height above sea level, for the graph</span>
+  <span class="k">mapLink</span>: <span class="s">"https://www.google.com/maps/@43.69,-79.46,17z"</span>,
+  <span class="k">media</span>:  [ { <span class="k">src</span>: <span class="s">"06-a.jpg"</span>, <span class="k">caption</span>: <span class="s">"The gap, fifty years on"</span> } ],
+  <span class="k">text</span>:   [
+    <span class="s">"The first paragraph."</span>,
+    <span class="s">"The second paragraph."</span> ]
+}</code></pre>
+
+      <p>Every field is optional except <code>title</code> and a way of placing the stop. Leave out
+        <code>mapLink</code> and the Google maps button simply does not appear. Leave out
+        <code>media</code> and the card has no picture.</p>
+
+      <h3>The fields, in full</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th>Field</th><th>What it does</th></tr></thead>
+          <tbody class="field">
+            <tr><td>title</td><td>the heading on the card, and the name in the address bar</td></tr>
+            <tr><td>marker</td><td><code>"#wp-something"</code> — the circle in this page's drawing that places the stop</td></tr>
+            <tr><td>along</td><td>instead of a marker: how far along the route, <code>0</code> to <code>1</code>. No drawing needed.</td></tr>
+            <tr><td>metres</td><td>height above sea level. Drives the elevation graph and the Elevation readout.</td></tr>
+            <tr><td>text</td><td>one string, or a list of them — one paragraph each</td></tr>
+            <tr><td>media</td><td>the pictures and video. See the next section.</td></tr>
+            <tr><td>mapLink</td><td>a Google Maps address; adds the button at the foot of the card</td></tr>
+            <tr><td>kind</td><td><code>"wishful"</code> marks it as a proposal rather than something built</td></tr>
+            <tr><td>cost / priority</td><td><code>"low"</code>, <code>"medium"</code> or <code>"high"</code> — proposals only</td></tr>
+            <tr><td>slug</td><td>the name in the address. Set it only to keep an old link working after a retitle.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <b>Renaming a waypoint breaks its links</b>
+        <p>The address of a stop is made from its title: "Allan Rd" becomes
+          <code>beltline.html#allan-rd</code>. Retitle it and every link pointing there — including the ones
+          on the Wishful thinking page — lands at the top of the trail instead. To rename and keep the old
+          links working, add the old name as a slug: <code>slug: "allan-rd",</code></p>
+      </div>
+
+      <h3>Links inside a paragraph</h3>
+      <p>The paragraphs may contain links. The whole paragraph is wrapped in double quotes, so use
+        <strong>single quotes</strong> inside it — double quotes would end the paragraph early and break
+        the page.</p>
+<pre><code><span class="k">text</span>: [
+  <span class="s">"A trench blasted through Midtown for the &lt;a href='https://en.wikipedia.org/wiki/Spadina_Expressway' target='_blank' rel='noopener'&gt;Spadina Expressway&lt;/a&gt;, wiping out hundreds of houses."</span> ]</code></pre>
+      <p>A link leaving the site gets a small outward arrow after it automatically. One pointing at another
+        page of this site does not.</p>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="pictures">
+      <h2 class="head"><span class="num">04</span>Add pictures and video</h2>
+      <p class="infile"><b>edit</b> <span>the trail's page</span> <b>and</b> <span>media/&lt;trail&gt;/</span></p>
+
+      <ol class="steps">
+        <li>Put the file in that trail's media folder — <code>media/beltline/</code>,
+          <code>media/humber/</code>, and so on. The folder is named in that page's
+          <code>mediaFolder</code> setting.</li>
+        <li>Add it to the waypoint's <code>media</code> list. The filename alone is enough; the folder is
+          added for you.</li>
+      </ol>
+
+<pre><code><span class="k">media</span>: [
+  { <span class="k">src</span>: <span class="s">"05-a.jpg"</span>, <span class="k">caption</span>: <span class="s">"Where the trail stops"</span> },
+  { <span class="k">src</span>: <span class="s">"05-b.jpg"</span>, <span class="k">caption</span>: <span class="s">"Where it could carry on"</span> },
+  { <span class="k">src</span>: <span class="s">"05-c.mp4"</span>, <span class="k">caption</span>: <span class="s">"From the air"</span> } ],</code></pre>
+
+      <p>Give a waypoint more than one and the card grows arrows and dots to step through them. The caption
+        changes with the picture — in the small card it sits beside the title, and in the expanded card it
+        is written across the bottom right of the photograph.</p>
+
+      <ul>
+        <li><strong>Any shape works.</strong> Portrait, square, 16:9 — everything is cropped to fill the
+          card's window from the centre, never squashed. Aim for the long edge at 1600px or so; larger
+          files only cost your readers time.</li>
+        <li><strong>Video</strong> — <code>.mp4</code>, <code>.webm</code>, <code>.ogv</code> or
+          <code>.mov</code> — plays silently and loops, and only while its own card is on screen. A spinner
+          shows while it is still arriving.</li>
+        <li><strong>A caption is optional.</strong> Without one the picture simply has no note.</li>
+      </ul>
+
+      <h3>A before-and-after slider</h3>
+      <p>Two pictures of the same view, with a handle to wipe between them. Both are cropped identically, so
+        shoot or crop them to line up.</p>
+<pre><code>{ <span class="k">before</span>: <span class="s">"gap-now.jpg"</span>, <span class="k">after</span>: <span class="s">"gap-bridged.jpg"</span>,
+  <span class="k">caption</span>: <span class="s">"What a bridge would do"</span>,
+  <span class="k">beforeLabel</span>: <span class="s">"Today"</span>, <span class="k">afterLabel</span>: <span class="s">"With a bridge"</span> }</code></pre>
+
+      <div class="note">
+        <b>Filenames are case-sensitive on GitHub</b>
+        <p><code>06-A.JPG</code> and <code>06-a.jpg</code> are two different files as far as the live site is
+          concerned, even though your own computer treats them as the same. A picture that works locally and
+          not online is nearly always this. Keep everything lower case.</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="waypoint">
+      <h2 class="head"><span class="num">05</span>Add a waypoint</h2>
+      <p class="infile"><b>edit</b> <span>the trail's page</span></p>
+
+      <p>Copy an existing entry, paste it into the <code>WAYPOINTS</code> list, and change it.
+        <strong>The order in the list does not matter</strong> — the page sorts the stops by where they
+        fall along the route, so a new one slots itself in.</p>
+
+      <h3>Placing it without touching Illustrator</h3>
+      <p>Use <code>along</code> instead of <code>marker</code>: how far down the route the stop sits, from
+        <code>0</code> at the start to <code>1</code> at the end. The waypoint is placed on the line, its
+        name chip appears on the map, and the distance readout works out from there.</p>
+
+<pre><code>{
+  <span class="k">along</span>:  0.62,                    <span class="c">// 62% of the way along the route</span>
+  <span class="k">title</span>:  <span class="s">"Yellow Creek"</span>,
+  <span class="k">metres</span>: 91,
+  <span class="k">media</span>:  [ { <span class="k">src</span>: <span class="s">"09-a.jpg"</span>, <span class="k">caption</span>: <span class="s">"Down into the ravine"</span> } ],
+  <span class="k">text</span>:   [ <span class="s">"What there is to say about it."</span> ]
+},</code></pre>
+
+      <div class="note good">
+        <b>Getting the fraction right</b>
+        <p>Read it off the trail itself. Scroll the trail page until the map is at the spot you want and
+          look at the <strong>Complete</strong> readout in the bottom right — 62% means
+          <code>along: 0.62</code>. Adjust and reload until the chip sits where you want it.</p>
+      </div>
+
+      <h3>Placing it by eye, in Illustrator</h3>
+      <p>The precise way, and the one the existing waypoints use. In the trail's Illustrator file, draw a
+        small circle where the stop belongs and name it <code>wp-yellowcreek</code>. Export SVG
+        (<em>File ▸ Export ▸ Export As ▸ SVG</em>, <strong>Styling: Presentation Attributes</strong>,
+        <strong>Object IDs: Layer Names</strong>), then paste the whole SVG into the page between
+        <code>&lt;template id="tm-artwork"&gt;</code> and <code>&lt;/template&gt;</code>, replacing what is
+        there. Then point the waypoint at it with <code>marker: "#wp-yellowcreek"</code>.</p>
+      <p>The circle does not have to sit exactly on the line — the page snaps the stop to the nearest point
+        of the route. Near enough is enough.</p>
+
+      <div class="note">
+        <b>A marker that is not in the drawing is skipped silently</b>
+        <p>If <code>marker</code> names a circle the artwork does not have, that waypoint simply does not
+          appear — no error on the page. Press <code>F12</code> and look at the Console: it says
+          <em>waypoint marker "#wp-…" is not in the artwork — skipping "…"</em>. That message is the fastest
+          way to catch a typo.</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="proposal">
+      <h2 class="head"><span class="num">06</span>Add a proposal</h2>
+      <p class="infile"><b>edit</b> <span>the trail's page</span> <b>and</b> <span>wishful.html</span></p>
+
+      <p>A proposal is an ordinary waypoint with three more fields. It turns purple, it hides behind the
+        <em>Wishful thinking</em> switch, and its card carries a coin for what it would cost and a dial for
+        how badly it is wanted.</p>
+
+<pre><code>{
+  <span class="k">along</span>:  0.31,
+  <span class="k">title</span>:  <span class="s">"Eglinton gap"</span>,
+  <span class="k">metres</span>: 104,
+  <span class="k">kind</span>:   <span class="s">"wishful"</span>,  <span class="k">cost</span>: <span class="s">"medium"</span>,  <span class="k">priority</span>: <span class="s">"high"</span>,
+  <span class="k">media</span>:  [ { <span class="k">src</span>: <span class="s">"eglinton-gap.jpg"</span>, <span class="k">caption</span>: <span class="s">"Where the path gives up"</span> } ],
+  <span class="k">text</span>:   [ <span class="s">"What is wrong, and the specific thing that would fix it."</span> ]
+},</code></pre>
+
+      <p><code>cost</code> and <code>priority</code> are each <code>"low"</code>, <code>"medium"</code> or
+        <code>"high"</code>. Both are required on a proposal — they are what the Wishful thinking page's
+        sliders sort on.</p>
+
+      <div class="note wish">
+        <b>The Wishful thinking page does not update itself</b>
+        <p>It is a separate page with its own list of cards, so a proposal added to a trail will not appear
+          on it until you add it there too. Four small edits, below.</p>
+      </div>
+
+      <h3>In wishful.html</h3>
+      <ol class="steps">
+        <li><strong>Make the picture.</strong> Save a 1000×560 image into
+          <code>wishful link images/</code>, named after the waypoint's address —
+          <code>eglinton-gap.png</code>.</li>
+        <li><strong>Copy a card</strong> — any <code>&lt;article class="wt-card"&gt;</code> block — paste it
+          in beside the others, and change the six things marked below.</li>
+        <li><strong>Update the three counts.</strong> Search for <code>countAll</code> and change
+          <code>"Showing 1 of 12"</code>, <code>"Showing all 12"</code> and <code>"Showing %s of 12"</code>
+          to the new total.</li>
+        <li><strong>Update the opening sentence</strong> — it begins <em>"Twelve places where the trail
+          network stops…"</em></li>
+      </ol>
+
+<pre><code>&lt;article class=<span class="s">"wt-card"</span> data-cost=<span class="s">"medium"</span> data-priority=<span class="s">"high"</span>
+         data-trail=<span class="s">"The Beltline"</span> data-title=<span class="s">"eglinton gap"</span>&gt;   <span class="c">&lt;!-- lower case --&gt;</span>
+  &lt;div class=<span class="s">"wt-shot"</span> style=<span class="s">"background-image:url('wishful%20link%20images/eglinton-gap.png')"</span>&gt;&lt;/div&gt;
+  &lt;div class=<span class="s">"wt-body"</span>&gt;
+    &lt;div class=<span class="s">"wt-on"</span>&gt;The Beltline&lt;/div&gt;                    <span class="c">&lt;!-- which trail --&gt;</span>
+    &lt;h3&gt;&lt;a class=<span class="s">"wt-open"</span> href=<span class="s">"beltline.html#eglinton-gap"</span>&gt;Eglinton gap&lt;/a&gt;&lt;/h3&gt;
+    &lt;p&gt;One sentence on what is missing and what would fix it.&lt;/p&gt;
+    &lt;div class=<span class="s">"wt-marks"</span>&gt;
+      &lt;span class=<span class="s">"wt-mark is-cost"</span>&gt;&lt;img src=<span class="s">"icons/cost-medium.svg"</span> alt=<span class="s">""</span>
+        width=<span class="s">"48"</span> height=<span class="s">"48"</span>&gt;&lt;span&gt;&lt;small&gt;Cost&lt;/small&gt;&lt;b&gt;Medium&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;
+      &lt;span class=<span class="s">"wt-mark is-priority"</span>&gt;&lt;img src=<span class="s">"icons/priority-high.svg"</span> alt=<span class="s">""</span>
+        width=<span class="s">"48"</span> height=<span class="s">"48"</span>&gt;&lt;span&gt;&lt;small&gt;Priority&lt;/small&gt;&lt;b&gt;High&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=<span class="s">"wt-go"</span>&gt;See it on the map &lt;span aria-hidden=<span class="s">"true"</span>&gt;&amp;rarr;&lt;/span&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/article&gt;</code></pre>
+
+      <p>The <code>data-cost</code> and <code>data-priority</code> attributes are what the sliders filter on,
+        and they must match the words shown in the two marks and the icon filenames
+        (<code>icons/cost-low.svg</code>, <code>icons/priority-high.svg</code>, and so on).
+        <code>data-title</code> is the title in lower case; it is only used for sorting.</p>
+
+      <p>The link on the card — <code>beltline.html#eglinton-gap</code> — is the whole point of the page.
+        Following it opens that waypoint's card expanded, over the map, with the trail already standing at
+        the right place.</p>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="trail-settings">
+      <h2 class="head"><span class="num">07</span>A trail's own settings</h2>
+      <p class="infile"><b>edit</b> <span>the trail's page, near the top</span></p>
+
+      <p>Above the waypoints sit two small blocks. <code>SETTINGS</code> holds the trail's facts:</p>
+
+<pre><code>const SETTINGS = {
+  <span class="k">trailLength</span>:    10.2,                        <span class="c">// km end to end. Every distance</span>
+                                              <span class="c">// on the page is worked out from this.</span>
+  <span class="k">mediaFolder</span>:    <span class="s">"media/beltline/"</span>,           <span class="c">// where its pictures live</span>
+  <span class="k">mapFile</span>:        <span class="s">"maps/beltline-map.svg"</span>,     <span class="c">// what Download hands over</span>
+  <span class="k">trailImage</span>:     <span class="s">"trail%20link%20images/beltline.png"</span>,
+};</code></pre>
+
+      <p>And <code>WORDS</code> holds everything written on the page that is not a waypoint:</p>
+
+<pre><code>const WORDS = {
+  <span class="k">cornerKicker</span>:  <span class="s">"Type: Railpath · Length: 10.2 km"</span>,   <span class="c">// top left, small</span>
+  <span class="k">cornerTitle</span>:   <span class="s">"The Beltline"</span>,                       <span class="c">// top left, large</span>
+  <span class="k">openingKicker</span>: <span class="s">"Midtown Toronto"</span>,
+  <span class="k">openingTitle</span>:  <span class="s">"The Beltline"</span>,
+  <span class="k">openingBody</span>:   <span class="s">"The paragraph on the opening screen."</span>,
+  <span class="k">closingTitle</span>:  <span class="s">"The end of the line"</span>,
+  <span class="k">closingBody</span>:   <span class="s">"The paragraph on the closing screen."</span>,
+};</code></pre>
+
+      <div class="note">
+        <b>Two spaces, written as %20</b>
+        <p>The folders <code>trail link images</code> and <code>wishful link images</code> have spaces in
+          their names, and a space cannot appear in a web address — it is written <code>%20</code>. Copy
+          those paths exactly as they appear; a literal space there is a broken picture.</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="map">
+      <h2 class="head"><span class="num">08</span>Replace a map</h2>
+      <p class="infile"><b>edit</b> <span>the trail's page</span> <b>and</b> <span>maps/</span></p>
+
+      <p>A trail's drawing is pasted into its page, between
+        <code>&lt;template id="tm-artwork"&gt;</code> and <code>&lt;/template&gt;</code>, near the bottom of
+        the file. To replace it, export SVG from Illustrator and paste the whole thing in place of what is
+        there.</p>
+
+      <p>Export with <strong>Styling: Presentation Attributes</strong> and
+        <strong>Object IDs: Layer Names</strong>. Three names inside the drawing matter:</p>
+
+      <div class="scroller">
+        <table>
+          <thead><tr><th>Name in Illustrator</th><th>What it becomes</th></tr></thead>
+          <tbody class="field">
+            <tr><td>route</td><td>the line the page walks. Exactly one per trail map.</td></tr>
+            <tr><td>wp-something</td><td>a small circle marking a waypoint, one per stop that uses a marker</td></tr>
+            <tr><td>link-1, link-2…</td><td>a small circle where this trail meets another; the page puts a button there</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Then save the same SVG into <code>maps/</code> under the name in that page's <code>mapFile</code>
+        setting, so the Download button hands over the new drawing rather than the old one.</p>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="new-trail">
+      <h2 class="head"><span class="num">09</span>Add a whole new trail</h2>
+      <p>This is the one job that touches several files. In order:</p>
+
+      <ol class="steps">
+        <li><strong>Copy a trail page</strong> that is closest in shape to the new one and rename it —
+          <code>rouge.html</code>. Change its <code>SETTINGS</code>, its <code>WORDS</code>, and its
+          <code>WAYPOINTS</code>.</li>
+        <li><strong>Paste its drawing in</strong> (section 08) and save a copy into <code>maps/</code>.</li>
+        <li><strong>Make its media folder</strong>: <code>media/rouge/</code>, and point
+          <code>mediaFolder</code> at it.</li>
+        <li><strong>Make its two pictures</strong>: <code>trail link images/rouge.png</code> at 1000×560,
+          for the opening card and the trails page.</li>
+        <li><strong>Add its card to trails.html</strong> — copy one that is already there and change the
+          name, the picture, the type and length line, and the link.</li>
+        <li><strong>Add it to the main map.</strong> In <code>index.html</code>, find <code>const ROUTES</code>
+          and add a line. <code>layer</code> is the name of the group in the main map's artwork that holds
+          this route's highlight; <code>x</code> and <code>y</code> are where its button sits, in the
+          artwork's own coordinates.</li>
+      </ol>
+
+<pre><code>{ <span class="k">label</span>: <span class="s">"Rouge"</span>, <span class="k">layer</span>: <span class="s">"rouge"</span>, <span class="k">x</span>: 4200, <span class="k">y</span>: 900,
+  <span class="k">href</span>: <span class="s">"rouge.html"</span>, <span class="k">needs</span>: ROUTE_NEEDS },</code></pre>
+
+      <ol class="steps" start="7">
+        <li><strong>Add the route to the main map's artwork</strong> — a group named <code>rouge</code>
+          holding the highlighted line, pasted into <code>index.html</code>'s artwork the same way. A route
+          with no group still gets a button; it just has nothing to light up when you point at it.</li>
+        <li><strong>Add it to the navigation</strong> if it should be there, and to
+          <code>sitemap.xml</code>.</li>
+      </ol>
+
+      <div class="note good">
+        <b>Do it in two sittings</b>
+        <p>Steps 1 to 5 give you a working trail page you can open and read, with its own map and pictures,
+          reachable from the trails list. Steps 6 and 7 put it on the main map. There is no harm in the gap:
+          a trail with no route button is simply not on the map yet.</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="looks">
+      <h2 class="head"><span class="num">10</span>Colours, sizes, behaviour</h2>
+      <p class="infile"><b>edit</b> <span>happy-trails.css</span> <b>or</b> <span>trail-engine.js</span></p>
+
+      <p>Both files open with one long block of numbers, each with a note saying what it does and what
+        happens if you change it. You will not need to read past those blocks. Everything in them applies to
+        the whole site at once.</p>
+
+      <h3>In happy-trails.css — the look</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th>Variable</th><th>What it sets</th></tr></thead>
+          <tbody class="field">
+            <tr><td>--accent</td><td>the red used for buttons and highlights</td></tr>
+            <tr><td>--route-line</td><td>the green of a built trail, on the map and the graph</td></tr>
+            <tr><td>--route-line-wish</td><td>the magenta of a proposed one</td></tr>
+            <tr><td>--card-body</td><td>the size of the paragraph text on a card. A tenth of a millimetre here is another line of text.</td></tr>
+            <tr><td>--card-text-lines</td><td>the most lines a small card will show at once before paging</td></tr>
+            <tr><td>--card-media</td><td>the shape of the picture window — <code>4/3</code></td></tr>
+            <tr><td>--card-width</td><td>how wide the card beside the map may be</td></tr>
+            <tr><td>--big-media-part</td><td>in the expanded card, the share of the width the picture takes. Raising it makes the picture bigger and the card taller.</td></tr>
+            <tr><td>--caption-size</td><td>the picture's caption</td></tr>
+            <tr><td>--bar-height</td><td>the navigation bar, which everything else measures down from</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>In trail-engine.js — the behaviour</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th>Setting</th><th>What it does</th></tr></thead>
+          <tbody class="field">
+            <tr><td>pageHeight</td><td>how much scrolling a trail takes, in screenfuls. Bigger = slower walk.</td></tr>
+            <tr><td>zoomWalking</td><td>how close in the map sits while walking</td></tr>
+            <tr><td>videoAutoplay</td><td>whether a video starts by itself when its card arrives</td></tr>
+            <tr><td>cardCanGrow</td><td>offer the expand button at all</td></tr>
+            <tr><td>cardGrowsFrom</td><td>the narrowest window that gets it — 1100px</td></tr>
+            <tr><td>bigOnArrival</td><td>which links open expanded. <code>"wishful"</code> is the Wishful thinking page's journey.</td></tr>
+            <tr><td>wishfulOn</td><td>whether proposals show before the switch is touched</td></tr>
+            <tr><td>cardsCanBeClosed</td><td>the × in a card's corner</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>A setting can also be changed for <strong>one trail only</strong>: add it to that page's own
+        <code>SETTINGS</code> block, which overrides the shared default. That is how a trail could get a
+        slower walk or a closer zoom than the rest without affecting anything else.</p>
+
+      <h3>Counting visits</h3>
+      <p><code>analytics.js</code> does nothing until you set <code>provider</code> to
+        <code>"plausible"</code>, <code>"goatcounter"</code> or <code>"cloudflare"</code> and fill in the one
+        setting it needs. No cookies, no identifiers, and it honours Do Not Track. It also records how far
+        down each trail page people actually get — a quarter, half, three quarters, the end — which is the
+        number that says whether the scrolling format is working.</p>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="traps">
+      <h2 class="head"><span class="num">11</span>The five traps</h2>
+      <p>Nearly every broken page comes from one of these. A trail page that goes blank or loses its
+        waypoints has almost certainly hit the first two.</p>
+
+      <ol class="steps">
+        <li><strong>A missing comma.</strong> Every waypoint in the list ends with <code>},</code> — except
+          the last, which may end with just <code>}</code>. Paste a new one in and it is easy to leave the
+          comma off the one above it.</li>
+        <li><strong>A double quote inside a double-quoted line.</strong> Use single quotes inside
+          paragraphs, or curly quotes (" ") for actual quotation marks. A straight double quote ends the
+          text early and everything after it stops making sense.</li>
+        <li><strong>Capital letters in filenames.</strong> The live site is case-sensitive; your computer is
+          not. Keep everything lower case and this never happens.</li>
+        <li><strong>A space in a path.</strong> Written <code>%20</code>. Only affects the two "link images"
+          folders.</li>
+        <li><strong>A marker that is not in the drawing.</strong> The waypoint disappears without a word.
+          The Console (<code>F12</code>) names it.</li>
+      </ol>
+
+      <div class="note">
+        <b>If a page goes blank</b>
+        <p>Press <code>F12</code> and read the first red line in the Console. It names the file and the line
+          number, and the mistake is nearly always on that line or the one above it. Nothing is lost: the
+          previous version is still on GitHub under the file's <strong>History</strong>.</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="check">
+      <h2 class="head"><span class="num">12</span>Check before you upload</h2>
+      <p>Everything works from your own computer — no server needed. Double-click the page you edited and it
+        opens in your browser exactly as it will online, with one exception: video and some pictures may not
+        load from a local file, which is not a fault.</p>
+
+      <ol class="steps">
+        <li><strong>Open the trail page</strong> and scroll it from top to bottom. Every waypoint you expect
+          should appear, in order, with its picture.</li>
+        <li><strong>Press F12 and look at the Console.</strong> Silence is the pass mark. A yellow warning
+          about a marker means a waypoint is being skipped.</li>
+        <li><strong>Click a waypoint's expand button</strong> and check the picture and the words in the big
+          view.</li>
+        <li><strong>If you added a proposal</strong>, open <code>wishful.html</code>, check the count is
+          right, move the sliders, and follow your new card's link — it should open that waypoint expanded,
+          over the map.</li>
+        <li><strong>Narrow the window</strong> to about the width of a phone. The card should go full width
+          and the expand button should disappear.</li>
+      </ol>
+
+      <p>Then upload, wait for the green dot, check <code>version.txt</code>, and hard-refresh.</p>
+    </section>
+
+    <div class="closer">
+      <h2>The short version</h2>
+      <p>Words, pictures and waypoints all live in one place: the <code>WAYPOINTS</code> block inside that
+        trail's own HTML file. Pictures go in <code>media/&lt;trail&gt;/</code>. A proposal needs the same
+        entry plus <code>kind</code>, <code>cost</code> and <code>priority</code> — and a matching card on
+        <code>wishful.html</code>, which is the only thing on the site that does not update itself.</p>
+      <p>Everything else — colours, sizes, how far you scroll, how the cards behave — is a numbered setting
+        at the top of <code>happy-trails.css</code> or <code>trail-engine.js</code>, and changes the whole
+        site at once.</p>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>
