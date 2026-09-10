@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 3.7
+   version 3.8
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -2357,6 +2357,22 @@ img{ -webkit-user-drag:none; user-drag:none; }
    they read as the same site.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── THE NUMBERS FOR A PAGE THAT SORTS ITSELF ─────────────────────────────
+   Two pages now do it — Wishful thinking and Trails — and they do it the same
+   way: a panel of controls, and a grid of cards that rearranges under them.
+   These are the numbers both of them use, which is why they live here rather
+   than in either one's own block. */
+body.page-text{
+  --ctl-panel:         rgba(255,255,255,.035);  /* the controls' own ground */
+  --ctl-track:         6px;    /* the thickness of a slider's groove */
+  --ctl-thumb:         22px;
+  --list-in:           300ms;  /* how long a card takes to arrive */
+  --list-out:          150ms;  /* and to shrink away. Shorter, on purpose: you
+                                  are waiting for what is left, not watching
+                                  what has gone. */
+  --list-ease:         cubic-bezier(.22,.9,.28,1);  /* quick out, soft landing */
+}
+
 body.page-text{
   overflow:auto; overscroll-behavior:auto;
   background:var(--map-backdrop); color:var(--text);
@@ -2567,6 +2583,156 @@ body.page-text main{
 .pt-mail a{ color:var(--bar-here); }
 
 /* the footer every reading page ends with */
+/* ═══════════════════════════════════════════════════════════════════════
+   SORTING THE TRAILS — body.page-trails
+   ═══════════════════════════════════════════════════════════════════════
+   The page has four ways of being read and one filter, and the controls are
+   the same objects the Wishful thinking page uses — see THE CONTROLS below,
+   where every rule that dresses a slider, a tick or a sort button names both
+   pages. Only what is particular to this page is here.
+
+   WHY ONE GRID RATHER THAN FIVE. The page used to be five sections, each with
+   its own heading and its own grid of cards. Sorted by length, popularity or
+   flatness those five walls are exactly what has to come down — a trail's kind
+   is not what you are looking at any more. So all thirteen cards live in ONE
+   grid, and the headings live in it with them, spanning the full width. In
+   "By type" the headings show and the cards sit in the order they are written,
+   which is the page as it always was. In any other sort the headings go and
+   the cards take a `order` worked out by the script.
+
+   Nothing is ever moved in the document. A card keeps its picture, its focus
+   and its scroll position however the list is arranged. */
+
+/* the numbers this page uses */
+body.page-trails{
+  --pt-graph-height:   calc(var(--shot-height) * 2 / 3);  /* two thirds of the
+                                  picture above it, which is what was asked for
+                                  and, as it happens, about as flat as a
+                                  profile can be drawn and still read */
+  --pt-drawer-ms:      260ms;  /* the length slider dropping down */
+  /* the ground under an elevation line: the trail's own colour, thinned until
+     it reads as terrain rather than as a second line */
+  --pt-fill:           rgba(78,207,78,.17);
+  --pt-fill-wish:      rgba(232,79,255,.15);
+}
+
+/* THE PANEL. The drawer inside it is closed by height rather than by `hidden`,
+   so it can open and shut visibly; it holds nothing but the one slider, and it
+   is only ever open while the list is sorted by length. */
+.pt-drawer{
+  display:grid; grid-template-rows:0fr;
+  transition:grid-template-rows var(--pt-drawer-ms) var(--list-ease),
+             opacity var(--pt-drawer-ms) var(--list-ease);
+  opacity:0;
+}
+.pt-drawer > div{ overflow:hidden; min-height:0; }
+.pt-controls.is-open .pt-drawer{ grid-template-rows:1fr; opacity:1; }
+/* the slider's own row, once the drawer is open */
+.pt-slider{ padding:18px 2px 2px; max-width:560px; }
+/* Rounded to the nearest tenth and read out beside the label, because a
+   maximum you cannot read is a maximum you cannot trust. */
+.pt-slider label b{ font-variant-numeric:tabular-nums; }
+
+/* the panel's first row needs no rule above it — there is nothing above it */
+.pt-controls .pt-sortRow{ margin-top:0; padding-top:0; border-top:0; }
+
+/* THE ONE GRID. Two columns at most, as before — three made the cards too
+   small to read — and one on a phone. The headings and the wishful note are
+   items in the same grid, spanning it. */
+.pt-list{
+  display:grid; gap:14px;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 700px){ .pt-list{ grid-template-columns:1fr; } }
+.pt-list > .pt-groupTitle,
+.pt-list > .pt-groupNote{ grid-column:1 / -1; }
+.pt-list > .pt-groupTitle{ margin:18px 0 0; }
+.pt-list > .pt-groupTitle:first-child{ margin-top:0; }
+/* A GROUP OF ONE GETS THE WHOLE WIDTH. There is one — the Martin Goodman
+   Trail is the only waterfront route — and a lone card in a two-column grid
+   leaves an obvious hole beside it. Only while the page is grouped: sorted by
+   anything else it is one card among thirteen and takes its column. */
+.pt-list.is-type > .pt-card.is-alone{ grid-column:1 / -1; }
+/* and sorted by anything else, the walls come down */
+.pt-list:not(.is-type) > .pt-groupTitle,
+.pt-list:not(.is-type) > .pt-groupNote{ display:none; }
+
+/* A CARD THAT THE LENGTH FILTER HAS TURNED AWAY shrinks first and leaves the
+   layout afterwards, so the gap closes behind it rather than under it. The
+   same three states the Wishful thinking cards have, and for the same reason:
+   `hidden` alone cannot do it, because .pt-card sets a display of its own and
+   the browser's [hidden] rule is only an attribute selector. */
+.pt-card.is-leaving{
+  opacity:0; transform:scale(.94);
+  transition-duration:var(--list-out); pointer-events:none;
+}
+.pt-card.is-out, .pt-card[hidden]{ display:none !important; }
+/* and the ones that stay settle into their new places */
+@keyframes pt-settle{
+  from{ opacity:.35; transform:translateY(6px); }
+  to{ opacity:1; transform:none; }
+}
+.pt-card.is-settling{ animation:pt-settle var(--list-in) var(--list-ease) both; }
+
+/* ── THE ELEVATION GRAPH ON A CARD ────────────────────────────────────────
+   The same drawing as the strip along the foot of a trail page, with
+   everything that only makes sense while you are walking taken out: no
+   cursor, no waypoint dots, no walked line. What is left is the shape of the
+   climb, which is the one thing worth comparing between trails.
+
+   EVERY GRAPH ON THIS PAGE IS DRAWN TO THE SAME SCALE — 20 m at the bottom of
+   the box to 190 m at the top, which covers every trail on the map. Drawn to
+   its own scale each one would fill its box and the flattest trail in the city
+   would look like the steepest; on one scale the Waterfront is a flat line low
+   down, Finch is a gentle rise high up, and sorting by flatness shows you
+   something. The scale is in the paths themselves, which are written into the
+   page — see the trails page's own comments.
+
+   Stretched to whatever width the card is: the box is 1000×100 and
+   preserveAspectRatio is off, so the line would thicken and thin with the card
+   were it not for non-scaling-stroke. */
+.pt-graph{
+  height:var(--pt-graph-height);
+  /* the top margin cancels the picture's bottom one: the graph sits against
+     the photograph, not below a gap */
+  margin:-14px -18px 12px; padding:0;
+  border-top:1px solid var(--panel-edge);
+  background:rgba(255,255,255,.02);
+  pointer-events:none;
+}
+.pt-graph svg{ display:block; width:100%; height:100%; }
+.pt-graph .pt-under{ fill:var(--pt-fill); }
+.pt-card.is-wishful .pt-graph .pt-under{ fill:var(--pt-fill-wish); }
+.pt-graph .pt-line{
+  fill:none; stroke:var(--route-line); stroke-width:2;
+  vector-effect:non-scaling-stroke;
+  stroke-linejoin:round; stroke-linecap:round;
+}
+.pt-card.is-wishful .pt-graph .pt-line{ stroke:var(--route-line-wish); }
+/* a trail with no waypoint heights yet has nothing to draw */
+.pt-card .pt-graph:empty{ display:none; }
+
+/* THE STOPS UNDER THE SLIDER are placed at the value each one means — see
+   their inline left percentages in the page — rather than spread evenly, which
+   would have put "15 km" a tenth of the groove away from where the thumb
+   stops for it. */
+.pt-controls .pt-ticks{ position:relative; display:block; height:30px; }
+.pt-controls .pt-ticks button{
+  position:absolute; top:0; margin:0; transform:translateX(-50%);
+}
+.pt-controls .pt-ticks button:first-child{ transform:none; }
+.pt-controls .pt-ticks button:last-child{ transform:translateX(-100%); }
+
+/* HOW HILLY IT IS, in metres of climb and descent per kilometre. It is only
+   shown while that is what the list is sorted by: on any other reading it is
+   a number in the way. */
+/* lower case among the small capitals of the rest of the line, because it is
+   a measurement rather than a label — and because "M/KM" shouted in capitals
+   reads like miles */
+.pt-flat{ display:none; text-transform:none; letter-spacing:.02em; }
+.pt-list.is-flat .pt-flat{ display:inline; }
+.pt-list.is-flat .pt-flat::before{ content:" · "; }
+
 .pt-foot{
   margin-top:60px; padding-top:22px; border-top:1px solid var(--panel-edge);
   font:400 12px/1.7 var(--font-body); color:var(--text-faint);
@@ -2590,14 +2756,6 @@ body.page-wishful{
   --wt-gap:            16px;
   --wt-shot-height:    150px;  /* the picture at the top of a card              */
   --wt-radius:         14px;
-  --wt-in:             300ms;  /* how long a card takes to arrive               */
-  --wt-out:            150ms;  /* and to shrink away. Shorter, on purpose: you
-                                  are waiting for what is left, not watching
-                                  what has gone.                                */
-  --wt-ease:           cubic-bezier(.22,.9,.28,1);   /* quick out, soft landing */
-  --wt-track:          6px;    /* the thickness of a slider's groove            */
-  --wt-thumb:          22px;
-  --wt-panel:          rgba(255,255,255,.035);
 
   /* the three levels, wherever they are shown as colour. The cost colours are
      the coins' own metals so the slider and the icons agree; the priority
@@ -2611,23 +2769,23 @@ body.page-wishful{
 }
 
 /* ── THE CONTROLS ──────────────────────────────────────────────────────── */
-.wt-controls{
+.wt-controls, .pt-controls{
   margin:26px 0 24px; padding:20px 22px 16px;
   border:1px solid var(--panel-edge); border-radius:var(--panel-radius);
-  background:var(--wt-panel);
+  background:var(--ctl-panel);
 }
 .wt-sliders{
   display:grid; gap:26px 40px;
   grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
 }
-.wt-slider label{
+.wt-slider label, .pt-slider label{
   display:flex; align-items:baseline; gap:10px;
   font:600 10px/1 var(--font-body); letter-spacing:.2em; text-transform:uppercase;
   color:var(--text-quiet);
 }
 /* the value the slider is currently at, said in words beside its name. A
    slider with no readout is a slider you have to guess at. */
-.wt-slider label b{
+.wt-slider label b, .pt-slider label b{
   font:600 13px/1 var(--font-body); letter-spacing:0; text-transform:none;
   color:var(--text);
 }
@@ -2638,39 +2796,39 @@ body.page-wishful{
    the colour of the level it is sitting on — which is the same colour as the
    coin or the gauge zone that level uses on the cards, so moving the slider to
    "high" turns it the colour of the things it is about to show. */
-.wt-slider input[type=range]{
+.wt-slider input[type=range], .pt-slider input[type=range]{
   -webkit-appearance:none; appearance:none;
   width:100%; margin:12px 0 6px; background:transparent; cursor:pointer;
 }
-.wt-slider input[type=range]:focus{ outline:none; }
-.wt-slider input[type=range]:focus-visible{
+.wt-slider input[type=range]:focus, .pt-slider input[type=range]:focus{ outline:none; }
+.wt-slider input[type=range]:focus-visible, .pt-slider input[type=range]:focus-visible{
   outline:2px solid var(--accent-soft); outline-offset:6px; border-radius:4px;
 }
-.wt-slider input[type=range]::-webkit-slider-runnable-track{
-  height:var(--wt-track); border-radius:999px;
+.wt-slider input[type=range]::-webkit-slider-runnable-track, .pt-slider input[type=range]::-webkit-slider-runnable-track{
+  height:var(--ctl-track); border-radius:999px;
   background:linear-gradient(to right, rgba(255,255,255,.10), rgba(255,255,255,.22));
 }
-.wt-slider input[type=range]::-moz-range-track{
-  height:var(--wt-track); border-radius:999px;
+.wt-slider input[type=range]::-moz-range-track, .pt-slider input[type=range]::-moz-range-track{
+  height:var(--ctl-track); border-radius:999px;
   background:linear-gradient(to right, rgba(255,255,255,.10), rgba(255,255,255,.22));
 }
-.wt-slider input[type=range]::-webkit-slider-thumb{
+.wt-slider input[type=range]::-webkit-slider-thumb, .pt-slider input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none; appearance:none;
-  width:var(--wt-thumb); height:var(--wt-thumb); border-radius:50%;
-  margin-top:calc((var(--wt-track) - var(--wt-thumb)) / 2);
+  width:var(--ctl-thumb); height:var(--ctl-thumb); border-radius:50%;
+  margin-top:calc((var(--ctl-track) - var(--ctl-thumb)) / 2);
   background:var(--text); border:2px solid rgba(0,0,0,.45);
   box-shadow:0 2px 6px rgba(0,0,0,.5);
   transition:background var(--button-fade), transform var(--button-fade);
 }
-.wt-slider input[type=range]::-moz-range-thumb{
-  width:var(--wt-thumb); height:var(--wt-thumb); border-radius:50%;
+.wt-slider input[type=range]::-moz-range-thumb, .pt-slider input[type=range]::-moz-range-thumb{
+  width:var(--ctl-thumb); height:var(--ctl-thumb); border-radius:50%;
   background:var(--text); border:2px solid rgba(0,0,0,.45);
   box-shadow:0 2px 6px rgba(0,0,0,.5);
   transition:background var(--button-fade), transform var(--button-fade);
 }
-.wt-slider input[type=range]:hover::-webkit-slider-thumb{ transform:scale(1.14); }
-.wt-slider input[type=range]:hover::-moz-range-thumb{ transform:scale(1.14); }
-.wt-slider input[type=range]:active::-webkit-slider-thumb{ transform:scale(1.22); }
+.wt-slider input[type=range]:hover::-webkit-slider-thumb, .pt-slider input[type=range]:hover::-webkit-slider-thumb{ transform:scale(1.14); }
+.wt-slider input[type=range]:hover::-moz-range-thumb, .pt-slider input[type=range]:hover::-moz-range-thumb{ transform:scale(1.14); }
+.wt-slider input[type=range]:active::-webkit-slider-thumb, .pt-slider input[type=range]:active::-webkit-slider-thumb{ transform:scale(1.22); }
 
 /* the thumb wears the level it is on — written twice because neither engine
    will accept the other's selector in the same rule */
@@ -2696,39 +2854,39 @@ body.page-wishful{
 
    They sit lower than the labels did, which is the room the hover state needs
    to land in without touching the groove above it. */
-.wt-ticks{
+.wt-ticks, .pt-ticks{
   display:flex; justify-content:space-between;
   margin-top:8px;
 }
-.wt-ticks button{
+.wt-ticks button, .pt-ticks button{
   font:600 9.5px/1 var(--font-body); letter-spacing:.1em; text-transform:uppercase;
   color:var(--text-faint); background:transparent; border:1px solid transparent;
   padding:6px 9px; margin:0 -9px; border-radius:999px; cursor:pointer;
   transition:color var(--button-fade), background var(--button-fade),
              border-color var(--button-fade), transform var(--button-fade);
 }
-.wt-ticks button:hover{
+.wt-ticks button:hover, .pt-ticks button:hover{
   color:var(--text); background:rgba(255,255,255,.08);
   border-color:var(--panel-edge); transform:translateY(-1px);
 }
-.wt-ticks button:active{ transform:translateY(0); }
-.wt-ticks button:focus-visible{
+.wt-ticks button:active, .pt-ticks button:active{ transform:translateY(0); }
+.wt-ticks button:focus-visible, .pt-ticks button:focus-visible{
   outline:2px solid var(--accent-soft); outline-offset:1px;
 }
 /* the stop the slider is currently on */
-.wt-ticks button.is-on{ color:var(--text); }
+.wt-ticks button.is-on, .pt-ticks button.is-on{ color:var(--text); }
 
 /* ── SORT, AND RESET ───────────────────────────────────────────────────── */
-.wt-sortRow{
+.wt-sortRow, .pt-sortRow{
   display:flex; align-items:center; gap:12px; flex-wrap:wrap;
   margin-top:20px; padding-top:16px; border-top:1px solid var(--panel-edge);
 }
-.wt-sortLabel{
+.wt-sortLabel, .pt-sortLabel{
   font:600 10px/1 var(--font-body); letter-spacing:.2em; text-transform:uppercase;
   color:var(--text-quiet);
 }
-.wt-sort{ display:flex; gap:6px; flex-wrap:wrap; }
-.wt-sort button, .wt-reset{
+.wt-sort, .pt-sort{ display:flex; gap:6px; flex-wrap:wrap; }
+.wt-sort button, .wt-reset, .pt-sort button{
   font:600 11px/1 var(--font-body); letter-spacing:.06em;
   padding:8px 13px; border-radius:999px; cursor:pointer;
   color:var(--text-quiet); background:transparent;
@@ -2736,19 +2894,19 @@ body.page-wishful{
   transition:color var(--button-fade), background var(--button-fade),
              border-color var(--button-fade), transform var(--button-fade);
 }
-.wt-sort button:hover, .wt-reset:hover{
+.wt-sort button:hover, .wt-reset:hover, .pt-sort button:hover{
   color:var(--text); border-color:var(--accent-soft); transform:translateY(-1px);
 }
-.wt-sort button:active, .wt-reset:active{ transform:translateY(0); }
+.wt-sort button:active, .wt-reset:active, .pt-sort button:active{ transform:translateY(0); }
 /* A shortcut lights up when the sliders are where it would put them, however
    they got there — dragged, typed or clicked. It is a reading of the state,
    not a record of what was pressed, so it can never disagree with the sliders
    the way a remembered "current tab" can. */
-.wt-sort button.is-on{
+.wt-sort button.is-on, .pt-sort button.is-on{
   color:#1d2124; background:var(--accent); border-color:transparent;
 }
 .wt-reset{ margin-left:auto; }
-.wt-count{
+.wt-count, .pt-count{
   margin:14px 0 0; font:500 12px/1 var(--font-body); color:var(--text-faint);
 }
 
@@ -2774,8 +2932,8 @@ body.page-wishful{
   border:1px solid var(--panel-edge); border-radius:var(--wt-radius);
   background:var(--panel-bg); overflow:hidden;
   opacity:0; transform:translateY(10px) scale(.97);
-  transition:opacity var(--wt-in) var(--wt-ease),
-             transform var(--wt-in) var(--wt-ease),
+  transition:opacity var(--list-in) var(--list-ease),
+             transform var(--list-in) var(--list-ease),
              border-color var(--button-fade);
 }
 .wt-card.is-in{ opacity:1; transform:none; }
@@ -2783,7 +2941,7 @@ body.page-wishful{
   opacity:0; transform:scale(.9);
   /* out faster than in, and from wherever it is rather than after a queue —
      leaving should feel like a dismissal, arriving like an arrival */
-  transition-duration:var(--wt-out); transition-delay:0ms !important;
+  transition-duration:var(--list-out); transition-delay:0ms !important;
   pointer-events:none;
 }
 /* A CARD THAT IS FILTERED OUT LEAVES THE LAYOUT.
@@ -2883,7 +3041,8 @@ body.page-wishful{
    once. */
 @media (prefers-reduced-motion: reduce){
   .wt-card, .wt-shot, .wt-mark img, .wt-go, .wt-go span,
-  .wt-ticks button, .wt-sort button, .wt-reset{
+  .wt-ticks button, .wt-sort button, .wt-reset,
+  .pt-card, .pt-graph, .pt-ticks button, .pt-sort button, .pt-drawer{
     transition-duration:1ms !important; transition-delay:0ms !important;
   }
 }

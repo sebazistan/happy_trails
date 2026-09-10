@@ -12,6 +12,47 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 11.0  THE TRAILS PAGE SORTS ITSELF, four ways, and every card now carries the
+       shape of its climb.
+
+       BY TYPE is the page as it was — railpaths, ravines, the waterfront, the
+       hydro corridors, and the trails that do not exist yet at the end — and
+       it is what the page opens on. It is also the only reading that groups:
+       every other one is a single ranked list, so the group headings go while
+       it is on and the lone waterfront card stops taking the full width.
+
+       SHORTEST FIRST brings a slider down with it: a maximum length, which
+       cannot go below the shortest trail on the map, so the list can never be
+       emptied. Choosing any other reading closes the slider AND clears it — a
+       filter nobody can see is a filter nobody remembers is on.
+
+       MOST POPULAR sorts on a number written on each card and shown nowhere:
+       1 is the busiest trail on the map, 10 the quietest. A trail with no
+       figure — the two wishful ones, and any future trail before somebody
+       works it out — sorts to the end rather than the top.
+
+       FLATTEST FIRST sorts on metres of climb and descent per kilometre,
+       worked out from the heights of that trail's waypoints. That figure is
+       the one thing the page shows only while it is being sorted on: on any
+       other reading it is a number in the way.
+
+       AND EVERY CARD HAS ITS ELEVATION GRAPH, under the picture, two thirds
+       of its height. It is the strip from the foot of a trail page with
+       everything that only makes sense while walking taken out — no cursor,
+       no waypoint dots, no walked line. EVERY GRAPH ON THE PAGE IS DRAWN TO
+       ONE SCALE, 20 m to 190 m, which covers every trail: drawn to its own
+       scale each would fill its box and the flattest trail in the city would
+       look like the steepest. On one scale the Waterfront is a flat line low
+       down, Finch a gentle rise high up, and the flatness sort shows you
+       something.
+
+       Nothing is ever moved in the document — the order is a CSS `order` —
+       so a card keeps its picture, its focus and its place under the pointer
+       however the list is arranged. And the build now refuses to publish a
+       trails page whose numbers have drifted from the trails themselves: the
+       length, the popularity, the hilliness and the number of points in each
+       graph are all checked against the trail data before anything goes out.
+
  10.2  THE CAPTION IS IN THE PLACE THAT SUITS THE CARD IT IS ON. In the small
        card it is back below the picture and beside the title, exactly where it
        was in 10.0 — the shared line, the top alignment, and the rule that a
