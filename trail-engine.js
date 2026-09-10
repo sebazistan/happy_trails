@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 2.9
+   version 3.0
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -716,6 +716,30 @@ const DEFAULTS = {
   /* Heights come from the `metres` values on the waypoints in section ③.
      Give at least two and the page fills in everything between them; give
      none and the elevation readouts and the profile strip remove themselves. */
+
+  /* HEIGHTS READ STRAIGHT OFF THE DRAWING.
+     A trail with three waypoints has three heights, and the profile between
+     them is a straight line — so a valley between two stops does not exist and
+     a trail that climbs and drops twice reads as one ramp. The fix is not more
+     waypoint cards: it is HEIGHT MARKS, small dots placed along the route in
+     the drawing and NAMED for their height. `h-118` is 118 metres above sea
+     level. One every 500 metres is plenty.
+
+     They are heights and nothing else. No card, no name chip, no dot on the
+     elevation graph, and nothing visible on the page — the stylesheet hides
+     anything in the artwork whose name begins with the prefix, and this reads
+     them and hides them again itself. A waypoint's own height always wins
+     where the two are close, because somebody typed it.
+
+     The number is everything from the first digit: `h-118`, `h-118_1` (what
+     Illustrator writes when two objects share a name) and `h-118-2` all mean
+     118. Set heightMarks to "" to ignore them entirely. */
+  heightMarks: "h-",           // what a height mark's name begins with
+  heightMarkClear: 0.005,      // a mark this near a waypoint, as a share of the
+                               // route, gives way to it
+  heightMarkStray: 0.04,       // and one further than this from the route says
+                               // so in the console — it has probably been left
+                               // somewhere by accident
 
   smoothElevation: 14,         // rounds off the corners where the straight lines
                                // between waypoints meet. 0 = leave them sharp.
@@ -1465,6 +1489,54 @@ function nearestPoint(x, y) {
   return best;
 }
 
+/* THE MIDDLE OF A SHAPE IN THE ARTWORK, in the artwork's own coordinates.
+   A circle drawn inside a group that Illustrator has transformed is not where
+   its own numbers say it is, so its box is measured and then put through the
+   matrix between it and the drawing's root. Both the waypoint markers and the
+   height marks are found this way. */
+function centreOf(node) {
+  const b = node.getBBox();
+  const dot = mapSvg.createSVGPoint();
+  dot.x = b.x + b.width / 2;
+  dot.y = b.y + b.height / 2;
+  const rootAt = mapSvg.getScreenCTM(), nodeAt = node.getScreenCTM();
+  return dot.matrixTransform((rootAt && nodeAt)
+    ? rootAt.inverse().multiply(nodeAt) : mapSvg.createSVGMatrix());
+}
+
+/* ── HEIGHT MARKS ────────────────────────────────────────────────────────
+   Every dot in the drawing whose name begins with the prefix, as
+   { at, metres } — where along the route it sits, and what it says the height
+   is there. See heightMarks in the settings for what they are for.
+
+   Each one is hidden as it is read. The stylesheet hides them too; this is the
+   belt to its braces, and it is what keeps them invisible in a page whose
+   stylesheet is older than its engine. */
+function readHeightMarks() {
+  const prefix = SETTINGS.heightMarks;
+  if (!prefix || !mapSvg) return [];
+  const found = [];
+  mapSvg.querySelectorAll('[id^="' + prefix + '"]').forEach(node => {
+    /* The prefix is reserved: anything in the artwork whose name begins with
+       it is a height mark, is hidden, and is nothing else. One with no number
+       in its name — `h-todo`, say — is hidden with the rest and simply has no
+       height to give. */
+    node.style.visibility = "hidden";
+    const said = /^(-?\d+(?:\.\d+)?)/.exec(node.id.slice(prefix.length));
+    if (!said) return;
+    const spot = centreOf(node);
+    const i = nearestPoint(spot.x, spot.y);
+    const off = Math.hypot(path[i].x - spot.x, path[i].y - spot.y) / routeLength;
+    if (off > SETTINGS.heightMarkStray) {
+      console.warn('height mark "' + node.id + '" is a long way off the route ('
+                   + Math.round(off * 100) + '% of its length) — it is being '
+                   + 'read at the nearest point anyway');
+    }
+    found.push({ at: along[i] / routeLength, metres: parseFloat(said[1]) });
+  });
+  return found.sort((a, b) => a.at - b.at);
+}
+
 function placeWaypoints() {
   const placed = [];
   WAYPOINTS.forEach(w => {
@@ -1478,13 +1550,7 @@ function placeWaypoints() {
       if (w.marker && mapSvg) {
         node = mapSvg.querySelector(w.marker);
         if (node) {
-          const b = node.getBBox();
-          const dot = mapSvg.createSVGPoint();
-          dot.x = b.x + b.width / 2;
-          dot.y = b.y + b.height / 2;
-          const rootAt = mapSvg.getScreenCTM(), nodeAt = node.getScreenCTM();
-          const q = dot.matrixTransform((rootAt && nodeAt) ? rootAt.inverse().multiply(nodeAt)
-                                                          : mapSvg.createSVGMatrix());
+          const q = centreOf(node);
           spot = { x: q.x, y: q.y };
         } else {
           console.warn('waypoint marker "' + w.marker + '" is not in the artwork — skipping "' + w.title + '"');
@@ -1531,9 +1597,16 @@ function slugify(text) {
 
 /* ── step 4: heights, worked out from the waypoints ────────────────────── */
 function buildHeights() {
-  const known = stops.filter(s => typeof s.metres === "number")
-                     .map(s => ({ at: s.fraction, metres: s.metres }))
-                     .sort((a, b) => a.at - b.at);
+  const typed = stops.filter(s => typeof s.metres === "number")
+                     .map(s => ({ at: s.fraction, metres: s.metres }));
+  /* THE HEIGHTS THE DRAWING KNOWS, added to the heights the waypoints know.
+     A mark sitting on top of a waypoint gives way to it: the waypoint's height
+     was typed by a person and is the one shown on its card, so the profile
+     must pass through it exactly. Everywhere else the marks fill in what the
+     straight line between two waypoints was only guessing at. */
+  const marks = readHeightMarks().filter(m =>
+    !typed.some(s => Math.abs(s.at - m.at) < SETTINGS.heightMarkClear));
+  const known = typed.concat(marks).sort((a, b) => a.at - b.at);
   if (known.length < 2) return;
 
   // straight lines between the known heights, flat beyond the ends

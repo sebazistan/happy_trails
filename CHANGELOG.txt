@@ -12,6 +12,33 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 12.0  HEIGHTS CAN NOW BE READ STRAIGHT OFF THE DRAWING. A route may carry
+       HEIGHT MARKS: small dots placed along it and NAMED for the height at
+       that point — `h-118` is 118 metres above sea level. One every 500
+       metres. The profile is built from them and from the waypoints together,
+       so a trail with three waypoint cards can still have an honest elevation
+       graph: the valley between two stops exists, instead of the straight line
+       that used to be drawn through it.
+
+       They are heights and nothing else. No card, no name chip, no dot on the
+       elevation graph, and nothing visible on the page — the stylesheet hides
+       anything in the artwork whose name begins with h-, and the engine hides
+       them again as it reads them. Where a mark sits on top of a waypoint the
+       waypoint wins, because somebody typed that number and its card shows it.
+
+       EVERY MAP THIS BUILD DRAWS NOW HAS THEM, at the height the waypoints
+       imply — which changes nothing until one is corrected, and that is the
+       point. They are a scaffold: open the map in Illustrator, rename the dot
+       at the bottom of the ravine to what it really is, and the trail page
+       follows. `h-118`, `h-118_1` (what Illustrator writes when two objects
+       share a name) and `h-118-2` all mean 118.
+
+       AND THE TRAILS PAGE'S GRAPHS READ AS MEASUREMENTS. A faint kilometre
+       grid behind each one — every kilometre up to 12 km, every two beyond,
+       with every fifth line a shade brighter — and the climb end to end
+       written small in the corner: −75 m, +40 m. The build refuses to publish
+       a page whose figure has drifted from the heights it was drawn from.
+
  11.0  THE TRAILS PAGE SORTS ITSELF, four ways, and every card now carries the
        shape of its climb.
 

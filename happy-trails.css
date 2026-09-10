@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 3.8
+   version 3.9
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -1780,6 +1780,23 @@ body.page-trail.trail-wishful #tm-brand .tm-kicker{ color:var(--wishful-kicker-i
   .pt-support{ flex-direction:column; gap:12px; padding:18px; }
 }
 
+/* ── HEIGHT MARKS IN THE ARTWORK ──────────────────────────────────────────
+   Small dots drawn along a route and NAMED for the height at that point —
+   `h-118` is 118 metres above sea level. The engine reads them to fill in the
+   elevation profile between the waypoints, and they are never meant to be seen
+   on the page: they belong to the drawing, the way a pencil line belongs to a
+   plan.
+
+   VISIBILITY RATHER THAN DISPLAY. A shape with display:none has no box to
+   measure in most browsers, and measuring them is exactly what the engine has
+   to do to find out where along the route each one sits. Hidden this way they
+   are still there to be measured, and still invisible.
+
+   The engine hides them again itself as it reads them, so this rule is not
+   load-bearing — it is what stops them appearing for the frame between the
+   drawing arriving and the engine reaching them. */
+#tm-world [id^="h-"]{ visibility:hidden; }
+
 /* ── the picture on a trail card ──────────────────────────────────────────
    A crop of that trail's own map — the same picture its page opens with, so
    arriving there looks like the thing you clicked. It is a background rather
@@ -2614,6 +2631,8 @@ body.page-trails{
      it reads as terrain rather than as a second line */
   --pt-fill:           rgba(78,207,78,.17);
   --pt-fill-wish:      rgba(232,79,255,.15);
+  --pt-grid:           rgba(255,255,255,.07);  /* a kilometre line */
+  --pt-grid-five:      rgba(255,255,255,.13);  /* and every fifth one */
 }
 
 /* THE PANEL. The drawer inside it is closed by height rather than by `hidden`,
@@ -2701,6 +2720,15 @@ body.page-trails{
   pointer-events:none;
 }
 .pt-graph svg{ display:block; width:100%; height:100%; }
+/* A KILOMETRE GRID, faint, so the graph is a measurement rather than a
+   picture: you can see how far apart the climbs are and that a long trail's
+   kilometres are closer together than a short one's. Every kilometre up to
+   12 km and every two beyond that — see tick_step where the page is built —
+   with every fifth one a shade brighter to count by. */
+.pt-graph .pt-tick{
+  stroke:var(--pt-grid); stroke-width:1; vector-effect:non-scaling-stroke;
+}
+.pt-graph .pt-tick.is-five{ stroke:var(--pt-grid-five); }
 .pt-graph .pt-under{ fill:var(--pt-fill); }
 .pt-card.is-wishful .pt-graph .pt-under{ fill:var(--pt-fill-wish); }
 .pt-graph .pt-line{
@@ -2722,6 +2750,22 @@ body.page-trails{
 }
 .pt-controls .pt-ticks button:first-child{ transform:none; }
 .pt-controls .pt-ticks button:last-child{ transform:translateX(-100%); }
+
+/* WHAT THE LINE ADDS UP TO, in the corner of the graph: the height at the end
+   less the height at the start. It sits OUTSIDE the drawing, over it — the box
+   is 1000x100 stretched to about 250x88, so a word written inside it would be
+   squashed to a quarter of its width. Tabular figures so the minus signs line
+   up down a column of cards. */
+.pt-rise{
+  position:absolute; top:6px; right:9px;
+  font:600 9.5px/1 var(--font-body); letter-spacing:.1em;
+  color:var(--text-quiet); font-variant-numeric:tabular-nums;
+  /* the same wash the pictures' captions carry, for the same reason: on a
+     trail that climbs, the line runs right under this corner */
+  padding:3px 5px; border-radius:4px; background:rgba(8,10,12,.55);
+  text-shadow:0 1px 3px rgba(8,10,12,.7);
+}
+.pt-graph{ position:relative; }
 
 /* HOW HILLY IT IS, in metres of climb and descent per kilometre. It is only
    shown while that is what the list is sorted by: on any other reading it is
