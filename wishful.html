@@ -24,7 +24,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Twelve places where the trail network stops, doubles back, or sends you onto a road — sorted by what each one would cost to fix and how badly it is wanted.">
+<meta name="description" content="Fifteen places where the trail network stops, doubles back, or sends you onto a road — sorted by what each one would cost to fix and how badly it is wanted.">
 <title>Wishful thinking — Happy Trails</title>
 <!-- how this page looks when someone shares the link, and in a browser tab.
      The image is 1200x630, which is the shape every one of them crops to.
@@ -39,14 +39,14 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Happy Trails">
 <meta property="og:title" content="Wishful thinking — Happy Trails">
-<meta property="og:description" content="Twelve places where the trail network stops, doubles back, or sends you onto a road — sorted by what each one would cost to fix and how badly it is wanted.">
+<meta property="og:description" content="Fifteen places where the trail network stops, doubles back, or sends you onto a road — sorted by what each one would cost to fix and how badly it is wanted.">
 <meta property="og:url" content="https://happytrailstoronto.com/wishful.html">
 <meta property="og:image" content="https://happytrailstoronto.com/social/wishful.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Wishful thinking — Happy Trails">
-<meta name="twitter:description" content="Twelve places where the trail network stops, doubles back, or sends you onto a road — sorted by what each one would cost to fix and how badly it is wanted.">
+<meta name="twitter:description" content="Fifteen places where the trail network stops, doubles back, or sends you onto a road — sorted by what each one would cost to fix and how badly it is wanted.">
 <meta name="twitter:image" content="https://happytrailstoronto.com/social/wishful.png">
 <link rel="stylesheet" href="happy-trails.css">
 <!-- Counting visits. Inert until analytics.js names a provider —
@@ -71,7 +71,7 @@
   <div class="pt-head">
     <div class="pt-kicker">What is missing, and what it would take</div>
     <h1>Wishful thinking</h1>
-    <p class="pt-lede">Twelve places where the trail network stops, doubles
+    <p class="pt-lede">Fifteen places where the trail network stops, doubles
       back, or sends you onto a road. Each one is somewhere a specific, buildable
       thing would fix a specific problem — a crossing, a deck, a light, a
       kilometre of path. Narrow them down by what they would cost and by how
@@ -126,7 +126,7 @@
       <button type="button" id="wt-reset" class="wt-reset">Reset</button>
     </div>
 
-    <p class="wt-count" id="wt-count" role="status">Showing all 12</p>
+    <p class="wt-count" id="wt-count" role="status">Showing all 15</p>
   </section>
 
   <section class="wt-list" id="wt-list">
@@ -263,7 +263,7 @@
       <div class="wt-shot" style="background-image:url('wishful%20link%20images/half-mile-bridge.png')"></div>
       <div class="wt-body">
         <div class="wt-on">Lower Don</div>
-        <h3><a class="wt-open" href="don.html#half-mile-bridge">Half Mile Bridge</a></h3>
+        <h3><a class="wt-open" href="lower-don.html#half-mile-bridge">Half Mile Bridge</a></h3>
         <p>The bridge is already standing and already closed. It needs a deck and railings, and nothing else.</p>
         <div class="wt-marks">
           <span class="wt-mark is-cost"><img src="icons/cost-medium.svg" alt=""
@@ -275,15 +275,63 @@
       </div>
     </article>
     <article class="wt-card" data-cost="high" data-priority="medium"
-             data-trail="East Don" data-title="sheppard gap">
+             data-trail="Upper Don" data-title="sheppard gap">
       <div class="wt-shot" style="background-image:url('wishful%20link%20images/sheppard-gap.png')"></div>
       <div class="wt-body">
-        <div class="wt-on">East Don</div>
-        <h3><a class="wt-open" href="e-don.html#sheppard-gap">Sheppard gap</a></h3>
+        <div class="wt-on">Upper Don</div>
+        <h3><a class="wt-open" href="upper-don.html#sheppard-gap">Sheppard gap</a></h3>
         <p>A kilometre of valley with no path in it. The trail picks up again on the far side.</p>
         <div class="wt-marks">
           <span class="wt-mark is-cost"><img src="icons/cost-high.svg" alt=""
             width="48" height="48"><span><small>Cost</small><b>High</b></span></span>
+          <span class="wt-mark is-priority"><img src="icons/priority-medium.svg" alt=""
+            width="48" height="48"><span><small>Priority</small><b>Medium</b></span></span>
+        </div>
+        <div class="wt-go">See it on the map <span aria-hidden="true">&rarr;</span></div>
+      </div>
+    </article>
+    <article class="wt-card" data-cost="medium" data-priority="high"
+             data-trail="Don Valley" data-title="eglinton crossing">
+      <div class="wt-shot" style="background-image:url('wishful%20link%20images/eglinton-crossing.png')"></div>
+      <div class="wt-body">
+        <div class="wt-on">Don Valley</div>
+        <h3><a class="wt-open" href="don-valley.html#eglinton-crossing">Eglinton crossing</a></h3>
+        <p>Four lanes and no signal</p>
+        <div class="wt-marks">
+          <span class="wt-mark is-cost"><img src="icons/cost-medium.svg" alt=""
+            width="48" height="48"><span><small>Cost</small><b>Medium</b></span></span>
+          <span class="wt-mark is-priority"><img src="icons/priority-high.svg" alt=""
+            width="48" height="48"><span><small>Priority</small><b>High</b></span></span>
+        </div>
+        <div class="wt-go">See it on the map <span aria-hidden="true">&rarr;</span></div>
+      </div>
+    </article>
+    <article class="wt-card" data-cost="high" data-priority="high"
+             data-trail="Upper Don Connection" data-title="bayview gap">
+      <div class="wt-shot" style="background-image:url('wishful%20link%20images/bayview-gap.png')"></div>
+      <div class="wt-body">
+        <div class="wt-on">Upper Don Connection</div>
+        <h3><a class="wt-open" href="upper-don-connection.html#bayview-gap">Bayview gap</a></h3>
+        <p>A road with no crossing</p>
+        <div class="wt-marks">
+          <span class="wt-mark is-cost"><img src="icons/cost-high.svg" alt=""
+            width="48" height="48"><span><small>Cost</small><b>High</b></span></span>
+          <span class="wt-mark is-priority"><img src="icons/priority-high.svg" alt=""
+            width="48" height="48"><span><small>Priority</small><b>High</b></span></span>
+        </div>
+        <div class="wt-go">See it on the map <span aria-hidden="true">&rarr;</span></div>
+      </div>
+    </article>
+    <article class="wt-card" data-cost="low" data-priority="medium"
+             data-trail="Taylor Creek" data-title="dentonia gap">
+      <div class="wt-shot" style="background-image:url('wishful%20link%20images/dentonia-gap.png')"></div>
+      <div class="wt-body">
+        <div class="wt-on">Taylor Creek</div>
+        <h3><a class="wt-open" href="taylor-creek.html#dentonia-gap">Dentonia gap</a></h3>
+        <p>The path gives up at the road</p>
+        <div class="wt-marks">
+          <span class="wt-mark is-cost"><img src="icons/cost-low.svg" alt=""
+            width="48" height="48"><span><small>Cost</small><b>Low</b></span></span>
           <span class="wt-mark is-priority"><img src="icons/priority-medium.svg" alt=""
             width="48" height="48"><span><small>Priority</small><b>Medium</b></span></span>
         </div>
@@ -355,9 +403,9 @@ const SETTINGS = {
   worth:          { low: 1, medium: 2, high: 3 },
   valueBias:      1.35,        // how much heavier priority is than cost
 
-  countOne:       "Showing 1 of 12",
-  countAll:       "Showing all 12",
-  countSome:      "Showing %s of 12",
+  countOne:       "Showing 1 of 15",
+  countAll:       "Showing all 15",
+  countSome:      "Showing %s of 15",
 
   /* Cards are re-ordered by writing a CSS `order` on each, rather than by
      moving them in the document: nothing is destroyed and rebuilt, so the

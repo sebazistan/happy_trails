@@ -12,6 +12,88 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 14.0  THE MAIN MAP SHOWS WAYPOINTS OF ITS OWN. Zoom in past 3.5x — 2.2x on a
+       phone — and a small badge appears on each trail at two or three of its
+       places. Click one and that waypoint's card opens over the map: its
+       pictures, its words, its height and its distance from the start, the
+       expand button, the x. It is THE SAME CARD as the one on the trail page,
+       because it is now the same file.
+
+       WHICH WAYPOINTS is a flag on the waypoint itself — isMainMapFeatured —
+       and the main map keeps a matching entry, the way the Wishful thinking
+       page does. The build refuses a page where the two disagree, or where a
+       featured waypoint is a proposal on a built trail.
+
+       WHERE EACH BADGE SITS IS MEASURED, not typed: the build takes the
+       waypoint's position along its trail and finds that point on the route's
+       own drawn line on the main map. Nobody enters a coordinate, and moving
+       a route in Illustrator moves its badges with it. A dot named
+       feat-<trail>-<waypoint> in the drawing overrides the measurement, the
+       way a wp- circle does on a trail's own map.
+
+       ONE CARD, IN ONE FILE. Everything a waypoint card is — the picture, the
+       carousel, the caption, the paged text, the facts, the x and the expand
+       button — has moved out of trail-engine.js into waypoint-card.js, which
+       both the trail pages and the main map load. It was that or write the
+       card a second time, and a card written twice is a card that goes out of
+       step. UPLOAD IT WITH THE OTHER TWO: a page without it says so rather
+       than failing quietly.
+
+       THE NAMES ON THE MAP ARE SMALLER, and there are half as many hidden
+       because of it: at the whole-city zoom the map now keeps 53 names where
+       it kept 37. One setting controls it — mapTextSize in index.html, with
+       the useful range written beside it.
+
+       AND THEY GROW FROM THEIR LEFT EDGE rather than their middle, so the
+       first letter of a name stays on the thing it names at every zoom
+       instead of creeping sideways as you go in.
+
+ 13.0  THE MAP IS REDRAWN, FROM HT_93.ai, AND IT HAS FIVE MORE TRAILS ON IT.
+       The Don is no longer one route: it is the UPPER DON, the DON VALLEY,
+       the UPPER DON CONNECTION, TAYLOR CREEK and the LOWER DON, a page each,
+       and the FINCH EXTENSION joins the wishful ones. Sixteen trails now, on
+       the map, on the Trails page, on the Wishful thinking page, in the
+       sitemap and in the link previews.
+
+       The two old addresses still work. don.html and e-don.html are one line
+       each that says where the trail went and goes there — with the right
+       waypoint still attached, so a link somebody sent last month lands where
+       it was meant to.
+
+       THE NAMES ON THE MAP BEHAVE LIKE A MAP'S NAMES. They used to be part of
+       the drawing, so at the zoom where the whole city fits they were two
+       pixels tall and at full zoom they were enormous. Now every name holds
+       its size on screen, and which names are shown depends on how far in you
+       are: lakes and districts always, the trails from a quarter turn in,
+       expressways, golf courses and the unpaved and unbuilt sections further
+       still. Names that would sit on top of one another give way in order of
+       how big they are drawn, so the map thins out rather than piling up.
+       Nothing is hidden that a route button needs.
+
+       AND THE ZOOM IS WRITTEN DOWN, bottom right under the zoom buttons:
+       1.0× is the whole city, and it counts up from there.
+
+       A ROUTE BUTTON THAT LANDS ON ANOTHER ONE NOW MOVES ITSELF, along its
+       own line, to the nearest point that is clear. Five Don routes within a
+       few hundred units of each other made three pairs of buttons overlap;
+       the build sorts that out and says which ones it moved. A correction
+       typed into pin-nudges.json still wins.
+
+       LIGHTER BY A FIFTH. The renderer defines the outline of every letter
+       once per layer, so the letter "e" was in the file nine times. One copy
+       of each is kept and everything points at it: 447 definitions dropped,
+       the main page down from 873 KB to 697 KB, with the drawing unchanged
+       to the pixel.
+
+       TWO LAYERS WITH THE SAME NAME ARE NOW ONE LAYER. HT_93.ai has two
+       called "Meadoway", holding a piece of that route each; the second was
+       quietly overwriting the first and half the Meadoway was missing from
+       the map. They are drawn together now, and the build says so.
+
+       The build also reports what it finds wrong in a drawing it cannot fix
+       itself: it counts the names that appear twice, and says if a whole set
+       of labels has been copied and nudged.
+
  12.0  HEIGHTS CAN NOW BE READ STRAIGHT OFF THE DRAWING. A route may carry
        HEIGHT MARKS: small dots placed along it and NAMED for the height at
        that point — `h-118` is 118 metres above sea level. One every 500

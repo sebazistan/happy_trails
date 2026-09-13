@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 3.9
+   version 4.1
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -328,6 +328,16 @@
   --maplink-size:      9.5px;
   --media-ease:        cubic-bezier(.4, 0, .2, 1);
   --media-slide:       .45s;
+  /* THE FEATURED WAYPOINTS' ICONS on the main map: the badge that sits on a
+     route and opens a waypoint's card. --feat-size is how big it is ON SCREEN,
+     at any zoom, because the page counter-scales it the way it does the route
+     buttons. --map-card-foot is the room left under the card on that page,
+     where a trail page would have its readouts and elevation graph. */
+  --feat-size:         26px;
+  --feat-lift:         1.16;
+  --feat-fade:         .22s;
+  --map-card-foot:     78px;
+
   --pin-lift:          1.08;
   --pin-radius:        999px;
   --pin-size:          13px;
@@ -2298,6 +2308,156 @@ img{ -webkit-user-drag:none; user-drag:none; }
 /* ── the round zoom controls ─────────────────────────────────────────────
    Bottom right, so they sit opposite the rail rather than competing with it.
    Same round dark-glass button as the rail uses. */
+/* ── THE ZOOM READOUT ─────────────────────────────────────────────────────
+   Under the zoom buttons, in the same column, and deliberately not one of
+   them: no border, no background, nothing to press. 1.0× is the whole map. */
+#ht-zoomLevel{
+  margin-top:6px; padding:4px 0; text-align:center;
+  font:600 11px/1 var(--font-body); letter-spacing:.08em;
+  color:var(--text); font-variant-numeric:tabular-nums;
+  border-radius:var(--radius-pill);
+  background:var(--panel); border:1px solid var(--panel-edge);
+  backdrop-filter:blur(var(--panel-blur));
+  user-select:none; pointer-events:none;
+}
+
+/* ── THE NAMES ON THE MAP ─────────────────────────────────────────────────
+   Drawn text scales with the drawing; names should not. Each one was wrapped
+   at build time, and --label-counter — set on the world by the page, once per
+   zoom — scales them back so they land at the same size on screen whatever
+   the zoom. How big "the same size" is, is mapTextSize in index.html; this
+   file only does the scaling.
+
+   IT SCALES FROM THE LEFT, NOT THE MIDDLE. transform-box:fill-box measures
+   the origin against the name's own box, and 0% 50% puts it at the left edge,
+   halfway down — so as the type grows and shrinks the first letter stays put
+   and the word grows to the right of it, the way a word processor does it.
+   About the middle, every name crept sideways as you zoomed and a name beside
+   the thing it names appeared to drift off it.
+
+   The wrapper is what scales. A rotated street name carries its rotation in a
+   transform attribute of its own, and a CSS transform on that same element
+   would replace it — so the rotation sits inside, untouched. (Which also means
+   a name set vertically grows from the left of its upright box rather than
+   from its first letter. There is no way to have both while the rotation is
+   the drawing's business, and it is a handful of creek names.)
+
+   WITHOUT THE SCRIPT nothing here does anything: --label-counter falls back to
+   1, which is the drawing's own size, and no layer is switched off. The map
+   reads exactly as it did before. */
+#ht-world .ht-label{
+  transform-box:fill-box; transform-origin:0% 50%;
+  transform:scale(var(--label-counter, 1));
+}
+/* a whole layer of names, waiting for the zoom it belongs to, and a single
+   name that has nowhere to sit. Visibility rather than display, twice over:
+   the layer switches own display and must be able to disagree without a
+   fight, and a name that is hidden this way can still be measured — which is
+   how it knows when there is room for it again. */
+#ht-world [data-tier].is-off{ visibility:hidden; }
+#ht-world .ht-label.is-crowded{ visibility:hidden; }
+
+/* ── THE FEATURED WAYPOINTS ON THE MAIN MAP ───────────────────────────────
+   A small badge sitting on a route, at the point of one of that trail's
+   waypoints. It holds its size on screen the way the route buttons do — the
+   page writes --pin-counter, which is 1/zoom — and it appears only once the
+   map is zoomed in far enough to be showing places: see featuredFrom in
+   index.html, which is what adds .is-on.
+
+   Two states worth naming. Pointing at one lifts it, the same gesture a route
+   button makes. The one whose card is open stays lifted and gains a ring, so
+   that with a card on screen it is obvious which icon opened it. */
+#ht-feats{ position:absolute; inset:0; }
+.ht-feat{
+  position:absolute; z-index:4; padding:0; border:0; background:none;
+  width:var(--feat-size); height:var(--feat-size); line-height:0;
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transform-origin:50% 50%;
+  transform:translate(-50%, -50%) scale(calc(var(--pin-counter, 1) * .001));
+  opacity:0; pointer-events:none;
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,.5));
+  transition:opacity var(--feat-fade) ease, filter var(--button-fade);
+}
+/* The icons are OFF until the zoom says otherwise, and the scale rather than
+   display is what hides them: an icon that is display:none cannot animate in,
+   and one that is merely transparent still takes clicks. Both are dealt with
+   here, and .is-on is the single switch. */
+.ht-feat.is-on{
+  opacity:1; pointer-events:auto;
+  transform:translate(-50%, -50%) scale(var(--pin-counter, 1));
+}
+.ht-feat img{ width:100%; height:100%; display:block; pointer-events:none; }
+.ht-feat.is-on:hover, .ht-feat.is-on:focus-visible{
+  transform:translate(-50%, -50%) scale(calc(var(--pin-counter, 1) * var(--feat-lift)));
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));
+}
+.ht-feat:focus-visible{ outline:2px solid #fff; outline-offset:3px; border-radius:50%; }
+.ht-feat.is-on.is-open{
+  transform:translate(-50%, -50%) scale(calc(var(--pin-counter, 1) * var(--feat-lift)));
+  filter:drop-shadow(0 0 0 3px var(--accent)) drop-shadow(0 4px 10px rgba(0,0,0,.6));
+}
+
+/* ── AND THE CARD THAT OPENS OVER THIS MAP ────────────────────────────────
+   The card itself is the trail pages' card, dressed by every .tm- rule above.
+   What it needs here is a column to sit in, because this page has no walk and
+   no readouts along the bottom — so the band it measures against is its own.
+   Everything else it inherits, which is the point of it being the same card. */
+body.page-map #tm-cards{
+  position:fixed; z-index:36;
+  top:calc(var(--bar-height) + var(--edge-gap));
+  bottom:calc(var(--edge-gap) + var(--map-card-foot));
+  left:var(--edge-gap); right:var(--edge-gap);
+  width:auto; max-width:var(--card-width); margin-left:auto;
+  pointer-events:none;
+  /* A trail page lifts its card halfway up the column, to clear the readouts
+     and the elevation graph along the bottom. This page has neither, so the
+     card sits at the foot of its own column and uses the whole height. */
+  --card-sit:0px;
+}
+/* A CLOSED CARD IS NOT THERE AT ALL. On a trail page a card is only ever a
+   fade away from being wanted, so it stays painted at opacity 0 and the walk
+   brings it back. Here there are thirty-six of them, one per featured
+   waypoint on the whole map, and a card carries a backdrop blur — thirty-six
+   blurred panels held at zero opacity cost this page three quarters of its
+   frame rate while the map was being dragged. visibility takes them out of
+   the painting entirely, and it is delayed by the length of the fade so that
+   closing one still fades rather than blinking. */
+body.page-map .tm-card{
+  transform:none;
+  visibility:hidden;
+  /* AND ITS CONTENTS ARE NOT LAID OUT EITHER, which is what stops the browser
+     deciding that a picture inside a card it is not drawing is near enough to
+     the window to be worth fetching. Without it the map opened by downloading
+     a handful of photographs from trails nobody had clicked on. */
+  content-visibility:hidden;
+  transition:opacity var(--feat-fade) ease,
+             visibility 0s linear var(--feat-fade);
+  pointer-events:none;
+}
+body.page-map .tm-card.is-showing{
+  visibility:visible; content-visibility:visible; pointer-events:auto;
+  transition:opacity var(--feat-fade) ease, visibility 0s linear 0s;
+}
+/* Expanded, it is the trail pages' expanded card exactly. Its box is set by
+   #tm-cards.is-big above; this rule has to REPEAT those four edges because
+   the rule just above it is more specific and would otherwise keep the column
+   at its small size. Nothing here is a different measurement — every value is
+   the same variable — it is only said again where it would be overruled. */
+body.page-map #tm-cards.is-big{
+  z-index:37;
+  top:var(--big-gap-top); bottom:var(--big-gap-bottom);
+  left:var(--big-side-gap); right:var(--big-side-gap);
+  max-width:var(--big-card-width); margin-right:auto;
+}
+body.page-map #tm-cardveil{
+  position:fixed; inset:var(--bar-height) 0 0 0; z-index:35;
+  background:var(--big-veil); opacity:0; visibility:hidden;
+  transition:opacity var(--big-fade) ease, visibility 0s linear var(--big-fade);
+}
+body.page-map #tm-cardveil.is-on{
+  opacity:1; visibility:visible; transition-delay:0s, 0s;
+}
+
 #ht-controls{
   position:fixed; right:var(--edge-gap); bottom:var(--edge-gap); z-index:35;
   display:flex; flex-direction:column; gap:var(--control-gap);
@@ -3314,6 +3474,15 @@ body.page-wishful{
     --panel-width:      calc(100vw - var(--edge-gap) * 2
                                    - var(--compass-size) - var(--panel-gap));
     --panel-width-wide: var(--panel-width);
+    /* A FEATURED WAYPOINT'S CARD FILLS THE WIDTH HERE, exactly as a card does
+       on a trail page at this size: 172 pixels of card on a 390 pixel phone is
+       a column of two words. The icons get a little bigger for the same
+       reason — a 26-pixel target is fine under a pointer and small under a
+       thumb — and there is less to leave under the card, because this page has
+       no readouts along the bottom. */
+    --card-width:    none;
+    --feat-size:     30px;
+    --map-card-foot: 16px;
     /* --switch-columns stays at 2 here. It used to drop to 1 on a phone, which
        made the list twice as tall as the screen and cut the last switches off
        entirely. Two columns with the explanations hidden — see the small-screen
