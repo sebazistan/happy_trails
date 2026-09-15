@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE WAYPOINT CARD
-   version 1.0
+   version 1.1
 
    ONE CARD, USED IN TWO PLACES. A waypoint card — the picture, the caption,
    the paged text, the facts along the bottom, the × and the expand button —
@@ -75,6 +75,7 @@ window.HappyTrailsCards = function (opts) {
     level_low:     "Low",
     level_medium:  "Medium",
     level_high:    "High",
+    openOnTrail:   "Open card on trail page",
   };
 
   /* ── AND ITS OWN SETTINGS ────────────────────────────────────────────────
@@ -326,6 +327,19 @@ window.HappyTrailsCards = function (opts) {
     if (s.mapLink) facts.push(
       '<a class="tm-mapLink" href="' + s.mapLink + '" target="_blank" rel="noopener">' +
       WORDS.mapLink + "</a>");
+    /* AND ONE MORE BUTTON, WHERE THE CARD IS NOT ON ITS OWN TRAIL. A card
+       opened from the main map is a visitor: it shows one waypoint, with no
+       walk around it and no way through to the rest of the trail. `goTo` is
+       that way through — the waypoint's own address on its own page, which
+       opens there with the card already up. A card on its own trail page
+       passes nothing and gets no button, so this costs those pages a line of
+       markup that is never written. */
+    if (s.goTo) facts.push(
+      '<a class="tm-goTo" href="' + s.goTo + '">' +
+      (s.goToLabel || WORDS.openOnTrail) +
+      '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M5 12h13M12 5l7 7-7 7"/></svg></a>');
 
     const slides = slidesFor(s, i);
     const many = slides.length > 1;

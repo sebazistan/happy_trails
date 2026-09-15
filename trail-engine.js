@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 4.0
+   version 4.1
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -2890,9 +2890,19 @@ function start() {
        side of a map they did not ask for. bigOnArrival decides which links
        count: "wishful" is the one journey there is, but "true" opens every
        deep link expanded and "false" turns it off. A window too small for the
-       big view simply gets the ordinary card — see roomToGrow. */
+       big view simply gets the ordinary card — see roomToGrow.
+
+       AND A LINK MAY ASK FOR IT OUTRIGHT, with ?big=1 on the address. The
+       main map's featured waypoints do: their cards carry an "Open card on
+       trail page" button, and somebody who presses that has asked to see this
+       one waypoint properly, exactly as the Wishful thinking page's links
+       mean. Putting it in the address rather than in a setting keeps it a
+       property of the JOURNEY — a link somebody shares of the trail itself
+       still opens the trail. */
+    const askedForBig = /(?:^|[?&])big=1(?:&|$)/.test(location.search.slice(1));
+
     const shouldArriveBig = i =>
-      SETTINGS.bigOnArrival === true ||
+      SETTINGS.bigOnArrival === true || askedForBig ||
       (SETTINGS.bigOnArrival === "wishful" && stops[i] && stops[i].kind === "wishful");
 
     const arriveAt = () => {

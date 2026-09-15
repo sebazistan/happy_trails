@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 4.1
+   version 4.2
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -333,9 +333,18 @@
      at any zoom, because the page counter-scales it the way it does the route
      buttons. --map-card-foot is the room left under the card on that page,
      where a trail page would have its readouts and elevation graph. */
+  /* the halo under every name on the main map. Two small shadows rather than
+     one: a tight dark one that sharpens the letter edges against a pale lake,
+     and a wider soft one that lifts the whole word off a busy background. */
+  --label-shadow:      drop-shadow(0 0 1.5px rgba(8,12,10,.95))
+                       drop-shadow(0 1px 2.5px rgba(8,12,10,.55));
+
   --feat-size:         26px;
   --feat-lift:         1.16;
   --feat-fade:         .22s;
+  --feat-away:         .62;    /* how small an icon is before it arrives      */
+  --feat-pop:          .34s;   /* and how long it takes to get to full size   */
+  --feat-spring:       cubic-bezier(.34, 1.62, .62, 1);   /* with a small overshoot */
   --map-card-foot:     78px;
 
   --pin-lift:          1.08;
@@ -1411,7 +1420,7 @@ body.page-trail{
   margin-top:11px; padding-top:10px; border-top:1px solid var(--panel-edge);
   /* flex-end so the link button sits on the same baseline as the numbers
      beside it rather than stretching to the full height of the row */
-  display:flex; gap:20px; align-items:flex-end;
+  display:flex; gap:20px 14px; align-items:flex-end; flex-wrap:wrap;
 }
 /* the link button at the end of the facts row. It reads as a button rather
    than a fact, but it is the same size and sits on the same line, so the row
@@ -1431,6 +1440,46 @@ body.page-trail{
 }
 .tm-card.tm-wishful .tm-mapLink:hover{ background:var(--wishful); }
 .tm-card .tm-mapLink:focus-visible{ outline:2px solid var(--accent-soft); outline-offset:2px; }
+
+/* ── OPEN CARD ON TRAIL PAGE ───────────────────────────────────────────────
+   Only ever on a card that is NOT on its own trail — which today means the few
+   waypoints shown on the main map. It is the way through from one waypoint to
+   the trail it belongs to, so it is the loudest thing in the row: filled
+   rather than outlined, and last, at the bottom right corner of the card.
+   margin-left:auto on whichever button comes first pushes the pair over; this
+   one only needs to keep its own place at the end.
+
+   The arrow is part of the button rather than a character, so it sits on the
+   baseline of the words at any size and cannot be replaced by a font that
+   does not have it. */
+.tm-card .tm-goTo{
+  flex:0 0 auto; align-self:center;
+  display:inline-flex; align-items:center; gap:7px;
+  font:600 var(--maplink-size)/1 var(--font-body);
+  letter-spacing:.11em; text-transform:uppercase; text-decoration:none;
+  white-space:nowrap; color:#fff;
+  background:var(--accent); border:1px solid transparent;
+  padding:7px 12px; border-radius:999px;
+  transition:filter var(--button-fade), background var(--button-fade);
+}
+/* it is the first thing in the row to be pushed right, so it carries the
+   auto margin when there is no Google maps button beside it */
+.tm-card .tm-goTo:first-of-type{ margin-left:auto; }
+.tm-card .tm-goTo svg{ width:13px; height:13px; flex:0 0 auto; }
+.tm-card .tm-goTo:hover{ filter:brightness(1.12); }
+.tm-card .tm-goTo:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+.tm-card.tm-wishful .tm-goTo{ background:var(--wishful); color:#20092b; }
+
+/* ON A NARROW CARD IT TAKES ITS OWN LINE. "Open card on trail page" beside two
+   figures needs about 380 pixels; on a phone the card is 366 and the button
+   was pushed past the edge. Given the whole width it reads better anyway — it
+   is the one thing on the card that goes somewhere. */
+@media (max-width:860px){
+  .tm-card .tm-goTo,
+  .tm-card .tm-goTo:first-of-type{
+    margin-left:0; width:100%; justify-content:center; margin-top:2px;
+  }
+}
 .tm-card .tm-facts div{ font:600 12px/1.2 var(--font-body); }
 .tm-card .tm-facts small{
   display:block; font:500 9.5px/1 var(--font-body); letter-spacing:.14em;
@@ -2328,26 +2377,31 @@ img{ -webkit-user-drag:none; user-drag:none; }
    the zoom. How big "the same size" is, is mapTextSize in index.html; this
    file only does the scaling.
 
-   IT SCALES FROM THE LEFT, NOT THE MIDDLE. transform-box:fill-box measures
-   the origin against the name's own box, and 0% 50% puts it at the left edge,
-   halfway down — so as the type grows and shrinks the first letter stays put
-   and the word grows to the right of it, the way a word processor does it.
-   About the middle, every name crept sideways as you zoomed and a name beside
-   the thing it names appeared to drift off it.
+   IT SCALES ABOUT ITS MIDDLE. transform-box:fill-box measures the origin
+   against the name's own box, so `center` is the middle of the word: it grows
+   and shrinks in place, spreading evenly either side of where it is drawn.
+   That keeps a name centred on the thing it names — which is how the artwork
+   places them — and it is the same for a name set upright and one running up
+   a creek, where there is no sensible "first letter" to pin to.
+
+   AND IT CARRIES A SHADOW, because a white name has to stay readable over a
+   pale lake as well as a dark ravine, and this map has both under the same
+   names. A drop-shadow filter rather than a second copy of the text: it
+   follows the letters exactly, costs nothing in the file, and needs no second
+   set of four hundred elements to keep in step. Kept deliberately small —
+   --label-shadow is a soft dark halo, not a cast shadow.
 
    The wrapper is what scales. A rotated street name carries its rotation in a
    transform attribute of its own, and a CSS transform on that same element
-   would replace it — so the rotation sits inside, untouched. (Which also means
-   a name set vertically grows from the left of its upright box rather than
-   from its first letter. There is no way to have both while the rotation is
-   the drawing's business, and it is a handful of creek names.)
+   would replace it — so the rotation sits inside, untouched.
 
    WITHOUT THE SCRIPT nothing here does anything: --label-counter falls back to
    1, which is the drawing's own size, and no layer is switched off. The map
    reads exactly as it did before. */
 #ht-world .ht-label{
-  transform-box:fill-box; transform-origin:0% 50%;
+  transform-box:fill-box; transform-origin:center;
   transform:scale(var(--label-counter, 1));
+  filter:var(--label-shadow);
 }
 /* a whole layer of names, waiting for the zoom it belongs to, and a single
    name that has nowhere to sit. Visibility rather than display, twice over:
@@ -2373,28 +2427,65 @@ img{ -webkit-user-drag:none; user-drag:none; }
   width:var(--feat-size); height:var(--feat-size); line-height:0;
   cursor:pointer; -webkit-tap-highlight-color:transparent;
   transform-origin:50% 50%;
-  transform:translate(-50%, -50%) scale(calc(var(--pin-counter, 1) * .001));
-  opacity:0; pointer-events:none;
-  filter:drop-shadow(0 2px 5px rgba(0,0,0,.5));
-  transition:opacity var(--feat-fade) ease, filter var(--button-fade);
-}
-/* The icons are OFF until the zoom says otherwise, and the scale rather than
-   display is what hides them: an icon that is display:none cannot animate in,
-   and one that is merely transparent still takes clicks. Both are dealt with
-   here, and .is-on is the single switch. */
-.ht-feat.is-on{
-  opacity:1; pointer-events:auto;
+  /* THE COUNTER-SCALE LIVES HERE AND IS NEVER ANIMATED. --pin-counter is
+     rewritten on every frame of a zoom to hold the icon at one size on screen;
+     a transition on this transform would try to ease each of those, so the
+     icons would lag a fifth of a second behind the map and swell and shrink
+     while it moved. The arrival animation is on the image inside instead,
+     where it has the element to itself. */
   transform:translate(-50%, -50%) scale(var(--pin-counter, 1));
+  pointer-events:none;
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,.5));
+  transition:filter var(--button-fade);
 }
-.ht-feat img{ width:100%; height:100%; display:block; pointer-events:none; }
+.ht-feat.is-on{ pointer-events:auto; }
+
+/* ── HOW THEY ARRIVE ───────────────────────────────────────────────────────
+   These are the one thing on the map you can click that was not clickable a
+   moment ago, so they say so: each grows from about two thirds size with a
+   small overshoot — that is what the 1.62 in the curve is — and fades in over
+   a quarter of a second. Enough to catch the eye, not enough to be a
+   performance.
+
+   AND THEY DO NOT ARRIVE TOGETHER. --feat-delay is written on each icon by the
+   page, a fresh random fraction of a second every time they appear, so they
+   come in as a scatter rather than as one pop. Thirty-six things moving in
+   perfect unison reads as a machine; the same thirty-six spread over a third
+   of a second reads as a map waking up. See featuredStagger in index.html.
+
+   The delay belongs to arriving and leaving only. Pointing at one has its own
+   rule below that takes the delay back off, because a button that waits a
+   fifth of a second before acknowledging the pointer feels broken. */
+.ht-feat img{
+  width:100%; height:100%; display:block; pointer-events:none;
+  transform-origin:50% 50%;
+  transform:scale(var(--feat-away));
+  opacity:0;
+  transition:opacity   var(--feat-fade) ease               var(--feat-delay, 0s),
+             transform var(--feat-pop)  var(--feat-spring) var(--feat-delay, 0s);
+}
+.ht-feat.is-on img{ opacity:1; transform:scale(1); }
+
+/* Pointing at one, and the one whose card is open, answer AT ONCE — the
+   arriving stagger is taken back off, and the curve drops its overshoot so a
+   hover is a lift rather than a bounce. */
+.ht-feat.is-on:hover img, .ht-feat.is-on:focus-visible img, .ht-feat.is-on.is-open img{
+  transform:scale(var(--feat-lift));
+  transition-delay:0s; transition-timing-function:ease, ease;
+}
 .ht-feat.is-on:hover, .ht-feat.is-on:focus-visible{
-  transform:translate(-50%, -50%) scale(calc(var(--pin-counter, 1) * var(--feat-lift)));
   filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));
 }
 .ht-feat:focus-visible{ outline:2px solid #fff; outline-offset:3px; border-radius:50%; }
 .ht-feat.is-on.is-open{
-  transform:translate(-50%, -50%) scale(calc(var(--pin-counter, 1) * var(--feat-lift)));
   filter:drop-shadow(0 0 0 3px var(--accent)) drop-shadow(0 4px 10px rgba(0,0,0,.6));
+}
+/* SOMEBODY WHO HAS ASKED FOR LESS MOVEMENT still gets the icons; they simply
+   appear. The stagger goes with the animation — a delay with nothing moving in
+   it is just a wait. */
+@media (prefers-reduced-motion: reduce){
+  .ht-feat img{ transition:opacity .12s linear; transform:scale(1); }
+  .ht-feat.is-on img{ transition-delay:0s; }
 }
 
 /* ── AND THE CARD THAT OPENS OVER THIS MAP ────────────────────────────────

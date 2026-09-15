@@ -12,6 +12,42 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 15.0  A NEW MAIN MAP — HT_94 — and the copied-and-nudged labels are gone from
+       it. Where the drawing carried every background name twice, it now
+       carries each once; the build's report is down to a handful of names
+       that genuinely repeat across the city. The two layers both called
+       Meadoway are still there, still drawing the same route twice from the
+       same point, and the build still says so.
+
+       THE NAMES SCALE ABOUT THEIR MIDDLE AGAIN, and each one now carries a
+       soft dark halo — a drop shadow tight enough to sharpen the letters
+       against a pale lake and wide enough to lift a name off a busy
+       background. It follows the letters exactly and costs nothing: no second
+       copy of four hundred elements to keep in step. Measured: the map holds
+       its frame rate exactly as before.
+
+       AND THE TRAILS WIN WHEN TWO NAMES WANT THE SAME CORNER. Size used to
+       decide, which is right between two lakes and wrong between a lake and a
+       trail — this is a map of trails. Trail, lane, unpaved and proposed names
+       are now placed first and can no longer be pushed out by a district; the
+       rest follow, still biggest first. It is one number per layer in the
+       build, beside the zoom each layer appears at.
+
+       THE WAYPOINT BADGES ARRIVE RATHER THAN APPEAR. Each grows from two
+       thirds size with a small overshoot and fades in over a third of a
+       second — and each waits a fresh random fraction of a second before it
+       starts, so the thirty-six of them come in as a scatter rather than as
+       one pop. Enough to say "these are clickable now", not enough to be a
+       performance. featuredStagger sets the spread; somebody who has asked
+       their computer for less movement just gets the icons.
+
+       AND EVERY ONE OF THOSE CARDS NOW HAS A WAY THROUGH. "Open card on trail
+       page", at the foot of the card, opens that waypoint on its own trail
+       page with the card already up — the same short loading screen and the
+       same arrival as a link from the Wishful thinking page. It is the
+       address that asks for it (?big=1), not a setting, so a link somebody
+       shares of the trail itself still opens the trail.
+
  14.0  THE MAIN MAP SHOWS WAYPOINTS OF ITS OWN. Zoom in past 3.5x — 2.2x on a
        phone — and a small badge appears on each trail at two or three of its
        places. Click one and that waypoint's card opens over the map: its
