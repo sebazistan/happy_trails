@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     HAPPY TRAILS — COMING SOON
+     version 1.0
+
+     A reading page, with one moving picture at the top of it.
+
+     It shares the navigation bar and the whole palette with the map pages
+     through happy-trails.css; everything else it needs lives in that file's
+     section 4, under body.page-text, and in the COMING SOON block near the
+     foot of it.
+
+     WHAT IT IS FOR. Somewhere to send people when a link is not ready yet. It
+     is deliberately NOT in the navigation bar on any page — it is a
+     destination you hand out, not a section of the site — so the only way
+     here is a link somebody was given.
+
+     THERE ARE TWO WORDS ON IT, and that is the whole page. Everything else is
+     the picture: a trail network drawing and undrawing itself, in the main
+     map's own colours and its own geometry. It is drawn by coming-soon.js on
+     the canvas below; there is no image file. Every number in it — how fast,
+     how many, how often one branches, how long before a line starts rubbing
+     itself out — is in the SETTINGS block at the top of that file.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coming soon — Happy Trails</title>
+<meta name="description" content="What is being drawn next for Happy Trails: more trails, real photographs on every waypoint, measured heights, and the case for the missing links.">
+<link rel="stylesheet" href="happy-trails.css">
+<!-- how this page looks when someone shares the link, and in a browser tab.
+     The image is 1200x630, which is the shape every one of them crops to.
+     The addresses have to be absolute: a relative og:image is ignored by most
+     scrapers, so a preview that looks right locally comes out blank in Slack.
+     They are all built from BASE in make_meta.py — change it there. -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="favicon-180.png">
+<meta name="theme-color" content="#1d2124">
+<link rel="canonical" href="https://happytrailstoronto.com/coming-soon.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Happy Trails">
+<meta property="og:title" content="Coming soon — Happy Trails">
+<meta property="og:description" content="What is being drawn next for Happy Trails: more trails, real photographs on every waypoint, measured heights, and the case for the missing links.">
+<meta property="og:url" content="https://happytrailstoronto.com/coming-soon.html">
+<meta property="og:image" content="https://happytrailstoronto.com/social/site.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Coming soon — Happy Trails">
+<meta name="twitter:description" content="What is being drawn next for Happy Trails: more trails, real photographs on every waypoint, measured heights, and the case for the missing links.">
+<meta name="twitter:image" content="https://happytrailstoronto.com/social/site.png">
+<!-- Counting visits. Inert until analytics.js names a provider —
+     one file, one line, every page. -->
+<script src="analytics.js" defer></script>
+</head>
+<body class="page-text page-soon">
+
+<!-- the same bar as every other page on the site. This page is not IN it: it
+     is somewhere to be sent, not somewhere to browse to. -->
+<header id="ht-bar">
+  <a id="ht-brand" href="index.html">Happy Trails</a>
+  <nav id="ht-nav">
+    <a href="index.html">Map</a>
+    <a href="trails.html">Trails</a>
+    <a href="wishful.html">Wishful</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a class="ht-coffee" href="https://buymeacoffee.com/sebazistan" target="_blank" rel="noopener"><span class="nav-full">Buy me a coffee</span><span class="nav-short">Coffee</span></a>
+  </nav>
+</header>
+
+<main>
+  <h1 class="cs-title">Coming soon</h1>
+
+  <!-- THE PICTURE. A canvas and nothing else: coming-soon.js finds it by its
+       id and takes it from there. No panel, no border, no background of its
+       own — it is drawn straight onto the page, in the page's own colour, so
+       what you see is a map appearing rather than a picture of one in a
+       frame. With the script missing, or with JavaScript off, the page is two
+       words and some space, which is a page rather than a hole. -->
+  <div class="cs-stage">
+    <canvas id="cs-canvas" role="img"
+            aria-label="A trail network drawing itself: green trails forking and
+                        joining, bike lanes, expressways and railways coming and
+                        going, and red blocks where golf courses stand in the
+                        way."></canvas>
+  </div>
+</main>
+
+<script src="coming-soon.js"></script>
+<script>HappyTrailsComingSoon(document.getElementById("cs-canvas"));</script>
+
+</body>
+</html>

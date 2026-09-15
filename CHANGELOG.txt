@@ -12,6 +12,73 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 17.0  THE COMING SOON PAGE IS TWO WORDS AND A DRAWING. It is NOT in the
+       navigation bar on any page, and was not meant to be: it is somewhere to
+       send people when a link is not ready yet, so the only way to it is a
+       link you hand out. The text has gone; what is left is "Coming soon" in
+       big letters and the picture, full width, straight onto the page in the
+       page's own colour with no panel and no border around it. One screen, no
+       scrolling.
+
+       AND THE PICTURE IS A MAP NOW RATHER THAN A TANGLE.
+
+       It runs at half the speed. Trails go horizontally and vertically, with
+       only the occasional forty-five degree leg, and they turn on a radius the
+       way the map's do rather than on a sharp point.
+
+       NO TRAIL CROSSES ANOTHER TRAIL, OR ITSELF. Every step a trail takes
+       claims the ground under it, and nothing else may step there until the
+       far end has been rubbed out and given it back — the rule a game of snake
+       plays by. They still cross expressways and railways freely, and they
+       still will not cross a golf course, which is a red SQUARE now rather
+       than whatever shape the dice gave it.
+
+       WHAT THE DOTS MEAN, all of them the map's own marks, and all of them
+       popping in rather than appearing:
+         white       a trail has branched here
+         bright green  the trail crosses OVER a road or a railway. Where it
+                     goes under there is no dot, and the road is drawn back
+                     across the trail so you can see it pass beneath.
+         red         a pinch point. Never more than three at once, and each
+                     one goes again after five to seven seconds.
+
+       And every so often a purple line — something proposed rather than built
+       — draws itself in and straight back out again at more than twice the
+       speed.
+
+       Sixty frames a second at every window size tested, on a phone included.
+
+ 16.0  A NEW PAGE — COMING SOON — with a moving picture on it. A trail network
+       draws itself across a panel in the map's own colours and its own
+       geometry: green trails running straight or at forty-five degrees,
+       forking, with white dots where they meet and where they end; bike lanes
+       dashed in and out; expressways and railways underneath; red blocks where
+       a golf course is in the way, which the trails turn to get around. When a
+       line has run as long as it is allowed, its far end starts rubbing itself
+       out and it travels across the picture. There are no labels — it is a map
+       of nowhere.
+
+       It is drawn by coming-soon.js, on a canvas, with no image file. Every
+       number in it is in the SETTINGS block at the top of that file: how many
+       lines at once, how fast, how long before one starts erasing itself, how
+       much clearance a trail keeps around a golf course. It holds sixty frames
+       a second on a phone, and it stops running altogether when the tab is
+       hidden or the picture is scrolled out of sight.
+
+       THE WAYPOINT BADGES ARE HALF AGAIN AS BIG and much harder to miss. They
+       grow from a quarter size now rather than two thirds, over half a second
+       rather than a third, and a ring of their own colour opens out of each one
+       and fades as it lands — the gesture a dropped pin makes on every map
+       application there is. Each still waits its own random fraction of a
+       second, so thirty-six of them arrive as a scatter.
+
+       AND THE NAVIGATION BAR FITS AGAIN. Seven sections and a coffee link do
+       not fit beside "Happy Trails" on a small phone; the last link ran off the
+       edge, and since the bar deliberately does not scroll it could not be
+       reached. The name of the site now gives way before a link does — it is
+       the one thing in the bar that is not a destination. Checked at 320, 360,
+       390, 430 and 700 pixels, on every kind of page.
+
  15.0  A NEW MAIN MAP — HT_94 — and the copied-and-nudged labels are gone from
        it. Where the drawing carried every background name twice, it now
        carries each once; the build's report is down to a handful of names

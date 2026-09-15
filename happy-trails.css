@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 4.2
+   version 4.4
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -339,12 +339,26 @@
   --label-shadow:      drop-shadow(0 0 1.5px rgba(8,12,10,.95))
                        drop-shadow(0 1px 2.5px rgba(8,12,10,.55));
 
-  --feat-size:         26px;
-  --feat-lift:         1.16;
-  --feat-fade:         .22s;
-  --feat-away:         .62;    /* how small an icon is before it arrives      */
-  --feat-pop:          .34s;   /* and how long it takes to get to full size   */
-  --feat-spring:       cubic-bezier(.34, 1.62, .62, 1);   /* with a small overshoot */
+  /* THE COMING SOON PAGE'S PICTURE. Its colours are not here — they are in
+     coming-soon.js, taken from the artwork itself, because the drawing has to
+     agree with the map rather than with the interface. These are only the box
+     it sits in. */
+  --cs-wide:           1500px;  /* the widest the picture is allowed to get  */
+  --cs-size:           clamp(46px, 9vw, 104px);  /* COMING SOON, in big letters */
+  --cs-top:            clamp(28px, 6vh, 64px);
+  --cs-gap:            clamp(20px, 4vh, 44px);
+  --cs-min:            300px;
+  --cs-max:            760px;
+
+  --feat-size:         36px;   /* how big a badge is on screen, at any zoom  */
+  --feat-lift:         1.14;
+  --feat-fade:         .26s;
+  --feat-away:         .28;    /* how small an icon is before it arrives      */
+  --feat-pop:          .52s;   /* and how long it takes to get to full size   */
+  --feat-spring:       cubic-bezier(.24, 1.74, .5, 1);   /* with a real overshoot */
+  /* the ring that opens out of a badge once as it arrives — see .ht-feat::after */
+  --feat-ring:         .72s;
+  --feat-ring-grow:    2.5;
   --map-card-foot:     78px;
 
   --pin-lift:          1.08;
@@ -2466,6 +2480,31 @@ img{ -webkit-user-drag:none; user-drag:none; }
 }
 .ht-feat.is-on img{ opacity:1; transform:scale(1); }
 
+/* ── AND A RING OPENS OUT OF IT, ONCE ──────────────────────────────────────
+   The grow-and-fade alone was easy to miss: on a map where half a dozen other
+   things are moving as the zoom settles, a badge quietly reaching full size
+   reads as part of the scenery. This is the part that says LOOK — a ring of
+   the badge's own colour that expands out of it and fades, the way a dropped
+   pin does on every map application there is. It runs once per arrival, under
+   the same random delay as the badge, and then there is nothing left animating.
+
+   It is a pseudo-element on the button, so it costs no markup, and it cannot
+   be clicked or hovered — the badge underneath keeps all of that. */
+.ht-feat::after{
+  content:""; position:absolute; inset:14%;
+  border-radius:50%; border:2.5px solid var(--pin-green);
+  opacity:0; pointer-events:none;
+}
+.ht-feat.is-wishful::after{ border-color:var(--pin-purple); }
+.ht-feat.is-on::after{
+  animation:ht-feat-ring var(--feat-ring) ease-out var(--feat-delay, 0s) 1 both;
+}
+@keyframes ht-feat-ring{
+  0%   { opacity:0;   transform:scale(.7); }
+  18%  { opacity:.85; }
+  100% { opacity:0;   transform:scale(var(--feat-ring-grow)); }
+}
+
 /* Pointing at one, and the one whose card is open, answer AT ONCE — the
    arriving stagger is taken back off, and the curve drops its overshoot so a
    hover is a lift rather than a bounce. */
@@ -2486,6 +2525,7 @@ img{ -webkit-user-drag:none; user-drag:none; }
 @media (prefers-reduced-motion: reduce){
   .ht-feat img{ transition:opacity .12s linear; transform:scale(1); }
   .ht-feat.is-on img{ transition-delay:0s; }
+  .ht-feat.is-on::after{ animation:none; }
 }
 
 /* ── AND THE CARD THAT OPENS OVER THIS MAP ────────────────────────────────
@@ -2548,6 +2588,54 @@ body.page-map #tm-cardveil{
 body.page-map #tm-cardveil.is-on{
   opacity:1; visibility:visible; transition-delay:0s, 0s;
 }
+
+/* ── THE COMING SOON PAGE ──────────────────────────────────────────────────
+   Two words and a drawing. There is no panel around the picture and no border
+   under it: it is drawn straight onto the page, in the page's own colour, so
+   what somebody sees is a map appearing rather than a picture of one in a
+   frame. The canvas is the full width of the window up to a limit — past about
+   1500 pixels a wider picture stops adding anything and only makes the grid
+   look small — and it takes whatever height is left, within reason.
+
+   The page is NOT in the navigation bar on any page of the site. It is
+   somewhere to send people when a link is not ready, which means the only way
+   to it is a link somebody was handed. */
+/* .page-text as well as .page-soon, because the reading pages' own rule for
+   `main` sits further down this file and would otherwise win on being later.
+   This page is a reading page with nothing to read. */
+body.page-text.page-soon main{
+  max-width:none;
+  padding:calc(var(--bar-height) + var(--cs-top)) 0 0;
+  /* THE PAGE IS ONE SCREEN AND DOES NOT SCROLL. Two words and a picture: there
+     is nothing below to scroll to, and a picture cut off by the bottom of the
+     window looks like a mistake rather than a crop. A fixed height rather than
+     a minimum, so the picture takes exactly what is left over. */
+  display:flex; flex-direction:column;
+  height:100vh; height:100svh; overflow:hidden;
+}
+.cs-title{
+  margin:0 auto var(--cs-gap);
+  padding:0 var(--edge-gap);
+  max-width:var(--cs-wide); width:100%;
+  font:700 var(--cs-size)/1 var(--font-display);
+  letter-spacing:-.02em; color:var(--text);
+}
+.cs-stage{
+  position:relative;
+  width:100%; max-width:var(--cs-wide); margin:0 auto;
+  /* basis 0, not auto: the height comes from what is left in the column and
+     from nothing else, so the canvas cannot push the page taller than a screen */
+  flex:1 1 0;
+  min-height:var(--cs-min); max-height:var(--cs-max);
+}
+.cs-stage canvas{
+  display:block; width:100%; height:100%;
+  /* it is a picture, not a control: nothing in it can be clicked or dragged,
+     and a long press on a phone should scroll the page rather than offer to
+     save an image */
+  pointer-events:none; user-select:none;
+}
+
 
 #ht-controls{
   position:fixed; right:var(--edge-gap); bottom:var(--edge-gap); z-index:35;
@@ -3572,7 +3660,7 @@ body.page-wishful{
        thumb — and there is less to leave under the card, because this page has
        no readouts along the bottom. */
     --card-width:    none;
-    --feat-size:     30px;
+    --feat-size:     40px;
     --map-card-foot: 16px;
     /* --switch-columns stays at 2 here. It used to drop to 1 on a phone, which
        made the list twice as tall as the screen and cut the last switches off
@@ -3638,10 +3726,26 @@ body.page-wishful{
    point of the bar; it just stops being spacious. */
 @media (max-width: 480px){
   :root{
-    --bar-pad:        10px;
-    --bar-brand-size: 14px;
-    --bar-link-size:  9.5px;
-    --bar-link-gap:   9px;
+    --bar-pad:        8px;
+    --bar-brand-size: 13px;
+    --bar-link-size:  9px;
+    --bar-link-gap:   7px;
   }
-  #ht-nav a, #tm-barNav a{ letter-spacing:.05em; }
+  #ht-nav a, #tm-barNav a{ letter-spacing:.03em; }
+  /* THE BRAND GIVES WAY BEFORE A LINK DOES. Seven sections and a coffee link
+     do not fit beside "Happy Trails" on a 390-pixel phone — the last link ran
+     off the edge, and because the bar deliberately does not scroll, it was
+     simply unreachable. The name of the site is the one thing in the bar that
+     is not a destination and is written at the top of every page anyway, so it
+     is what shrinks: it holds its place until the links need the room and then
+     gives up as much as they need, with an ellipsis so it never looks broken.
+     Below about 360 pixels it disappears altogether and the logo is the tab. */
+  #ht-bar, #tm-bar{ gap:8px; }
+  #ht-brand, #tm-barBrand{
+    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  #ht-nav, #tm-barNav{ flex:0 0 auto; }
+}
+@media (max-width: 358px){
+  #ht-brand, #tm-barBrand{ display:none; }
 }
