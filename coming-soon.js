@@ -1,15 +1,18 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE DRAWING THAT DRAWS ITSELF
-   version 3.0
+   version 3.1
 
    WHAT THIS IS. The picture on coming-soon.html: a trail network that builds
    itself and takes itself apart again, in the main map's own colours and its
    own geometry. Trails run horizontally and vertically, with the occasional
    forty-five degree leg, the way a subway map does. They branch now and then
    and a white dot marks the junction. They cross expressways and railways —
-   a bright green dot where a trail goes OVER one, nothing where it goes under,
-   and the road is drawn back across the trail so you can see it pass beneath.
-   Rivers run under all of it. Red blocks are golf courses, and a trail will not
+   a bright green dot on the bridges and no mark on the level crossings.
+   Rivers run under all of it, and are always crossed on a bridge.
+
+   NOTHING EVER RUNS ON TOP OF ANYTHING ELSE. Lines cross — at ninety degrees
+   wherever the grid allows it — but no two of them ever share a step, of any
+   kind, so nothing is ever drawn along the top of something else. Red blocks are golf courses, and a trail will not
    cross one. Grey and red connections run from one trail to another. Every so
    often a red dot appears at a pinch point, or a purple line — something
    proposed rather than built — draws itself in and straight back out again.
@@ -124,6 +127,17 @@ window.HappyTrailsComingSoon = function (canvas) {
                               // round something. A kind may override it with
                               // `diag` — the river does, because a river IS
                               // mostly diagonal.
+    /* THE LAST FEW PIXELS OF A LINE. Every line ends the same way — its tail
+       catches its head — and for a second before that it is a stub: an inch of
+       grey lying on the picture with no beginning and no end, which reads as a
+       stray mark rather than as a road going away. So the last stretch of a
+       line is faded out instead of drawn, and a line that never got going in
+       the first place is not held on screen at all, it is whipped off. */
+    stubLeast:       2.0,     // cells: below this a line fades as it shortens
+    leastSteps:      5,       // steps: a line that stops shorter than this
+                              // never had anywhere to go
+    stubRush:        3.5,     // and how much faster such a line is taken away
+
     giveUp:          3,       // HOW MANY TIMES RUNNING A LINE MAY BE SHOVED
                               // off its course before it simply stops. A line
                               // that keeps being blocked is in a corner it
@@ -181,11 +195,15 @@ window.HappyTrailsComingSoon = function (canvas) {
     dotPinch:       12.5,     // and the red one at a pinch point
     dotPop:          0.34,    // seconds for a dot to reach full size
     dotOvershoot:    1.3,     // and how far past it goes on the way
-    crossOver:       0.5,     // chance a trail crosses OVER a road or railway
-                              // rather than under it. Over gets the bright
-                              // green dot; under gets the road drawn back
-                              // across the trail. A river is always crossed
-                              // over — that is what a bridge is.
+    crossOver:       0.75,    // chance a crossing is a BRIDGE and gets the
+                              // bright green dot. The rest are level crossings
+                              // and get no mark at all — the trail is simply
+                              // drawn over the road, the way the map draws it.
+                              // There used to be a short piece of road painted
+                              // back across the trail here to say "under", and
+                              // what it looked like on the picture was a stray
+                              // grey dash lying on a green line. A river is
+                              // always crossed over: that is what a bridge is.
     redEvery:        [4, 9],  // seconds between one red dot and the next
     redAtOnce:       3,       // and never more than this many on the picture
     redLife:         [5, 7],  // how long one stays
@@ -265,10 +283,6 @@ window.HappyTrailsComingSoon = function (canvas) {
     dashHighway:   [9.14, 18.28],   // the centre line of an expressway
     dashRail:      [2, 12],         // and the sleepers on a railway
     dotLane:       [0, 17],         // a bike lane: dots, not dashes
-
-    underStub:     2.6,         // how far either side of a trail a road is
-                                // drawn back over it, in trail widths, where
-                                // the trail passes underneath
 
     /* THE COLOURS, taken from the legend's own drawings rather than matched by
        eye. Change one here and the picture stops agreeing with the map, which
@@ -360,6 +374,7 @@ window.HappyTrailsComingSoon = function (canvas) {
 
   let lines = [], golf = [], reds = [];
   let taken = new Map();                 // the ground the trails have claimed
+  let busy = new Map();                  // and every step every line is standing on
   let spread = new Map();                // and the room each kind keeps to itself
   let W = 0, H = 0, cell = SETTINGS.cell, room = 1, reach = 1;
   let sinceLine = 0, sinceGolf = 0, tillRed = 0, tillWish = 0, clock = 0;
@@ -405,23 +420,46 @@ window.HappyTrailsComingSoon = function (canvas) {
 
   const claimed = (x, y) => taken.has(key(x, y));
 
-  function claim(line, at, keys) {
-    for (let i = 0; i < keys.length; i++) {
-      taken.set(keys[i], (taken.get(keys[i]) || 0) + 1);
+  /* ── AND THE STEP ITSELF, WHICH EVERY KIND CLAIMS ────────────────────────
+     Two lines may CROSS — that is what a map does, and at ninety degrees it is
+     the clearest thing on it — but they may not run along the same ground, and
+     the difference between the two is exactly one thing: whether they share an
+     EDGE of the grid or only a corner of it.
+
+     A crossing shares a point and no edge: one line goes east through it, the
+     other goes north through it, and the two edges they use are different
+     edges. Running on top of each other means using the SAME edge, and that is
+     the only thing refused here. Which is why the key is the middle of the
+     step with the step's axis written after it — the middle alone is not
+     enough, because the two diagonals of a cell share their middle and are a
+     perfectly good ninety-degree crossing. */
+  const edgeOf = (ax, ay, bx, by, dir) =>
+        key((ax + bx) / 2, (ay + by) / 2) + "/" + (dir % 4);
+
+  function claim(line, at, ground, edges) {
+    for (let i = 0; i < ground.length; i++) {
+      taken.set(ground[i], (taken.get(ground[i]) || 0) + 1);
     }
-    line.claims.push({ at: at, keys: keys });
+    for (let i = 0; i < edges.length; i++) {
+      busy.set(edges[i], (busy.get(edges[i]) || 0) + 1);
+    }
+    line.claims.push({ at: at, ground: ground, edges: edges });
   }
 
-  function release(keys) {
-    for (let i = 0; i < keys.length; i++) {
-      const n = (taken.get(keys[i]) || 0) - 1;
-      if (n > 0) taken.set(keys[i], n); else taken.delete(keys[i]);
+  function release(c) {
+    for (let i = 0; i < c.ground.length; i++) {
+      const n = (taken.get(c.ground[i]) || 0) - 1;
+      if (n > 0) taken.set(c.ground[i], n); else taken.delete(c.ground[i]);
+    }
+    for (let i = 0; i < c.edges.length; i++) {
+      const n = (busy.get(c.edges[i]) || 0) - 1;
+      if (n > 0) busy.set(c.edges[i], n); else busy.delete(c.edges[i]);
     }
   }
 
   function dropClaims(line, upTo) {
     while (line.claims.length && line.claims[0].at < upTo) {
-      release(line.claims.shift().keys);
+      release(line.claims.shift());
     }
   }
 
@@ -494,18 +532,31 @@ window.HappyTrailsComingSoon = function (canvas) {
 
   /* Is this step open to this kind of line? Off the canvas, into a golf course
      that is solid enough to see, onto ground another trail is already standing
-     on, or too close to another line of the same kind. */
-  function open(kind, x, y, fromX, fromY, self) {
+     on, along a step ANY line is already using, or too close to another line
+     of the same kind. `dir` is which of the eight ways the step goes; pass -1
+     where there is no step yet, as when a line is being placed. */
+  function open(kind, x, y, fromX, fromY, self, dir) {
     if (!inside(x, y)) return false;
+    if (dir >= 0 && busy.has(edgeOf(fromX, fromY, x, y, dir))) return false;
     const mx = (x + fromX) / 2, my = (y + fromY) / 2;
+    /* THE GOLF COURSES, TESTED ALONG THE WHOLE STEP rather than at its ends.
+       Two points — where the step lands and the middle of it — used to be
+       enough, and it was not: a DIAGONAL step can pass across the corner of a
+       square with both of those points outside it, and what you saw was a
+       trail clipping the corner of a golf course, which is the one thing a
+       golf course on this map never allows. Five points cost nothing and there
+       is no corner narrow enough to slip between them. */
     for (let i = 0; i < golf.length; i++) {
       const g = golf[i];
       if (g.alpha < 0.3) continue;
       const pad = cell * SETTINGS.golfClear;
-      if (x > g.x - pad && x < g.x + g.side + pad &&
-          y > g.y - pad && y < g.y + g.side + pad) return false;
-      if (mx > g.x - pad && mx < g.x + g.side + pad &&
-          my > g.y - pad && my < g.y + g.side + pad) return false;
+      const x0 = g.x - pad, x1 = g.x + g.side + pad;
+      const y0 = g.y - pad, y1 = g.y + g.side + pad;
+      for (let t = 0; t <= 4; t++) {
+        const px = fromX + (x - fromX) * t / 4;
+        const py = fromY + (y - fromY) * t / 4;
+        if (px > x0 && px < x1 && py > y0 && py < y1) return false;
+      }
     }
     if (K[kind].solid && (claimed(x, y) || claimed(mx, my))) return false;
     if (crowded(kind, x, y, self || null)) return false;
@@ -534,7 +585,7 @@ window.HappyTrailsComingSoon = function (canvas) {
       // and they are allowed to start out side by side
       near: parent ? parent.near : new Map(), marks: [], recent: [],
     };
-    if (k.solid) claim(line, 0, [key(x, y)]);
+    claim(line, 0, k.solid ? [key(x, y)] : [], []);
     stamp(line, 0, x, y);
     rebuild(line);
     return line;
@@ -652,7 +703,7 @@ window.HappyTrailsComingSoon = function (canvas) {
         const d = turn(line.dir, ways[t]);
         const s = DIRS[d];
         const nx = at.x + s[0] * cell, ny = at.y + s[1] * cell;
-        if (!open(line.kind, nx, ny, at.x, at.y, line)) continue;
+        if (!open(line.kind, nx, ny, at.x, at.y, line, d)) continue;
         let want = Math.hypot(line.target.x - nx, line.target.y - ny);
         if (ways[t] === 0) want -= cell * SETTINGS.linkStraight;
         if (d % 2) want += cell * SETTINGS.linkSquare;   // square by preference
@@ -672,7 +723,7 @@ window.HappyTrailsComingSoon = function (canvas) {
           const away = turn(line.dir, Math.random() < 0.5 ? 2 : -2);
           const s = DIRS[away];
           if (open(line.kind, at.x + s[0] * cell, at.y + s[1] * cell,
-                   at.x, at.y, line)) {
+                   at.x, at.y, line, away)) {
             lines.push(newLine(line.kind, at.x, at.y, away, line));
             line.forks++;
             line.dots.push({ at: here, born: clock, ink: INK.junction,
@@ -683,7 +734,7 @@ window.HappyTrailsComingSoon = function (canvas) {
 
       const ahead = DIRS[line.dir];
       if (open(line.kind, at.x + ahead[0] * cell, at.y + ahead[1] * cell,
-               at.x, at.y, line)) {
+               at.x, at.y, line, line.dir)) {
         go = line.dir;
         line.pushed = 0;            // a clear step: it is not stuck after all
       } else {
@@ -708,7 +759,7 @@ window.HappyTrailsComingSoon = function (canvas) {
           const d = turn(line.dir, away[t]);
           const s = DIRS[d];
           const nx = at.x + s[0] * cell, ny = at.y + s[1] * cell;
-          if (!open(line.kind, nx, ny, at.x, at.y, line)) continue;
+          if (!open(line.kind, nx, ny, at.x, at.y, line, d)) continue;
           const fx = at.x + s[0] * cell * peek, fy = at.y + s[1] * cell * peek;
           let spare = Math.min(fx, fy, W - fx, H - fy);
           if (d % 2 === 0) spare += cell * 2;
@@ -734,9 +785,9 @@ window.HappyTrailsComingSoon = function (canvas) {
     line.legLeft--;
     rebuild(line);
     stamp(line, ends(line), nx, ny);
-    if (k.solid) {
-      claim(line, ends(line), [key(nx, ny), key((nx + at.x) / 2, (ny + at.y) / 2)]);
-    }
+    claim(line, ends(line),
+          k.solid ? [key(nx, ny), key((nx + at.x) / 2, (ny + at.y) / 2)] : [],
+          [edgeOf(at.x, at.y, nx, ny, go)]);
     if (line.kind === "trail" || line.kind === "wish") {
       lookForCrossings(line, at, { x: nx, y: ny }, here);
     }
@@ -745,6 +796,13 @@ window.HappyTrailsComingSoon = function (canvas) {
 
   function stopGrowing(line) {
     line.growing = false;
+    /* A LINE THAT NEVER GOT GOING is not worth waiting for. It does not get
+       its hold, and its tail comes after it quickly, so what would have been a
+       stub sitting on the picture for three seconds is gone in half of one. */
+    if (line.steps < SETTINGS.leastSteps) {
+      line.hold = 0;
+      line.tailRush = SETTINGS.stubRush;
+    }
   }
 
   /* a connection that has got where it was going: it stops, and gets the white
@@ -759,10 +817,9 @@ window.HappyTrailsComingSoon = function (canvas) {
 
   /* ── WHERE A TRAIL MEETS A ROAD, A RAILWAY OR A RIVER ────────────────────
      Tested once, as the step is laid down, rather than every frame. Each
-     crossing is decided there and then: over, and it gets the bright green dot
-     the map puts on a bridge; under, and the road is drawn back across the
-     trail afterwards so you can see it pass beneath. A river is always crossed
-     over — a trail does not go under a river, it goes over it on a bridge. */
+     crossing is decided there and then: a bridge, and it gets the bright green
+     dot the map puts on one; a level crossing, and it gets no mark at all. A
+     river is always crossed on a bridge — a trail does not go under a river. */
   function lookForCrossings(line, a, b, atA) {
     for (let i = 0; i < lines.length; i++) {
       const other = lines[i];
@@ -772,16 +829,11 @@ window.HappyTrailsComingSoon = function (canvas) {
         if (run[q] < other.tail || run[q - 1] > other.head) continue;
         const hit = meet(a, b, pts[q - 1], pts[q]);
         if (!hit) continue;
-        const ux = (pts[q].x - pts[q - 1].x), uy = (pts[q].y - pts[q - 1].y);
-        const m = Math.hypot(ux, uy) || 1;
         line.cross.push({
           at: atA + Math.hypot(hit.x - a.x, hit.y - a.y),
           x: hit.x, y: hit.y, born: clock,
           over: K[other.kind].alwaysOver ? true
                                          : Math.random() < SETTINGS.crossOver,
-          ux: ux / m, uy: uy / m,
-          ink: INK.road,
-          w: K[other.kind].px,
         });
       }
     }
@@ -823,7 +875,7 @@ window.HappyTrailsComingSoon = function (canvas) {
     for (let go = 0; go < SETTINGS.startTries; go++) {
       const x = Math.round(between(m, W - m) / cell) * cell;
       const y = Math.round(between(m, H - m) / cell) * cell;
-      if (!open(kind, x, y, x, y, null)) continue;
+      if (!open(kind, x, y, x, y, null, -1)) continue;
       let near = Infinity;
       for (let i = 0; i < lines.length; i++) {
         const g = lines[i].grid;
@@ -887,7 +939,7 @@ window.HappyTrailsComingSoon = function (canvas) {
     for (let i = 0; i < 8; i += 2) {
       const s = DIRS[i];
       const nx = from.x + s[0] * cell, ny = from.y + s[1] * cell;
-      if (!open(kind, nx, ny, from.x, from.y, null)) continue;
+      if (!open(kind, nx, ny, from.x, from.y, null, i)) continue;
       const q = Math.hypot(to.x - nx, to.y - ny);
       if (q < best) { best = q; dir = i; }
     }
@@ -1054,6 +1106,14 @@ window.HappyTrailsComingSoon = function (canvas) {
     return started;
   }
 
+  /* how solidly a line is drawn: all of it, until the drawn stretch gets short
+     enough to read as a stray mark, and then less and less of it */
+  function showing(line) {
+    const least = cell * SETTINGS.stubLeast;
+    const len = line.head - line.tail;
+    return len >= least ? 1 : Math.max(0, len / least);
+  }
+
   function strokeKind(kind, colour, width, dash) {
     if (!(width > 0)) return;
     ctx.strokeStyle = colour;
@@ -1062,8 +1122,12 @@ window.HappyTrailsComingSoon = function (canvas) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (line.kind !== kind) continue;
+      const showy = showing(line);
+      if (showy <= 0.02) continue;
+      ctx.globalAlpha = showy;
       if (trace(line, line.tail, line.head)) ctx.stroke();
     }
+    ctx.globalAlpha = 1;
     ctx.setLineDash([]);
   }
 
@@ -1136,42 +1200,22 @@ window.HappyTrailsComingSoon = function (canvas) {
     strokeKind("trail", INK.trail, K.trail.px);
     strokeKind("wish",  INK.wish,  K.wish.px);
 
-    /* WHERE A TRAIL PASSES UNDER, the road is put back over it — a short piece
-       of it, in its own colour, across the trail. That is the whole difference
-       between over and under here, and it is why the bright green dot means
-       something: it is only ever on the crossings the trail is on top of. */
-    ctx.lineCap = "butt";
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      for (let c = 0; c < line.cross.length; c++) {
-        const x = line.cross[c];
-        if (x.over || x.at < line.tail || x.at > line.head) continue;
-        const half = K.trail.pxCase * SETTINGS.underStub / 2;
-        ctx.strokeStyle = x.ink;
-        ctx.lineWidth = x.w;
-        ctx.beginPath();
-        ctx.moveTo(x.x - x.ux * half, x.y - x.uy * half);
-        ctx.lineTo(x.x + x.ux * half, x.y + x.uy * half);
-        ctx.stroke();
-      }
-    }
-    ctx.lineCap = "round";
-
     /* and everything that sits on top of a trail: the white dot at a branch or
        a junction, the bright green one where it crosses over something, and
        the red one where there is a problem */
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      const showy = showing(line);
       for (let d = 0; d < line.dots.length; d++) {
         const it = line.dots[d];
         if (it.at < line.tail || it.at > line.head) continue;
         const p = pointAt(line, it.at);
-        if (p) dot(p.x, p.y, it.r * popped(it.born), it.ink);
+        if (p) dot(p.x, p.y, it.r * popped(it.born) * showy, it.ink);
       }
       for (let c = 0; c < line.cross.length; c++) {
         const x = line.cross[c];
         if (!x.over || x.at < line.tail || x.at > line.head) continue;
-        dot(x.x, x.y, DOT.bridge * popped(x.born), INK.bridge);
+        dot(x.x, x.y, DOT.bridge * popped(x.born) * showy, INK.bridge);
       }
     }
     for (let i = 0; i < reds.length; i++) {
@@ -1211,7 +1255,7 @@ window.HappyTrailsComingSoon = function (canvas) {
      rather than as an empty rectangle with one line crawling across it */
   function seed() {
     lines = []; golf = []; reds = [];
-    taken = new Map(); spread = new Map();
+    taken = new Map(); busy = new Map(); spread = new Map();
     sinceLine = SETTINGS.startEvery; sinceGolf = SETTINGS.golfEvery;
     tillRed = 0.5; tillWish = 3; clock = 0;
     for (let i = 0; i < SETTINGS.settleFrames; i++) advance(1 / 60);

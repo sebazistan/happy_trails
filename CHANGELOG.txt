@@ -12,6 +12,43 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 17.3  NOTHING IN THE DRAWING RUNS ON TOP OF ANYTHING ELSE. Only the trails
+       used to claim the ground they stood on, so a bike lane could be laid
+       down the middle of an expressway and a railway could run along a river,
+       and now and then one did.
+
+       Every line of every kind now claims each STEP it takes, and no other
+       line may take that same step. Which is the whole rule, because the
+       difference between crossing and overlapping is exactly one thing —
+       whether two lines share an EDGE of the grid or only a corner of it. One
+       going east through a point and one going north through it use different
+       edges: that is a crossing, at ninety degrees, and it is allowed and
+       encouraged. Two lines using the same edge are running along each other,
+       and that is refused.
+
+       The key is the middle of the step with the step's ANGLE written after
+       it. The middle on its own is not enough: the two diagonals of a square
+       share their middle, and those two are a perfectly good ninety-degree
+       crossing.
+
+       AND THE SHORT GREY LINES ARE GONE, both sorts of them.
+
+       The first sort was a piece of road painted back across a trail to say
+       the trail went UNDER it. On the picture that read as a stray grey dash
+       lying on a green line rather than as a road passing beneath. Crossings
+       are now either bridges — the bright green dot, as before — or level
+       crossings, which get no mark at all, which is how the map draws them.
+
+       The second sort was the last inch of a line before its tail caught its
+       head: a stub with no beginning and no end. A line now fades out over its
+       last two cells rather than being drawn down to a nub, and a line that
+       stopped almost as soon as it started is whipped off the picture instead
+       of sitting there.
+
+       Also: a diagonal step could clip the corner of a golf course, because
+       only the end and the middle of a step were tested against one. The whole
+       step is tested now.
+
  17.2  THE DRAWING IS THE LEGEND'S OWN LINES NOW, not lines that looked about
        right. Every width in it is the number out of the legend's own SVG,
        where everything is drawn against a trail sixteen units wide: a bike
