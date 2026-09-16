@@ -12,6 +12,85 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 17.2  THE DRAWING IS THE LEGEND'S OWN LINES NOW, not lines that looked about
+       right. Every width in it is the number out of the legend's own SVG,
+       where everything is drawn against a trail sixteen units wide: a bike
+       lane is eight of those, an expressway is sixteen with a two-unit dashed
+       tan line down it, a railway is sixteen with a two-unit rail and
+       eight-unit sleepers over the top, a connection is eight. One setting —
+       `pen` — says what a unit is worth in pixels, so the whole picture can be
+       made heavier or lighter in one place and still agree with the map.
+
+       THE TRAILS ARE THICKER, which is what the sixteen units come to, and the
+       dots are sized from the same scale — the map draws all of them at twelve
+       units on a sixteen-unit trail, so they now sit inside the line with a
+       rim of green all the way round instead of straddling its edges.
+
+       A BIKE LANE IS DOTTED RATHER THAN DASHED, which is how the map draws a
+       green line that is not a finished trail.
+
+       THREE NEW THINGS ON THE PICTURE
+         connections     grey, and they no longer wander off into nothing. A
+                         connection is given a real place on one trail and a
+                         real place on ANOTHER, and steers for it — so it
+                         arrives, it gets a white junction dot at both ends,
+                         and it sits there a moment before it goes. That is
+                         what the short grey lines were trying to be.
+         dangerous connections   the same thing in red.
+         rivers          the legend's own two-tone channel, blue water between
+                         dark banks, running under everything else. A trail
+                         crossing one always crosses OVER it — that is what a
+                         bridge is — so it always gets the bright green dot.
+
+       THE EXPRESSWAYS AND RAILWAYS RUN MUCH FURTHER, nearly twice as far, and
+       hardly turn at all. They are what the trails are crossing; a short one
+       going nowhere looked like a mistake.
+
+       THE TRAILS RUN FURTHER TOO — half as long again — and branch more often,
+       up to twice each rather than once.
+
+       AND FOUR RULES THAT MAKE IT READ AS A MAP RATHER THAN AS A TANGLE
+         · NOTHING RUNS ALONGSIDE ITS OWN KIND. Every step leaves a soft mark,
+           and no line of that kind may step within `apart` cells of somebody
+           else's. A line may ignore its own marks — but only the last few
+           steps of them, so it cannot come back and run beside a stretch of
+           itself either.
+         · NO HAIRPINS. A turn goes the opposite way from the last one unless
+           the dice say otherwise, which they rarely do. Two turns the same way
+           is a line folding back on itself, and that was most of what looked
+           wrong.
+         · NO FRAME. A line stopped by the edge used to find that running ALONG
+           the edge was as roomy as anything else, and the picture grew a
+           border. Room is now measured a whole leg ahead, where running along
+           the edge is still jammed against it, so the line comes back inside.
+         · A LINE THAT KEEPS BEING BLOCKED STOPS. It is in a corner it cannot
+           get out of, and left trying it ties itself into a knot of short
+           zigzags. Better that it ends and something starts somewhere emptier.
+
+       Forty-five degree legs are kept short, so a diagonal reads as the map's
+       way of getting round something rather than as a mountain drawn across
+       the picture. Sixty frames a second, and flat memory over a minute.
+
+ 17.1  THE BENDS IN THE DRAWING ARE CURVES NOW, not cut corners. Where a trail
+       turned, it used to have the point sliced off it — two marks a little way
+       back along each leg with one short straight step between them. At the
+       width these lines are drawn that reads as a chamfer, not as a bend.
+
+       Each turn is now a quadratic curve that leans on the corner it replaces:
+       it leaves the first leg going exactly the way that leg was going, arrives
+       on the second going exactly the way that one goes, and bows through the
+       middle. It is carried as six short straight pieces across a right angle
+       and fewer across a shallower one, each of them shorter than the line is
+       wide, so the rounded joins between them close up and what you see is a
+       curve — while everything that measures DISTANCE ALONG A LINE (how much
+       of it is drawn, where a dot sits, where a road crosses it) goes on
+       working the way it always did, with no arc lengths to solve.
+
+       The radius went up with it, from 9 to 14, because a curve can afford to
+       start further back than a chamfer could. Both numbers are in SETTINGS at
+       the top of coming-soon.js: `corner` for how far back a bend begins and
+       `cornerSteps` for how finely a right angle is cut.
+
  17.0  THE COMING SOON PAGE IS TWO WORDS AND A DRAWING. It is NOT in the
        navigation bar on any page, and was not meant to be: it is somewhere to
        send people when a link is not ready yet, so the only way to it is a
