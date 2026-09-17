@@ -159,7 +159,14 @@ window.TRAIL_PAGE = { SETTINGS: SETTINGS, WORDS: WORDS, WAYPOINTS: WAYPOINTS,
      there is one card on the site rather than two that drift apart.
      trail-engine.js is everything else a trail page does, and it asks for the
      card the moment it runs, so the card has to be loaded first. -->
+<script src="icon-life.js"></script>
 <script src="waypoint-card.js"></script>
 <script src="trail-engine.js"></script>
+<!-- Neither of these is needed to read a trail, and neither can break one:
+     both wait for the engine to say it is ready and reach it only through
+     window.TRAIL. Drop either <script> and the page loses that one feature
+     and nothing else. -->
+<script src="trail-graph.js"></script>
+<script src="autoplay.js"></script>
 </body>
 </html>

@@ -12,6 +12,122 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 18.0  THE SITE ANSWERS BACK. The biggest set of changes since the cards
+       themselves, and most of it is one idea: the things on these pages that
+       looked like controls should BE controls, and the ones that are should
+       say so when you touch them.
+
+       ── ON A TRAIL PAGE ──────────────────────────────────────────────────
+
+       A TOUR BUTTON, between the two arrows. Press it and the page walks the
+       trail for you: it scrolls, it opens each waypoint's card, it turns that
+       card's pages and its pictures, it closes it and it moves on. Escape
+       leaves it, so does pressing the button again, and so does touching the
+       wheel — at which point you have taken over and a page that keeps
+       driving itself is fighting you. A line at the foot of the screen says so
+       while it is running.
+
+       NOTHING ABOUT THE PACE IS WRITTEN DOWN ANYWHERE. The words on each card
+       are counted and divided by a reading speed; the pictures each ask for a
+       look, and a video asks for its own length; the longer of the two is how
+       long that card is worth. Then both tracks are laid out so the last page
+       of text and the last photograph arrive together, and the time from there
+       to the end is the last page's turn to be read. Add a waypoint next year
+       with four more photographs and twice the text and it is paced correctly
+       without a number changing. The one lever worth knowing is
+       `wordsPerMinute` at the top of autoplay.js — it is 200, which is a
+       careful read rather than a skim.
+
+       THE ELEVATION GRAPH IS NOT A PICTURE ANY MORE. Point at a waypoint and
+       its dot swells and says its name — the names were always there, in a
+       `title` attribute, which is to say they were there for nobody. Click the
+       name and the page goes there and opens that card. And the whole strip is
+       a scrubber: drag it and the trail runs past under your hand, the map
+       following. The cards stay shut while you drag, because thirteen of them
+       flashing open and closed in two seconds is not information.
+
+       A CARD NOW COMES OUT OF ITS OWN WAYPOINT. The circle you clicked and the
+       panel that answers are the same thing, and a card that faded up
+       somewhere else never said so.
+
+       CLICKING A WAYPOINT IS A TOGGLE. The one whose card is up puts it away;
+       any other swaps to it — and now actually swaps to it. Clicking a distant
+       waypoint used to do nothing at all: the card opened and the walk, still
+       standing where it was, took it back in the same frame. It stays until
+       you scroll, and then cards go back to opening and closing by themselves.
+       The waypoint being read is ringed on the map, so the second click has
+       something to aim at.
+
+       ESCAPE SHUTS EVERYTHING. An expanded card shrinks first; Escape again
+       leaves you looking at the trail.
+
+       ── ON THE MAIN MAP ──────────────────────────────────────────────────
+
+       A PANEL GREETS SOMEBODY THE FIRST TIME THEY OPEN IT, and only the first
+       time. It is the trail pages' opening box with two things added: a slow
+       four-colour wash in the map's own inks — a built trail, a wishful one,
+       the labels, the rivers — and a purple line that draws itself round the
+       edge and takes the panel away when it closes the circuit. The line is a
+       clock you can read without reading anything: the panel is not asking you
+       to wait, it is showing you how long it means to keep you. Continue sends
+       it away at once, and it leaves the way a panel should — swelling before
+       it goes rather than being switched off.
+
+       ── EVERYWHERE ───────────────────────────────────────────────────────
+
+       THE COIN TURNS OVER AND THE NEEDLE SWINGS UP. Both of them are readings
+       rather than decoration — the coin says what a connection would cost, the
+       dial says how badly it is wanted — and a reading that arrives is read
+       where one that is simply there is scenery. Every time either appears,
+       not once per page: a card that opens, closes and opens again does it
+       again, because the second time is the first time for whoever is looking.
+
+       The needle swings up from the bottom of the scale to whatever angle it
+       is drawn at, and goes a little past before it settles. It reads the
+       angle off the drawing rather than being told it, so a fourth reading
+       added to the dial one day swings correctly with nothing changed.
+
+       THE COMPASS WOBBLES WHEN YOU POINT AT IT, the way a knocked needle does.
+       It is the one thing on the site that moves purely because it is nice,
+       and it earns that by being the one part of the interface that is an
+       instrument.
+
+       ── THE COMING SOON PAGE ─────────────────────────────────────────────
+
+       THE CURSOR PUSHES INSTEAD OF BLOCKING. The circle round it was ground
+       closed to every line, and a wall has one behaviour a map must never
+       have: a line that meets one STOPS. Sweeping the mouse across the picture
+       was killing whatever it touched, and the soft disc of page colour that
+       went with it read as a hole burned in the artwork. Both are gone. A line
+       within reach of the cursor now keeps drawing and simply takes whichever
+       way leads furthest from the middle — it curves out and carries on.
+
+       AND A CLICK PLANTS A ROUTE, of a kind picked at random: a trail, an
+       unpaved one, one under construction, a bike lane, a wishful one. It
+       starts under the cursor and the push is what sends it away, so it
+       appears to run out from under your own finger. Two new kinds were added
+       to the picture for it, both of them out of the legend as everything else
+       is: unpaved is a trail's width in a duller green, under construction is
+       a trail's width in dots.
+
+       THE PICTURE NEVER REFUSES A CLICK — refusing one feels like a fault — so
+       instead it clears up faster. Past a comfortable number of lines
+       everything starts rubbing itself out more quickly, more so the fuller it
+       gets, and past a hard ceiling the oldest line is retired to make room.
+       Somebody hammering the mouse gets a busy picture that empties as fast as
+       they fill it, and never a seized one.
+
+       ── AND FOUR NEW FILES ───────────────────────────────────────────────
+       autoplay.js      the tour
+       trail-graph.js   the elevation graph's hovering, clicking and dragging
+       first-hello.js   the map's greeting
+       icon-life.js     the coin and the needle
+
+       None of the first three is needed to read a page and none can break one:
+       each waits for the engine to say it is ready and reaches it only through
+       window.TRAIL. Delete any one <script> tag and that page loses that one
+       feature and nothing else.
+
  17.4  WHERE THE CURSOR IS, THE MAP IS NOT. The drawing answers to the pointer
        now, and it is deliberately not a control: nothing lights up, nothing is
        drawn for the cursor, there is no instruction anywhere and nothing to

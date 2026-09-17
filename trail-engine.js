@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 4.3
+   version 4.4
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -583,6 +583,15 @@ const DEFAULTS = {
                                // removes the row and leaves auto-load on
                                // permanently.
 
+  /* THE TOUR. A button between the two arrows that walks the trail for you:
+     it scrolls, opens each card, turns its pages and its pictures at a pace
+     worked out from what is actually written and shown in that card, then
+     closes it and moves on. Escape leaves it, and so does pressing it again.
+     Everything else about it is in autoplay.js; `autoplay` here is a place to
+     override that file's own settings from a page. */
+  showAutoplay: true,
+  autoplay: {},
+
   showStepper: true,           // the two arrows above the readouts that jump
                                // from one waypoint to the next. Quieter than
                                // the legend and layers buttons on purpose:
@@ -871,6 +880,11 @@ const DEFAULT_WORDS = {
   openingHint:   "Scroll to begin",
   previousStop:  "Previous waypoint",
   nextStop:      "Next waypoint",
+  /* the tour button between the two arrows, and the line that says how to get
+     out of it once it is running */
+  playTour:      "Play the trail",
+  stopTour:      "Stop playing",
+  tourEscape:    "Press Esc to leave autoplay",
   turnPhone:     "Turn your phone upright",
   turnPhoneWhy:  "This trail is walked by scrolling, and there is not enough "
                + "room to show the map and a waypoint at once on a screen this "
@@ -1214,6 +1228,20 @@ function buildStepper() {
       '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"' +
       ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
       '<path d="M15 5 8 12l7 7"/></svg></button>' +
+    /* THE TOUR BUTTON SITS BETWEEN THE TWO ARROWS, because that is what it is:
+       the arrows step one waypoint at a time by hand, and this one does the
+       walking for you. Both faces are in the button and the stylesheet shows
+       whichever applies, so there is nothing to swap at the moment of pressing
+       it — a swap would lose the button's focus on the way through. */
+    (SETTINGS.showAutoplay ?
+      '<button class="tm-step tm-play" id="tm-play" type="button" ' +
+        'aria-pressed="false" aria-label="' + WORDS.playTour + '" title="' +
+        WORDS.playTour + '">' +
+        '<svg class="tm-playGo" viewBox="0 0 24 24" aria-hidden="true" ' +
+        'fill="currentColor"><path d="M8 5.2v13.6L19 12z"/></svg>' +
+        '<svg class="tm-playStop" viewBox="0 0 24 24" aria-hidden="true" ' +
+        'fill="currentColor"><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="2"/></svg>' +
+        '</button>' : "") +
     '<button class="tm-step" id="tm-stepOn" type="button" aria-label="' +
       WORDS.nextStop + '" title="' + WORDS.nextStop + '">' +
       '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"' +
@@ -1754,10 +1782,11 @@ function start() {
     if (s.kind === "wishful") chip.classList.add("tm-wishful");
     chip.style.left = s.x + "px";
     chip.style.top  = s.y + "px";
+    s.chip = chip;              // so a card can be thrown from it
     if (SETTINGS.cardsReopenOnClick) {
       chip.title = WORDS.openCard;
       chip.classList.add("tm-clickable");
-      chip.addEventListener("click", () => openCard(i));
+      chip.addEventListener("click", () => tapCard(i));
     }
     chips.push(chip);
   });
@@ -2104,7 +2133,7 @@ function start() {
   if (SETTINGS.cardsReopenOnClick) stops.forEach((s, i) => {
     if (!s.marker) return;
     s.marker.style.cursor = "pointer";
-    s.marker.addEventListener("click", () => openCard(i));
+    s.marker.addEventListener("click", () => tapCard(i));
   });
 
   /* which card is currently the visible one, and whether it has faded in far
@@ -2186,6 +2215,15 @@ function start() {
      though the page is not being scrolled */
   let cardsMoving = false;
 
+  /* true while somebody is dragging the elevation graph's knob. See draw(). */
+  let scrubbing = false;
+
+  /* WHICH WAYPOINT THE WALK WAS STANDING AT when a card was last opened by
+     hand, and the one it is standing at now. The two together are what let a
+     clicked card stay open: see the note in draw() where a held card gives
+     way. */
+  let arrivedAt = -1, heldFrom = -2;
+
   function closeCard(i) {
     cardState[i].closed = true;
     cardState[i].held = false;
@@ -2197,7 +2235,10 @@ function start() {
     wake();
   }
 
-  function openCard(i) {
+  function openCard(i, quietly) {
+    const wasFront = frontCard;
+    // where the walk was standing when this was asked for — see draw()
+    heldFrom = arrivedAt;
     cardState.forEach((state, k) => {
       state.held = (k === i);          // only ever one card held open
       if (k === i) state.closed = false;
@@ -2205,6 +2246,60 @@ function start() {
       // left un-closed would fade back in the moment the held one let go.
       else if (!autoLoadOn) state.closed = true;
     });
+    wake();
+
+    /* AND IT ARRIVES OUT OF ITS OWN WAYPOINT. The little circle on the map is
+       where the card comes from, so the two read as one thing rather than as a
+       click over here and a panel over there. Only when the card was not
+       already the one on screen — re-throwing a card that is already up looks
+       like a stutter — and never for the tour, which opens cards by itself and
+       would otherwise fling one every few seconds. */
+    if (quietly || wasFront === i) return;
+    const chip = stops[i] && stops[i].chip;
+    if (!chip || !deck.popFrom) return;
+
+    /* WHERE THE WAYPOINT ACTUALLY IS ON THE SCREEN. The chip itself is a
+       zero-sized anchor — everything it shows, the pin and the tag, is
+       absolutely placed AROUND that point — so measuring the chip gives a box
+       of nothing and the card would have had nowhere to come from. The pin is
+       the thing you can see and the thing that was clicked, so it is the thing
+       the card comes out of; where there is no pin, a marker-sized box round
+       the anchor stands in for one. */
+    const mark = chip.querySelector(".tm-pin, .tm-dot");
+    let box = (mark || chip).getBoundingClientRect();
+    if (!box.width || !box.height) {
+      const size = parseFloat(getComputedStyle(document.documentElement)
+                     .getPropertyValue("--marker-size")) || SETTINGS.waypointSize || 14;
+      box = { left: box.left - size / 2, top: box.top - size / 2,
+              width: size, height: size };
+    }
+
+    /* AND ONLY IF IT IS ON THE SCREEN. A waypoint the map has not reached yet
+       is somewhere off the side, and a card flung in from beyond the edge is
+       a card sliding in from nowhere — which says less than simply fading up
+       where it belongs. */
+    const room = { w: window.innerWidth, h: window.innerHeight };
+    if (box.left + box.width < 0 || box.left > room.w ||
+        box.top + box.height < 0 || box.top > room.h) return;
+
+    // after the frame that makes the card visible, or there is nothing to
+    // measure and nothing to move
+    requestAnimationFrame(() => requestAnimationFrame(() => deck.popFrom(i, box)));
+  }
+
+  /* A CLICK ON A WAYPOINT IS A TOGGLE. On the one whose card is already up it
+     puts the card away; on any other it swaps to that one, wherever the walk
+     happens to have got to. */
+  function tapCard(i) {
+    if (frontCard === i && !cardState[i].closed) closeCard(i);
+    else openCard(i);
+  }
+
+  /* EVERY CARD SHUT, whatever opened it. Escape does this, and so does the
+     tour when it finishes. */
+  function closeAllCards() {
+    if (bigOn()) setBig(false, undefined, true);
+    cardState.forEach((state, i) => { state.held = false; state.closed = true; });
     wake();
   }
 
@@ -2231,6 +2326,17 @@ function start() {
                    { passive: false });
   addEventListener("touchmove", e => { if (bigOn()) e.preventDefault(); },
                    { passive: false });
+  /* ESCAPE PUTS AWAY WHATEVER IS IN FRONT OF THE MAP, one layer at a time:
+     an expanded card shrinks first (below), and Escape again — or Escape with
+     nothing expanded — shuts every card and leaves you looking at the trail.
+     It is registered before the handler below so the two cannot both fire on
+     the same press. */
+  addEventListener("keydown", e => {
+    if (e.key !== "Escape" || bigOn()) return;
+    if (openPanel) return;              // a panel has first claim on Escape
+    closeAllCards();
+  });
+
   addEventListener("keydown", e => {
     if (!bigOn()) return;
     if (e.key === "Escape") { setBig(false); return; }
@@ -2534,14 +2640,37 @@ function start() {
       return v;
     });
 
-    /* A card held open by a click gives way once the walk reaches another —
-       but only while cards open by themselves. With auto-load off there is no
-       "reaching another": the walk opens nothing, so a card you opened stays
-       until you close it or open a different one. Closing it on arrival at a
-       stop that is not going to open would have made cards vanish as you
-       scrolled, for no visible reason. */
-    if (arriving >= 0 && autoLoadOn)
+    arrivedAt = arriving;
+
+    /* A CARD HELD OPEN BY A CLICK GIVES WAY ONCE THE WALK REACHES ANOTHER —
+       and "another" means another than the one it was standing at when the
+       card was opened, not another than the card itself.
+
+       That distinction is the whole of clicking a distant waypoint. Ask for
+       the twelfth waypoint's card while standing at the fourth and the walk
+       is, on the very next frame, still "arriving at" the fourth — so the old
+       test threw the card away in the frame it was asked for, and clicking
+       anything but the waypoint under your feet did nothing at all. Now the
+       card stays until the walk actually MOVES to a different stop, which is
+       the moment the reader has taken over again and cards should go back to
+       opening and closing by themselves.
+
+       Only while cards open by themselves, as before: with auto-load off the
+       walk reaches nothing, so a card you opened stays until you close it. */
+    if (arriving >= 0 && autoLoadOn && arriving !== heldFrom) {
       cardState.forEach((state, i) => { if (i !== arriving) state.held = false; });
+      heldFrom = -2;
+    }
+
+    /* NOTHING OPENS WHILE THE GRAPH IS BEING DRAGGED. Scrubbing the elevation
+       knob runs the whole trail past in a second or two, and cards flashing
+       open and shut the whole way is unreadable and looks broken. The map
+       moves, the walker moves, the numbers move; the cards wait. */
+    if (scrubbing) {
+      for (let i = 0; i < byScroll.length; i++) byScroll[i] = 0;
+      cardState.forEach(state => { state.held = false; });
+      arriving = -1;
+    }
 
     cardsMoving = false;
     cardState.forEach((state, i) => {
@@ -2607,6 +2736,15 @@ function start() {
       // needs to know whether this is a phone.
       const nudge = (1 - v) * SETTINGS.cardRiseBy;
       card.style.setProperty("--card-nudge", nudge.toFixed(2));
+    });
+
+    /* THE WAYPOINT WHOSE CARD IS UP IS MARKED ON THE MAP. Now that clicking a
+       waypoint is a toggle — and that any waypoint can be opened from
+       anywhere, however far the walk has got — there has to be something on
+       the map saying which one you are looking at. Otherwise the second click
+       that closes a card is a click with no visible target. */
+    stops.forEach((s, i) => {
+      if (s.chip) s.chip.classList.toggle("is-open", i === front && shownAt[i] > 0.5);
     });
 
     // a video only runs while its own card is the one on screen, so start or
@@ -2696,10 +2834,21 @@ function start() {
     el("readouts").style.opacity = uiFade;
     /* the stepper is part of the walk's furniture, so it arrives and leaves
        with the readouts rather than sitting over the opening panel */
+    /* THE ARROWS FADE WITH THE READOUTS; THE TOUR BUTTON DOES NOT.
+       The arrows step from one waypoint to the next, which is meaningless
+       before the walk has started — so they arrive with the rest of the band.
+       The tour button is the opposite: it is most use to somebody who has just
+       arrived and has not begun, and offering it only after they have started
+       scrolling is offering it to the one person who no longer needs it. So it
+       sits there from the first frame, beside the opening panel, as the other
+       way in. */
     const stepper = el("stepper");
     if (stepper) {
-      stepper.style.opacity = uiFade;
-      stepper.style.pointerEvents = +uiFade > 0.5 ? "auto" : "none";
+      const live = +uiFade > 0.5 ? "auto" : "none";
+      stepper.querySelectorAll(".tm-step:not(.tm-play)").forEach(arrow => {
+        arrow.style.opacity = uiFade;
+        arrow.style.pointerEvents = live;
+      });
     }
     /* The shading over the map exists to make the readouts legible against it.
        With the readouts gone at the finish it is just a stain across a picture
@@ -2777,6 +2926,19 @@ function start() {
   function pageAtStop(i) {
     const at = (walkFrom + stops[i].fraction) / pageSpan;
     return Math.round(at * (document.documentElement.scrollHeight - window.innerHeight));
+  }
+
+  /* THE SAME SUM AS pageAtStop, ASKED WITH A FRACTION INSTEAD OF A STOP.
+     Dragging the elevation graph gives a position along the trail and wants
+     the page put there; the graph knows nothing about waypoints, and should
+     not have to. */
+  function pageAtFraction(f) {
+    const at = (walkFrom + clamp(f, 0, 1)) / pageSpan;
+    return Math.round(at * (document.documentElement.scrollHeight - window.innerHeight));
+  }
+
+  function goToFraction(f) {
+    window.scrollTo(0, pageAtFraction(f));
   }
 
   /* The stop the walk is currently at or has most recently passed. */
@@ -2985,8 +3147,31 @@ function start() {
     stages: { pageSpan, walkFrom, walkTo, pulledOut },
     cardState, openCard, closeCard, draw,
     // linking: TRAIL.slugs() lists what this trail's stops are called in a URL
-    slugs: () => stops.map(s => s.slug), goToStop, stopNamed
+    slugs: () => stops.map(s => s.slug), goToStop, stopNamed,
+
+    /* ── AND WHAT THE TWO COMPANION FILES ASK FOR ────────────────────────
+       autoplay.js and trail-graph.js are separate files on purpose — neither
+       is needed to read a trail, and neither should be able to break one — so
+       everything they need comes through here rather than through a private
+       arrangement. Nothing below is new behaviour; it is the engine's own
+       working, named. */
+    deck,                                  // the cards, as waypoint-card.js made them
+    closeAllCards, tapCard,
+    goToFraction, pageAtFraction, pageAtStop,
+    liveStops, nearestStop,
+    onALiveLayer: s => onALiveLayer(s),
+    // true while the graph is being dragged: cards stay shut, the map still moves
+    scrubbing: on => { scrubbing = !!on; wake(); },
+    isScrubbing: () => scrubbing,
+    front: () => frontCard,
+    wake
   };
+
+  /* THE PAGE IS READY, AND SAYS SO. autoplay.js and trail-graph.js are built
+     on things that do not exist until the artwork has loaded and the waypoints
+     have been placed — the cards, the graph's dots, window.TRAIL itself. Both
+     wait for this rather than guessing at a moment. */
+  document.dispatchEvent(new CustomEvent("trail:ready", { detail: window.TRAIL }));
 
   /* ── the coordinate reader (optional; press E) ───────────────────────── */
   if (!SETTINGS.coordinateReader) return;

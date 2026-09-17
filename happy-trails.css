@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 4.5
+   version 5.0
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -772,6 +772,33 @@ body.page-trail{
 }#tm-compass span,
 #ht-compass span{ font:700 10px/1 var(--font-body); letter-spacing:.1em; color:var(--text); }
 
+/* THE NEEDLE SWINGS WHEN YOU POINT AT IT. A compass needle that has been
+   knocked does not snap back — it overshoots, comes back past, and settles,
+   and that settling is the whole character of the instrument. The badge lifts
+   a little at the same time so the two read as one gesture.
+
+   It is the only thing on this site that moves purely because it is nice. It
+   earns its place by being the one piece of the interface that IS an
+   instrument: the map is drawn north-up and the badge is how you know. */
+#tm-compass, #ht-compass{ transition:transform 260ms var(--panel-ease); }
+#tm-compass:hover, #ht-compass:hover{ transform:scale(1.06); }
+#tm-compass svg, #ht-compass svg{ transform-origin:50% 58%; }
+#tm-compass:hover svg, #ht-compass:hover svg{
+  animation:ht-compass var(--compass-spin, 900ms) cubic-bezier(.3,.7,.3,1) both;
+}
+@keyframes ht-compass{
+  0%   { transform:rotate(0deg); }
+  22%  { transform:rotate(-21deg); }
+  46%  { transform:rotate(13deg); }
+  66%  { transform:rotate(-7deg); }
+  84%  { transform:rotate(3deg); }
+  100% { transform:rotate(0deg); }
+}
+@media (prefers-reduced-motion:reduce){
+  #tm-compass:hover svg, #ht-compass:hover svg{ animation:none; }
+  #tm-compass:hover, #ht-compass:hover{ transform:none; }
+}
+
 /* the two round buttons under the compass */
 .tm-railBtn{
   pointer-events:auto; cursor:pointer; padding:0;
@@ -1415,14 +1442,17 @@ body.page-trail{
   margin:0; padding:0; border:0; background:none;
 }
 .tm-judge{ display:flex; align-items:center; gap:7px; }
-.tm-judge img{
+.tm-judge img, .tm-judge .ht-dial{
   width:21px; height:21px; display:block; flex:0 0 auto;
   /* the dial and the coins both carry a soft shadow so they sit ON the panel
      rather than looking pasted onto it */
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));
   transition:transform var(--button-fade);
 }
+/* the coin may be tilted on hover; the DIAL may only be scaled. Its needle's
+   angle is the reading, and tipping the whole dial tips the reading with it. */
 .tm-judge:hover img{ transform:scale(1.12) rotate(-4deg); }
+.tm-judge:hover .ht-dial{ transform:scale(1.12); }
 .tm-judgeText{ display:flex; flex-direction:column; gap:2px; }
 .tm-judgeText small{
   font:600 7.5px/1 var(--font-body); letter-spacing:.14em; text-transform:uppercase;
@@ -1633,12 +1663,80 @@ body.page-trail{
   border-radius:50%; background:var(--wpdot-colour);
   border:1px solid var(--wpdot-ring);
   transform:translate(-50%, -50%); pointer-events:none;
+  transition:width var(--button-fade), height var(--button-fade),
+             background var(--button-fade), box-shadow var(--button-fade);
 }
 #tm-profile .tm-knob{
   position:absolute; width:var(--knob-size); height:var(--knob-size);
   border-radius:50%; background:var(--knob-colour);
   transform:translate(-50%, -50%); pointer-events:none;
   box-shadow:0 0 5px rgba(0,0,0,.9);
+  transition:width 120ms var(--panel-ease), height 120ms var(--panel-ease);
+}
+
+/* ══ THE GRAPH YOU CAN USE ════════════════════════════════════════════════
+   Everything below only applies once trail-graph.js has said it is there, by
+   putting `is-live` on the graph. A page without that file has the graph it
+   always had: a picture, and nothing that looks clickable, which is honest.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --wpdot-near:      11px;    /* how big a waypoint's dot gets when pointed at */
+  --graph-grab:      16px;    /* how far above and below the strip a press
+                                 still counts — the graph itself is thin, and
+                                 a thin target is a target nobody can hit */
+  --wpname-fade:     150ms;
+}
+#tm-profile.is-live{
+  cursor:ew-resize;
+  /* #tm-ui takes no pointer events and hands them out one control at a time.
+     The graph was a picture and never needed any; now it is the quickest way
+     to move about the trail, so it takes its own. */
+  pointer-events:auto;
+  /* the reach extends past the drawn strip without moving it, so a pointer
+     anywhere near the graph is on it */
+  padding:var(--graph-grab) 0;
+  margin:calc(var(--graph-grab) * -1) 0;
+  touch-action:none;          /* a drag along it is a drag, not a page scroll */
+}
+#tm-profile.is-live.is-dragging{ cursor:grabbing; }
+#tm-profile.is-live.is-dragging .tm-knob{
+  width:calc(var(--knob-size) * 1.45); height:calc(var(--knob-size) * 1.45);
+}
+#tm-profile .tm-wpdot.is-near{
+  width:var(--wpdot-near); height:var(--wpdot-near);
+  background:var(--route-line);
+  box-shadow:0 0 0 3px rgba(78,207,78,.22), 0 2px 6px rgba(0,0,0,.6);
+}
+#tm-profile .tm-wpdot.tm-wishful.is-near{
+  background:var(--route-line-wish);
+  box-shadow:0 0 0 3px rgba(232,79,255,.22), 0 2px 6px rgba(0,0,0,.6);
+}
+
+/* THE NAME OF THE WAYPOINT BEING POINTED AT. One label, moved about — see
+   trail-graph.js for why there is not one per waypoint. It sits ABOVE the dot
+   because two waypoints close together would otherwise write over each other,
+   and it is a real button because clicking it goes there. */
+.tm-wpname{
+  position:absolute; z-index:3;
+  transform:translate(-50%, -100%) translateY(4px) scale(.94);
+  margin:0; padding:5px 10px; border:1px solid var(--panel-edge);
+  border-radius:8px; background:var(--panel);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  font:600 11px/1.1 var(--font-body); color:var(--text);
+  white-space:nowrap; cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,.4);
+  opacity:0; pointer-events:none;
+  transition:opacity var(--wpname-fade) ease, transform var(--wpname-fade) var(--panel-ease);
+}
+.tm-wpname.is-on{
+  opacity:1; pointer-events:auto;
+  transform:translate(-50%, -100%) translateY(0) scale(1);
+}
+.tm-wpname:hover{ border-color:var(--route-line); }
+#tm-profile.is-dragging .tm-wpname{ opacity:0; pointer-events:none; }
+
+@media (prefers-reduced-motion:reduce){
+  #tm-profile .tm-wpdot, #tm-profile .tm-knob, .tm-wpname{ transition:none; }
 }
 
 /* ── opening and closing screens ─────────────────────────────────────── */
@@ -1968,6 +2066,94 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
 .tm-step svg{ width:56%; height:56%; }
 .tm-step:hover:not(:disabled){ background:var(--stepper-bg-hover); color:#fff; }
 .tm-step:disabled{ opacity:var(--stepper-off); cursor:default; }
+
+/* THE WAYPOINT WHOSE CARD IS OPEN. A click on a waypoint is a toggle now, and
+   any waypoint can be opened from anywhere on the trail — so the map has to say
+   which one is being read, or the second click that closes it is a click with
+   no visible target. A ring, growing out of the pin rather than drawn round it,
+   so nothing in the layout moves. */
+.tm-label .tm-pin, .tm-label .tm-dot{ transition:transform var(--button-fade); }
+.tm-label.is-open .tm-pin, .tm-label.is-open .tm-dot{ transform:scale(1.28); }
+.tm-label.tm-clickable::after{
+  content:""; position:absolute; left:50%; top:50%;
+  width:var(--marker-size); height:var(--marker-size);
+  margin:calc(var(--marker-size) / -2) 0 0 calc(var(--marker-size) / -2);
+  border-radius:50%; pointer-events:none;
+  box-shadow:0 0 0 0 var(--route-glow);
+  opacity:0; transition:opacity 200ms ease, box-shadow 320ms var(--panel-ease);
+}
+.tm-label.tm-clickable.is-open::after{ opacity:1; box-shadow:0 0 0 7px var(--route-glow); }
+.tm-label.tm-wishful.tm-clickable.is-open::after{ box-shadow:0 0 0 7px var(--route-glow-wish); }
+@media (prefers-reduced-motion:reduce){
+  .tm-label .tm-pin, .tm-label .tm-dot, .tm-label.tm-clickable::after{ transition:none; }
+}
+
+/* ══ THE TOUR BUTTON, BETWEEN THE TWO ARROWS ══════════════════════════════
+   The arrows step one waypoint at a time by hand; this one does the walking
+   for you. It is the same button as its neighbours and slightly bigger, which
+   is the only way a row of three says which one is the one.
+
+   BOTH FACES LIVE IN IT and the stylesheet shows whichever applies, so there
+   is no markup to swap at the moment of pressing — a swap that would lose the
+   button's focus and its hover on the way through.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --play-bigger:  1.16;    /* how much larger the tour button is than an arrow */
+  --play-on:      var(--route-line);
+  --play-on-ink:  #14310c;
+  --tour-pulse:   2.6s;    /* the breath it takes while it is running */
+}
+.tm-play{
+  width:calc(var(--stepper-size) * var(--play-bigger));
+  height:calc(var(--stepper-size) * var(--play-bigger));
+  position:relative;
+  /* #tm-ui takes no pointer events and hands them out; the engine hands them
+     to the two arrows as the band fades in, and this one takes its own,
+     because it is live from the first frame. */
+  pointer-events:auto;
+}
+.tm-play svg{ grid-area:1 / 1; }        /* both faces in the same cell */
+.tm-play .tm-playStop{ opacity:0; transform:scale(.6); }
+.tm-play .tm-playGo,
+.tm-play .tm-playStop{ transition:opacity 160ms ease, transform 200ms var(--panel-ease); }
+.tm-play.is-on .tm-playGo{ opacity:0; transform:scale(.6); }
+.tm-play.is-on .tm-playStop{ opacity:1; transform:scale(1); }
+.tm-play .tm-playGo{ margin-left:6%; }  /* a triangle looks off-centre centred */
+
+/* RUNNING. It fills in, and it breathes — slowly, once every two and a half
+   seconds, which is the one piece of movement on the page that says something
+   is still happening while the map is sliding quietly along. */
+.tm-play.is-on{
+  background:var(--play-on); color:var(--play-on-ink); border-color:transparent;
+  animation:tm-touring var(--tour-pulse) ease-in-out infinite;
+}
+.tm-play.is-on:hover:not(:disabled){ background:var(--play-on); color:var(--play-on-ink); }
+@keyframes tm-touring{
+  0%,100%{ box-shadow:0 0 0 0 rgba(78,207,78,.42); }
+  55%    { box-shadow:0 0 0 9px rgba(78,207,78,0); }
+}
+
+/* THE LINE THAT SAYS HOW TO LEAVE. Bottom centre, out of the way of both the
+   card column and the readouts, and it only exists while the tour is running.
+   role="status" on it, so a screen reader is told the tour has started without
+   the focus being moved anywhere. */
+.tm-tourNote{
+  position:fixed; z-index:9;
+  left:50%; bottom:calc(var(--edge-gap) + 4px);
+  transform:translate(-50%, 10px);
+  padding:8px 16px; border-radius:999px;
+  background:rgba(12,14,17,.82); border:1px solid var(--panel-edge);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  font:600 10.5px/1 var(--font-body); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text-quiet);
+  opacity:0; pointer-events:none; white-space:nowrap;
+  transition:opacity 220ms ease, transform 220ms var(--panel-ease);
+}
+.tm-tourNote.is-on{ opacity:1; transform:translate(-50%, 0); }
+
+@media (prefers-reduced-motion:reduce){
+  .tm-play.is-on{ animation:none; }
+}
 .tm-step:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
 /* ── the invisible column you actually scroll ────────────────────────── */
@@ -2642,6 +2828,10 @@ body.page-text.page-soon main{
      parts it and does nothing else. */
   user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
   touch-action:manipulation;
+  /* a click plants a route, so the pointer says there is something to click.
+     Crosshair rather than a hand: a hand promises a link, and this is a place
+     on a drawing rather than somewhere to go. */
+  cursor:crosshair;
 }
 
 
@@ -2694,6 +2884,163 @@ body.page-text.page-soon main{
 #ht-coords.is-on{ display:block; }
 
 /* ── the "something went wrong" screen ───────────────────────────────────── */
+/* ══ THE FIRST HELLO ══════════════════════════════════════════════════════
+   The panel the map greets somebody with, once. It is the trail pages' opening
+   box — same translucent panel, same kicker, title and body — with two things
+   added, because this one is a doorway rather than a heading: a slow wash of
+   the map's own four inks behind it, and a purple line that draws itself round
+   the edge and takes the panel away when it closes the circuit.
+
+   static/first-hello.js builds it and decides whether it is shown at all.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --hello-veil:    rgba(8,10,12,.62);   /* the ground either side of it */
+  --hello-blur:    10px;                /* and how far it softens the map */
+  --hello-wide:    560px;
+  --hello-round:   24px;
+  --hello-edge:    2.5px;               /* the purple line's thickness */
+  --hello-wash:    .34;                 /* how strongly the four inks show */
+  --hello-blobby:  46px;                /* how soft they are */
+  --hello-drift:   19s;                 /* and how slowly they move */
+  /* --hello-draw and --hello-leave are written on the panel by first-hello.js,
+     from its own settings, so the line and the code cannot disagree. */
+}
+
+#ht-hello{
+  position:fixed; inset:0; z-index:70;
+  display:grid; place-items:center; padding:24px;
+  background:var(--hello-veil);
+  -webkit-backdrop-filter:blur(var(--hello-blur));
+  backdrop-filter:blur(var(--hello-blur));
+  opacity:0; transition:opacity 260ms var(--panel-ease);
+}
+#ht-hello.is-here{ opacity:1; }
+
+.ht-helloBox{
+  position:relative; isolation:isolate; overflow:hidden;
+  width:100%; max-width:var(--hello-wide);
+  border-radius:var(--hello-round);
+  background:var(--panel); border:1px solid var(--panel-edge);
+  box-shadow:var(--shadow);
+  -webkit-backdrop-filter:blur(var(--panel-blur));
+  backdrop-filter:blur(var(--panel-blur));
+  padding:clamp(28px,4.4vw,42px);
+  text-align:center;
+  transform:scale(.92) translateY(16px);
+  opacity:0;
+  transition:transform 420ms cubic-bezier(.2,1.1,.4,1), opacity 300ms ease;
+}
+#ht-hello.is-here .ht-helloBox{ transform:none; opacity:1; }
+
+/* GOING. It swells before it shrinks — that is the whole trick, and it is one
+   easing curve: a bezier whose control points go BELOW zero overshoots
+   backwards at the start, so the panel gathers itself and then leaves. */
+#ht-hello.is-going{ opacity:0; transition:opacity var(--hello-leave) ease; }
+#ht-hello.is-going .ht-helloBox{
+  transform:scale(.82) translateY(-14px);
+  opacity:0; filter:blur(7px);
+  transition:transform var(--hello-leave) cubic-bezier(.62,-.45,.72,.3),
+             opacity var(--hello-leave) ease-in,
+             filter var(--hello-leave) ease-in;
+}
+
+/* ── the wash ─────────────────────────────────────────────────────────────
+   Four inks off the map: a built trail, a wishful one, the labels, the rivers.
+   Four blurred circles drifting on their own paths — nothing but transform, so
+   the whole thing lives on the compositor and costs the map nothing. */
+.ht-helloArt{
+  position:absolute; inset:0; z-index:0; border-radius:inherit;
+  overflow:hidden; opacity:var(--hello-wash); pointer-events:none;
+}
+.ht-blob{
+  position:absolute; width:62%; aspect-ratio:1; border-radius:50%;
+  filter:blur(var(--hello-blobby));
+  will-change:transform;
+  animation:ht-drift var(--hello-drift) ease-in-out infinite alternate;
+}
+.ht-blob.is-1{ left:-14%; top:-24%;  background:var(--route-line);
+               animation-duration:calc(var(--hello-drift) * 1.00); }
+.ht-blob.is-2{ right:-18%; top:-14%; background:var(--route-line-wish);
+               animation-duration:calc(var(--hello-drift) * 1.27);
+               animation-delay:-4s; }
+.ht-blob.is-3{ left:6%; bottom:-30%;  background:var(--accent-soft);
+               animation-duration:calc(var(--hello-drift) * 1.53);
+               animation-delay:-9s; }
+.ht-blob.is-4{ right:-10%; bottom:-24%; background:#82afb8;
+               animation-duration:calc(var(--hello-drift) * 1.81);
+               animation-delay:-13s; }
+@keyframes ht-drift{
+  0%   { transform:translate3d(0,0,0) scale(1); }
+  33%  { transform:translate3d(26%,14%,0) scale(1.14); }
+  66%  { transform:translate3d(-16%,22%,0) scale(.92); }
+  100% { transform:translate3d(14%,-18%,0) scale(1.08); }
+}
+
+/* ── the line that draws itself round ─────────────────────────────────────
+   pathLength="1" so the dash maths is 0 to 1 whatever size the panel is, which
+   is why the line takes the same time on a phone as on a desktop. The rect's
+   own numbers are set from the panel's measured box by first-hello.js. */
+.ht-helloEdge{
+  position:absolute; inset:0; width:100%; height:100%;
+  z-index:2; pointer-events:none; overflow:visible;
+}
+.ht-helloRun{
+  fill:none; stroke:var(--route-line-wish); stroke-width:var(--hello-edge);
+  stroke-linecap:round;
+  stroke-dasharray:1; stroke-dashoffset:1;
+  filter:drop-shadow(0 0 6px var(--route-glow-wish));
+}
+#ht-hello.is-here .ht-helloRun{
+  animation:ht-helloRun var(--hello-draw, 4600ms) linear forwards;
+}
+@keyframes ht-helloRun{ to{ stroke-dashoffset:0; } }
+
+/* ── the words, and the way on ────────────────────────────────────────────*/
+.ht-helloText{ position:relative; z-index:3; }
+.ht-helloKicker{
+  font:600 11px/1 var(--font-body); letter-spacing:.28em;
+  text-transform:uppercase; color:var(--accent-soft);
+}
+#ht-hello h2{
+  margin:16px 0 14px;
+  font:600 clamp(24px,4.2vw,40px)/1.1 var(--font-display);
+  letter-spacing:-.02em; text-wrap:balance; color:var(--text);
+}
+#ht-hello p{
+  margin:0 auto; max-width:46ch;
+  font:400 clamp(14px,1.5vw,16px)/1.65 var(--font-body); color:var(--text-quiet);
+}
+.ht-helloGo{
+  margin-top:clamp(24px,3.4vw,32px);
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:min(280px,100%); padding:16px 40px;
+  border:0; border-radius:999px; cursor:pointer;
+  font:600 15px/1 var(--font-body); letter-spacing:.02em;
+  color:var(--pin-text); background:var(--pin-green);
+  box-shadow:0 8px 24px rgba(108,194,74,.28);
+  transition:transform 180ms var(--panel-ease), box-shadow 180ms var(--panel-ease),
+             filter 180ms var(--panel-ease);
+}
+.ht-helloGo:hover{ transform:translateY(-2px); filter:brightness(1.07);
+                   box-shadow:0 12px 30px rgba(108,194,74,.36); }
+.ht-helloGo:active{ transform:translateY(0) scale(.98); }
+.ht-helloGo:focus-visible{ outline:3px solid var(--route-line-wish); outline-offset:3px; }
+.ht-helloBox:focus{ outline:none; }   /* it is focused to carry a reader in */
+
+@media (max-width:480px){
+  :root{ --hello-round:20px; --hello-blobby:34px; }
+  .ht-helloGo{ width:100%; padding:16px 20px; }
+}
+
+/* Somebody who has asked for less movement gets the panel, the wash held
+   still, and no line travelling round it — first-hello.js falls back to a
+   plain timer for the closing, which is the only place it uses one. */
+@media (prefers-reduced-motion:reduce){
+  .ht-blob{ animation:none; }
+  #ht-hello.is-here .ht-helloRun{ animation:none; stroke-dashoffset:0; opacity:.5; }
+  .ht-helloBox, #ht-hello.is-going .ht-helloBox{ transition:opacity 200ms ease; transform:none; filter:none; }
+}
+
 #ht-problem{
   position:fixed; inset:0; z-index:60; display:none; place-items:center;
   padding:8vw; text-align:center; background:var(--map-backdrop); color:var(--text-quiet);
@@ -3371,13 +3718,72 @@ body.page-wishful{
   margin:0 0 14px; font:400 13px/1.6 var(--font-body); color:var(--text-quiet);
 }
 
+/* ══ THE ICONS THAT MOVE ══════════════════════════════════════════════════
+   Two of the little drawings on this site are READINGS rather than decoration:
+   the coin says what a connection would cost, the dial says how badly it is
+   wanted. Both move when they arrive, because a reading that arrives is read
+   and one that is simply there is scenery.
+
+   static/icon-life.js puts the classes on and takes them off again. It does it
+   every time the icon appears — a card that opens, closes and opens again does
+   this again — so nothing here may depend on running only once.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --coin-turn:   620ms;    /* how long the coin is in the air */
+  --coin-lift:   1.16;     /* and how much bigger it looks at the top of it */
+  --dial-swing:  760ms;    /* how long the needle takes to find its reading */
+  --dial-past:   .12;      /* how far past it goes first, as a share of the
+                              swing — a needle that stops dead has no weight */
+  --compass-spin: 900ms;   /* the compass needle's wobble on rollover */
+}
+
+/* THE COIN TURNS OVER. Twice, edge on and back, rising as it goes — which is
+   what a coin flipped on a table does, and is why it reads as a coin rather
+   than as a picture being spun. The perspective is what stops it looking like
+   a flat disc squashing itself. */
+[data-life="coin"]{ backface-visibility:visible; }
+[data-life="coin"].is-turning{
+  animation:ht-coin var(--coin-turn) cubic-bezier(.34,.72,.3,1) both;
+  transform-style:preserve-3d;
+}
+@keyframes ht-coin{
+  0%   { transform:perspective(220px) rotateY(0deg) scale(1); }
+  45%  { transform:perspective(220px) rotateY(-540deg) scale(var(--coin-lift)); }
+  72%  { transform:perspective(220px) rotateY(-720deg) scale(1.05); }
+  100% { transform:perspective(220px) rotateY(-720deg) scale(1); }
+}
+
+/* AND THE NEEDLE SWINGS UP TO ITS READING, from the bottom of the scale, and
+   goes a little past before it settles.
+
+   --swing is written onto the needle by icon-life.js, from the angle that
+   build/make_icons.py drew it at. It is the only number here that knows
+   anything about the dial, and it comes from the drawing itself — so a fourth
+   reading added to the dial one day swings correctly with nothing changed. */
+.ht-dial .ht-needle{ transform:rotate(0deg); }
+.ht-dial.is-swinging .ht-needle{
+  animation:ht-needle var(--dial-swing) cubic-bezier(.22,.68,.3,1) both;
+}
+@keyframes ht-needle{
+  0%   { transform:rotate(var(--swing, -90deg)); }
+  58%  { transform:rotate(calc(var(--swing, -90deg) * (0 - var(--dial-past)))); }
+  76%  { transform:rotate(calc(var(--swing, -90deg) * .05)); }
+  90%  { transform:rotate(calc(var(--swing, -90deg) * -.02)); }
+  100% { transform:rotate(0deg); }
+}
+
+@media (prefers-reduced-motion:reduce){
+  [data-life="coin"].is-turning,
+  .ht-dial.is-swinging .ht-needle{ animation:none; }
+}
+
 /* ── THE COIN AND THE DIAL ─────────────────────────────────────────────── */
 .wt-marks{
   display:flex; gap:16px; flex-wrap:wrap; margin:auto 0 12px;
   padding-top:12px; border-top:1px solid var(--panel-edge);
 }
 .wt-mark{ display:flex; align-items:center; gap:8px; }
-.wt-mark img{
+.wt-mark img, .wt-mark .ht-dial{
   width:28px; height:28px; display:block;
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));
   transition:transform 420ms var(--panel-ease);
@@ -3385,7 +3791,8 @@ body.page-wishful{
 /* the coin turns and the dial leans when the card is pointed at — one gesture
    each, and they are staggered so it reads as a response rather than a twitch */
 .wt-card:hover .wt-mark.is-cost img{ transform:rotate(-12deg) scale(1.12); }
-.wt-card:hover .wt-mark.is-priority img{ transform:scale(1.12); transition-delay:70ms; }
+.wt-card:hover .wt-mark.is-priority img,
+.wt-card:hover .wt-mark.is-priority .ht-dial{ transform:scale(1.12); transition-delay:70ms; }
 .wt-mark span{ display:flex; flex-direction:column; gap:2px; }
 .wt-mark small{
   font:600 8.5px/1 var(--font-body); letter-spacing:.16em; text-transform:uppercase;

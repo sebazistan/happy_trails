@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE DRAWING THAT DRAWS ITSELF
-   version 3.2
+   version 4.0
 
    WHAT THIS IS. The picture on coming-soon.html: a trail network that builds
    itself and takes itself apart again, in the main map's own colours and its
@@ -158,10 +158,23 @@ window.HappyTrailsComingSoon = function (canvas) {
     /* ── WHERE THE CURSOR IS, THE MAP IS NOT ────────────────────────────────
        The one interactive thing on the page, and it is deliberately not a
        control: nothing is drawn for the pointer, nothing lights up, there is
-       no instruction to read. A circle of ground around the cursor is simply
-       closed to every line, the way a golf course is, so the drawing parts as
-       you move through it and closes up again behind you. Sit still and it
-       settles into a clearing; take the mouse away and it fills back in.
+       no instruction to read.
+
+       IT IS A PUSH, NOT A WALL. The circle round the cursor was a wall once —
+       ground closed to every line, the way a golf course is — and a wall has
+       one behaviour a map must never have: a line that meets one STOPS. What
+       you saw was the drawing dying under the mouse.
+
+       So nothing is closed now. A line whose head is inside the circle, or
+       near enough to be about to be, simply keeps drawing and takes whichever
+       way open to it leads furthest from the middle. It curves out and carries
+       on. A line approaching from outside bends round rather than through. The
+       drawing parts as you move, and it is still a whole drawing.
+
+       And nothing is painted for it either: the parting is the effect. There
+       WAS a soft disc of the page's own colour under the cursor, rubbing out
+       what was already drawn there — it read as a hole burned in the artwork,
+       which is not what a map does.
 
        A page nobody touches looks exactly as it did before, which is the whole
        point — and somebody who has asked for less movement gets the still
@@ -181,24 +194,47 @@ window.HappyTrailsComingSoon = function (canvas) {
                               // page does not saw through the picture.
     wakeGrow:        6,       // and how fast it opens when the pointer arrives
                               // and closes when it leaves
-    wakeSolid:       0.5,     // HOW MUCH OF THE CLEARING IS ACTUALLY CLEAR.
-                              // The rule above only stops a line GROWING into
-                              // the circle; everything already drawn there
-                              // stays put, so on its own the effect is a faint
-                              // swerve you are not sure you saw. So what is
-                              // already inside the circle is faded back into
-                              // the page as well: solid to this fraction of
-                              // the radius, then easing back to full by the
-                              // edge. No ring, no spotlight, no hard rim —
-                              // the drawing simply is not there near the
-                              // cursor, which is what the rule says too. Set
-                              // it to 0 for the swerve alone.
-    wakeShy:         0.6,     // HOW MUCH A LINE LEANS AWAY. The circle alone
-                              // only stops a line dead at its edge; this makes
-                              // a line that has to turn prefer the way that
-                              // takes it further from the cursor, so it bends
-                              // away in advance instead of running up against
-                              // the circle and stopping. Zero turns that off.
+    wakeReach:       1.45,    // HOW FAR OUT THE PUSH IS FELT, as a multiple of
+                              // the radius. Past 1 a line starts leaning away
+                              // BEFORE it arrives, so it curves round the
+                              // circle in one long bend instead of running at
+                              // it and turning hard at the last moment.
+    wakeKeep:        0.45,    // and how much carrying straight on is worth
+                              // against a cell of getting further away. Above
+                              // zero the escape is a curve rather than a
+                              // scramble; at zero the line bolts.
+    wakeSquare:      0.55,    // and what a diagonal escape costs. It needs to
+                              // be here: a diagonal step gets a line a full
+                              // half-cell further from the cursor than a
+                              // square one does, so without a price on it
+                              // every escape is a diagonal and a mouse drawn
+                              // across the picture leaves a comb of them.
+    wakeShy:         0.6,     // how much a line that has been blocked by
+                              // something ELSE — a golf course, the edge —
+                              // also leans away from the cursor while it is
+                              // choosing where to go instead
+
+    /* ── AND A CLICK PLANTS ONE ────────────────────────────────────────────
+       Click anywhere on the picture and a new route starts there, of a kind
+       picked at random from every kind marked `plantable` below: a trail, an
+       unpaved one, one under construction, a bike lane, a wishful one. It
+       starts under the cursor and the push above is what sends it away, so it
+       appears to run out from under your finger.
+
+       WHICH MEANS THE PICTURE HAS TO BE ABLE TO SAY NO — not by refusing the
+       click, which feels broken, but by clearing up faster. Past `crowdFrom`
+       lines every line on the picture starts rubbing itself out more quickly,
+       more so the fuller it gets; past `crowdMost` the oldest one is retired
+       to make room. Somebody hammering the mouse gets a busy picture that
+       empties as fast as they fill it, and never a seized one. */
+    plantEvery:      0.09,    // seconds: the fastest a click can plant, so a
+                              // double-click is one route and not three
+    plantTries:      24,      // places tried outward from the cursor before a
+                              // click is given up on
+    crowdFrom:       18,      // lines: above this everything starts hurrying
+    crowdRush:       0.35,    // how much faster per line over that number
+    crowdMost:       7,       // and how many over it before the oldest line is
+                              // sent away to make room
 
     /* THE CONNECTIONS. A connection on the map is a short link that gets you
        from the end of one trail to the start of another, and it is no use
@@ -277,11 +313,11 @@ window.HappyTrailsComingSoon = function (canvas) {
        Every speed and length is jittered per line, so no two move alike. */
     kinds: {
       trail:   { want: 7, speed: 58, maxLen: 1000, steps: 46, leg: [5, 12],
-                 fork: 0.30, forks: 2, apart: 1, hold: 0,
+                 fork: 0.30, forks: 2, apart: 1, hold: 0, plantable: true,
                  width: 16, casing: 26, solid: true },
 
       wish:    { want: 0, speed: 68, maxLen: 460, steps: 20, leg: [4, 8],
-                 fork: 0, forks: 0, apart: 2, hold: 0,
+                 fork: 0, forks: 0, apart: 2, hold: 0, plantable: true,
                  width: 16, casing: 26, solid: true },
 
       /* a bike lane is the same green as a trail and half its width. On the
@@ -289,8 +325,23 @@ window.HappyTrailsComingSoon = function (canvas) {
          is drawn as the map draws a route that is not a finished trail —
          round dots with a gap between them, not a dashed line. */
       lane:    { want: 2, speed: 74, maxLen: 420, steps: 26, leg: [4, 9],
-                 fork: 0, forks: 0, apart: 2, hold: 0,
+                 fork: 0, forks: 0, apart: 2, hold: 0, plantable: true,
                  width: 8, casing: 0, solid: false },
+
+      /* AN UNPAVED TRAIL is a trail in every way but its colour: the map
+         draws it at a trail's full width in a duller green. */
+      unpaved: { want: 1, speed: 52, maxLen: 820, steps: 40, leg: [4, 10],
+                 fork: 0.18, forks: 1, apart: 1, hold: 0, plantable: true,
+                 width: 16, casing: 26, solid: true },
+
+      /* AND ONE UNDER CONSTRUCTION is a trail's width in a trail's green,
+         drawn as dots — which is how the map says a line is on its way but
+         not yet walkable. No casing: a dark line under dots reads as a dashed
+         road rather than as a route being built. */
+      construction:
+               { want: 1, speed: 66, maxLen: 640, steps: 32, leg: [4, 9],
+                 fork: 0, forks: 0, apart: 1, hold: 0, plantable: true,
+                 width: 16, casing: 0, solid: true },
 
       link:    { want: 2, speed: 96, maxLen: 520, steps: 22, leg: [3, 8],
                  fork: 0, forks: 0, apart: 2, hold: 3.5, seeks: true,
@@ -328,6 +379,9 @@ window.HappyTrailsComingSoon = function (canvas) {
     dashHighway:   [9.14, 18.28],   // the centre line of an expressway
     dashRail:      [2, 12],         // and the sleepers on a railway
     dotLane:       [0, 17],         // a bike lane: dots, not dashes
+    dotBuilding:   [0, 20.78],      // and a trail under construction: the same
+                                    // dots at a trail's full width, which is
+                                    // the legend's own number for it
 
     /* THE COLOURS, taken from the legend's own drawings rather than matched by
        eye. Change one here and the picture stops agreeing with the map, which
@@ -342,6 +396,8 @@ window.HappyTrailsComingSoon = function (canvas) {
       bridge:      "#a9ff9c",   // where a trail crosses OVER something
       pinch:       "#ff3600",   // a red dot: where a trail has a problem
       lane:        "#4ecf4e",   // a bike lane: the same green, drawn thin
+      unpaved:     "#678c5f",   // a trail that is not paved: duller, same width
+      building:    "#4ecf4e",   // and one under construction: dots, full width
       link:        "#bdbdbd",   // a road connection between two trails
       danger:      "#ff3600",   // and a dangerous one
       road:        "#878787",   // the bed of an expressway AND of a railway:
@@ -399,20 +455,9 @@ window.HappyTrailsComingSoon = function (canvas) {
     highway: SETTINGS.dashHighway.map(v => v * pen),
     rail:    SETTINGS.dashRail.map(v => v * pen),
     lane:    SETTINGS.dotLane.map(v => v * pen),
+    building: SETTINGS.dotBuilding.map(v => v * pen),
   };
   // the dots are given in legend units across; here they are radii in pixels
-  /* the backdrop again with nothing in it, for the soft edge of the clearing.
-     Worked out from the one colour above rather than written down twice — two
-     spellings of the same grey is exactly the sort of thing that goes out of
-     step the first time somebody changes it. */
-  const NOTHING = (function () {
-    let h = INK.backdrop.replace("#", "");
-    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-    const n = parseInt(h, 16);
-    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," +
-           (n & 255) + ",0)";
-  })();
-
   const DOT = {
     junction: SETTINGS.dotJunction * pen / 2,
     bridge:   SETTINGS.dotBridge   * pen / 2,
@@ -586,6 +631,18 @@ window.HappyTrailsComingSoon = function (canvas) {
     return false;
   }
 
+  /* ── HOW HARD THE CURSOR IS PUSHING, HERE ────────────────────────────────
+     Zero everywhere outside the reach of the circle, rising to one at its
+     middle. A line uses it for one thing only: to decide whether it should be
+     choosing its next step by "where is there room" or by "which way is away
+     from that". It never refuses anything. */
+  function wakeBite(x, y) {
+    if (wake <= 1) return 0;
+    const reach = wake * SETTINGS.wakeReach;
+    const off = Math.hypot(x - wakeX, y - wakeY);
+    return off >= reach ? 0 : 1 - off / reach;
+  }
+
   const inside = (x, y) => {
     const m = cell * SETTINGS.edgeMargin;
     return x >= m && y >= m && x <= W - m && y <= H - m;
@@ -619,18 +676,12 @@ window.HappyTrailsComingSoon = function (canvas) {
         if (px > x0 && px < x1 && py > y0 && py < y1) return false;
       }
     }
-    /* AND THE CURSOR'S CLEARING, tested the same way along the step — but
-       NOT at the step's own starting point. A line that the clearing has
-       swept over is standing inside it; test where it stands and every way
-       out is closed too, and instead of walking out it stops dead. Leaving
-       t = 0 out means it may not go deeper in, but it may always leave. */
-    if (wake > 1) {
-      for (let t = 1; t <= 4; t++) {
-        const px = fromX + (x - fromX) * t / 4;
-        const py = fromY + (y - fromY) * t / 4;
-        if (Math.hypot(px - wakeX, py - wakeY) < wake) return false;
-      }
-    }
+    /* THE CURSOR IS NOT TESTED HERE, AND THAT IS THE POINT. It used to be,
+       and a line that ran out of open steps stopped growing — so sweeping the
+       mouse over the picture killed whatever it touched. The cursor is a
+       push, not a wall, and a push belongs where a line CHOOSES its direction
+       (see `wakeBite` and its use in `extend`), never where a step is refused.
+       Nothing below can ever make a line stop for the pointer. */
     if (K[kind].solid && (claimed(x, y) || claimed(mx, my))) return false;
     if (crowded(kind, x, y, self || null)) return false;
     return true;
@@ -653,7 +704,7 @@ window.HappyTrailsComingSoon = function (canvas) {
       tailRush: kind === "wish" ? SETTINGS.wishRush : 1,
       hold: k.hold || 0,
       growing: true, forks: 0, dots: [], cross: [], claims: [],
-      target: null, spin: 0, pushed: 0,
+      target: null, spin: 0, pushed: 0, born: clock, retired: false,
       // a branch shares its parent's tally: they are one trail with two ends,
       // and they are allowed to start out side by side
       near: parent ? parent.near : new Map(), marks: [], recent: [],
@@ -722,6 +773,12 @@ window.HappyTrailsComingSoon = function (canvas) {
   }
 
   const ends = line => line.run.length ? line.run[line.run.length - 1] : 0;
+
+  /* A ROUTE SOMEBODY COULD ACTUALLY WALK ON — which is what a connection wants
+     to land on and what a red dot wants to sit on. Every solid kind except the
+     wishful one, because a wishful route is not built yet and a pinch point on
+     a line that does not exist means nothing. */
+  const walkable = line => K[line.kind].solid && line.kind !== "wish";
 
   /* ── WHICH WAY NEXT ──────────────────────────────────────────────────────
      Mostly square. Off a horizontal or vertical leg a turn stays square most
@@ -805,8 +862,45 @@ window.HappyTrailsComingSoon = function (canvas) {
         }
       }
 
+      /* ── GETTING OUT FROM UNDER THE CURSOR ─────────────────────────────
+         Before anything else, because it overrides everything else. A head
+         within reach of the circle stops asking "where is there room" and
+         asks "which way is away from the middle of that" — and then carries
+         on drawing, at its own speed, in its own style. It is never refused a
+         step and never stops: if every way out is blocked by something real,
+         it falls through to the ordinary rules below and behaves as it always
+         did.
+
+         Carrying straight on is worth something (`wakeKeep`), or a line
+         directly in the path of the cursor jitters sideways instead of
+         sweeping out of the way; and a square step is preferred to a diagonal
+         one, as everywhere else in this picture. */
+      if (wakeBite(at.x, at.y) > 0) {
+        let furthest = -Infinity;
+        const ways = [0, 2, -2, 1, -1];
+        for (let t = 0; t < ways.length; t++) {
+          const d = turn(line.dir, ways[t]);
+          const st = DIRS[d];
+          const nx = at.x + st[0] * cell, ny = at.y + st[1] * cell;
+          if (!open(line.kind, nx, ny, at.x, at.y, line, d)) continue;
+          let off = Math.hypot(nx - wakeX, ny - wakeY);
+          if (ways[t] === 0) off += cell * SETTINGS.wakeKeep;
+          if (d % 2) off -= cell * SETTINGS.wakeSquare;
+          if (off > furthest) { furthest = off; go = d; }
+        }
+        if (go !== null) {
+          line.pushed = 0;              // being pushed is not being stuck
+          // a diagonal escape is still only allowed to be a short diagonal
+          line.legLeft = (go % 2) ? legFor(line, go)
+                                  : Math.max(line.legLeft, 2);
+          if (go !== line.dir) line.spin = 0;
+        }
+      }
+
       const ahead = DIRS[line.dir];
-      if (open(line.kind, at.x + ahead[0] * cell, at.y + ahead[1] * cell,
+      if (go !== null) {
+        /* already steering */
+      } else if (open(line.kind, at.x + ahead[0] * cell, at.y + ahead[1] * cell,
                at.x, at.y, line, line.dir)) {
         go = line.dir;
         line.pushed = 0;            // a clear step: it is not stuck after all
@@ -868,7 +962,7 @@ window.HappyTrailsComingSoon = function (canvas) {
     claim(line, ends(line),
           k.solid ? [key(nx, ny), key((nx + at.x) / 2, (ny + at.y) / 2)] : [],
           [edgeOf(at.x, at.y, nx, ny, go)]);
-    if (line.kind === "trail" || line.kind === "wish") {
+    if (K[line.kind].solid) {
       lookForCrossings(line, at, { x: nx, y: ny }, here);
     }
     return true;
@@ -956,6 +1050,10 @@ window.HappyTrailsComingSoon = function (canvas) {
       const x = Math.round(between(m, W - m) / cell) * cell;
       const y = Math.round(between(m, H - m) / cell) * cell;
       if (!open(kind, x, y, x, y, null, -1)) continue;
+      // nothing new BEGINS under the cursor of its own accord. A click may
+      // plant one there — that is the point of a click — but the picture does
+      // not grow into the space somebody is holding the mouse over.
+      if (wakeBite(x, y) > 0) continue;
       let near = Infinity;
       for (let i = 0; i < lines.length; i++) {
         const g = lines[i].grid;
@@ -984,7 +1082,7 @@ window.HappyTrailsComingSoon = function (canvas) {
     const able = [];
     for (let i = 0; i < lines.length; i++) {
       const l = lines[i];
-      if (l.kind === "trail" && l !== notThis && l.head - l.tail > cell * 4) {
+      if (walkable(l) && l !== notThis && l.head - l.tail > cell * 4) {
         able.push(l);
       }
     }
@@ -1032,6 +1130,60 @@ window.HappyTrailsComingSoon = function (canvas) {
     }
     lines.push(line);
     return line;
+  }
+
+  /* ── A CLICK PLANTS A ROUTE ──────────────────────────────────────────────
+     Of a kind picked at random from everything marked `plantable`, starting as
+     near the cursor as there is room for. It is looked for in rings outward
+     from the exact cell clicked, so it lands under the pointer where there is
+     space and just beside it where there is not — and never fails silently in
+     a busy corner when a cell one step away would have done.
+
+     It begins pointing at nothing in particular. The push from the cursor is
+     what sends it away, which is why a planted route appears to run out from
+     under your own finger. */
+  const PLANTS = Object.keys(K).filter(name => K[name].plantable);
+
+  function plant(x, y) {
+    const kind = pick(PLANTS);
+    const cx = Math.round(x / cell) * cell, cy = Math.round(y / cell) * cell;
+    for (let go = 0; go < SETTINGS.plantTries; go++) {
+      // ring 0 is the cell itself; after that, a widening square around it
+      const ring = Math.ceil(Math.sqrt(go));
+      const px = cx + Math.round(between(-ring, ring)) * cell;
+      const py = cy + Math.round(between(-ring, ring)) * cell;
+      if (!open(kind, px, py, px, py, null, -1)) continue;
+      makeRoom();
+      lines.push(newLine(kind, px, py, ((Math.random() * 4) | 0) * 2, null));
+      return true;
+    }
+    return false;
+  }
+
+  /* ROOM FOR ONE MORE. The picture never refuses a click — refusing one feels
+     like a fault — so instead it clears up faster. Past `crowdMost` over the
+     comfortable number, the oldest line on the picture is told to stop and
+     sent away at speed; and `hurrying()` below quietly speeds every tail up
+     as the count rises, so somebody hammering the mouse gets a picture that
+     empties as fast as they can fill it. */
+  function makeRoom() {
+    if (lines.length < SETTINGS.crowdFrom + SETTINGS.crowdMost) return;
+    let oldest = null;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.retired) continue;         // already on its way out
+      if (!oldest || line.born < oldest.born) oldest = line;
+    }
+    if (!oldest) return;                  // every one of them is already going
+    oldest.retired = true;
+    if (oldest.growing) stopGrowing(oldest);
+    oldest.hold = 0;
+    oldest.tailRush = Math.max(oldest.tailRush, SETTINGS.stubRush);
+  }
+
+  function hurrying() {
+    const over = lines.length - SETTINGS.crowdFrom;
+    return over <= 0 ? 1 : 1 + over * SETTINGS.crowdRush;
   }
 
   function addGolf() {
@@ -1089,7 +1241,7 @@ window.HappyTrailsComingSoon = function (canvas) {
      one goes again after a handful of seconds. */
   function addRed() {
     if (reds.length >= SETTINGS.redAtOnce) return;
-    const able = lines.filter(l => l.kind === "trail" && l.head - l.tail > cell * 3);
+    const able = lines.filter(l => walkable(l) && l.head - l.tail > cell * 3);
     if (!able.length) return;
     const line = pick(able);
     reds.push({ line: line, at: between(line.tail + cell, line.head - cell),
@@ -1140,6 +1292,7 @@ window.HappyTrailsComingSoon = function (canvas) {
       if (g.alpha <= 0 && going) golf.splice(i, 1);
     }
 
+    const rush = hurrying();
     for (let i = lines.length - 1; i >= 0; i--) {
       const line = lines[i];
       if (line.growing) {
@@ -1154,7 +1307,7 @@ window.HappyTrailsComingSoon = function (canvas) {
       if (!line.growing && line.hold > 0) {
         line.hold -= dt;
       } else if (!line.growing || ends(line) - line.tail > line.maxLen) {
-        line.tail += line.speed * dt * (line.growing ? 1 : line.tailRush);
+        line.tail += line.speed * dt * (line.growing ? 1 : line.tailRush) * rush;
       }
       dropClaims(line, line.tail);
       unstamp(line, line.tail);
@@ -1291,10 +1444,13 @@ window.HappyTrailsComingSoon = function (canvas) {
     strokeKind("danger", INK.danger, K.danger.px);
 
     // a trail is drawn twice: its dark edge, then its colour
-    strokeKind("trail", INK.trailCasing, K.trail.pxCase);
-    strokeKind("wish",  INK.wishCasing,  K.wish.pxCase);
-    strokeKind("trail", INK.trail, K.trail.px);
-    strokeKind("wish",  INK.wish,  K.wish.px);
+    strokeKind("trail",   INK.trailCasing, K.trail.pxCase);
+    strokeKind("unpaved", INK.trailCasing, K.unpaved.pxCase);
+    strokeKind("wish",    INK.wishCasing,  K.wish.pxCase);
+    strokeKind("trail",   INK.trail,   K.trail.px);
+    strokeKind("unpaved", INK.unpaved, K.unpaved.px);
+    strokeKind("construction", INK.building, K.construction.px, DASH.building);
+    strokeKind("wish",    INK.wish,    K.wish.px);
 
     /* and everything that sits on top of a trail: the white dot at a branch or
        a junction, the bright green one where it crosses over something, and
@@ -1320,26 +1476,6 @@ window.HappyTrailsComingSoon = function (canvas) {
       if (p) dot(p.x, p.y, DOT.pinch * popped(r.born), INK.pinch);
     }
 
-    /* ── AND THE CLEARING, LAST ──────────────────────────────────────────
-       The page's own colour, painted back over whatever is under the cursor
-       and easing out to nothing by the edge of the circle. It goes on top of
-       everything, dots included, so what is near the pointer is simply not
-       there — which is what the rule that keeps lines out of it says as well.
-
-       It is a fade and not a hole on purpose: a hard rim would read as a
-       spotlight cut into the artwork, and a line stopping dead at an invisible
-       circle would read as a fault. This way a line that has routed around the
-       clearing is at full strength exactly where it comes back into view. */
-    if (wake > 1 && SETTINGS.wakeSolid < 1) {
-      const fade = ctx.createRadialGradient(
-        wakeX, wakeY, wake * SETTINGS.wakeSolid, wakeX, wakeY, wake);
-      fade.addColorStop(0, INK.backdrop);
-      fade.addColorStop(1, NOTHING);
-      ctx.fillStyle = fade;
-      ctx.beginPath();
-      ctx.arc(wakeX, wakeY, wake, 0, Math.PI * 2);
-      ctx.fill();
-    }
   }
 
   /* ── THE LOOP ────────────────────────────────────────────────────────────  */
@@ -1417,6 +1553,18 @@ window.HappyTrailsComingSoon = function (canvas) {
     };
     canvas.addEventListener("pointermove", here, { passive: true });
     canvas.addEventListener("pointerdown", here, { passive: true });
+
+    /* AND A CLICK PLANTS ONE. Rate-limited, so a double click is one route
+       rather than three and somebody holding the button down cannot outrun
+       the picture's own clearing-up. It plants where the pointer is, which on
+       a touch screen is where the finger went down. */
+    let planted = -Infinity;
+    canvas.addEventListener("pointerdown", e => {
+      if (clock - planted < SETTINGS.plantEvery) return;
+      planted = clock;
+      plant(e.offsetX, e.offsetY);
+      if (!running) { advance(1 / 60); paint(); }   // still? show it anyway
+    }, { passive: true });
     const gone = () => { wakeOn = false; };
     canvas.addEventListener("pointerleave", gone, { passive: true });
     canvas.addEventListener("pointercancel", gone, { passive: true });

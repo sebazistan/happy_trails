@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE WAYPOINT CARD
-   version 1.1
+   version 1.2
 
    ONE CARD, USED IN TWO PLACES. A waypoint card — the picture, the caption,
    the paged text, the facts along the bottom, the × and the expand button —
@@ -91,6 +91,17 @@ window.HappyTrailsCards = function (opts) {
     cardGrowsAbove:     620,
     cardGrowsFrom:      1100,
     cardMinLines:       3,
+    /* how long a card takes to arrive out of the waypoint that was clicked,
+       and the shape of that move. See popFrom. */
+    cardPopMs:          380,
+    cardPopEase:        "cubic-bezier(.28,.78,.32,1)",
+    /* HOW SMALL THE CARD STARTS. Not the waypoint's real size: a pin is
+       fourteen pixels and a card is five hundred, and a move that begins at
+       three per cent spends nine tenths of itself as a speck and then arrives
+       all at once. Starting at a fifth reads as the card coming OUT of the
+       waypoint, which is the thing being said, and every frame of it is worth
+       looking at. */
+    cardPopLeast:       0.22,
     cardsCanBeClosed:   true,
     compareClickToMove: true,
     compareStartsAt:    50,
@@ -295,7 +306,8 @@ window.HappyTrailsCards = function (opts) {
       if (!LEVELS[level]) return;
       bits.push('<span class="tm-judge is-' + what + ' is-' + level + '">' +
         '<img src="' + SETTINGS.iconFolder + what + "-" + level + '.svg" alt="" ' +
-        'width="48" height="48">' +
+        'width="48" height="48" data-life="' +
+        (what === "cost" ? "coin" : "dial") + '">' +
         '<span class="tm-judgeText"><small>' + WORDS[what] + "</small><b>" +
         WORDS["level_" + level] + "</b></span></span>");
     };
@@ -572,6 +584,60 @@ window.HappyTrailsCards = function (opts) {
     });
 
     setSplit(SETTINGS.compareStartsAt);
+  }
+
+  /* ══ A CARD ARRIVES OUT OF ITS WAYPOINT ══════════════════════════════════
+     The waypoint you clicked and the card that answers are the same thing, and
+     a card that simply fades up somewhere else does not say so. Given the box
+     the waypoint's own circle occupies on the screen, the card starts there —
+     that size, that place — and grows to where it belongs.
+
+     WHY IT ANIMATES TO THE CARD'S CURRENT TRANSFORM AND NOT TO `none`. The
+     page has its own transform on every card: a lift, and a nudge it rewrites
+     on every frame while the card fades in. Animating to `none` would carry
+     the card away from that and then snap it back the moment the animation was
+     cleared. So the resting transform is read first, the move is stacked in
+     FRONT of it — which puts it in the parent's coordinates, where both
+     rectangles were measured — and the move ends on the resting transform
+     itself, so clearing it afterwards changes nothing.
+
+     A transition rather than a keyframe, because the end state is a matrix
+     that is only known at the moment it begins. */
+  function popFrom(i, from) {
+    const card = cards[i];
+    if (!card || !from || !from.width || !from.height) return;
+    if (wantsStillness()) return;
+    if (card.popping) return;                 // already on its way
+
+    const to = card.getBoundingClientRect();
+    if (!to.width || !to.height) return;
+
+    const rest = getComputedStyle(card).transform;
+    const held = rest && rest !== "none" ? " " + rest : "";
+
+    /* one scale for both axes, taken from whichever fits — a card is a tall
+       rectangle and a waypoint is a small circle, and squashing one into the
+       other reads as a mistake rather than as a move */
+    const shrink = Math.max(SETTINGS.cardPopLeast, Math.min(1,
+                   Math.min(from.width / to.width, from.height / to.height)));
+    const dx = (from.left + from.width / 2) - (to.left + to.width / 2);
+    const dy = (from.top + from.height / 2) - (to.top + to.height / 2);
+
+    card.popping = true;
+    card.style.transition = "none";
+    card.style.transform =
+      "translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) scale(" +
+      shrink.toFixed(4) + ")" + held;
+    void card.offsetWidth;                    // make the browser believe it
+    card.style.transition = "transform " + SETTINGS.cardPopMs + "ms " +
+                            SETTINGS.cardPopEase;
+    card.style.transform = rest && rest !== "none" ? rest : "none";
+    clearTimeout(card.popTimer);
+    card.popTimer = setTimeout(() => {
+      card.style.transition = "";
+      card.style.transform = "";
+      card.popping = false;
+    }, SETTINGS.cardPopMs + 40);
   }
 
   /* ── the picture carousel ─────────────────────────────────────────────── */
@@ -883,6 +949,7 @@ window.HappyTrailsCards = function (opts) {
     }, SETTINGS.cardGrowFadeMs);
   }
   return {
+    popFrom:    popFrom,
     cards:      cards,
     setBig:     setBig,
     isBig:      () => bigOn,

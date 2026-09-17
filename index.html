@@ -145,6 +145,8 @@
      few waypoints of its own — see FEATURED below — and they are the same
      card, from the same file, so the two cannot drift apart. Without it the
      map works exactly as before and simply has no featured waypoints on it. -->
+<script src="icon-life.js"></script>
+<script src="first-hello.js"></script>
 <script src="waypoint-card.js"></script>
 </head>
 <body class="page-map">
@@ -260,7 +262,7 @@
 
 const SETTINGS = {
 
-  version: "4.1",              // printed in the bottom-right corner
+  version: "5.0",              // printed in the bottom-right corner
 
   /* ── THE ARTWORK ────────────────────────────────────────────────────── */
 
@@ -510,7 +512,23 @@ const SETTINGS = {
 
   coordinateReader: true,      // press C to read map coordinates off the map,
                                // which is how you find x/y values for new pins
-  showFitButton: true
+  showFitButton: true,
+
+  /* ── THE PANEL THAT GREETS SOMEBODY THE FIRST TIME ──────────────────────
+     Once per person, remembered in the browser. Everything about how it looks
+     is in the stylesheet under THE FIRST HELLO; its words are in WORDS.hello
+     below; and what it does is in first-hello.js. */
+  showHello: true,
+  helloStay: 4600,             // milliseconds the purple line takes to travel
+                               // all the way round the panel — and therefore
+                               // how long the panel stays if nobody touches
+                               // it. It is a clock you can read without
+                               // reading anything.
+  helloLeave: 380,             // and how long it takes to go
+  helloRemember: "happy-trails:hello:1"
+                               // where it is remembered. RAISE THE NUMBER and
+                               // everybody is greeted once more, which is what
+                               // you want when the words below change.
 };
 
 
@@ -546,6 +564,18 @@ const WORDS = {
     /* Clear a href and that button is left off the page; clear them all and
        the row disappears and the band above closes up to suit. */
   ],
+
+  /* The first hello. Three lines and a button: what this is, how to work it,
+     and the way in. Anybody who has been here before never sees it. */
+  hello: {
+    kicker:  "Every multi-use trail in the GTA",
+    title:   "Welcome to Happy Trails",
+    body:    "Drag to move the map and scroll to zoom. Green is a trail you " +
+             "can ride today; purple is one that ought to exist. Zoom in and " +
+             "the waypoints appear \u2014 click one to see what is there.",
+    go:      "Continue",
+    goLabel: "Close this and go to the map"
+  },
 
   north:        "N",                 /* the letter on the compass badge  */
   northLabel:   "North is up",       /* its screen-reader description    */
@@ -2376,6 +2406,17 @@ function wireCoordinateReader() {
 /* ── start ─────────────────────────────────────────────────────────────── */
 function begin() {
   writeWords();
+  /* THE GREETING GOES UP FIRST, before the artwork is asked for. The map is a
+     large drawing and a slow connection can take a moment over it; putting the
+     panel up first means the first thing anybody sees is finished, rather than
+     an empty grey rectangle that a welcome arrives on top of later. */
+  if (SETTINGS.showHello && typeof window.HappyTrailsHello === "function") {
+    HappyTrailsHello({
+      words: WORDS.hello,
+      settings: { stay: SETTINGS.helloStay, leave: SETTINGS.helloLeave,
+                  remember: SETTINGS.helloRemember }
+    });
+  }
   loadArtwork(() => {
     applyStartingLayers();
     buildPins();
