@@ -271,7 +271,7 @@
 
 const SETTINGS = {
 
-  version: "5.1",              // printed in the bottom-right corner
+  version: "5.2",              // printed in the bottom-right corner
 
   /* ── THE ARTWORK ────────────────────────────────────────────────────── */
 
@@ -591,6 +591,8 @@ const WORDS = {
   stopTour:     "Stop the tour",
   tourEscape:   "Press Esc to leave the tour",
   tourAt:       "{n} of {of}",
+  tourBack:     "Previous waypoint",
+  tourOn:       "Next waypoint",
 
   north:        "N",                 /* the letter on the compass badge  */
   northLabel:   "North is up",       /* its screen-reader description    */
@@ -2378,10 +2380,28 @@ function onUp(e) {
   if (pointers.size < 2) pinchGap = 0;
   if (pointers.size === 0) {
     el("stage").classList.remove("is-dragging");
-    // a press that never really moved counts as a click, not a drag
-    if (dragFrom && movedBy < SETTINGS.dragThreshold && SETTINGS.clickZoomsOut &&
-        !e.target.closest(".ht-pin") && !e.target.closest(".ht-feat") &&
-        !e.target.closest("#tm-cards")) {
+    /* A PRESS THAT NEVER REALLY MOVED COUNTS AS A CLICK, NOT A DRAG — which
+       is the whole of the distinction here, and `movedBy` is what carries it.
+       Dragging the map is how you move about it, and a drag that happened to
+       finish over nothing must not also be read as "I have finished with that
+       panel". */
+    const aClick = dragFrom && movedBy < SETTINGS.dragThreshold &&
+                   !e.target.closest(".ht-pin") && !e.target.closest(".ht-feat") &&
+                   !e.target.closest("#tm-cards");
+
+    /* AND A CLICK ON THE MAP PUTS THINGS AWAY, exactly as it does on a trail
+       page. Clicking the thing you are reading is the oldest way of saying you
+       have finished with whatever was over it — so the legend or layers panel
+       closes, and so does an open waypoint card. Only then does the click get
+       on with zooming out, so one press never does two things. */
+    if (aClick) {
+      let putAway = false;
+      if (openPanel) { showPanel(openPanel); putAway = true; }
+      if (openAt >= 0) { showFeature(-1); putAway = true; }
+      if (putAway) { dragFrom = null; updatePins(); updateFeatures(); cullLabels(); return; }
+    }
+
+    if (aClick && SETTINGS.clickZoomsOut) {
       const p = stagePoint(e);
       zoomByStep(1 / SETTINGS.zoomStep, p.x, p.y);
     }

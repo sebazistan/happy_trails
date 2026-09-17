@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE ICONS THAT MOVE
-   version 1.1
+   version 1.2
 
    WHAT THIS IS. Two of the little drawings on this site are readings rather
    than decoration — the coin says what a connection would COST, the dial says
@@ -64,6 +64,14 @@
        furthest, which is the reading being acted out rather than just shown. */
     dialFrom:     180,
 
+    /* THE SHAPE OF THE SETTLE, as fractions of the whole swing: how far past
+       the reading the needle goes first, then how far back, then how far past
+       again before it stops. A needle that arrives and stops dead has no
+       weight; one that rings for ever is a toy. */
+    past:         0.12,
+    back:         0.05,
+    rest:         0.02,
+
     /* AND HOW LONG THE TWO MOVES TAKE. Both are also in the stylesheet, as
        --coin-turn and --dial-swing; these are only the fallback for working
        out when a turn has finished. The stylesheet is where to change them. */
@@ -126,8 +134,26 @@
         const angle = parseFloat(needle.dataset.angle);
         needle.style.transformOrigin = hub[0] + "px " + hub[1] + "px";
         if (isFinite(angle)) {
-          // CSS turns clockwise; the dial is measured the other way round
-          needle.style.setProperty("--swing", -(SETTINGS.dialFrom - angle) + "deg");
+          /* EVERY ANGLE IN THE SWING, WORKED OUT HERE AND WRITTEN DOWN.
+             It used to be one number — the starting angle — with the keyframes
+             deriving the overshoot and the two settling wobbles from it by
+             multiplying one custom property by another inside a calc(). That
+             is the sort of thing that works in a test page and is quietly
+             dropped in a real one: a calc() multiplying two custom properties,
+             inside a keyframe, on an SVG element, is about as far out on the
+             thin ice as CSS goes, and where it is not supported the whole
+             keyframe is invalid and the needle simply does not move. Which is
+             exactly what was happening.
+
+             Four plain degree values instead. Nothing to resolve, nothing to
+             multiply, and the shape of the swing is decided in the one place
+             that already knows the angles. CSS turns clockwise and the dial is
+             measured the other way round, hence the minus. */
+          const swing = -(SETTINGS.dialFrom - angle);
+          needle.style.setProperty("--swing", swing + "deg");
+          needle.style.setProperty("--swing-past", (-swing * SETTINGS.past).toFixed(2) + "deg");
+          needle.style.setProperty("--swing-back", (swing * SETTINGS.back).toFixed(2) + "deg");
+          needle.style.setProperty("--swing-rest", (-swing * SETTINGS.rest).toFixed(2) + "deg");
         }
       }
       img.replaceWith(svg);

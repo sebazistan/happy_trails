@@ -12,6 +12,73 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 18.2  NINE CHANGES TO THE TOURS, THE MAP AND THE TWO READINGS.
+
+       ── THE MAIN MAP ─────────────────────────────────────────────────────
+
+       CLICKING THE MAP PUTS THE PALETTES AWAY, the way it already did on a
+       trail page: a click anywhere that is not a pin, a route or a card closes
+       the legend, the layers palette and any open waypoint. A CLICK AND DRAG
+       DOES NOT — dragging the map is how you look around it, and having the
+       panel you were reading vanish because you moved the map an inch is the
+       kind of thing that makes a page feel like it is fighting you. The two are
+       told apart by how far the pointer travelled between going down and coming
+       up, not by which one fired first.
+
+       THE FLIGHT TO THE FIRST WAYPOINT NO LONGER SWERVES. It used to slide the
+       map's corner across the screen in a straight line while the zoom grew by
+       a ratio each frame, and those two do not describe the same journey — the
+       place you are flying to drifted sideways across the screen on the way in
+       and was caught at the last moment, which read as a swerve. The flight now
+       decides which POINT ON THE MAP has to sit under the middle of the screen,
+       holds it there, and works the corner out from the zoom every frame. The
+       target does not move at all now: it grows.
+
+       THE TOUR IS FASTER, and the order of its stops IS SHUFFLED, so the map
+       tour tells a different story each time it is started rather than reciting
+       the same thirty-six in the same order. Shuffled properly (Fisher-Yates,
+       every order equally likely) rather than by sorting on a random number,
+       which is neither uniform nor, in some browsers, even stable.
+
+       ── BOTH TOURS ───────────────────────────────────────────────────────
+
+       ARROWS EITHER SIDE OF THE COUNT. "◀ 12 of 36 ▶" — the same note that
+       tells you where you are now takes you a stop forward or back without
+       leaving the tour. Pressing one cuts the current stop short rather than
+       queueing behind it, so the tour follows the arrow immediately and picks
+       its own pace up again from wherever you left it.
+
+       EVERY SLIDE IN A CARD'S CAROUSEL GETS AN EQUAL SHARE of that card's time.
+       The first one used to flash past: the code worked out when the LAST slide
+       should begin and, on a card with a single page of text, that moment was
+       zero — so every slide change fired at once and the carousel appeared to
+       start on its second picture. Each slide now simply gets the card's dwell
+       divided by the number of slides.
+
+       ── THE TWO READINGS ─────────────────────────────────────────────────
+
+       THE DIAL'S NEEDLE MOVES. It has not been moving, twice reported and twice
+       "fixed", and the reason was one line of CSS: the keyframes worked the
+       overshoot and the two settling wobbles out by multiplying one custom
+       property by another inside a calc(), inside a keyframe, on an SVG
+       element. Where that is not supported the whole keyframe is invalid and
+       the needle sits still — no error, no warning, nothing to see. The four
+       angles are worked out in JavaScript now and written down as plain
+       degrees. The needle swings up from the bottom of the scale, goes a little
+       past its reading, and settles back onto it.
+
+       THE COINS ARE SHINY. A flare of brightness and contrast crosses each one
+       as it turns edge-on and dulls as the face comes back round, which is what
+       metal does under a light and what a flat disc rotating does not.
+
+       ── AND ONE SMALL THING ──────────────────────────────────────────────
+
+       THE GREEN DOT ON THE TRAIL GROWS INSTEAD OF DROPPING. Pointing at a
+       waypoint made its dot slide downwards off the route — the hover rule
+       replaced the transform that was holding the dot centred instead of adding
+       to it. It scales up now, on the line, and the open waypoint's dot is
+       larger still.
+
  18.1  FOUR THINGS PUT RIGHT, AND TEN ADDED.
 
        ── WHAT WAS WRONG ───────────────────────────────────────────────────

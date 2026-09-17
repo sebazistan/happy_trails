@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 4.5
+   version 4.6
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -903,6 +903,8 @@ const DEFAULT_WORDS = {
   /* where the tour has got to. {n} and {of} are filled in from the stops that
      are actually live, so switching the wishful layer off changes both. */
   tourAt:        "{n} of {of}",
+  tourBack:      "Previous waypoint",
+  tourOn:        "Next waypoint",
   /* the elevation graph, for a keyboard and a screen reader, and the word for
      ground that is not going anywhere much */
   graphLabel:    "Position along the trail",

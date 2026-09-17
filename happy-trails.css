@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 5.1
+   version 5.2
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -604,8 +604,26 @@ body.page-trail{
 .tm-label.tm-clickable:hover .tm-tag{ background:var(--accent); color:#fff; border-color:transparent; }
 /* the moving point is decoration — never let it eat a click */
 #tm-walker{ pointer-events:none; }
+/* ── HOW BIG A WAYPOINT'S MARK IS, AND WHY IT IS A VARIABLE ───────────────
+   Both of these are held in place by a translate — the dot by half its width
+   and half its height, the pin by half its height — and both are also made
+   bigger at times: on hover, and while their card is the one being read.
+
+   THE SIZE IS THEREFORE A VARIABLE AND NEVER A TRANSFORM. Writing
+   `transform:scale(1.28)` in the rule that enlarges one REPLACES the whole
+   transform, translate and all, and the mark slides off the route by half its
+   own size. That is precisely what was happening: the green dot dropped
+   downwards the moment its card opened. A scale factor in a custom property
+   cannot do that, because the translate is written once, here, and never
+   restated anywhere else. */
+.tm-label{ --pin-pop:1; }
+.tm-label.tm-clickable:hover{ --pin-pop:1.18; }
+.tm-label.is-open{ --pin-pop:1.28; }
+.tm-label.tm-clickable.is-open:hover{ --pin-pop:1.36; }
+
 .tm-label .tm-dot{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  position:absolute; left:50%; top:50%;
+  transform:translate(-50%,-50%) scale(var(--pin-pop,1));
   width:11px; height:11px; border-radius:50%;
   background:var(--backdrop); border:2.5px solid #fff;
   box-shadow:0 2px 8px rgba(0,0,0,.6);
@@ -620,7 +638,7 @@ body.page-trail{
   position:absolute; left:0; top:50%;
   width:var(--marker-size, 15px); height:var(--marker-size, 15px);
   margin-left:calc(var(--marker-size, 15px) / -2);
-  transform:translateY(-50%);
+  transform:translateY(-50%) scale(var(--pin-pop,1));
   border-radius:50%; box-sizing:border-box;
   background:#fff;
   /* THE PIN IS PART OF THE ROUTE, so it is the route's colour — green on a
@@ -638,8 +656,8 @@ body.page-trail{
   border-width:var(--marker-ring-wish, 3px);
   border-color:var(--wishful);
 }
-.tm-label.tm-clickable .tm-pin{ transition:transform var(--button-fade); }
-.tm-label.tm-clickable:hover .tm-pin{ transform:translateY(-50%) scale(1.18); }
+.tm-label.tm-clickable .tm-pin,
+.tm-label.tm-clickable .tm-dot{ transition:transform var(--button-fade); }
 
 .tm-label .tm-tag{
   opacity:var(--tag-fade, 1);
@@ -2122,9 +2140,9 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
    any waypoint can be opened from anywhere on the trail — so the map has to say
    which one is being read, or the second click that closes it is a click with
    no visible target. A ring, growing out of the pin rather than drawn round it,
-   so nothing in the layout moves. */
-.tm-label .tm-pin, .tm-label .tm-dot{ transition:transform var(--button-fade); }
-.tm-label.is-open .tm-pin, .tm-label.is-open .tm-dot{ transform:scale(1.28); }
+   so nothing in the layout moves. The mark's own growth is --pin-pop, set
+   further up with the rest of the marker's sizing — see the note there for why
+   it is a variable rather than a transform. */
 .tm-label.tm-clickable::after{
   content:""; position:absolute; left:50%; top:50%;
   width:var(--marker-size); height:var(--marker-size);
@@ -2136,7 +2154,8 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
 .tm-label.tm-clickable.is-open::after{ opacity:1; box-shadow:0 0 0 7px var(--route-glow); }
 .tm-label.tm-wishful.tm-clickable.is-open::after{ box-shadow:0 0 0 7px var(--route-glow-wish); }
 @media (prefers-reduced-motion:reduce){
-  .tm-label .tm-pin, .tm-label .tm-dot, .tm-label.tm-clickable::after{ transition:none; }
+  .tm-label.tm-clickable .tm-pin, .tm-label.tm-clickable .tm-dot,
+  .tm-label.tm-clickable::after{ transition:none; }
 }
 
 /* ══ THE TOUR BUTTON, BETWEEN THE TWO ARROWS ══════════════════════════════
@@ -2218,6 +2237,25 @@ body.page-trail .tm-tourNote{ bottom:calc(var(--band-bottom) + 16px); }
   color:var(--route-line); font-variant-numeric:tabular-nums;
 }
 .tm-tourNote b[hidden]{ display:none; }
+
+/* THE TWO ARROWS, either side of the count. They belong here rather than
+   anywhere else on the screen because this line is the only thing on it that
+   belongs to the tour — everything else belongs to the page. */
+.tm-tourStep{
+  width:24px; height:24px; padding:0; cursor:pointer;
+  /* the note itself takes no pointer events — it is a label lying over a map
+     somebody may want to click — so the two things in it that ARE buttons take
+     their own */
+  pointer-events:auto;
+  display:grid; place-items:center; border-radius:50%;
+  border:1px solid var(--panel-edge); background:rgba(255,255,255,.06);
+  color:var(--text-quiet);
+  transition:background var(--button-fade), color var(--button-fade);
+}
+.tm-tourStep svg{ width:14px; height:14px; }
+.tm-tourStep:hover:not(:disabled){ background:var(--route-line); color:#14310c; border-color:transparent; }
+.tm-tourStep:disabled{ opacity:.3; cursor:default; }
+.tm-tourStep.is-on{ margin-right:4px; }
 
 @media (prefers-reduced-motion:reduce){
   .tm-play.is-on{ animation:none; }
@@ -3878,6 +3916,14 @@ body.page-wishful{
 :root{
   --coin-turn:   620ms;    /* how long the coin is in the air */
   --coin-lift:   1.16;     /* and how much bigger it looks at the top of it */
+  --coin-flare:  1.85;     /* how brightly it catches the light, face on */
+  --coin-dull:   .62;      /* and how dark it goes passing edge on */
+  --coin-shadow: drop-shadow(0 1px 2px rgba(0,0,0,.45));
+                           /* the shadow it already had, kept inside the
+                              animation's own filter — a filter set by a
+                              keyframe replaces the element's filter outright,
+                              so leaving it out would drop the shadow for the
+                              length of the turn and put it back with a jolt */
   --dial-swing:  760ms;    /* how long the needle takes to find its reading */
   --dial-past:   .12;      /* how far past it goes first, as a share of the
                               swing — a needle that stops dead has no weight */
@@ -3893,11 +3939,27 @@ body.page-wishful{
   animation:ht-coin var(--coin-turn) cubic-bezier(.34,.72,.3,1) both;
   transform-style:preserve-3d;
 }
+/* AND IT CATCHES THE LIGHT AS IT GOES. A real coin is not evenly lit while it
+   turns: it flares as its face swings through the light and goes dull as it
+   passes edge on, twice per revolution. That is done here with brightness and
+   contrast rather than with a highlight drawn over it — a moving sheen would
+   need a second element sitting on top of a 21-pixel icon, and this reads as
+   metal for nothing. The flares are at the quarter turns, where a face is
+   square to you; the dull points are at the halves, where it is on its edge. */
 @keyframes ht-coin{
-  0%   { transform:perspective(220px) rotateY(0deg) scale(1); }
-  45%  { transform:perspective(220px) rotateY(-540deg) scale(var(--coin-lift)); }
-  72%  { transform:perspective(220px) rotateY(-720deg) scale(1.05); }
-  100% { transform:perspective(220px) rotateY(-720deg) scale(1); }
+  0%   { transform:perspective(220px) rotateY(0deg) scale(1);
+         filter:var(--coin-shadow) brightness(1) contrast(1); }
+  12%  { filter:var(--coin-shadow) brightness(var(--coin-flare)) contrast(1.1)
+                saturate(1.15); }
+  25%  { filter:var(--coin-shadow) brightness(var(--coin-dull)) contrast(.95); }
+  45%  { transform:perspective(220px) rotateY(-540deg) scale(var(--coin-lift));
+         filter:var(--coin-shadow) brightness(var(--coin-flare)) contrast(1.12)
+                saturate(1.2); }
+  62%  { filter:var(--coin-shadow) brightness(var(--coin-dull)) contrast(.95); }
+  72%  { transform:perspective(220px) rotateY(-720deg) scale(1.05);
+         filter:var(--coin-shadow) brightness(var(--coin-flare)) contrast(1.08); }
+  100% { transform:perspective(220px) rotateY(-720deg) scale(1);
+         filter:var(--coin-shadow) brightness(1) contrast(1); }
 }
 
 /* AND THE NEEDLE SWINGS UP TO ITS READING, from the bottom of the scale, and
@@ -3911,11 +3973,18 @@ body.page-wishful{
 .ht-dial.is-swinging .ht-needle{
   animation:ht-needle var(--dial-swing) cubic-bezier(.22,.68,.3,1) both;
 }
+/* FOUR PLAIN ANGLES, all four written onto the needle by icon-life.js from the
+   angle the drawing says it is at. There was a version of this that kept one
+   angle here and derived the rest with calc(var() * var()) inside the
+   keyframe — and a calc multiplying two custom properties, inside a keyframe,
+   on an SVG element is thin enough ice that where it is not supported the
+   whole keyframe is invalid and the needle never moves at all. Which is what
+   was happening. Nothing here resolves anything now. */
 @keyframes ht-needle{
   0%   { transform:rotate(var(--swing, -90deg)); }
-  58%  { transform:rotate(calc(var(--swing, -90deg) * (0 - var(--dial-past)))); }
-  76%  { transform:rotate(calc(var(--swing, -90deg) * .05)); }
-  90%  { transform:rotate(calc(var(--swing, -90deg) * -.02)); }
+  58%  { transform:rotate(var(--swing-past, 11deg)); }
+  76%  { transform:rotate(var(--swing-back, -4deg)); }
+  90%  { transform:rotate(var(--swing-rest, 2deg)); }
   100% { transform:rotate(0deg); }
 }
 

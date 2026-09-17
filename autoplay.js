@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE TOUR
-   version 1.1
+   version 1.2
 
    WHAT THIS IS. The play button between the two arrows walks the trail for
    you. It scrolls to a waypoint, opens its card, turns the card's pages and
@@ -24,12 +24,11 @@
      video wants its own length if it has one, so a card with eight
      photographs and one line of text is not gone in three seconds.
 
-     THEN BOTH ARRIVE TOGETHER. The card is open for `dwell`; the last page of
-     text and the last picture are both reached at the same instant, `endAt`,
-     and the time from there to the end — one page's worth of reading — is the
-     last page's turn to be read. The two tracks run at different rates, which
-     is the point: three pages and seven pictures means the pictures change
-     faster, and they still finish on the same beat.
+     THEN EACH TRACK IS DIVIDED EQUALLY. The card is open for `dwell`; every
+     picture gets dwell ÷ slides and every page gets dwell ÷ pages. The two run
+     at different rates — three pages and seven pictures means the pictures
+     change faster — and both are on their last one when the card closes. The
+     sums are in tour-pace.js, which the map's tour asks the same question of.
 
    TWO WAYS OUT, and a line on the screen saying so: Escape, or the button
    again. It also stops the moment somebody scrolls, touches or uses the arrow
@@ -156,10 +155,24 @@
        sight is one people stop watching — and it is worked out from the stops
        that are actually live, so switching the wishful layer off changes the
        route and the total together. */
+    const arrow = (way, d, label) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "tm-tourStep is-" + way;
+      b.title = label; b.setAttribute("aria-label", label);
+      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" ' +
+        'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
+        'stroke-linejoin="round"><path d="' + d + '"/></svg>';
+      return b;
+    };
+    const back = arrow("back", "M15 5 8 12l7 7", WORDS.tourBack || "Previous");
+    const on = arrow("on", "M9 5l7 7-7 7", WORDS.tourOn || "Next");
     const count = document.createElement("b");
     const how = document.createElement("span");
     how.textContent = WORDS.tourEscape || "Press Esc to leave autoplay";
+    note.appendChild(back);
     note.appendChild(count);
+    note.appendChild(on);
     note.appendChild(how);
 
     function sayWhere(n, of) {
@@ -168,7 +181,7 @@
                                  .replace("{n}", n).replace("{of}", of) : "";
     }
 
-    let running = false, tween = 0;
+    let running = false, tween = 0, jump = 0;
     const timers = [];
     const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
     const clearAll = () => { while (timers.length) clearTimeout(timers.pop()); };
@@ -178,12 +191,30 @@
        either because the time came or because somebody stopped the tour. That
        is why nothing in here checks a flag halfway through a sleep: a stopped
        tour simply falls out of its own sequence at the next `if (!running)`. */
+    let cutShort = null;
     function hold(ms) {
       return new Promise(done => {
         if (!running) { done(); return; }
-        later(done, ms);
+        const t = setTimeout(() => { cutShort = null; done(); }, ms);
+        timers.push(t);
+        /* the handle on the wait currently running, so an arrow can end it
+           early instead of the tour having to poll a flag */
+        cutShort = () => { clearTimeout(t); cutShort = null; done(); };
       });
     }
+
+    /* AN ARROW. The pending slide and page turns go with it — they belong to a
+       card about to be left — and then whatever the tour is waiting on is cut
+       short so the loop moves at once. The loop is the only place that has to
+       know what "on" and "back" mean. */
+    function step(by) {
+      if (!running) return;
+      jump = by;
+      clearAll();
+      if (cutShort) cutShort();
+    }
+    back.addEventListener("click", e => { e.stopPropagation(); step(-1); });
+    on.addEventListener("click", e => { e.stopPropagation(); step(1); });
 
     /* ── SCROLLING THERE ───────────────────────────────────────────────────
        Its own tween rather than scrollTo({behavior:"smooth"}), for two
@@ -251,11 +282,11 @@
     }
 
     /* ── ONE CARD, START TO FINISH ─────────────────────────────────────────
-       The two tracks are laid out first and then simply waited through. Page
-       j of P arrives at j × endAt / (P−1) and picture k of S at k × endAt /
-       (S−1) — so whatever P and S are, the last of each lands on endAt
-       together, and the stretch from there to `dwell` is the last page being
-       read. */
+       The two tracks are laid out first and then simply waited through. Every
+       page is up for dwell ÷ pages and every picture for dwell ÷ slides, so
+       each gets the same turn as its neighbours and both tracks are on their
+       last one when the card closes. tour-pace.js does the arithmetic and the
+       map's tour asks it the same question. */
     async function showCard(i) {
       TRAIL.openCard(i, true);          // quietly: no throw from the waypoint
       await hold(SETTINGS.settleFirst);
@@ -268,7 +299,7 @@
       if (deck.showSlide) deck.showSlide(it.card, 0);
 
       const turn = (count, move) => {
-        window.HappyTrailsPace.moments(count, it.endAt).forEach(m => {
+        window.HappyTrailsPace.moments(count, it.dwell).forEach(m => {
           later(() => { if (running) move(m.j); }, m.at);
         });
       };
@@ -288,17 +319,22 @@
       const here = TRAIL.nearestStop();
       let from = fromTheTop ? 0 : Math.max(0, live.indexOf(here.at));
 
-      for (let n = from; n < live.length; n++) {
+      /* a `while` rather than a `for`, because the two arrows move `n` too */
+      let n = from;
+      while (n < live.length) {
         if (!running) return;
+        jump = 0;
         const i = live[n];
         sayWhere(n + 1, live.length);
+        back.disabled = n <= 0;
         await glideTo(TRAIL.pageAtStop(i));
         if (!running) return;
         if (live[n + 1] !== undefined) fetchAhead(live[n + 1]);
-        await showCard(i);
+        if (!jump) await showCard(i);
         if (!running) return;
         TRAIL.closeCard(i);
-        await hold(SETTINGS.betweenCards);
+        if (!jump) await hold(SETTINGS.betweenCards);
+        n = jump ? Math.max(0, Math.min(live.length - 1, n + jump)) : n + 1;
       }
       if (running) stop();              // the end of the trail ends the tour
     }
