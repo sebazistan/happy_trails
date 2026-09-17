@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 5.4
+   version 5.5
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -2174,41 +2174,35 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
 }
 #tm-stepCount[hidden]{ display:none; }
 
-/* ── THE PAUSE BUTTON ──────────────────────────────────────────────────────
-   It exists only while a tour is running, and it is a separate button from the
-   one that starts and stops the tour on purpose. Stopping and pausing are not
-   the same thing and should not be the same control: stopping closes the card
-   and gives you the page back, pausing leaves everything exactly where it is
-   so you can finish reading. Folding both onto one button would mean somebody
-   who wanted another twenty seconds with a waypoint pressing the button and
-   losing the waypoint.
+/* ── THE STOP BUTTON ───────────────────────────────────────────────────────
+   The row is a transport bar now, and it is laid out like every transport bar
+   anybody has ever used: back, play/pause, forward, stop.
 
-   Both faces live in it and the stylesheet shows whichever applies, so there
-   is no markup to swap at the moment of pressing — a swap loses the button's
-   focus on the way through. The same trick as the play button beside it. */
-/* NOT SHOWN UNTIL THERE IS A TOUR TO PAUSE. Written against the row's id
-   rather than as a bare `.tm-hold{display:none}`, which is what it was first
-   and which did nothing at all: `.tm-step` sets display:grid and appears later
-   in this file, so two rules of equal weight met and the later one won. The id
-   settles it, and says in passing that this button only exists inside a row. */
-#tm-stepper .tm-hold,
-#ht-stepper .tm-hold{ display:none; }
-#tm-stepper.is-touring .tm-hold,
-#ht-stepper.is-touring .tm-hold{ display:grid; }
-.tm-hold svg{ grid-area:1 / 1; }
-.tm-hold .tm-holdGo{ opacity:0; transform:scale(.6); }
-.tm-hold .tm-holdGo,
-.tm-hold .tm-holdStop{ transition:opacity 160ms ease, transform 200ms var(--panel-ease); }
-.tm-hold.is-held .tm-holdStop{ opacity:0; transform:scale(.6); }
-.tm-hold.is-held .tm-holdGo{ opacity:1; transform:scale(1); }
-.tm-hold .tm-holdGo{ margin-left:6%; }   /* a triangle looks off-centre centred */
-/* HELD READS AS HELD. The button fills in the way the play button does when it
-   is running, because "this tour is paused" is a state of the page and not
-   just of a button, and the one thing on screen that can say so is here. */
-.tm-hold.is-held{
-  background:var(--play-on); color:var(--play-on-ink); border-color:transparent;
-}
-.tm-hold.is-held:hover:not(:disabled){ background:var(--play-on); color:var(--play-on-ink); }
+   THE MIDDLE BUTTON IS PLAY AND PAUSE, one control with two states, which is
+   what a play button has meant since the cassette deck. Press it and the tour
+   starts; press it again and it holds where it is; press it again and it
+   carries on. Nothing about that has to be learned.
+
+   STOPPING IS A DIFFERENT THING and so it is a different button, and it only
+   exists while there is a tour to stop. Stop closes the card and hands the
+   page back; pause leaves everything exactly where it is so you can finish
+   reading. The previous arrangement had these two the wrong way round —
+   play/stop on the middle button with pause added beside it — which meant the
+   one gesture everybody already knows, pressing play twice, did the one thing
+   a reader almost never wants.
+
+   Both of the middle button's faces live inside it and the stylesheet shows
+   whichever applies, so there is no markup to swap at the moment of pressing:
+   a swap loses the button's focus and its hover on the way through.
+
+   Written against the row's id rather than as a bare `.tm-stop{display:none}`,
+   which is what it was first and which did nothing at all: `.tm-step` sets
+   display:grid and appears later in this file, so two rules of equal weight
+   met and the later one won. */
+#tm-stepper .tm-stop,
+#ht-stepper .tm-stop{ display:none; }
+#tm-stepper.is-touring .tm-stop,
+#ht-stepper.is-touring .tm-stop{ display:grid; }
 
 /* ══ THE SAME ROW OF CONTROLS ON THE MAIN MAP ═════════════════════════════
    The tour button used to sit on top of the three zoom controls in the bottom
@@ -2224,13 +2218,13 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
    argument: there is one tour control on this site and it appears in one
    place.
 
-   THE ARROWS AND THE COUNT ARE NOT THERE UNTIL THE TOUR IS. This is the one
-   way the map differs from a trail page, and it is not a whim: on a trail page
-   the arrows step the WALK, which exists whether a tour is running or not, and
-   the count says where on that walk you are. The map has no walk — there is
-   nothing an arrow could mean until a tour is running to have a next stop in.
-   So they arrive with it and leave with it, and `is-touring` on the row is
-   what says so.
+   THE ARROWS AND THE COUNT ARE ALWAYS THERE, as on a trail page. They used to
+   appear only with the tour, on the argument that this map has no walk for an
+   arrow to step along — but it has thirty-six featured waypoints in a fixed
+   order, which is a walk in everything but name. The arrows fly to the next
+   and the previous one and open its card, tour or no tour, and the count says
+   which one you are on. The only thing that arrives with a tour is the stop
+   button, because stopping something that is not running is not a thing.
    ═══════════════════════════════════════════════════════════════════════════ */
 #ht-stepper{
   position:fixed; left:var(--edge-gap); bottom:var(--edge-gap);
@@ -2239,11 +2233,6 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
   pointer-events:none;
 }
 #ht-stepper > *{ pointer-events:auto; }
-/* the things that belong to the tour rather than to the map */
-#ht-stepper .tm-step.is-tourOnly,
-#ht-stepper #ht-stepCount{ display:none; }
-#ht-stepper.is-touring .tm-step.is-tourOnly{ display:grid; }
-#ht-stepper.is-touring #ht-stepCount{ display:block; }
 /* ── THE SAME BUTTONS, DRESSED FOR A MAP YOU CAN SEE THROUGH ───────────────
    A trail page's row stands on a darkened map — #tm-shade is there to make the
    readouts legible — so it can be a pale translucent white and be read
@@ -2267,11 +2256,9 @@ body.page-map #ht-stepCount{
 body.page-map #ht-stepper .tm-step:hover:not(:disabled){
   background:var(--accent); color:#fff; border-color:transparent;
 }
-/* the two states that mean something keep their own colour, over the top */
-body.page-map #ht-stepper .tm-play.is-on,
-body.page-map #ht-stepper .tm-play.is-on:hover:not(:disabled),
-body.page-map #ht-stepper .tm-hold.is-held,
-body.page-map #ht-stepper .tm-hold.is-held:hover:not(:disabled){
+/* the one state that means something keeps its own colour, over the top */
+body.page-map #ht-stepper.is-touring .tm-play,
+body.page-map #ht-stepper.is-touring .tm-play:hover:not(:disabled){
   background:var(--play-on); color:var(--play-on-ink); border-color:transparent;
 }
 #ht-stepCount{
@@ -2353,21 +2340,35 @@ body.page-map #ht-stepper .tm-tourNote.is-on{ transform:none; }
      with the graph, and the row is what is handed the pointer. */
 }
 .tm-play svg{ grid-area:1 / 1; }        /* both faces in the same cell */
-.tm-play .tm-playStop{ opacity:0; transform:scale(.6); }
+.tm-play .tm-playPause{ opacity:0; transform:scale(.6); }
 .tm-play .tm-playGo,
-.tm-play .tm-playStop{ transition:opacity 160ms ease, transform 200ms var(--panel-ease); }
+.tm-play .tm-playPause{ transition:opacity 160ms ease, transform 200ms var(--panel-ease); }
+/* `is-on` MEANS PLAYING, not "a tour exists". A paused tour shows the triangle
+   again, because the triangle is the offer — press this and it goes — and that
+   is exactly what pressing it will then do. The row keeps its own `is-touring`
+   for the things that belong to a tour whether it is moving or not. */
 .tm-play.is-on .tm-playGo{ opacity:0; transform:scale(.6); }
-.tm-play.is-on .tm-playStop{ opacity:1; transform:scale(1); }
+.tm-play.is-on .tm-playPause{ opacity:1; transform:scale(1); }
 .tm-play .tm-playGo{ margin-left:6%; }  /* a triangle looks off-centre centred */
 
-/* RUNNING. It fills in, and it breathes — slowly, once every two and a half
+/* PLAYING. It fills in, and it breathes — slowly, once every two and a half
    seconds, which is the one piece of movement on the page that says something
-   is still happening while the map is sliding quietly along. */
+   is still happening while the map is sliding quietly along. A PAUSED tour
+   fills in too, and does not breathe: the colour says "this is the tour's
+   button and the tour is still here", the stillness says it is not moving. */
 .tm-play.is-on{
   background:var(--play-on); color:var(--play-on-ink); border-color:transparent;
   animation:tm-touring var(--tour-pulse) ease-in-out infinite;
 }
 .tm-play.is-on:hover:not(:disabled){ background:var(--play-on); color:var(--play-on-ink); }
+#tm-stepper.is-touring .tm-play,
+#ht-stepper.is-touring .tm-play{
+  background:var(--play-on); color:var(--play-on-ink); border-color:transparent;
+}
+#tm-stepper.is-touring .tm-play:hover:not(:disabled),
+#ht-stepper.is-touring .tm-play:hover:not(:disabled){
+  background:var(--play-on); color:var(--play-on-ink);
+}
 @keyframes tm-touring{
   0%,100%{ box-shadow:0 0 0 0 rgba(78,207,78,.42); }
   55%    { box-shadow:0 0 0 9px rgba(78,207,78,0); }
@@ -3331,14 +3332,10 @@ body.page-text.page-soon main{
   text-shadow:0 1px 6px rgba(0,0,0,.85);
   pointer-events:none;
 }
-/* THE HINT SITS ABOVE THE TOUR'S ROW, which took the bottom-left corner the
-   hint used to have to itself. Lifted by the row's own height rather than by a
-   number typed in here, so making the buttons bigger moves the hint with them
-   instead of quietly sliding it back underneath. */
-#ht-hint{
-  left:var(--edge-gap); max-width:44vw; opacity:.85;
-  bottom:calc(var(--edge-gap) + var(--stepper-size) + 12px);
-}
+/* (there was a hint line here — "Drag to move the map, scroll to zoom" — and
+   it is gone. It said out loud the three things a map does that nobody has
+   needed telling since about 2008, and it was standing in the corner the
+   tour's controls now use. .ht-note is kept: other notes use it.) */
 
 /* ── the coordinate readout (press C) ────────────────────────────────────── */
 #ht-coords{
@@ -4662,16 +4659,6 @@ body.page-wishful{
   #ht-brandline{ max-width:100%; }
   #ht-brandline h1{ font-size:14px; }
   #ht-version{ display:none; }
-  /* THE HOW-TO LINE GOES, on a phone.
-     "Drag to move the map. Use the mouse wheel to zoom. Click to zoom out."
-     is written for a mouse, and there is no mouse here — two of its three
-     sentences describe something the reader does not have. What they do have
-     is touch, which they already know how to use: everyone who has opened a
-     map on a phone has dragged and pinched one. So it is instruction nobody
-     needs, sitting across the bottom-left corner of a screen that has less
-     room than any other. It stays on the desktop, where the wheel and the
-     click-to-zoom-out genuinely are worth saying. */
-  #ht-hint{ display:none; }
 }
 @media (max-height: 860px){
   body.page-map{

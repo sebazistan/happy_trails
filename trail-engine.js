@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 4.8
+   version 4.9
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -1295,19 +1295,26 @@ function buildStepper() {
       '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"' +
       ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
       '<path d="M15 5 8 12l7 7"/></svg></button>' +
-    /* THE TOUR BUTTON SITS BETWEEN THE TWO ARROWS, because that is what it is:
+    /* THE PLAY BUTTON SITS BETWEEN THE TWO ARROWS, because that is what it is:
        the arrows step one waypoint at a time by hand, and this one does the
-       walking for you. Both faces are in the button and the stylesheet shows
-       whichever applies, so there is nothing to swap at the moment of pressing
-       it — a swap would lose the button's focus on the way through. */
+       walking for you. It is play AND pause — one control, two states, the way
+       a play button has meant since the cassette deck. Press it and the tour
+       starts, press it again and it holds where it is, press it again and it
+       carries on. Stopping is a different thing and has a button of its own,
+       after the forward arrow, which autoplay.js adds.
+
+       Both faces are in the button and the stylesheet shows whichever applies,
+       so there is nothing to swap at the moment of pressing it — a swap would
+       lose the button's focus on the way through. */
     (SETTINGS.showAutoplay ?
       '<button class="tm-step tm-play" id="tm-play" type="button" ' +
         'aria-pressed="false" aria-label="' + WORDS.playTour + '" title="' +
         WORDS.playTour + '">' +
         '<svg class="tm-playGo" viewBox="0 0 24 24" aria-hidden="true" ' +
         'fill="currentColor"><path d="M8 5.2v13.6L19 12z"/></svg>' +
-        '<svg class="tm-playStop" viewBox="0 0 24 24" aria-hidden="true" ' +
-        'fill="currentColor"><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="2"/></svg>' +
+        '<svg class="tm-playPause" viewBox="0 0 24 24" aria-hidden="true" ' +
+        'fill="currentColor"><rect x="6" y="5" width="4.4" height="14" rx="1.4"/>' +
+        '<rect x="13.6" y="5" width="4.4" height="14" rx="1.4"/></svg>' +
         '</button>' : "") +
     '<button class="tm-step" id="tm-stepOn" type="button" aria-label="' +
       WORDS.nextStop + '" title="' + WORDS.nextStop + '">' +

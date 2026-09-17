@@ -12,6 +12,68 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 18.6  THE ROW IS A TRANSPORT BAR.
+
+       ── ONE BUTTON, TWO STATES, AND A STOP BUTTON BESIDE IT ──────────────
+
+       THE MIDDLE BUTTON IS PLAY AND PAUSE. Press it and the tour starts, press
+       it again and it holds where it is, press it again and it carries on.
+       That is what a play button has meant since the cassette deck, and
+       nothing about it has to be learned.
+
+       STOPPING IS A DIFFERENT THING AND NOW A DIFFERENT BUTTON, in the place
+       the pause button was, after the forward arrow. It is only there while
+       there is a tour to stop.
+
+       The previous arrangement had these the wrong way round — play and stop
+       folded onto the middle button, with pause added beside it — so the one
+       gesture everybody already knows, pressing play twice, did the thing a
+       reader almost never wants: it closed the card and gave the page back. A
+       reader who wanted twenty more seconds with a waypoint lost the waypoint
+       to get them.
+
+       THE SPACEBAR PRESSES THE MIDDLE BUTTON, from anywhere on either page,
+       which is what the spacebar does in every media player there is. It has
+       to preventDefault, because the browser's own meaning for it is "scroll
+       down a page" — and on a trail page scrolling IS walking the trail, so
+       left alone it would start the tour and in the same keystroke tell the
+       engine that a reader had taken over, which stops it. The tour would have
+       been on for about one frame. What is lost is space as a way to scroll;
+       the arrow keys, Page Down, the wheel, the two arrows and the draggable
+       elevation graph all still move you down a trail.
+
+       A SPACE TYPED INTO A TEXT BOX IS STILL A SPACE. The page has one — the
+       coordinate reader — and the key is ignored while anything typeable has
+       the focus.
+
+       ── AND THE ARROWS ALWAYS MEAN THE SAME THING ────────────────────────
+
+       NEXT CARD AND PREVIOUS CARD, tour or no tour, on both pages. On the main
+       map they used to appear only with the tour, on the argument that a map
+       has no walk for an arrow to step along. It has thirty-six featured
+       waypoints in a fixed order, which is a walk in everything but name — so
+       the arrows fly to the next and the previous and open its card, and the
+       count beside them says which one you are on. They are the same buttons
+       doing the same thing in the same corner as on every trail page.
+
+       AN ARROW PRESSED ON A PAUSED TOUR LEAVES IT PAUSED. "Show me the next
+       one" is not "show me the next one and start the clock again" — somebody
+       who paused to read has not changed their mind about reading.
+
+       THE COUNT ON THE MAP MEANS TWO THINGS and says which it is by changing
+       when the meaning does. While a tour runs it is how far through THE TOUR
+       you are, and the tour is shuffled, so its fourth stop is not the fourth
+       waypoint on the map. With no tour it is which of the thirty-six is open,
+       which is what the arrows step through. It is rewritten the moment a tour
+       ends rather than being left saying the old thing about the new state.
+
+       ── AND ONE THING REMOVED ────────────────────────────────────────────
+
+       THE HOW-TO LINE IN THE CORNER OF THE MAP is gone: "Drag to move the map.
+       Use the mouse wheel to zoom. Click to zoom out." It said out loud the
+       three things a map does that nobody has needed telling since about 2008,
+       and it was standing in the corner the tour's controls now use.
+
  18.5  A CLOCK YOU CAN SEE, AND ONE YOU CAN STOP.
 
        ── THE LINE ROUND THE CARD ──────────────────────────────────────────

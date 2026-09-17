@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE TOUR OF THE WHOLE NETWORK
-   version 1.2
+   version 1.3
 
    WHAT THIS IS. The trail pages walk one trail; this walks all of them. Press
    play on the main map and it flies from one featured waypoint to the next,
@@ -110,28 +110,19 @@
     const on = document.getElementById("ht-stepOn");
     const count = document.getElementById("ht-stepCount");
     if (!row || !back || !on || !count) return;
+    button.title = WORDS.playTour || "Tour the network";
+    button.setAttribute("aria-label", button.title);
     back.title = WORDS.tourBack || "Previous";
     back.setAttribute("aria-label", back.title);
     on.title = WORDS.tourOn || "Next";
     on.setAttribute("aria-label", on.title);
 
-    /* THE PAUSE BUTTON, made here for the same reason autoplay.js makes the
-       trail pages' one: it belongs to the tour and has no meaning without one.
-       A SEPARATE button from play/stop on purpose — stopping closes the card
-       and hands the map back, pausing leaves everything exactly where it is,
-       and somebody who wants another twenty seconds with a waypoint should not
-       have to lose the waypoint to get them. */
-    const holdBtn = document.createElement("button");
-    holdBtn.type = "button";
-    holdBtn.className = "tm-step tm-hold";
-    holdBtn.id = "ht-hold";
-    holdBtn.innerHTML =
-      '<svg class="tm-holdStop" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">' +
-        '<rect x="6" y="5" width="4.4" height="14" rx="1.4"/>' +
-        '<rect x="13.6" y="5" width="4.4" height="14" rx="1.4"/></svg>' +
-      '<svg class="tm-holdGo" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">' +
-        '<path d="M8 5.2v13.6L19 12z"/></svg>';
-    row.insertBefore(holdBtn, on.nextSibling);
+    /* THE STOP BUTTON, written into index.html beside the others. Separate from
+       play/pause for the reason the trail pages' one is: stopping closes the
+       card and hands the map back, pausing leaves everything exactly where it
+       is so you can finish reading. */
+    const stopBtn = document.getElementById("ht-stop");
+    if (!stopBtn) return;
 
     /* and the words, which join the row after the count rather than floating
        in the middle of the bottom of the screen with a second set of arrows */
@@ -166,31 +157,91 @@
       held = !!state;
       if (held) clock.pause(); else clock.resume();
       if (window.HappyTrailsEdge) window.HappyTrailsEdge.hold(held);
-      holdBtn.classList.toggle("is-held", held);
-      holdBtn.title = held ? (WORDS.tourGoOn || "Carry on")
-                           : (WORDS.tourHold || "Pause the tour");
-      holdBtn.setAttribute("aria-label", holdBtn.title);
-      holdBtn.setAttribute("aria-pressed", held ? "true" : "false");
+      /* `is-on` on the play button means PLAYING, so a held tour shows the
+         triangle again — which is the offer, and pressing it is what carries
+         on. The row's `is-touring` keeps the button green and the stop button
+         on screen while it is held. */
+      button.classList.toggle("is-on", !held);
+      button.setAttribute("aria-pressed", held ? "false" : "true");
+      button.title = held ? (WORDS.tourGoOn || "Carry on")
+                          : (WORDS.tourHold || "Pause the tour");
+      button.setAttribute("aria-label", button.title);
       how.textContent = held
         ? (WORDS.tourHeld || "Paused — press play to carry on")
         : (WORDS.tourEscape || "Press Esc to leave the tour");
     }
-    holdBtn.addEventListener("click", e => { e.stopPropagation(); holdTour(!held); });
+    stopBtn.addEventListener("click", e => { e.stopPropagation(); stop(); });
+
+    /* ONE BUTTON, THREE MEANINGS, AND NO AMBIGUITY BETWEEN THEM: nothing
+       running means start, running means hold, held means carry on. */
+    function toggle() {
+      if (!running) start();
+      else holdTour(!held);
+    }
 
     /* AN ARROW. The pending slide and page turns go with it — they belong to a
        card that is about to be left — and then whatever the tour is waiting on
-       is cut short so the loop moves at once. It also lets go of a pause:
-       "next" on a paused tour means go on, not go on and stop again in the
-       very next instruction, which is what the loop would otherwise do. */
+       is cut short so the loop moves at once. A PAUSED TOUR STAYS PAUSED: an
+       arrow means "show me the next one", not "show me the next one and start
+       the clock again" — somebody who paused to read has not changed their
+       mind about reading. */
     function step(by) {
       if (!running) return;
-      holdTour(false);
       jump = by;
       clearAll();
       clock.cut();
     }
-    back.addEventListener("click", e => { e.stopPropagation(); step(-1); });
-    on.addEventListener("click", e => { e.stopPropagation(); step(1); });
+
+    /* ── AND THE SAME ARROWS WITH NO TOUR RUNNING ──────────────────────────
+       They used to appear only with the tour, because this map has no walk for
+       an arrow to step along. It has thirty-six featured waypoints in a fixed
+       order, which is a walk in all but name — so the arrows fly to the next
+       and the previous one and open its card, and the count says which one you
+       are on, whether a tour is running or not. The same thing the arrows on a
+       trail page have always done.
+
+       WHERE IT STEPS FROM is asked of the PAGE, not remembered here: somebody
+       who clicks a badge by hand has moved the cursor, and a second idea of
+       "current" kept in this file would quietly disagree with the map. */
+    let at = -1;
+    function sayWhere() {
+      const live = HT.liveFeatures();
+      const k = live.indexOf(at);
+      count.hidden = false;
+      count.textContent = (WORDS.tourAt || "{n} / {of}")
+        .replace("{n}", k < 0 ? "\u2014" : (k + 1))
+        .replace("{of}", live.length);
+    }
+    async function hop(by) {
+      const live = HT.liveFeatures();
+      if (!live.length) return;
+      const open = HT.openAt ? HT.openAt() : -1;
+      let k = live.indexOf(open >= 0 ? open : at);
+      /* nothing open and nowhere been: forward lands on the first, back on the
+         last, which is what an arrow pressed into an empty list should do */
+      if (k < 0) k = by > 0 ? -1 : live.length;
+      k = Math.max(0, Math.min(live.length - 1, k + by));
+      at = live[k];
+      sayWhere();
+      HT.show(-1);
+      await flyTo(HT.features()[at], true);
+      HT.show(at);
+    }
+
+    const arrow = by => e => {
+      e.stopPropagation();
+      if (running) step(by); else hop(by);
+    };
+    back.addEventListener("click", arrow(-1));
+    on.addEventListener("click", arrow(1));
+    /* a badge clicked by hand moves the count too — read a frame later, when
+       the page has had time to record which one is open */
+    document.addEventListener("click", e => {
+      if (running) return;
+      if (!e.target.closest || !e.target.closest(".ht-feat")) return;
+      requestAnimationFrame(() => { at = HT.openAt ? HT.openAt() : -1; sayWhere(); });
+    });
+    sayWhere();
     const still = () => window.matchMedia &&
                         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -217,9 +268,13 @@
        map's x and y are worked out from those two every frame rather than
        being animated themselves. The waypoint comes straight at you and lands
        exactly where it was always going to. */
-    function flyTo(f) {
+    function flyTo(f, always) {
       return new Promise(done => {
-        if (!running) { done(); return; }
+        /* `always` is for the arrows with no tour running: the same flight,
+           the same landing place, asked for by a person rather than by the
+           loop. Everything else about it is identical, which is the point —
+           stepping by hand and being taken there should not look different. */
+        if (!running && !always) { done(); return; }
         const narrow = window.innerWidth <= S.phoneWidth;
         const rests = narrow ? S.restsAtPhone : S.restsAt;
         const box = HT.stage();
@@ -241,7 +296,7 @@
 
         const began = performance.now();
         const step = now => {
-          if (!running) { done(); return; }
+          if (!running && !always) { done(); return; }
           const t = Math.min(1, (now - began) / S.flyMs);
           const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
           place(wasOn.x + (f.x - wasOn.x) * e,
@@ -308,10 +363,10 @@
         if (!running) return;
         jump = 0;
         const i = live[n];
+        at = i;                       // so the arrows carry on from here after
         count.hidden = false;
-        count.textContent = (WORDS.tourAt || "{n} of {of}")
+        count.textContent = (WORDS.tourAt || "{n} / {of}")
           .replace("{n}", n + 1).replace("{of}", live.length);
-        back.disabled = n <= 0;
         await flyTo(HT.features()[i]);
         if (!running) return;
         if (!jump) await showCard(i);
@@ -328,17 +383,16 @@
       running = true;
       button.classList.add("is-on");
       button.setAttribute("aria-pressed", "true");
-      button.setAttribute("aria-label", WORDS.stopTour || "Stop playing");
-      button.title = WORDS.stopTour || "Stop playing";
+      button.title = WORDS.tourHold || "Pause the tour";
+      button.setAttribute("aria-label", button.title);
+      stopBtn.title = WORDS.stopTour || "Stop the tour";
+      stopBtn.setAttribute("aria-label", stopBtn.title);
       /* the row grows the pieces that belong to the tour: the two arrows, the
          count and the pause. Before this there is nothing an arrow could mean,
          because this map has no walk to step along. */
       row.classList.add("is-touring");
       row.appendChild(note);
       requestAnimationFrame(() => note.classList.add("is-on"));
-      holdBtn.title = WORDS.tourHold || "Pause the tour";
-      holdBtn.setAttribute("aria-label", holdBtn.title);
-      holdBtn.setAttribute("aria-pressed", "false");
       fly();
     }
 
@@ -356,19 +410,26 @@
       if (window.HappyTrailsEdge) window.HappyTrailsEdge.clear();
       button.classList.remove("is-on");
       button.setAttribute("aria-pressed", "false");
-      button.setAttribute("aria-label", WORDS.playTour || "Tour the network");
       button.title = WORDS.playTour || "Tour the network";
+      button.setAttribute("aria-label", button.title);
       note.classList.remove("is-on");
       setTimeout(() => {
         if (note.parentNode) note.parentNode.removeChild(note);
         row.classList.remove("is-touring");
       }, 260);
       HT.show(-1);
+      /* THE COUNT MEANS SOMETHING DIFFERENT NOW, so it is rewritten. While a
+         tour runs it says how far through THE TOUR you are — and the tour is
+         shuffled, so its fourth stop is not the fourth waypoint on the map.
+         With no tour it says which of the thirty-six is open, which is what
+         the arrows either side of it now step through. The one number cannot
+         mean both, so it changes at the moment the meaning does. */
+      sayWhere();
     }
 
     button.addEventListener("click", e => {
       e.stopPropagation();        // the map's own click handler must not see it
-      running ? stop() : start();
+      toggle();
     });
 
     /* ANYTHING AT ALL STOPS IT. The map publishes the same `trail:handover`
@@ -376,7 +437,24 @@
        a waypoint, a panel. This file does not need to know what any of them
        are. */
     document.addEventListener("trail:handover", () => { if (running) stop(); });
+    /* SOMEBODY TYPING IS NOT PRESSING A CONTROL. This page has a textarea on
+       it — the coordinate reader — and a space typed into that must be a
+       space. */
+    const typing = e => {
+      const n = e.target;
+      return !!n && (n.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName));
+    };
     document.addEventListener("keydown", e => {
+      if (typing(e)) return;
+      /* SPACE IS PLAY AND PAUSE, the same key doing the same thing as on every
+         trail page. preventDefault because the browser's own meaning for it is
+         "scroll", and this page does not scroll. */
+      if (e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        e.stopPropagation();
+        toggle();
+        return;
+      }
       if (running && e.key === "Escape") { e.stopPropagation(); stop(); }
     }, true);
 

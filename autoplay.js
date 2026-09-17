@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE TOUR
-   version 1.4
+   version 1.5
 
    WHAT THIS IS. The play button between the two arrows walks the trail for
    you. It scrolls to a waypoint, opens its card, turns the card's pages and
@@ -175,29 +175,26 @@
     const rowOn = document.getElementById("tm-stepOn");
     const joinsTheRow = !!(row && rowBack && rowOn);
 
-    /* ── THE PAUSE BUTTON ──────────────────────────────────────────────────
+    /* ── THE STOP BUTTON ───────────────────────────────────────────────────
        Made here rather than written into the page, and made the same way by
-       the map's tour, because it belongs to the tour: it has no meaning when
-       one is not running and there is nothing for a page without a tour to do
-       with it. It is a SEPARATE button from the one that starts and stops,
-       which is the whole point — stopping closes the card and hands the page
-       back, pausing leaves everything exactly where it is. Somebody who wants
-       another twenty seconds with a waypoint should not have to lose the
-       waypoint to get them.
+       the map's tour, because it belongs to the tour: there is nothing for a
+       page without a tour to do with it, and the stylesheet keeps it out of
+       sight until the row is wearing `is-touring`.
 
-       It joins the row after the forward arrow and the stylesheet keeps it out
-       of sight until the row is wearing `is-touring`. */
-    const holdBtn = document.createElement("button");
-    holdBtn.type = "button";
-    holdBtn.className = "tm-step tm-hold";
-    holdBtn.id = "tm-hold";
-    holdBtn.innerHTML =
-      '<svg class="tm-holdStop" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">' +
-        '<rect x="6" y="5" width="4.4" height="14" rx="1.4"/>' +
-        '<rect x="13.6" y="5" width="4.4" height="14" rx="1.4"/></svg>' +
-      '<svg class="tm-holdGo" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">' +
-        '<path d="M8 5.2v13.6L19 12z"/></svg>';
-    if (joinsTheRow) row.insertBefore(holdBtn, rowOn.nextSibling);
+       It is a SEPARATE button from play/pause, which is the whole point.
+       Stopping closes the card and hands the page back; pausing leaves
+       everything exactly where it is so you can finish reading. Putting both
+       on the middle button — which is what this was before — meant that the
+       one gesture everybody already knows, pressing play twice, did the thing
+       a reader almost never wants. */
+    const stopBtn = document.createElement("button");
+    stopBtn.type = "button";
+    stopBtn.className = "tm-step tm-stop";
+    stopBtn.id = "tm-stop";
+    stopBtn.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">' +
+        '<rect x="6.6" y="6.6" width="10.8" height="10.8" rx="2"/></svg>';
+    if (joinsTheRow) row.insertBefore(stopBtn, rowOn.nextSibling);
 
     let back = null, on = null, count = null;
     if (!joinsTheRow) {
@@ -265,28 +262,39 @@
       held = !!on;
       if (held) clock.pause(); else clock.resume();
       if (window.HappyTrailsEdge) window.HappyTrailsEdge.hold(held);
-      holdBtn.classList.toggle("is-held", held);
-      holdBtn.title = held ? (WORDS.tourGoOn || "Carry on")
-                           : (WORDS.tourHold || "Pause the tour");
-      holdBtn.setAttribute("aria-label", holdBtn.title);
-      holdBtn.setAttribute("aria-pressed", held ? "true" : "false");
+      /* `is-on` on the play button means PLAYING, so a paused tour shows the
+         triangle again — which is the offer, and pressing it is exactly what
+         carries on. The row's own `is-touring` is what keeps the button green
+         and the stop button on screen while it is held. */
+      button.classList.toggle("is-on", !held);
+      button.setAttribute("aria-pressed", held ? "false" : "true");
+      button.title = held ? (WORDS.tourGoOn || "Carry on")
+                          : (WORDS.tourHold || "Pause the tour");
+      button.setAttribute("aria-label", button.title);
       how.textContent = held
         ? (WORDS.tourHeld || "Paused — press play to carry on")
         : (WORDS.tourEscape || "Press Esc to leave autoplay");
     }
-    holdBtn.addEventListener("click", e => { e.stopPropagation(); holdTour(!held); });
+    stopBtn.addEventListener("click", e => { e.stopPropagation(); stop(); });
+
+    /* ONE BUTTON, THREE MEANINGS, AND NO AMBIGUITY BETWEEN THEM: nothing
+       running means start, running means hold, held means carry on. */
+    function toggle() {
+      if (!running) start(false);
+      else holdTour(!held);
+    }
 
     /* AN ARROW. The pending slide and page turns go with it — they belong to a
        card about to be left — and then whatever the tour is waiting on is cut
        short so the loop moves at once. The loop is the only place that has to
        know what "on" and "back" mean.
 
-       AND IT LETS GO OF A PAUSE. Pressing "next" on a paused tour means go on,
-       not go on and stop again immediately — which is what would happen, since
-       the very next thing the loop does is wait. */
+       AND A PAUSED TOUR STAYS PAUSED. An arrow pressed while it is held means
+       "show me the next one", not "show me the next one and start the clock
+       again" — somebody who paused to read has not changed their mind about
+       reading. The card opens and everything waits, exactly as it was. */
     function step(by) {
       if (!running) return;
-      holdTour(false);
       jump = by;
       clearAll();
       clock.cut();
@@ -467,18 +475,16 @@
       if (TRAIL.autoLoad && !TRAIL.isAutoLoad()) TRAIL.autoLoad(true);
       button.classList.add("is-on");
       button.setAttribute("aria-pressed", "true");
-      button.setAttribute("aria-label", WORDS.stopTour || "Stop playing");
-      button.title = WORDS.stopTour || "Stop playing";
+      button.title = WORDS.tourHold || "Pause the tour";
+      button.setAttribute("aria-label", button.title);
+      stopBtn.title = WORDS.stopTour || "Stop the tour";
+      stopBtn.setAttribute("aria-label", stopBtn.title);
       (joinsTheRow ? row : document.body).appendChild(note);
       requestAnimationFrame(() => note.classList.add("is-on"));
       document.body.classList.add("tm-touring");
       /* the row grows its tour-only pieces — the pause button here, and on the
          map the two arrows and the count as well */
       if (row) row.classList.add("is-touring");
-      holdTour(false);
-      holdBtn.title = WORDS.tourHold || "Pause the tour";
-      holdBtn.setAttribute("aria-label", holdBtn.title);
-      holdBtn.setAttribute("aria-pressed", "false");
       walk(fromTheTop);
     }
 
@@ -496,8 +502,8 @@
       if (window.HappyTrailsEdge) window.HappyTrailsEdge.clear();
       button.classList.remove("is-on");
       button.setAttribute("aria-pressed", "false");
-      button.setAttribute("aria-label", WORDS.playTour || "Play the trail");
       button.title = WORDS.playTour || "Play the trail";
+      button.setAttribute("aria-label", button.title);
       note.classList.remove("is-on");
       setTimeout(() => {
         if (note.parentNode) note.parentNode.removeChild(note);
@@ -507,7 +513,7 @@
       TRAIL.closeAllCards();
     }
 
-    button.addEventListener("click", () => (running ? stop() : start(false)));
+    button.addEventListener("click", toggle);
 
     /* ── A LINK THAT STARTS THE TOUR ───────────────────────────────────────
        beltline.html?play — so a trail can be handed to somebody as something
@@ -529,10 +535,38 @@
        so the tour is out of the way before anything else acts on the press —
        otherwise Escape would shut the cards the tour is in the middle of
        showing and the tour would open another one a moment later. */
+    /* SOMEBODY TYPING IS NOT PRESSING A CONTROL. The page has a textarea on it
+       — the coordinate reader — and a space typed into that must be a space. */
+    const typing = e => {
+      const n = e.target;
+      return !!n && (n.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName));
+    };
+
     document.addEventListener("keydown", e => {
+      if (typing(e)) return;
+      /* ── SPACE IS PLAY AND PAUSE, TOUR OR NO TOUR ───────────────────────
+         The one key every media player on earth has bound to this, and the
+         same key on both this page and the main map.
+
+         preventDefault, because the browser's own meaning for space is "scroll
+         down a page" — and on a trail page scrolling IS walking the trail, so
+         left alone it would start the tour and in the same keystroke tell the
+         engine a reader had taken over, which stops it. The tour would have
+         been on for about one frame.
+
+         What is lost is space as a way to scroll. The arrow keys, Page Down
+         and the scroll wheel all still do it, and this page has a tour, a pair
+         of arrows and a draggable elevation graph for moving down a trail —
+         space was the least of them. */
+      if (e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        e.stopPropagation();
+        toggle();
+        return;
+      }
       if (!running) return;
       if (e.key === "Escape") { e.stopPropagation(); stop(); return; }
-      if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "]
+      if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End"]
           .indexOf(e.key) >= 0) stop();
     }, true);
 
