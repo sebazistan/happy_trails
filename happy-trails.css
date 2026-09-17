@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 4.4
+   version 4.5
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -2630,10 +2630,18 @@ body.page-text.page-soon main{
 }
 .cs-stage canvas{
   display:block; width:100%; height:100%;
-  /* it is a picture, not a control: nothing in it can be clicked or dragged,
-     and a long press on a phone should scroll the page rather than offer to
-     save an image */
-  pointer-events:none; user-select:none;
+  /* THE POINTER HAS TO REACH IT. The drawing keeps a circle of ground clear
+     around the cursor — it parts as you move through it and closes up behind
+     you — and that needs pointermove on the canvas, so this is no longer
+     pointer-events:none as it was when the picture was only a picture.
+
+     Everything else about it is still not a control. There is nothing to
+     click, nothing to drag and nothing to select; a long press on a phone
+     should not offer to save an image; and touch-action:manipulation keeps a
+     double tap from zooming the page, so a finger drawn across the drawing
+     parts it and does nothing else. */
+  user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+  touch-action:manipulation;
 }
 
 

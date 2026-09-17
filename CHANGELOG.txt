@@ -12,6 +12,45 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 17.4  WHERE THE CURSOR IS, THE MAP IS NOT. The drawing answers to the pointer
+       now, and it is deliberately not a control: nothing lights up, nothing is
+       drawn for the cursor, there is no instruction anywhere and nothing to
+       click. A circle of ground around the pointer is simply closed to every
+       line, the way a golf course is, so the drawing parts as you move through
+       it and closes up again behind you. Leave the mouse still and it settles
+       into a real clearing — trails and roads route around it and it empties
+       out. Take the pointer off the picture and it fills back in.
+
+       TWO THINGS MAKE IT, and it needs both.
+
+       The rule stops a line GROWING into the circle, and leans a line that has
+       to turn towards the way that takes it further from the cursor, so it
+       bends away in advance rather than running up against an invisible edge
+       and stopping. On its own that is a swerve you are not sure you saw:
+       everything already drawn stays exactly where it was.
+
+       So whatever IS already inside the circle is faded back into the page as
+       well — solid at the middle, easing back to full strength by the edge. No
+       ring, no rim, no spotlight. What that buys, besides being visible, is
+       that a line which has routed around the clearing comes back into view at
+       full strength exactly where the fade has finished, so nothing ever looks
+       cut off.
+
+       On a phone the clearing is capped at about a quarter of the short side
+       of the picture: five cells is judged against a wide screen, and on a
+       small one the same five cells would be a hole half the width of it.
+
+       And the canvas takes pointer events at all now, which it did not — it
+       was marked as a picture and nothing else, back when that is all it was.
+       It is still not a control in every other respect: nothing to select,
+       nothing to drag, no offer to save an image on a long press, and a double
+       tap does not zoom the page.
+
+       NOBODY WHO HAS ASKED FOR LESS MOVEMENT GETS ANY OF THIS. They get the
+       one still drawing they always got, with no loop behind it — a picture
+       that quietly rearranged itself under the cursor is exactly the thing
+       they turned off.
+
  17.3  NOTHING IN THE DRAWING RUNS ON TOP OF ANYTHING ELSE. Only the trails
        used to claim the ground they stood on, so a bike lane could be laid
        down the middle of an expressway and a railway could run along a river,

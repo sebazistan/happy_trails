@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE DRAWING THAT DRAWS ITSELF
-   version 3.1
+   version 3.2
 
    WHAT THIS IS. The picture on coming-soon.html: a trail network that builds
    itself and takes itself apart again, in the main map's own colours and its
@@ -154,6 +154,51 @@ window.HappyTrailsComingSoon = function (canvas) {
                               // so a line pushed round by the edge of the
                               // picture comes back into it quickly instead of
                               // drawing a frame round the outside.
+
+    /* ── WHERE THE CURSOR IS, THE MAP IS NOT ────────────────────────────────
+       The one interactive thing on the page, and it is deliberately not a
+       control: nothing is drawn for the pointer, nothing lights up, there is
+       no instruction to read. A circle of ground around the cursor is simply
+       closed to every line, the way a golf course is, so the drawing parts as
+       you move through it and closes up again behind you. Sit still and it
+       settles into a clearing; take the mouse away and it fills back in.
+
+       A page nobody touches looks exactly as it did before, which is the whole
+       point — and somebody who has asked for less movement gets the still
+       picture and no pointer behaviour at all. */
+    wakeCells:       5,       // the radius of that circle, in CELLS. Big on
+                              // purpose: at two or three the lines swerve and
+                              // you are not sure you saw it.
+    wakeMost:        0.26,    // …but never more than this much of the SHORTER
+                              // side of the picture. Five cells is judged
+                              // against a wide screen; on a phone the cells
+                              // are smaller but the picture is much smaller
+                              // still, and the same five cells would be a hole
+                              // half the width of it.
+    wakeEase:        14,      // how fast the circle follows the cursor, per
+                              // second. High enough to feel attached to the
+                              // pointer, low enough that a flick across the
+                              // page does not saw through the picture.
+    wakeGrow:        6,       // and how fast it opens when the pointer arrives
+                              // and closes when it leaves
+    wakeSolid:       0.5,     // HOW MUCH OF THE CLEARING IS ACTUALLY CLEAR.
+                              // The rule above only stops a line GROWING into
+                              // the circle; everything already drawn there
+                              // stays put, so on its own the effect is a faint
+                              // swerve you are not sure you saw. So what is
+                              // already inside the circle is faded back into
+                              // the page as well: solid to this fraction of
+                              // the radius, then easing back to full by the
+                              // edge. No ring, no spotlight, no hard rim —
+                              // the drawing simply is not there near the
+                              // cursor, which is what the rule says too. Set
+                              // it to 0 for the swerve alone.
+    wakeShy:         0.6,     // HOW MUCH A LINE LEANS AWAY. The circle alone
+                              // only stops a line dead at its edge; this makes
+                              // a line that has to turn prefer the way that
+                              // takes it further from the cursor, so it bends
+                              // away in advance instead of running up against
+                              // the circle and stopping. Zero turns that off.
 
     /* THE CONNECTIONS. A connection on the map is a short link that gets you
        from the end of one trail to the start of another, and it is no use
@@ -356,6 +401,18 @@ window.HappyTrailsComingSoon = function (canvas) {
     lane:    SETTINGS.dotLane.map(v => v * pen),
   };
   // the dots are given in legend units across; here they are radii in pixels
+  /* the backdrop again with nothing in it, for the soft edge of the clearing.
+     Worked out from the one colour above rather than written down twice — two
+     spellings of the same grey is exactly the sort of thing that goes out of
+     step the first time somebody changes it. */
+  const NOTHING = (function () {
+    let h = INK.backdrop.replace("#", "");
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    const n = parseInt(h, 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," +
+           (n & 255) + ",0)";
+  })();
+
   const DOT = {
     junction: SETTINGS.dotJunction * pen / 2,
     bridge:   SETTINGS.dotBridge   * pen / 2,
@@ -379,6 +436,10 @@ window.HappyTrailsComingSoon = function (canvas) {
   let W = 0, H = 0, cell = SETTINGS.cell, room = 1, reach = 1;
   let sinceLine = 0, sinceGolf = 0, tillRed = 0, tillWish = 0, clock = 0;
   let running = false, frame = 0, lastAt = 0, visible = true, onScreen = true;
+  /* the cursor's clearing: where it is being drawn towards, where it actually
+     is this frame, and how wide it is open. All three are eased, so the hole
+     opens, follows and closes rather than jumping about. */
+  let wantX = 0, wantY = 0, wakeX = 0, wakeY = 0, wake = 0, wakeOn = false;
 
   const stillWanted = window.matchMedia &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -556,6 +617,18 @@ window.HappyTrailsComingSoon = function (canvas) {
         const px = fromX + (x - fromX) * t / 4;
         const py = fromY + (y - fromY) * t / 4;
         if (px > x0 && px < x1 && py > y0 && py < y1) return false;
+      }
+    }
+    /* AND THE CURSOR'S CLEARING, tested the same way along the step — but
+       NOT at the step's own starting point. A line that the clearing has
+       swept over is standing inside it; test where it stands and every way
+       out is closed too, and instead of walking out it stops dead. Leaving
+       t = 0 out means it may not go deeper in, but it may always leave. */
+    if (wake > 1) {
+      for (let t = 1; t <= 4; t++) {
+        const px = fromX + (x - fromX) * t / 4;
+        const py = fromY + (y - fromY) * t / 4;
+        if (Math.hypot(px - wakeX, py - wakeY) < wake) return false;
       }
     }
     if (K[kind].solid && (claimed(x, y) || claimed(mx, my))) return false;
@@ -762,6 +835,13 @@ window.HappyTrailsComingSoon = function (canvas) {
           if (!open(line.kind, nx, ny, at.x, at.y, line, d)) continue;
           const fx = at.x + s[0] * cell * peek, fy = at.y + s[1] * cell * peek;
           let spare = Math.min(fx, fy, W - fx, H - fy);
+          /* and, if the cursor is on the picture, the way that gets further
+             from it — so a line bends away in advance rather than running up
+             against the clearing and stopping at its edge */
+          if (wake > 1) {
+            spare += (Math.hypot(fx - wakeX, fy - wakeY) -
+                      Math.hypot(at.x - wakeX, at.y - wakeY)) * SETTINGS.wakeShy;
+          }
           if (d % 2 === 0) spare += cell * 2;
           if (line.spin && Math.sign(away[t]) === line.spin) spare -= cell * 3;
           if (spare > bestRoom) { bestRoom = spare; go = d; line.spin = Math.sign(away[t]); }
@@ -963,6 +1043,11 @@ window.HappyTrailsComingSoon = function (canvas) {
       const x = Math.round(between(m, W - m - side) / cell) * cell;
       const y = Math.round(between(m, H - m - side) / cell) * cell;
       let clear = true;
+      // nor does a golf course appear in the clearing the cursor has made
+      if (wake > 1 &&
+          Math.hypot(x + side / 2 - wakeX, y + side / 2 - wakeY) < wake + side) {
+        continue;
+      }
       for (let i = 0; i < golf.length; i++) {
         const g = golf[i];
         if (x < g.x + g.side + cell && g.x < x + side + cell &&
@@ -1019,6 +1104,17 @@ window.HappyTrailsComingSoon = function (canvas) {
   /* ── MOVING EVERYTHING ON ────────────────────────────────────────────────  */
   function advance(dt) {
     clock += dt;
+
+    /* THE CLEARING CATCHES UP. Exponential approach rather than a fixed step,
+       so it behaves the same whatever the frame rate — and so a tab coming
+       back from the background does not find the hole in last minute's place
+       and drag it across the picture. */
+    const follows = 1 - Math.exp(-SETTINGS.wakeEase * dt);
+    wakeX += (wantX - wakeX) * follows;
+    wakeY += (wantY - wakeY) * follows;
+    const wants = wakeOn ? Math.min(SETTINGS.wakeCells * cell,
+                                    Math.min(W, H) * SETTINGS.wakeMost) : 0;
+    wake += (wants - wake) * (1 - Math.exp(-SETTINGS.wakeGrow * dt));
 
     sinceLine += dt;
     if (sinceLine > SETTINGS.startEvery) { sinceLine = 0; startOne(); }
@@ -1223,6 +1319,27 @@ window.HappyTrailsComingSoon = function (canvas) {
       const p = pointAt(r.line, r.at);
       if (p) dot(p.x, p.y, DOT.pinch * popped(r.born), INK.pinch);
     }
+
+    /* ── AND THE CLEARING, LAST ──────────────────────────────────────────
+       The page's own colour, painted back over whatever is under the cursor
+       and easing out to nothing by the edge of the circle. It goes on top of
+       everything, dots included, so what is near the pointer is simply not
+       there — which is what the rule that keeps lines out of it says as well.
+
+       It is a fade and not a hole on purpose: a hard rim would read as a
+       spotlight cut into the artwork, and a line stopping dead at an invisible
+       circle would read as a fault. This way a line that has routed around the
+       clearing is at full strength exactly where it comes back into view. */
+    if (wake > 1 && SETTINGS.wakeSolid < 1) {
+      const fade = ctx.createRadialGradient(
+        wakeX, wakeY, wake * SETTINGS.wakeSolid, wakeX, wakeY, wake);
+      fade.addColorStop(0, INK.backdrop);
+      fade.addColorStop(1, NOTHING);
+      ctx.fillStyle = fade;
+      ctx.beginPath();
+      ctx.arc(wakeX, wakeY, wake, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   /* ── THE LOOP ────────────────────────────────────────────────────────────  */
@@ -1258,6 +1375,7 @@ window.HappyTrailsComingSoon = function (canvas) {
     taken = new Map(); busy = new Map(); spread = new Map();
     sinceLine = SETTINGS.startEvery; sinceGolf = SETTINGS.golfEvery;
     tillRed = 0.5; tillWish = 3; clock = 0;
+    wake = 0; wakeOn = false;      // the picture is wound forward untouched
     for (let i = 0; i < SETTINGS.settleFrames; i++) advance(1 / 60);
     paint();
   }
@@ -1274,6 +1392,35 @@ window.HappyTrailsComingSoon = function (canvas) {
     new IntersectionObserver(entries => {
       onScreen = entries[0].isIntersecting; settle();
     }, { threshold: 0.02 }).observe(canvas);
+  }
+
+  /* ── THE CURSOR ──────────────────────────────────────────────────────────
+     offsetX and offsetY are already in the same pixels everything else here
+     works in — the canvas has no padding and its CSS size is its size — so
+     there is no rectangle to measure and nothing to read back from layout on
+     every mouse move.
+
+     On the first move the clearing is put exactly where the pointer is rather
+     than eased to it, or it would open somewhere else and sweep across the
+     picture on its way over. Passive listeners throughout: this never wants to
+     stop the page scrolling, and on a touch screen a drag should still scroll
+     even as it parts the drawing under the finger.
+
+     Nobody who has asked for less movement gets any of this: there is no loop
+     running for it to affect, and a still picture that quietly rearranged
+     itself under the cursor would be exactly the thing they turned off. */
+  if (!stillWanted) {
+    const here = e => {
+      if (!wakeOn) { wakeX = e.offsetX; wakeY = e.offsetY; }
+      wantX = e.offsetX; wantY = e.offsetY;
+      wakeOn = true;
+    };
+    canvas.addEventListener("pointermove", here, { passive: true });
+    canvas.addEventListener("pointerdown", here, { passive: true });
+    const gone = () => { wakeOn = false; };
+    canvas.addEventListener("pointerleave", gone, { passive: true });
+    canvas.addEventListener("pointercancel", gone, { passive: true });
+    window.addEventListener("blur", gone, { passive: true });
   }
 
   let resizing = 0;
