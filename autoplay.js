@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE TOUR
-   version 1.0
+   version 1.1
 
    WHAT THIS IS. The play button between the two arrows walks the trail for
    you. It scrolls to a waypoint, opens its card, turns the card's pages and
@@ -47,6 +47,20 @@
   "use strict";
 
   const DEFAULTS = {
+    /* ── THE ONE DIAL FOR THE WHOLE THING ──────────────────────────────────
+       Everything below is a duration, and every one of them is divided by
+       this before it is used. So `speed` is the tour's pace and nothing else
+       has to be touched to change it: 1 is the reading pace the numbers below
+       are written at, 2 is twice as brisk, 0.5 is half.
+
+       It is a separate number from `wordsPerMinute` on purpose, and the two
+       mean different things. wordsPerMinute is how fast a person READS — it
+       decides how long a wordy card is compared with a short one, which is
+       the shape of the tour. `speed` is how fast the tour goes through all of
+       it. Changing the first changes the proportions; changing this one does
+       not. */
+    speed:          2,
+
     /* ── HOW FAST THE WORDS GO BY ──────────────────────────────────────────
        Words per minute. Silent reading of unfamiliar prose runs around 200 to
        250 for most adults; this is deliberately at the slow end of that,
@@ -85,6 +99,18 @@
        pages. It is SETTINGS.cardCloseMs on the engine's side; a little more
        here so the first page is properly up before it moves. */
     settleFirst:    420,
+
+    /* ── FETCHING AHEAD ────────────────────────────────────────────────────
+       While one card is being read, the pictures for the NEXT waypoint are
+       quietly asked for. On a slow connection the tour would otherwise arrive
+       at each waypoint and show a grey rectangle for a second or two — the one
+       moment a tour cannot afford it, because nobody is scrolling and there is
+       nothing else to look at. Off on a metered connection: fetching
+       photographs nobody has asked for is what a data cap is for avoiding. */
+    lookAhead:      true,
+
+    /* THE WORD THAT STARTS IT FROM A LINK — beltline.html?play */
+    linkWord:       "play",
   };
 
   let wired = false;
@@ -93,12 +119,26 @@
     if (wired) return;
     const TRAIL = window.TRAIL;
     if (!TRAIL || !TRAIL.deck || !TRAIL.stops || !TRAIL.pageAtStop) return;
+    if (!window.HappyTrailsPace) return;      // the pacing lives in its own file
     const button = document.getElementById("tm-play");
     if (!button) return;
     wired = true;
 
-    const SETTINGS = Object.assign({}, DEFAULTS,
-                                   (TRAIL.SETTINGS && TRAIL.SETTINGS.autoplay) || {});
+    const asked = Object.assign({}, DEFAULTS,
+                                (TRAIL.SETTINGS && TRAIL.SETTINGS.autoplay) || {});
+    /* EVERY DURATION DIVIDED BY THE PACE, once, here — so no sum further down
+       has to remember to do it and none of them can forget. `wordsPerMinute`
+       is not a duration and is left alone; dividing it would change the shape
+       of the tour rather than its speed. */
+    const RATES = { scrollSpeed: 1 };     // per SECOND, so a faster tour wants MORE
+    const KEEP = { speed: 1, wordsPerMinute: 1 };
+    const SETTINGS = {};
+    const pace = asked.speed || 1;
+    for (const k in asked) {
+      if (typeof asked[k] !== "number" || KEEP[k]) SETTINGS[k] = asked[k];
+      else if (RATES[k]) SETTINGS[k] = asked[k] * pace;   // pixels a second
+      else SETTINGS[k] = asked[k] / pace;                 // milliseconds
+    }
     const WORDS = TRAIL.WORDS || {};
     const deck = TRAIL.deck;
     const still = () => window.matchMedia &&
@@ -111,7 +151,22 @@
     note.className = "tm-tourNote";
     note.id = "tm-tourNote";
     note.setAttribute("role", "status");
-    note.textContent = WORDS.tourEscape || "Press Esc to leave autoplay";
+    /* TWO PIECES: WHERE THE TOUR HAS GOT TO, and how to leave it. The count is
+       worth having for the reason a progress bar is — a tour with no end in
+       sight is one people stop watching — and it is worked out from the stops
+       that are actually live, so switching the wishful layer off changes the
+       route and the total together. */
+    const count = document.createElement("b");
+    const how = document.createElement("span");
+    how.textContent = WORDS.tourEscape || "Press Esc to leave autoplay";
+    note.appendChild(count);
+    note.appendChild(how);
+
+    function sayWhere(n, of) {
+      count.hidden = !of;
+      count.textContent = of ? (WORDS.tourAt || "{n} of {of}")
+                                 .replace("{n}", n).replace("{of}", of) : "";
+    }
 
     let running = false, tween = 0;
     const timers = [];
@@ -161,40 +216,38 @@
        Counted, every time, off the card itself. `measureOne` is asked first
        because the number of pages depends on how tall the card is, and the
        card is only its real height once it is showing. */
+    /* ── ASKING FOR THE NEXT WAYPOINT'S PICTURES ───────────────────────────
+       An image the browser has already fetched is an image that is simply
+       there when its card opens. Nothing is added to the page: these are the
+       same URLs the card asks for a moment later, so the browser's own cache
+       does all of the work and nothing is decoded twice.
+
+       Videos are left alone. One is megabytes, it is not shown until its slide
+       is, and the card's own `preload` already deals with it. */
+    function fetchAhead(i) {
+      if (!SETTINGS.lookAhead) return;
+      if (TRAIL.onAMeteredLine && TRAIL.onAMeteredLine()) return;
+      const card = deck.cards[i];
+      if (!card || card.fetchedAhead) return;
+      card.fetchedAhead = true;
+      card.querySelectorAll("img[src]").forEach(img => {
+        const ahead = new Image();
+        ahead.decoding = "async";
+        ahead.src = img.getAttribute("src");
+      });
+    }
+
+    /* HOW LONG THIS CARD IS WORTH — asked of tour-pace.js, which the map's
+       own tour asks the same question of. `measureOne` first, because how many
+       pages a card has depends on how tall it is and it is only its real
+       height once it is showing. */
     function readCard(i) {
       const card = deck.cards[i];
       if (!card) return null;
       if (deck.measureOne) deck.measureOne(card);
-
-      const words = Array.prototype.reduce.call(
-        card.querySelectorAll(".tm-textpages p"),
-        (n, para) => n + (para.textContent.trim().match(/\S+/g) || []).length, 0);
-
-      const slides = Array.prototype.slice.call(card.querySelectorAll(".tm-slide"));
-      const pages = Math.max(1, card.pageCount || 1);
-
-      /* what the pictures want between them: a plain look each, except a video
-         that will say how long it runs, which wants to be seen through */
-      const look = slides.reduce((sum, slide) => {
-        const film = slide.querySelector("video");
-        const runs = film && isFinite(film.duration) ? film.duration * 1000 : 0;
-        return sum + Math.max(SETTINGS.leastOnASlide,
-                              Math.min(SETTINGS.mostOnAVideo, runs));
-      }, 0);
-
-      const read = Math.min(SETTINGS.mostOnACard,
-                   Math.max(SETTINGS.leastOnACard,
-                            words / SETTINGS.wordsPerMinute * 60000));
-
-      const dwell = Math.max(read, look, SETTINGS.leastOnACard);
-      /* the last page's own turn to be read — one page's worth, and never less
-         than a picture is worth */
-      const lastLook = Math.max(SETTINGS.leastOnASlide, read / pages);
-      return {
-        card: card, pages: pages, slides: slides.length,
-        dwell: dwell,
-        endAt: Math.max(0, dwell - lastLook),
-      };
+      const plan = window.HappyTrailsPace &&
+                   window.HappyTrailsPace.plan(card, SETTINGS);
+      return plan ? Object.assign({ card: card }, plan) : null;
     }
 
     /* ── ONE CARD, START TO FINISH ─────────────────────────────────────────
@@ -215,10 +268,9 @@
       if (deck.showSlide) deck.showSlide(it.card, 0);
 
       const turn = (count, move) => {
-        if (count < 2) return;
-        for (let j = 1; j < count; j++) {
-          later(() => { if (running) move(j); }, j * it.endAt / (count - 1));
-        }
+        window.HappyTrailsPace.moments(count, it.endAt).forEach(m => {
+          later(() => { if (running) move(m.j); }, m.at);
+        });
       };
       turn(it.pages, j => deck.showPage(it.card, j));
       turn(it.slides, j => deck.showSlide(it.card, j));
@@ -230,17 +282,19 @@
        From wherever the page happens to be standing, not always from the top:
        pressing play halfway down a trail carries on from there, which is what
        anybody would expect of it. */
-    async function walk() {
+    async function walk(fromTheTop) {
       const live = TRAIL.liveStops();
       if (!live.length) { stop(); return; }
       const here = TRAIL.nearestStop();
-      let from = Math.max(0, live.indexOf(here.at));
+      let from = fromTheTop ? 0 : Math.max(0, live.indexOf(here.at));
 
       for (let n = from; n < live.length; n++) {
         if (!running) return;
         const i = live[n];
+        sayWhere(n + 1, live.length);
         await glideTo(TRAIL.pageAtStop(i));
         if (!running) return;
+        if (live[n + 1] !== undefined) fetchAhead(live[n + 1]);
         await showCard(i);
         if (!running) return;
         TRAIL.closeCard(i);
@@ -250,9 +304,14 @@
     }
 
     /* ── ON AND OFF ────────────────────────────────────────────────────────  */
-    function start() {
+    function start(fromTheTop) {
       if (running) return;
       running = true;
+      /* AUTO-LOAD GOES ON. With it off the walk opens nothing, so the tour
+         would scroll the whole trail past a map with no cards on it at all —
+         it would look broken, and it would be. The switch on the Layers panel
+         moves with it, so the panel never disagrees with the page. */
+      if (TRAIL.autoLoad && !TRAIL.isAutoLoad()) TRAIL.autoLoad(true);
       button.classList.add("is-on");
       button.setAttribute("aria-pressed", "true");
       button.setAttribute("aria-label", WORDS.stopTour || "Stop playing");
@@ -260,7 +319,7 @@
       document.body.appendChild(note);
       requestAnimationFrame(() => note.classList.add("is-on"));
       document.body.classList.add("tm-touring");
-      walk();
+      walk(fromTheTop);
     }
 
     function stop() {
@@ -279,7 +338,23 @@
       TRAIL.closeAllCards();
     }
 
-    button.addEventListener("click", () => (running ? stop() : start()));
+    button.addEventListener("click", () => (running ? stop() : start(false)));
+
+    /* ── A LINK THAT STARTS THE TOUR ───────────────────────────────────────
+       beltline.html?play — so a trail can be handed to somebody as something
+       to WATCH rather than something to scroll, and it is the same page
+       either way for anybody who would rather do it themselves.
+
+       It starts from the top, because a link is being handed the trail rather
+       than carrying on with it. A moment's wait first: the opening panel is
+       still going and the artwork is still settling, and a tour that sets off
+       into that looks like a page that will not sit still.
+
+       ?play rather than #play: a trail's hash is already its waypoint
+       addresses — don.html#half-mile-bridge — and a waypoint could perfectly
+       well be called "play". */
+    const asks = new RegExp("(^|[?&])" + SETTINGS.linkWord + "($|[=&])");
+    if (asks.test(location.search)) setTimeout(() => start(true), 900);
 
     /* ESCAPE LEAVES IT, and so does taking the wheel. Capture on the keydown
        so the tour is out of the way before anything else acts on the press —
@@ -297,6 +372,19 @@
        times a second and would stop itself. */
     window.addEventListener("wheel", () => { if (running) stop(); }, { passive: true });
     window.addEventListener("touchstart", () => { if (running) stop(); }, { passive: true });
+
+    /* AND SO HAS ANYBODY WHO TOUCHED ANYTHING. The engine raises
+       `trail:handover` from the handler of every real event a reader can cause
+       — clicking a waypoint, closing a card, stepping with the arrows, opening
+       a panel, dragging the graph, clicking the map. It is raised where the
+       BROWSER said a human was involved and never from the functions
+       themselves, which is why the tour, driving those same functions all day,
+       does not stop itself.
+
+       This file does not know what any of those things are, and does not need
+       to: anything added later that a person can press stops the tour by
+       saying the same word. */
+    document.addEventListener("trail:handover", () => { if (running) stop(); });
   }
 
   document.addEventListener("trail:ready", begin);

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE ELEVATION GRAPH, MADE OF BUTTONS
-   version 1.0
+   version 1.1
 
    WHAT THIS IS. The strip along the bottom of a trail page was a picture: it
    showed the hills, it showed where you were, and there was nothing you could
@@ -54,6 +54,25 @@
        again, so releasing the knob in the middle of a waypoint does not snap a
        card up in the same instant. */
     settle:     220,
+
+    /* ── THE GRADIENT ──────────────────────────────────────────────────────
+       While the graph is being dragged, the number beside the knob is the
+       slope under it — which is the number anybody riding this actually wants,
+       and the one thing a picture of a hill cannot tell you. It is worked out
+       over a span rather than between two neighbouring samples: sampled
+       finely, a hand-drawn profile is all noise, and a gradient that flickers
+       between +11 and −8 as you drag is worse than none. */
+    slopeOver:  0.006,        // the span it is measured across, as a fraction
+                              // of the whole trail
+    slopeShow:  0.5,          // below this, in per cent, it says "level"
+
+    /* ── THE STEEP BITS, MARKED ────────────────────────────────────────────
+       Anything at or above this gradient is drawn over the profile in a warmer
+       colour. Five per cent is about where a climb stops being scenery and
+       starts being a decision. Set it to 0 to leave the graph alone. */
+    steepAt:    5,
+    steepLeast: 2,            // and how many samples in a row it takes to count,
+                              // so one noisy sample is not a hill
   };
 
   let wired = false;
@@ -146,14 +165,17 @@
     graph.addEventListener("pointermove", e => {
       if (!dragging) { show(nearest(e.clientX)); return; }
       if (!moved && Math.abs(e.clientX - began) < SETTINGS.slack) return;
-      if (!moved) { moved = true; TRAIL.scrubbing(true); }
-      TRAIL.goToFraction(whereIn(e.clientX));
+      if (!moved) { moved = true; TRAIL.scrubbing(true); graph.classList.add("is-reading"); }
+      const f = whereIn(e.clientX);
+      TRAIL.goToFraction(f);
+      saySlope(f);
     });
 
     function release(e) {
       if (!dragging) return;
       dragging = false;
       graph.classList.remove("is-dragging");
+      graph.classList.remove("is-reading");
       if (moved) {
         /* let the cards back in, but not in the same frame: the walk is still
            settling and a card that snaps up on the release reads as a jolt */
@@ -161,6 +183,7 @@
       } else if (e && at >= 0) {
         /* a press that never moved, on a waypoint: treat it as the click it
            plainly was, so the dot itself works as well as its name does */
+        if (TRAIL.byHand) TRAIL.byHand();
         TRAIL.goToStop(at, true);
       }
       moved = false;
@@ -177,7 +200,93 @@
        "go and stand at this waypoint" */
     name.addEventListener("click", e => {
       e.stopPropagation();
+      if (TRAIL.byHand) TRAIL.byHand();     // a click here is a reader taking over
       if (at >= 0) TRAIL.goToStop(at, true);
+    });
+
+    /* ── THE STEEP SECTIONS ────────────────────────────────────────────────
+       Drawn from the profile's own polyline rather than from a second set of
+       samples, so the warm line lies exactly on the white one — it IS the
+       white one, in the places where the ground is steep. The points come
+       straight out of the path's `d`, which the engine wrote at even
+       intervals, and the gradient at each is asked of the engine. */
+    function markTheSteep() {
+      if (!SETTINGS.steepAt || !TRAIL.metresAt || !TRAIL.perMetre) return;
+      const svg = graph.querySelector("svg");
+      const whole = graph.querySelector(".tm-whole");
+      if (!svg || !whole) return;
+      const d = whole.getAttribute("d") || "";
+      const pts = d.replace(/[ML]/g, " ").trim().split(/\s+/).map(Number);
+      const n = pts.length / 2;
+      if (n < 4) return;
+
+      const across = (TRAIL.length / (n - 1)) * TRAIL.perMetre;   // metres along
+      let run = [], spans = [];
+      for (let i = 1; i < n; i++) {
+        const up = TRAIL.metresAt(i / (n - 1)) - TRAIL.metresAt((i - 1) / (n - 1));
+        const grade = across ? Math.abs(up / across * 100) : 0;
+        if (grade >= SETTINGS.steepAt) { if (!run.length) run.push(i - 1); run.push(i); }
+        else { if (run.length >= SETTINGS.steepLeast) spans.push(run); run = []; }
+      }
+      if (run.length >= SETTINGS.steepLeast) spans.push(run);
+      if (!spans.length) return;
+
+      const bit = spans.map(span =>
+        span.map((i, k) => (k ? "L" : "M") + pts[i * 2] + " " + pts[i * 2 + 1]).join("")
+      ).join(" ");
+      const mark = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      mark.setAttribute("class", "tm-steep");
+      mark.setAttribute("d", bit);
+      // under the walked line, over the whole profile
+      whole.parentNode.insertBefore(mark, whole.nextSibling);
+    }
+    markTheSteep();
+
+    /* ── THE GRADIENT UNDER THE POINTER ────────────────────────────────────
+       Only while dragging. Standing still it would be a number nobody asked
+       for sitting on top of the graph; moving, it is the whole reason for
+       dragging in the first place. */
+    const slope = document.createElement("div");
+    slope.className = "tm-slope";
+    slope.setAttribute("aria-hidden", "true");
+    graph.appendChild(slope);
+
+    function saySlope(f) {
+      if (!TRAIL.metresAt || !TRAIL.perMetre) return;
+      const half = SETTINGS.slopeOver / 2;
+      const a = Math.max(0, f - half), b = Math.min(1, f + half);
+      const across = (b - a) * TRAIL.length * TRAIL.perMetre;
+      const up = TRAIL.metresAt(b) - TRAIL.metresAt(a);
+      const grade = across ? up / across * 100 : 0;
+      slope.textContent = Math.abs(grade) < SETTINGS.slopeShow
+        ? (TRAIL.WORDS.level || "level")
+        : (grade > 0 ? "+" : "\u2212") + Math.abs(grade).toFixed(1) + "%";
+      slope.classList.toggle("is-up", grade >= SETTINGS.slopeShow);
+      slope.classList.toggle("is-down", grade <= -SETTINGS.slopeShow);
+      slope.style.left = (f * 100).toFixed(2) + "%";
+    }
+
+    /* ── AND THE KEYBOARD ──────────────────────────────────────────────────
+       The graph is a slider now, so it is one to a keyboard too: left and
+       right step a waypoint at a time — the same journey the two arrows make —
+       and Home and End go to the ends. It takes focus, which also means the
+       whole trail can be walked without a mouse. */
+    graph.tabIndex = 0;
+    graph.setAttribute("role", "slider");
+    graph.setAttribute("aria-label", TRAIL.WORDS.graphLabel || "Position along the trail");
+    graph.addEventListener("keydown", e => {
+      const live = TRAIL.liveStops();
+      if (!live.length) return;
+      const here = live.indexOf(TRAIL.nearestStop().at);
+      let want = null;
+      if (e.key === "ArrowLeft"  || e.key === "ArrowDown") want = live[Math.max(0, here - 1)];
+      else if (e.key === "ArrowRight" || e.key === "ArrowUp") want = live[Math.min(live.length - 1, here + 1)];
+      else if (e.key === "Home") want = live[0];
+      else if (e.key === "End")  want = live[live.length - 1];
+      else return;
+      e.preventDefault();
+      if (TRAIL.byHand) TRAIL.byHand();
+      if (want !== undefined) TRAIL.goToStop(want, true);
     });
 
     wired = true;

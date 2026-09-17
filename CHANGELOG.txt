@@ -12,6 +12,125 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 18.1  FOUR THINGS PUT RIGHT, AND TEN ADDED.
+
+       ── WHAT WAS WRONG ───────────────────────────────────────────────────
+
+       THE WAYPOINT DOTS HAD COME OFF THE ELEVATION LINE. Making the thin strip
+       easier to hit was done with padding, and padding was the wrong tool: the
+       dots and the position knob are placed with a `top` in per cent, and a
+       percentage measures itself against the PADDING box — so padding the
+       graph silently pushed every dot off the line it belongs on. The reach is
+       a pseudo-element now and the box nothing is measured against is
+       untouched.
+
+       THE CARD NO LONGER FLIES OUT OF ITS WAYPOINT. It was wrong twice over:
+       the throw fought the rise the drawing loop was doing at the same moment,
+       and because it ended on the transform the card had when it STARTED,
+       clearing it let the card jump the last few pixels of that rise in one
+       frame — a small hop a moment after the card had apparently finished
+       arriving. That hop is gone with it. Cards arrive the way they always
+       did.
+
+       THE COIN AND THE DIAL NOW ACTUALLY MOVE on a trail page and on the main
+       map. They were left to an observer that asks "has this come into view",
+       which is right on the Wishful thinking page and useless here: every card
+       on these pages is inside the viewport the whole time and simply faded to
+       nothing, so the observer fired once, at load, while the card was
+       invisible, and never again. The pages that fade their cards now ask for
+       the animation at the moment a card becomes the one on screen.
+
+       AND POINTING AT EITHER ONE PLAYS IT. A reading you have reached for is a
+       reading you are asking about.
+
+       ── THE TOUR ─────────────────────────────────────────────────────────
+
+       TWICE AS FAST, and there is now one number that says so — `speed` at the
+       top of autoplay.js. Every duration in the file is divided by it, so the
+       pace is one lever and nothing else has to be touched. It is separate
+       from `wordsPerMinute`, which is how fast a person READS and therefore
+       how long a wordy card is compared with a short one: changing the first
+       changes the shape of the tour, changing the second changes its speed.
+
+       IT SWITCHES WAYPOINT AUTO-LOAD ON. With it off the walk opens nothing,
+       so the tour would have scrolled the whole trail past a map with no cards
+       on it.
+
+       AND ANYTHING AT ALL STOPS IT — a waypoint clicked, a card closed, an
+       arrow pressed, a panel opened, the graph dragged, the map clicked. The
+       engine raises one word, `trail:handover`, from the handler of every real
+       event a reader can cause, and the tour listens for it. It is raised
+       where the BROWSER said a human was involved and never inside the
+       functions themselves, which is why the tour — driving those same
+       functions all day — does not stop itself. Anything added later that a
+       person can press stops the tour by saying the same word.
+
+       ONE CARD REPLACING ANOTHER IS NOW SOMETHING YOU CAN WATCH. It used to be
+       instant: the outgoing card's opacity was set to zero in the same frame
+       the incoming one appeared, and two things happening in one frame is not
+       a change anybody can follow. The new card comes in from the right and
+       SHOVES the old one out to the left, the old one stepping back a little
+       as it goes.
+
+       And the line saying how to leave the tour is solid, and has moved up off
+       the elevation graph rather than sitting on it.
+
+       ── AND TEN NEW THINGS ───────────────────────────────────────────────
+
+       A LINK THAT STARTS THE TOUR.  beltline.html?play — so a trail can be
+       handed to somebody as something to watch.
+
+       A COUNT IN THE TOUR'S OWN LINE.  "4 of 13", from the stops that are
+       actually live, so switching the wishful layer off changes the route and
+       the total together.
+
+       A TOUR OF THE WHOLE NETWORK, on the main map: a play button above the
+       zoom controls that flies from one featured waypoint to the next,
+       anywhere in the region. It shares exactly one thing with the trail
+       pages' tour — how long a card is worth, which is in tour-pace.js and
+       asked by both — because that is the only question on which the two must
+       never disagree.
+
+       THE ELEVATION GRAPH TAKES THE KEYBOARD.  It is a slider, so it behaves
+       like one: left and right step a waypoint at a time, Home and End go to
+       the ends. Which also means the whole trail can be walked without a
+       mouse.
+
+       THE GRADIENT UNDER YOUR HAND while the graph is being dragged — the one
+       number a picture of a hill cannot give you, and the reason for dragging
+       in the first place. Measured across a span rather than between two
+       neighbouring samples, because a finely sampled profile is all noise.
+
+       THE STEEP SECTIONS MARKED, in a warmer colour, drawn from the profile's
+       own line so the mark lies exactly on it. Five per cent and up, which is
+       about where a climb stops being scenery and starts being a decision.
+       (Nothing is marked on a rail path, which is correct — they are built
+       under two.)
+
+       A LINK TO EACH WAYPOINT, on its card. Every waypoint has had an address
+       of its own for a long time and nothing on the page ever offered it.
+
+       WHERE YOU LEFT OFF. A trail is nine screenfuls; coming back to one and
+       finding yourself at the trailhead again is a small tax on having stopped
+       to do something else. A chip offers to put you back — once, from the top
+       of the page only, and it takes silence for a no.
+
+       THE NEXT WAYPOINT'S PICTURES, FETCHED while the current one is being
+       read, so the tour does not arrive at a grey rectangle. Off on a metered
+       connection.
+
+       AND WHAT IS NEW ON THE WISHFUL THINKING PAGE, marked. Not from a date —
+       nothing here carries one, and a date is a thing somebody has to remember
+       to set. From the LIST: the addresses of the proposals that were on the
+       page last time are kept, and anything not among them is new. Add one to
+       trails_data.py and it marks itself, for everybody who has been here
+       before and for nobody who has not.
+
+       ── THREE MORE FILES ─────────────────────────────────────────────────
+       tour-pace.js   how long a card is worth — asked by both tours
+       map-tour.js    the tour of the whole network
+       remembers.js   where you left off, and what is new
+
  18.0  THE SITE ANSWERS BACK. The biggest set of changes since the cards
        themselves, and most of it is one idea: the things on these pages that
        looked like controls should BE controls, and the ones that are should

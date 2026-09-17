@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE WAYPOINT CARD
-   version 1.2
+   version 1.3
 
    ONE CARD, USED IN TWO PLACES. A waypoint card — the picture, the caption,
    the paged text, the facts along the bottom, the × and the expand button —
@@ -76,6 +76,9 @@ window.HappyTrailsCards = function (opts) {
     level_medium:  "Medium",
     level_high:    "High",
     openOnTrail:   "Open card on trail page",
+    copyLink:      "Copy link",
+    copyLinkLong:  "Copy a link to this waypoint",
+    copied:        "Copied",
   };
 
   /* ── AND ITS OWN SETTINGS ────────────────────────────────────────────────
@@ -91,17 +94,6 @@ window.HappyTrailsCards = function (opts) {
     cardGrowsAbove:     620,
     cardGrowsFrom:      1100,
     cardMinLines:       3,
-    /* how long a card takes to arrive out of the waypoint that was clicked,
-       and the shape of that move. See popFrom. */
-    cardPopMs:          380,
-    cardPopEase:        "cubic-bezier(.28,.78,.32,1)",
-    /* HOW SMALL THE CARD STARTS. Not the waypoint's real size: a pin is
-       fourteen pixels and a card is five hundred, and a move that begins at
-       three per cent spends nine tenths of itself as a speck and then arrives
-       all at once. Starting at a fifth reads as the card coming OUT of the
-       waypoint, which is the thing being said, and every frame of it is worth
-       looking at. */
-    cardPopLeast:       0.22,
     cardsCanBeClosed:   true,
     compareClickToMove: true,
     compareStartsAt:    50,
@@ -346,6 +338,20 @@ window.HappyTrailsCards = function (opts) {
        opens there with the card already up. A card on its own trail page
        passes nothing and gets no button, so this costs those pages a line of
        markup that is never written. */
+    /* AND ITS OWN ADDRESS. Every waypoint has had one for a long time —
+       don.html#half-mile-bridge — and nothing on the page has ever offered it,
+       so the only way to find one was to click a waypoint and read the address
+       bar. `share` is given by whoever built the deck, because only they know
+       whether this card is on its own trail's page or on the main map. */
+    if (s.share) facts.push(
+      '<button class="tm-copy" type="button" data-share="' + s.share + '" ' +
+      'title="' + WORDS.copyLinkLong + '">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M10 13.5a4 4 0 0 0 5.7.4l3-3a4 4 0 0 0-5.7-5.7l-1.7 1.7"/>' +
+      '<path d="M14 10.5a4 4 0 0 0-5.7-.4l-3 3a4 4 0 0 0 5.7 5.7l1.7-1.7"/></svg>' +
+      '<span>' + WORDS.copyLink + '</span></button>');
+
     if (s.goTo) facts.push(
       '<a class="tm-goTo" href="' + s.goTo + '">' +
       (s.goToLabel || WORDS.openOnTrail) +
@@ -463,6 +469,29 @@ window.HappyTrailsCards = function (opts) {
     card.pageAt = 0;                       // which page of text is showing
     card.pageCount = 1;
     card.pageHeight = 0;
+
+    /* COPYING IT. The clipboard call needs a secure page and a real gesture;
+       both are true here. Where it is refused anyway — an old browser, a page
+       served over plain http — the button says nothing rather than throwing,
+       and the address is still in the address bar where it always was. */
+    const copy = card.querySelector(".tm-copy");
+    if (copy) copy.addEventListener("click", () => {
+      const say = copy.querySelector("span");
+      const was = say.dataset.was || say.textContent;
+      say.dataset.was = was;
+      const done = () => {
+        say.textContent = WORDS.copied;
+        copy.classList.add("is-done");
+        clearTimeout(copy.saidIt);
+        copy.saidIt = setTimeout(() => {
+          say.textContent = was;
+          copy.classList.remove("is-done");
+        }, 1800);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(copy.dataset.share).then(done, () => {});
+      }
+    });
 
     if (SETTINGS.cardsCanBeClosed) {
       card.querySelector(".tm-close").addEventListener("click", () => onClose(i));
@@ -584,60 +613,6 @@ window.HappyTrailsCards = function (opts) {
     });
 
     setSplit(SETTINGS.compareStartsAt);
-  }
-
-  /* ══ A CARD ARRIVES OUT OF ITS WAYPOINT ══════════════════════════════════
-     The waypoint you clicked and the card that answers are the same thing, and
-     a card that simply fades up somewhere else does not say so. Given the box
-     the waypoint's own circle occupies on the screen, the card starts there —
-     that size, that place — and grows to where it belongs.
-
-     WHY IT ANIMATES TO THE CARD'S CURRENT TRANSFORM AND NOT TO `none`. The
-     page has its own transform on every card: a lift, and a nudge it rewrites
-     on every frame while the card fades in. Animating to `none` would carry
-     the card away from that and then snap it back the moment the animation was
-     cleared. So the resting transform is read first, the move is stacked in
-     FRONT of it — which puts it in the parent's coordinates, where both
-     rectangles were measured — and the move ends on the resting transform
-     itself, so clearing it afterwards changes nothing.
-
-     A transition rather than a keyframe, because the end state is a matrix
-     that is only known at the moment it begins. */
-  function popFrom(i, from) {
-    const card = cards[i];
-    if (!card || !from || !from.width || !from.height) return;
-    if (wantsStillness()) return;
-    if (card.popping) return;                 // already on its way
-
-    const to = card.getBoundingClientRect();
-    if (!to.width || !to.height) return;
-
-    const rest = getComputedStyle(card).transform;
-    const held = rest && rest !== "none" ? " " + rest : "";
-
-    /* one scale for both axes, taken from whichever fits — a card is a tall
-       rectangle and a waypoint is a small circle, and squashing one into the
-       other reads as a mistake rather than as a move */
-    const shrink = Math.max(SETTINGS.cardPopLeast, Math.min(1,
-                   Math.min(from.width / to.width, from.height / to.height)));
-    const dx = (from.left + from.width / 2) - (to.left + to.width / 2);
-    const dy = (from.top + from.height / 2) - (to.top + to.height / 2);
-
-    card.popping = true;
-    card.style.transition = "none";
-    card.style.transform =
-      "translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) scale(" +
-      shrink.toFixed(4) + ")" + held;
-    void card.offsetWidth;                    // make the browser believe it
-    card.style.transition = "transform " + SETTINGS.cardPopMs + "ms " +
-                            SETTINGS.cardPopEase;
-    card.style.transform = rest && rest !== "none" ? rest : "none";
-    clearTimeout(card.popTimer);
-    card.popTimer = setTimeout(() => {
-      card.style.transition = "";
-      card.style.transform = "";
-      card.popping = false;
-    }, SETTINGS.cardPopMs + 40);
   }
 
   /* ── the picture carousel ─────────────────────────────────────────────── */
@@ -949,7 +924,6 @@ window.HappyTrailsCards = function (opts) {
     }, SETTINGS.cardGrowFadeMs);
   }
   return {
-    popFrom:    popFrom,
     cards:      cards,
     setBig:     setBig,
     isBig:      () => bigOn,

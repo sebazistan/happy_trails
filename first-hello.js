@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE FIRST HELLO
-   version 1.0
+   version 1.1
 
    WHAT THIS IS. The panel that greets somebody the first time they open the
    main map, and only the first time. It is the map's answer to the panel a

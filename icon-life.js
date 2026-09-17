@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE ICONS THAT MOVE
-   version 1.0
+   version 1.1
 
    WHAT THIS IS. Two of the little drawings on this site are readings rather
    than decoration — the coin says what a connection would COST, the dial says
@@ -14,6 +14,12 @@
    EVERY TIME THE THING APPEARS, not once per page. A card that opens, closes
    and opens again does it again, because the second time is the first time for
    whoever is looking at it. That is the whole reason for this file.
+
+   AND AGAIN WHENEVER SOMEBODY POINTS AT ONE. A reading you have reached for is
+   a reading you are asking about, and the coin turning under the cursor is the
+   answer arriving rather than sitting there. It is also how anybody finds out
+   the movement exists at all, if they happened to be looking elsewhere the
+   first time.
 
    WHY NOT A GIF, which would have been less code. A GIF has one animation
    clock shared by every copy of it on the page, so a play-once GIF shows its
@@ -126,7 +132,7 @@
       }
       img.replaceWith(svg);
       watch(svg);
-      if (seen(svg)) play(svg, 0);
+      play(svg, 0);
     });
   }
 
@@ -148,13 +154,6 @@
     if (wait) setTimeout(go, wait); else go();
   }
 
-  const seen = node => {
-    const box = node.getBoundingClientRect();
-    if (!box.width || !box.height) return false;
-    const room = window.innerHeight || 0;
-    return box.top < room * (1 - 0) && box.bottom > 0;
-  };
-
   /* ── WATCHING FOR THEM TO COME INTO VIEW ─────────────────────────────────
      One observer for the whole page. It is deliberately NOT `once`: an icon
      that scrolls out and comes back, or a card that closes and opens, has
@@ -165,6 +164,15 @@
      twenty proposals would have the last one starting two seconds late. */
   let watcher = null;
   function watch(node) {
+    /* POINTING AT ONE PLAYS IT. On the icon itself rather than on the card
+       around it: hovering a card is not asking about its cost, and a row of
+       readings that all move whenever the pointer crosses the card is a twitch
+       rather than an answer. `play` refuses while one is already running, so
+       waggling the mouse over it cannot stack them up. */
+    if (!node.dataset.lifeHover) {
+      node.dataset.lifeHover = "1";
+      node.addEventListener("pointerenter", () => play(node, 0));
+    }
     if (!window.IntersectionObserver) { play(node, 0); return; }
     if (!watcher) {
       watcher = new IntersectionObserver(entries => {
@@ -186,13 +194,33 @@
      every generator, so a third page that writes one of these icons gets the
      behaviour without knowing this file exists. */
   function sweep(root) {
-    const found = (root.querySelectorAll ? root : document)
+    const found = ((root && root.querySelectorAll) ? root : document)
       .querySelectorAll('[data-life="coin"], [data-life="dial"]');
     found.forEach(node => {
       if (node.dataset.life === "dial") beDial(node);
       else if (!node.dataset.lifeOn) { node.dataset.lifeOn = "1"; watch(node); }
     });
   }
+
+  /* ── AND BEING ASKED DIRECTLY ────────────────────────────────────────────
+     An observer answers "has this scrolled into view", which is the right
+     question on the wishful page, where each proposal is a card in a column.
+     It is the WRONG question on a trail page and on the main map: the cards
+     there are all in the viewport all the time and simply faded to nothing, so
+     the observer fires once, while the card is invisible, and never again.
+
+     So the pages that fade their cards ask for the animation at the moment a
+     card actually becomes the one on screen. Nothing here has to know which
+     pages those are — they call `replay` and pass the card. */
+  function replay(root) {
+    if (!root) return;
+    sweep(root);                     // in case its dial is still an <img>
+    let nth = 0;
+    root.querySelectorAll('[data-life="coin"], svg.ht-dial').forEach(node => {
+      play(node, Math.min(nth++, SETTINGS.staggerMost) * SETTINGS.stagger);
+    });
+  }
+  window.HappyTrailsIconLife = { replay: replay, sweep: () => sweep(document) };
 
   function begin() {
     sweep(document);

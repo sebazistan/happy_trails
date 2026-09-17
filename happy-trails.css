@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 5.0
+   version 5.1
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -1002,7 +1002,16 @@ body.page-trail{
   bottom:var(--card-sit);
   transform:
     translateY(calc(var(--card-lift) + var(--card-nudge, 0) * var(--card-lean) * 1%))
-    translateY(calc(var(--card-nudge, 0) * 1px));
+    translateY(calc(var(--card-nudge, 0) * 1px))
+    /* AND THE SHOVE, when one card is replacing another. The engine writes
+       --card-shove as a plain number of pixels — positive for the card coming
+       in from the right, negative for the one being pushed out to the left —
+       and --card-shrink for the small step backwards the outgoing one takes
+       as it goes. Both are 0 and 1 the rest of the time, which is why they
+       can live in the same transform as the fade's rise without a transition:
+       the engine is already writing this every frame. */
+    translateX(calc(var(--card-shove, 0) * 1px))
+    scale(var(--card-shrink, 1));
   background:var(--card-panel); border:1px solid var(--panel-edge);
   border-radius:var(--card-radius); box-shadow:var(--shadow);
   backdrop-filter:blur(var(--card-blur)) saturate(1.2);
@@ -1449,10 +1458,10 @@ body.page-trail{
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));
   transition:transform var(--button-fade);
 }
-/* the coin may be tilted on hover; the DIAL may only be scaled. Its needle's
-   angle is the reading, and tipping the whole dial tips the reading with it. */
-.tm-judge:hover img{ transform:scale(1.12) rotate(-4deg); }
-.tm-judge:hover .ht-dial{ transform:scale(1.12); }
+/* NO TRANSFORM ON HOVER ANY MORE. Pointing at one of these plays its own
+   animation now — the coin turns over, the needle swings — and a scale sitting
+   underneath a keyframe that also sets transform is a fight the keyframe wins
+   and a jump when it ends. The movement is the response. */
 .tm-judgeText{ display:flex; flex-direction:column; gap:2px; }
 .tm-judgeText small{
   font:600 7.5px/1 var(--font-body); letter-spacing:.14em; text-transform:uppercase;
@@ -1685,6 +1694,7 @@ body.page-trail{
                                  still counts — the graph itself is thin, and
                                  a thin target is a target nobody can hit */
   --wpname-fade:     150ms;
+  --steep-ink:       #e8503a;   /* the gradient worth knowing about */
 }
 #tm-profile.is-live{
   cursor:ew-resize;
@@ -1692,11 +1702,18 @@ body.page-trail{
      The graph was a picture and never needed any; now it is the quickest way
      to move about the trail, so it takes its own. */
   pointer-events:auto;
-  /* the reach extends past the drawn strip without moving it, so a pointer
-     anywhere near the graph is on it */
-  padding:var(--graph-grab) 0;
-  margin:calc(var(--graph-grab) * -1) 0;
   touch-action:none;          /* a drag along it is a drag, not a page scroll */
+}
+/* THE REACH IS A PSEUDO-ELEMENT, NOT PADDING. Padding on the graph was the
+   obvious way to make a twenty-pixel strip easier to hit, and it was wrong:
+   every waypoint dot and the position knob are absolutely placed with a `top`
+   in per cent, and a percentage resolves against the PADDING box — so padding
+   the graph silently pushed every dot off the line it belongs on. This adds
+   the same reach without touching the box anything is measured against. */
+#tm-profile.is-live::before{
+  content:""; position:absolute; left:0; right:0;
+  top:calc(var(--graph-grab) * -1); bottom:calc(var(--graph-grab) * -1);
+  z-index:0;
 }
 #tm-profile.is-live.is-dragging{ cursor:grabbing; }
 #tm-profile.is-live.is-dragging .tm-knob{
@@ -1710,6 +1727,40 @@ body.page-trail{
 #tm-profile .tm-wpdot.tm-wishful.is-near{
   background:var(--route-line-wish);
   box-shadow:0 0 0 3px rgba(232,79,255,.22), 0 2px 6px rgba(0,0,0,.6);
+}
+
+/* THE STEEP BITS, drawn over the profile in the same place the profile is —
+   it IS the profile, in the stretches where the ground is a decision rather
+   than scenery. Warmer and thicker, so it reads before anything else on the
+   strip does. */
+#tm-profile .tm-steep{
+  fill:none; stroke:var(--steep-ink); stroke-width:3.5;
+  stroke-linecap:round; stroke-linejoin:round;
+  vector-effect:non-scaling-stroke; pointer-events:none;
+  filter:drop-shadow(0 0 4px rgba(232,80,58,.5));
+}
+
+/* THE GRADIENT, while the graph is being dragged. It is the number a picture
+   of a hill cannot give you, and the reason for dragging in the first place. */
+.tm-slope{
+  position:absolute; z-index:4; bottom:calc(100% + 6px);
+  transform:translateX(-50%);
+  padding:4px 9px; border-radius:7px;
+  background:rgba(12,14,17,.95); border:1px solid var(--panel-edge);
+  font:700 11px/1 var(--font-body); font-variant-numeric:tabular-nums;
+  color:var(--text-quiet); white-space:nowrap; pointer-events:none;
+  opacity:0; transition:opacity 140ms ease;
+}
+#tm-profile.is-reading .tm-slope{ opacity:1; }
+.tm-slope.is-up{ color:var(--steep-ink); }
+.tm-slope.is-down{ color:var(--route-line); }
+
+/* IT TAKES FOCUS, so the whole trail can be walked from a keyboard. The ring
+   goes round the strip rather than round the padded reach, or it would float
+   well clear of the thing it belongs to. */
+#tm-profile.is-live:focus{ outline:none; }
+#tm-profile.is-live:focus-visible{
+  outline:2px solid var(--route-line); outline-offset:6px; border-radius:4px;
 }
 
 /* THE NAME OF THE WAYPOINT BEING POINTED AT. One label, moved about — see
@@ -2142,7 +2193,9 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
   left:50%; bottom:calc(var(--edge-gap) + 4px);
   transform:translate(-50%, 10px);
   padding:8px 16px; border-radius:999px;
-  background:rgba(12,14,17,.82); border:1px solid var(--panel-edge);
+  /* nearly solid: it sits directly over the elevation graph, and a note you
+     can read the hills through is a note that has made the hills unreadable */
+  background:rgba(12,14,17,.95); border:1px solid var(--panel-edge);
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
   font:600 10.5px/1 var(--font-body); letter-spacing:.14em;
   text-transform:uppercase; color:var(--text-quiet);
@@ -2150,10 +2203,104 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
   transition:opacity 220ms ease, transform 220ms var(--panel-ease);
 }
 .tm-tourNote.is-on{ opacity:1; transform:translate(-50%, 0); }
+/* ON A TRAIL PAGE IT SITS ABOVE THE BAND, not on it. Solid enough to read is
+   solid enough to hide whatever it is standing on, and what it was standing on
+   was the elevation graph — so it is moved off it rather than made see-through
+   again, which would only have traded one of those problems for the other.
+   --band-bottom is where the readouts begin, the same figure the card column
+   stops at, so restyling the graph moves this with it. */
+body.page-trail .tm-tourNote{ bottom:calc(var(--band-bottom) + 16px); }
+/* WHERE THE TOUR HAS GOT TO, in front of the way out of it. A tour with no end
+   in sight is a tour people stop watching. */
+.tm-tourNote{ display:flex; align-items:center; gap:10px; }
+.tm-tourNote b{
+  font:700 10.5px/1 var(--font-body); letter-spacing:.1em;
+  color:var(--route-line); font-variant-numeric:tabular-nums;
+}
+.tm-tourNote b[hidden]{ display:none; }
 
 @media (prefers-reduced-motion:reduce){
   .tm-play.is-on{ animation:none; }
 }
+
+/* THE SAME BUTTON ON THE MAIN MAP, where it sits above the three zoom
+   controls — not one of them, because those change how you are looking at the
+   map and this one takes you round it. */
+.ht-play{ position:relative; }
+.ht-play svg{ grid-area:1 / 1; }
+.ht-play .tm-playStop{ opacity:0; transform:scale(.6); }
+.ht-play .tm-playGo,
+.ht-play .tm-playStop{ transition:opacity 160ms ease, transform 200ms var(--panel-ease); }
+.ht-play.is-on .tm-playGo{ opacity:0; transform:scale(.6); }
+.ht-play.is-on .tm-playStop{ opacity:1; transform:scale(1); }
+.ht-play .tm-playGo{ margin-left:6%; }
+.ht-play.is-on{
+  background:var(--pin-green); color:var(--pin-text); border-color:transparent;
+  animation:tm-touring var(--tour-pulse) ease-in-out infinite;
+}
+#ht-tourNote{ z-index:45; }        /* over the white bar, like the map's panels */
+@media (prefers-reduced-motion:reduce){ .ht-play.is-on{ animation:none; } }
+
+/* ══ COPYING A LINK TO ONE WAYPOINT ═══════════════════════════════════════
+   Every waypoint has had an address of its own for a long time and nothing on
+   the page ever offered it. The button sits with the other things you can do
+   with a waypoint, and says so when it has done it. */
+.tm-copy{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 10px; border-radius:7px; cursor:pointer;
+  border:1px solid var(--panel-edge); background:var(--wishful-panel-soft);
+  font:600 10.5px/1 var(--font-body); letter-spacing:.06em; color:var(--text-quiet);
+  transition:color var(--button-fade), border-color var(--button-fade),
+             background var(--button-fade);
+}
+.tm-copy svg{ width:12px; height:12px; flex:0 0 auto; }
+.tm-copy:hover{ color:var(--text); border-color:var(--route-line); }
+.tm-copy.is-done{ color:var(--route-line); border-color:var(--route-line); }
+
+/* ══ WHERE YOU LEFT OFF ═══════════════════════════════════════════════════
+   A chip at the foot of the screen offering to put a long trail back where it
+   was. It only ever appears once, at the top of the page, and only when there
+   is somewhere worth going back to. */
+.tm-resume{
+  position:fixed; z-index:38;
+  left:50%; bottom:calc(var(--edge-gap) + 4px);
+  transform:translate(-50%, 14px);
+  display:flex; align-items:center; gap:14px;
+  padding:10px 12px 10px 18px; border-radius:999px;
+  background:rgba(12,14,17,.95); border:1px solid var(--panel-edge);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  box-shadow:var(--shadow);
+  font:500 12.5px/1 var(--font-body); color:var(--text-quiet);
+  opacity:0; pointer-events:none;
+  transition:opacity 260ms ease, transform 260ms var(--panel-ease);
+}
+.tm-resume.is-on{ opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
+.tm-resume button{
+  border:0; border-radius:999px; cursor:pointer; padding:8px 16px;
+  font:600 12px/1 var(--font-body);
+}
+.tm-resume .is-go{ background:var(--pin-green); color:var(--pin-text); }
+.tm-resume .is-no{ background:transparent; color:var(--text-faint); padding:8px 6px; }
+.tm-resume .is-no:hover{ color:var(--text); }
+
+/* ══ NEW SINCE YOU WERE LAST HERE ═════════════════════════════════════════
+   On the Wishful thinking page. It is worked out from which proposals were on
+   the page last time rather than from a date, so nothing has to be maintained
+   for it to stay true. */
+.wt-card{ position:relative; }
+.wt-new{
+  position:absolute; z-index:2; top:12px; left:12px;
+  padding:4px 9px; border-radius:999px;
+  background:var(--route-line-wish); color:#2b0f3d;
+  font:700 9px/1 var(--font-body); letter-spacing:.14em; text-transform:uppercase;
+  box-shadow:0 4px 14px rgba(232,79,255,.4);
+  animation:wt-new-in 520ms cubic-bezier(.2,1.2,.4,1) both;
+}
+@keyframes wt-new-in{
+  from{ opacity:0; transform:translateY(-6px) scale(.8); }
+  to  { opacity:1; transform:none; }
+}
+@media (prefers-reduced-motion:reduce){ .wt-new{ animation:none; } }
 .tm-step:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
 /* ── the invisible column you actually scroll ────────────────────────── */
@@ -3788,11 +3935,8 @@ body.page-wishful{
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));
   transition:transform 420ms var(--panel-ease);
 }
-/* the coin turns and the dial leans when the card is pointed at — one gesture
-   each, and they are staggered so it reads as a response rather than a twitch */
-.wt-card:hover .wt-mark.is-cost img{ transform:rotate(-12deg) scale(1.12); }
-.wt-card:hover .wt-mark.is-priority img,
-.wt-card:hover .wt-mark.is-priority .ht-dial{ transform:scale(1.12); transition-delay:70ms; }
+/* Same here: the card no longer tips its coin, because pointing at the coin
+   itself now turns it over. Hovering the CARD is not asking about its cost. */
 .wt-mark span{ display:flex; flex-direction:column; gap:2px; }
 .wt-mark small{
   font:600 8.5px/1 var(--font-body); letter-spacing:.16em; text-transform:uppercase;
