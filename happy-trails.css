@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 5.2
+   version 5.3
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -351,14 +351,26 @@
   --cs-max:            760px;
 
   --feat-size:         36px;   /* how big a badge is on screen, at any zoom  */
-  --feat-lift:         1.14;
+  --feat-lift:         1.14;   /* how much it grows under the pointer         */
+  /* AND HOW MUCH THE ONE WHOSE CARD IS OPEN GROWS, which is a bigger number
+     than the hover on purpose. A hover is an answer to the pointer and is over
+     in a moment; this one has to be findable on a map of thirty-six badges
+     while you are reading a card somewhere else entirely, and at the old 1.14
+     it was the same size as whatever the pointer happened to be resting on. */
+  --feat-open:         1.42;
   --feat-fade:         .26s;
   --feat-away:         .28;    /* how small an icon is before it arrives      */
   --feat-pop:          .52s;   /* and how long it takes to get to full size   */
   --feat-spring:       cubic-bezier(.24, 1.74, .5, 1);   /* with a real overshoot */
   /* the ring that opens out of a badge once as it arrives — see .ht-feat::after */
   --feat-ring:         .72s;
-  --feat-ring-grow:    2.5;
+  --feat-ring-grow:    3.2;
+  /* AND THE ONE THAT KEEPS GOING while a card is open — see .ht-feat::before.
+     Slower and wider than the arrival ring, because this one is not announcing
+     an arrival, it is answering "which of these am I reading?" for as long as
+     the question can be asked. */
+  --feat-ping:         2s;
+  --feat-ping-grow:    3.6;
   --map-card-foot:     78px;
 
   --pin-lift:          1.08;
@@ -782,6 +794,13 @@ body.page-trail{
   display:grid; place-items:center;
   background:var(--panel); border:1px solid var(--panel-edge);
   backdrop-filter:blur(10px); box-shadow:0 4px 16px rgba(0,0,0,.28);
+  /* IT HAS TO BE ABLE TO BE POINTED AT. #tm-ui takes no pointer events at all
+     and hands them out to the things that need them; the badge below it was
+     never given any, so on a trail page the needle's rollover — which has been
+     written and sitting right there in the rule below since the day the main
+     map got it — could not fire, because the badge never saw a hover. It is
+     not a control and still is not one; this only lets the pointer reach it. */
+  pointer-events:auto;
 }#tm-compass[hidden],
 #ht-compass[hidden]{ display:none; }#tm-compass svg,
 #ht-compass svg{
@@ -2122,8 +2141,38 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
   transition:opacity var(--button-fade);
   left:var(--edge-gap);
   bottom:calc(var(--band-bottom) + var(--stepper-drop));
-  display:flex; gap:var(--stepper-gap);
+  /* ONE ROW, CENTRED ON ONE LINE. The three buttons are the same size as each
+     other now (see --play-bigger, which used to make the middle one larger),
+     and the count and the tour's note sit on the same line after them rather
+     than anywhere else on the screen. align-items:center is what keeps the
+     row level when the things in it are not all the same height. */
+  display:flex; align-items:center; gap:var(--stepper-gap);
 }
+
+/* WHERE YOU ARE, ALWAYS. It used to appear only while the tour was running,
+   which is exactly backwards: somebody being driven down the trail can see
+   perfectly well that something is happening, and somebody walking it
+   themselves is the one with no idea whether there are two waypoints left or
+   twenty. It reads off the same nearestStop the arrows do, so it can never
+   disagree with which one they will take you to, and it counts only the stops
+   that are live — switching the Wishful layer off changes the total. */
+#tm-stepCount{
+  flex:0 0 auto;
+  /* IT CARRIES ITS OWN BACKGROUND, for the same reason the arrows beside it
+     do: what is behind it is the map, and the map is pale here and dark there.
+     Plain grey text over it is legible over a ravine and gone completely over
+     a lake — which is exactly what happened the first time this was drawn. The
+     pill is the arrows' own background and border, so the row reads as four
+     pieces of one object rather than as three buttons and some writing. */
+  padding:6px 10px; border-radius:999px;
+  background:var(--stepper-bg); border:1px solid var(--stepper-edge);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  font:700 11px/1 var(--font-body); letter-spacing:.12em;
+  color:var(--text); font-variant-numeric:tabular-nums;
+  white-space:nowrap; user-select:none;
+  transition:opacity var(--button-fade);
+}
+#tm-stepCount[hidden]{ display:none; }
 .tm-step{
   width:var(--stepper-size); height:var(--stepper-size);
   display:grid; place-items:center; padding:0; cursor:pointer;
@@ -2160,15 +2209,18 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
 
 /* ══ THE TOUR BUTTON, BETWEEN THE TWO ARROWS ══════════════════════════════
    The arrows step one waypoint at a time by hand; this one does the walking
-   for you. It is the same button as its neighbours and slightly bigger, which
-   is the only way a row of three says which one is the one.
+   for you. It is the same button as its neighbours and now exactly the same
+   SIZE as them: it used to be a sixth larger, which was meant to say "this is
+   the one" and instead said "this row was not aligned on purpose" — three
+   round buttons in a line, one of them bigger, reads as a mistake rather than
+   as emphasis. It says which one it is by filling in when it runs.
 
    BOTH FACES LIVE IN IT and the stylesheet shows whichever applies, so there
    is no markup to swap at the moment of pressing — a swap that would lose the
    button's focus and its hover on the way through.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root{
-  --play-bigger:  1.16;    /* how much larger the tour button is than an arrow */
+  --play-bigger:  1;       /* the same size as an arrow — see the note above */
   --play-on:      var(--route-line);
   --play-on-ink:  #14310c;
   --tour-pulse:   2.6s;    /* the breath it takes while it is running */
@@ -2222,12 +2274,30 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
   transition:opacity 220ms ease, transform 220ms var(--panel-ease);
 }
 .tm-tourNote.is-on{ opacity:1; transform:translate(-50%, 0); }
-/* ON A TRAIL PAGE IT SITS ABOVE THE BAND, not on it. Solid enough to read is
-   solid enough to hide whatever it is standing on, and what it was standing on
-   was the elevation graph — so it is moved off it rather than made see-through
-   again, which would only have traded one of those problems for the other.
-   --band-bottom is where the readouts begin, the same figure the card column
-   stops at, so restyling the graph moves this with it. */
+
+/* ── ON A TRAIL PAGE IT IS NOT A SEPARATE THING AT ALL ─────────────────────
+   It used to float in the middle of the bottom of the screen with its own pair
+   of arrows in it — which meant that pressing play put a SECOND back-and-
+   forward pair on screen, a few inches from the one that was already there,
+   doing very nearly the same job. Two of everything, and no way to tell from
+   looking which pair you were meant to use.
+
+   So on a trail page the note is put INSIDE the row of buttons, after the
+   right-hand arrow, and brings no arrows of its own: autoplay.js drives the
+   three buttons that were already there. The note is then only what it says it
+   is — a line of words — and there is exactly one of everything on screen.
+
+   position:static is what does it: the fixed position, the bottom and the
+   centring transform above all stop applying, and it simply becomes the next
+   item in the flex row. It still fades in and out, sliding in from the arrow
+   it sits beside rather than up from the floor. */
+body.page-trail #tm-stepper .tm-tourNote{
+  position:static; transform:translateX(-8px);
+  padding:7px 13px;
+}
+body.page-trail #tm-stepper .tm-tourNote.is-on{ transform:none; }
+/* and the free-standing version keeps its place on any page that still uses
+   one — the main map, which has no row of buttons to join */
 body.page-trail .tm-tourNote{ bottom:calc(var(--band-bottom) + 16px); }
 /* WHERE THE TOUR HAS GOT TO, in front of the way out of it. A tour with no end
    in sight is a tour people stop watching. */
@@ -2876,11 +2946,46 @@ img{ -webkit-user-drag:none; user-drag:none; }
   100% { opacity:0;   transform:scale(var(--feat-ring-grow)); }
 }
 
+/* ── AND A SECOND RING THAT DOES NOT STOP ──────────────────────────────────
+   The one above runs once and is done; this one runs for as long as a card is
+   open, and it is the answer to a question the arrival ring cannot answer:
+   with a card up on the right of the screen and thirty-six badges on the map,
+   WHICH ONE is this about. On the tour, where the card changes by itself every
+   few seconds, that question is asked continuously — so the mark is
+   continuous, the way a radar sweep is, rather than a single flash that has
+   already happened by the time you look up from the card.
+
+   Its own pseudo-element rather than a second animation on ::after, because
+   the two overlap: a badge that has just been flown to is still finishing its
+   arrival ring at the moment its card opens, and one element cannot run both.
+   Wider and slower than the arrival ring so the two do not read as the same
+   mark stuttering. */
+.ht-feat::before{
+  content:""; position:absolute; inset:14%;
+  border-radius:50%; border:2.5px solid var(--pin-green);
+  opacity:0; pointer-events:none;
+}
+.ht-feat.is-wishful::before{ border-color:var(--pin-purple); }
+.ht-feat.is-on.is-open::before{
+  animation:ht-feat-ping var(--feat-ping) ease-out infinite;
+}
+@keyframes ht-feat-ping{
+  0%   { opacity:0;   transform:scale(.68); }
+  14%  { opacity:.75; }
+  100% { opacity:0;   transform:scale(var(--feat-ping-grow)); }
+}
+
 /* Pointing at one, and the one whose card is open, answer AT ONCE — the
    arriving stagger is taken back off, and the curve drops its overshoot so a
-   hover is a lift rather than a bounce. */
-.ht-feat.is-on:hover img, .ht-feat.is-on:focus-visible img, .ht-feat.is-on.is-open img{
+   hover is a lift rather than a bounce. The open one goes further than a
+   hover: see --feat-open. */
+.ht-feat.is-on:hover img, .ht-feat.is-on:focus-visible img{
   transform:scale(var(--feat-lift));
+  transition-delay:0s; transition-timing-function:ease, ease;
+}
+.ht-feat.is-on.is-open img,
+.ht-feat.is-on.is-open:hover img{
+  transform:scale(var(--feat-open));
   transition-delay:0s; transition-timing-function:ease, ease;
 }
 .ht-feat.is-on:hover, .ht-feat.is-on:focus-visible{
@@ -2897,6 +3002,10 @@ img{ -webkit-user-drag:none; user-drag:none; }
   .ht-feat img{ transition:opacity .12s linear; transform:scale(1); }
   .ht-feat.is-on img{ transition-delay:0s; }
   .ht-feat.is-on::after{ animation:none; }
+  /* the open one still has to be findable, so the ring stays — it simply
+     stops pulsing and sits there as a plain ring */
+  .ht-feat.is-on.is-open::before{ animation:none; opacity:.7; transform:scale(1.5); }
+  .ht-feat.is-on.is-open img{ transform:scale(var(--feat-open)); transition:none; }
 }
 
 /* ── AND THE CARD THAT OPENS OVER THIS MAP ────────────────────────────────
@@ -3320,6 +3429,16 @@ body.page-text main{
 }
 .pt-figure figcaption{
   margin-top:9px; font:400 12.5px/1.6 var(--font-body); color:var(--text-faint);
+}
+/* TWO PICTURES SIDE BY SIDE, for the cases where the point IS the comparison —
+   the same corner of the city as one map draws it and as another does. Side by
+   side rather than one above the other because a comparison you have to scroll
+   between is not a comparison; on a narrow screen there is no room for that, so
+   they stack and the caption has to carry the work instead. */
+.pt-pair{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.pt-pair figcaption{ grid-column:1 / -1; margin-top:0; }
+@media (max-width:700px){
+  .pt-pair{ grid-template-columns:1fr; }
 }
 
 /* ── the list of trails ────────────────────────────────────────────────────
@@ -4216,6 +4335,12 @@ body.page-wishful{
      16px is its inner padding, and the sum is where every line of text in it
      begins. */
   body.page-trail #tm-stepper{ left:calc(var(--edge-gap) + 16px); }
+  /* AND THE NOTE IN IT GOES. It says how to leave the tour with a key, on a
+     screen with no keys — and on the narrowest screen there is, a line of
+     words after three buttons and a count is what pushes the row off the side.
+     The count stays, because that is the part worth having. The way out on a
+     phone is the play button itself, which is showing a stop square. */
+  body.page-trail #tm-stepper .tm-tourNote{ display:none; }
   /* THE BOTTOM PADDING HOLDS A STRIP CLEAR FOR THE STEPPER ARROWS, which
      sit over the card on a phone. The scroll hint used to be that strip;
      with it gone the card has to keep the space itself, or the arrows land

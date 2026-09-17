@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE TOUR
-   version 1.2
+   version 1.3
 
    WHAT THIS IS. The play button between the two arrows walks the trail for
    you. It scrolls to a waypoint, opens its card, turns the card's pages and
@@ -150,32 +150,61 @@
     note.className = "tm-tourNote";
     note.id = "tm-tourNote";
     note.setAttribute("role", "status");
-    /* TWO PIECES: WHERE THE TOUR HAS GOT TO, and how to leave it. The count is
-       worth having for the reason a progress bar is — a tour with no end in
-       sight is one people stop watching — and it is worked out from the stops
-       that are actually live, so switching the wishful layer off changes the
-       route and the total together. */
-    const arrow = (way, d, label) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "tm-tourStep is-" + way;
-      b.title = label; b.setAttribute("aria-label", label);
-      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" ' +
-        'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
-        'stroke-linejoin="round"><path d="' + d + '"/></svg>';
-      return b;
-    };
-    const back = arrow("back", "M15 5 8 12l7 7", WORDS.tourBack || "Previous");
-    const on = arrow("on", "M9 5l7 7-7 7", WORDS.tourOn || "Next");
-    const count = document.createElement("b");
+
+    /* ── WHERE THE NOTE GOES, AND WHAT IT HAS TO CARRY ─────────────────────
+       A trail page already has a row of controls that mean exactly what this
+       note's arrows meant: a back arrow, a play button and a forward arrow,
+       sitting together above the elevation graph. Putting a second pair of
+       arrows on the screen the moment the tour starts — an inch away from the
+       first pair, pointing the same way, doing very nearly the same thing —
+       is two of everything and no way to tell from looking which is which.
+
+       So where that row exists, the note JOINS IT: no arrows of its own, no
+       count of its own, and it sits in the row after the forward arrow, so
+       pressing play makes the words appear beside the buttons rather than
+       putting a second set of buttons somewhere else. The three buttons that
+       were already there drive the tour — see the capture listener further
+       down — and the count beside them is the engine's own, which tracks the
+       walk whether a tour is running or not.
+
+       The main map has no such row, so there the note carries its own, which
+       is what it was always for. Nothing here decides which page it is on; it
+       asks whether the row is there. */
+    const row = document.getElementById("tm-stepper");
+    const rowBack = document.getElementById("tm-stepBack");
+    const rowOn = document.getElementById("tm-stepOn");
+    const joinsTheRow = !!(row && rowBack && rowOn);
+
+    let back = null, on = null, count = null;
+    if (!joinsTheRow) {
+      /* TWO PIECES: WHERE THE TOUR HAS GOT TO, and how to leave it. The count
+         is worth having for the reason a progress bar is — a tour with no end
+         in sight is one people stop watching — and it is worked out from the
+         stops that are actually live, so switching the wishful layer off
+         changes the route and the total together. */
+      const arrow = (way, d, label) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "tm-tourStep is-" + way;
+        b.title = label; b.setAttribute("aria-label", label);
+        b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" ' +
+          'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
+          'stroke-linejoin="round"><path d="' + d + '"/></svg>';
+        return b;
+      };
+      back = arrow("back", "M15 5 8 12l7 7", WORDS.tourBack || "Previous");
+      on = arrow("on", "M9 5l7 7-7 7", WORDS.tourOn || "Next");
+      count = document.createElement("b");
+      note.appendChild(back);
+      note.appendChild(count);
+      note.appendChild(on);
+    }
     const how = document.createElement("span");
     how.textContent = WORDS.tourEscape || "Press Esc to leave autoplay";
-    note.appendChild(back);
-    note.appendChild(count);
-    note.appendChild(on);
     note.appendChild(how);
 
     function sayWhere(n, of) {
+      if (!count) return;        // the row's own count is saying it instead
       count.hidden = !of;
       count.textContent = of ? (WORDS.tourAt || "{n} of {of}")
                                  .replace("{n}", n).replace("{of}", of) : "";
@@ -213,8 +242,36 @@
       clearAll();
       if (cutShort) cutShort();
     }
-    back.addEventListener("click", e => { e.stopPropagation(); step(-1); });
-    on.addEventListener("click", e => { e.stopPropagation(); step(1); });
+    if (back) back.addEventListener("click", e => { e.stopPropagation(); step(-1); });
+    if (on) on.addEventListener("click", e => { e.stopPropagation(); step(1); });
+
+    /* ── THE ROW'S OWN ARROWS, WHILE THE TOUR IS RUNNING ───────────────────
+       They already do something: they step the walk one waypoint, by hand, and
+       on the way they tell the engine a reader has taken over — which stops
+       the tour. That is exactly right when no tour is running and exactly
+       wrong when one is, where the obvious meaning of the forward arrow is
+       "go on to the next one" and the tour should follow rather than end.
+
+       So while the tour is running the press is caught before it reaches the
+       button, and means the tour's own step instead. In CAPTURE, and on the
+       document rather than on the buttons: a listener added to the button
+       itself would be a second listener on the same element, and listeners on
+       the element a click landed on run in the order they were added — the
+       engine's was added first, so it would already have stopped the tour
+       before this one was reached. Capture on an ancestor runs before either.
+
+       Not running, and nothing here happens at all: the press goes through to
+       the engine untouched and the arrows are the arrows. */
+    if (joinsTheRow) {
+      document.addEventListener("click", e => {
+        if (!running) return;
+        const hit = e.target.closest && e.target.closest("#tm-stepBack, #tm-stepOn");
+        if (!hit || hit.disabled) return;
+        e.stopPropagation();
+        e.preventDefault();
+        step(hit.id === "tm-stepBack" ? -1 : 1);
+      }, true);
+    }
 
     /* ── SCROLLING THERE ───────────────────────────────────────────────────
        Its own tween rather than scrollTo({behavior:"smooth"}), for two
@@ -326,7 +383,9 @@
         jump = 0;
         const i = live[n];
         sayWhere(n + 1, live.length);
-        back.disabled = n <= 0;
+        /* only the note's own arrow needs telling; the row's pair is greyed
+           out by the engine from where the walk actually is */
+        if (back) back.disabled = n <= 0;
         await glideTo(TRAIL.pageAtStop(i));
         if (!running) return;
         if (live[n + 1] !== undefined) fetchAhead(live[n + 1]);
@@ -352,7 +411,7 @@
       button.setAttribute("aria-pressed", "true");
       button.setAttribute("aria-label", WORDS.stopTour || "Stop playing");
       button.title = WORDS.stopTour || "Stop playing";
-      document.body.appendChild(note);
+      (joinsTheRow ? row : document.body).appendChild(note);
       requestAnimationFrame(() => note.classList.add("is-on"));
       document.body.classList.add("tm-touring");
       walk(fromTheTop);

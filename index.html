@@ -271,7 +271,7 @@
 
 const SETTINGS = {
 
-  version: "5.2",              // printed in the bottom-right corner
+  version: "5.3",              // printed in the bottom-right corner
 
   /* ── THE ARTWORK ────────────────────────────────────────────────────── */
 
@@ -2037,7 +2037,18 @@ function showFeature(i) {
     card.setAttribute("aria-hidden", on ? "false" : "true");
   });
   featEls.forEach((node, k) => node.classList.toggle("is-open", k === i));
-  if (i >= 0) deck.measureOne(deck.cards[i]);
+  if (i >= 0) {
+    deck.measureOne(deck.cards[i]);
+    /* THE COIN AND THE DIAL GO AGAIN. Nothing else would ask them to: the
+       cards on this page are all in the viewport the whole time and simply
+       faded to nothing, so the observer inside icon-life.js fires once, at
+       load, about a card nobody can see, and never again. This is the moment a
+       card BECOMES the one on screen, so this is the moment its two readings
+       should arrive. icon-life.js holds them until the fade above has actually
+       made the card visible — see `seenAt` there — so asking now is asking at
+       the right time rather than half a second early. */
+    if (window.HappyTrailsIconLife) window.HappyTrailsIconLife.replay(deck.cards[i]);
+  }
   deck.playTheRightVideo();
 }
 

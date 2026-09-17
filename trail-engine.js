@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 4.6
+   version 4.7
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -614,6 +614,26 @@ const DEFAULTS = {
   stepperSmooth: true,         // glide to the next stop rather than jumping.
                                // Off is instant, which some people prefer.
 
+  /* ── TRAVELLING PAST WAYPOINTS WITHOUT OPENING THEM ─────────────────────
+     Going to a waypoint halfway down the trail means scrolling past every
+     waypoint in between, and with auto-load on each of those opens its card
+     and shuts it again as it goes by — half a second each, six of them, none
+     of them the one asked for. It is the same unreadable flicker that dragging
+     the elevation graph used to cause, and it has the same answer: the cards
+     are hushed for the length of the journey and the one asked for opens on
+     arrival. Only when there is actually something in between: a step to the
+     next waypoint passes nothing and opens at once, as it always did. */
+  hushWhilePassing: true,
+  travelCheck:   60,           // how often to look whether the scroll has
+                               // arrived, in milliseconds
+  arrivedWithin: 3,            // and how close counts as arrived, in pixels
+  travelLeast:   180,          // ignore "it has not moved" for this long first:
+                               // a smooth scroll takes a moment to set off
+  travelStill:   3,            // then this many still checks means it has been
+                               // taken over, or stopped short of the target
+  travelMost:    2600,         // and a hard limit, because a hush that outlives
+                               // the journey is a page with no cards on it
+
   linkToStops: true,           // EVERY STOP GETS AN ADDRESS OF ITS OWN.
                                // don.html#half-mile-bridge opens the Don at
                                // that stop with its card up; walking past a
@@ -814,6 +834,11 @@ const DEFAULTS = {
                                // land exactly as the darkening finishes going.
                                // false leaves it simply present, as it was.
 
+  /* HOW FAR A CARD HAS TO HAVE FADED IN before it counts as being on screen —
+     which is when its coin and its dial are asked to move. Near enough to one
+     that the reading is plainly legible before it starts, because an animation
+     played behind a half-transparent card is an animation half seen. */
+  cardReadyAt:   0.96,
   cardLiveAbove: 0.05,         // a card fainter than this ignores the mouse, so
                                // it can never swallow a click meant for the map
   placeholderHue: 24,          // colour of the stand-in photo on the first card,
@@ -905,6 +930,13 @@ const DEFAULT_WORDS = {
   tourAt:        "{n} of {of}",
   tourBack:      "Previous waypoint",
   tourOn:        "Next waypoint",
+  /* AND WHERE THE WALK HAS GOT TO, SHOWN AT ALL TIMES beside the arrows —
+     tour or no tour. Shorter than tourAt because it is never read as a
+     sentence: it is a readout sitting next to the two controls it refers to,
+     the way a page number sits next to the page. {n} and {of} again count only
+     the live stops. */
+  stepAt:        "{n} / {of}",
+  stepAtLabel:   "Waypoint {n} of {of}",
   /* the elevation graph, for a keyboard and a screen reader, and the word for
      ground that is not going anywhere much */
   graphLabel:    "Position along the trail",
@@ -1275,7 +1307,15 @@ function buildStepper() {
       WORDS.nextStop + '" title="' + WORDS.nextStop + '">' +
       '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"' +
       ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
-      '<path d="M9 5l7 7-7 7"/></svg></button>';
+      '<path d="M9 5l7 7-7 7"/></svg></button>' +
+    /* AND THE COUNT, AFTER THEM. It belongs here and nowhere else: it is the
+       answer to "how much of this is left", which is the question the two
+       arrows raise, and a readout that answers a control ought to be beside
+       that control rather than in another corner of the screen. It is filled
+       in by refreshStepper, which already works out both halves of it for the
+       arrows' own disabled states. role="status" so the number reaching a
+       screen reader does not move the focus. */
+    '<span id="tm-stepCount" role="status"></span>';
   const readouts = el("readouts");
   readouts.parentNode.insertBefore(box, readouts);
 }
@@ -2173,6 +2213,9 @@ function start() {
      enough to count as on screen. Both are used to decide which video, if any,
      should be playing. */
   let frontCard = -1, frontShowing = false;
+  /* which card's coin and dial have already been played — see the note at the
+     bottom of draw(), where it is used */
+  let iconsPlayedFor = -1;
 
   /* ── THE WAYPOINT CARDS ──────────────────────────────────────────────────
      The cards themselves are in waypoint-card.js, which this page and the
@@ -2827,14 +2870,39 @@ function start() {
       frontCard = front;
       frontShowing = showingNow;
       playTheRightVideo();
-      /* THE COIN AND THE DIAL GO AGAIN. They cannot be left to an observer
-         here: every card on this page is inside the viewport the whole time
-         and simply faded to nothing, so "came into view" happens once, at
-         load, while the card is invisible. The moment a card BECOMES the one
-         on screen is the moment its readings should arrive, and this is that
-         moment. */
-      if (cameUp && front >= 0 && window.HappyTrailsIconLife) {
-        window.HappyTrailsIconLife.replay(cards[front]);
+    }
+
+    /* ── THE COIN AND THE DIAL GO AGAIN, ONCE THE CARD IS ACTUALLY UP ───────
+       They cannot be left to an observer here: every card on this page is
+       inside the viewport the whole time and simply faded to nothing, so "came
+       into view" happens once, at load, while the card is invisible.
+
+       BUT NOT AT THE MOMENT THE CARD IS CHOSEN EITHER, which is what this used
+       to do and is why the dial has been reported as not moving three times.
+       Choosing a card and the card being on screen are half a second apart: it
+       fades in, and `shownness` is what does the fading. Asking for the
+       animations at the moment of choosing meant the needle did its whole
+       swing — bottom of the scale, up to its reading, one overshoot — behind a
+       transparent card, and by the time there was anything to look at it had a
+       fifth of its travel left and was moving about two degrees. Which looks
+       exactly like a needle that does not move.
+
+       The coin survived it because its turn is two full revolutions and its
+       last fifth is still a coin spinning. The dial did not.
+
+       So the test is on how far the card has actually FADED IN, not on which
+       card is chosen: `shownAt[front]`, the same number the stylesheet is
+       being given. One play per card per appearance — iconsPlayedFor is what
+       makes it once — and it is cleared as soon as a different card takes over
+       or the cards go, so opening the same one again plays it again. */
+    if (front !== iconsPlayedFor) {
+      if (front >= 0 && shownAt[front] >= SETTINGS.cardReadyAt) {
+        iconsPlayedFor = front;
+        if (window.HappyTrailsIconLife) {
+          window.HappyTrailsIconLife.replay(cards[front]);
+        }
+      } else if (front < 0) {
+        iconsPlayedFor = -1;
       }
     }
 
@@ -3056,6 +3124,19 @@ function start() {
     const here = live.indexOf(at);
     back.disabled = here <= 0;
     on.disabled   = here < 0 || here >= live.length - 1;
+
+    /* THE COUNT, ON THE SAME FIGURES. It is written here rather than anywhere
+       else precisely so that it cannot disagree with the arrows: the same
+       `here` that decides whether the back arrow is greyed out is the number
+       shown. A trail with one live stop gets nothing — "1 / 1" is not
+       information — and the words come from WORDS so a page can change them. */
+    const count = el("stepCount");
+    if (!count) return;
+    if (here < 0 || live.length < 2) { count.hidden = true; return; }
+    count.hidden = false;
+    const put = t => String(t).replace("{n}", here + 1).replace("{of}", live.length);
+    count.textContent = put(WORDS.stepAt || "{n} / {of}");
+    count.setAttribute("aria-label", put(WORDS.stepAtLabel || "Waypoint {n} of {of}"));
   }
 
   if (SETTINGS.showStepper) {
@@ -3098,6 +3179,63 @@ function start() {
     try { history.replaceState(null, "", want); } catch (e) { /* file:// says no */ }
   }
 
+  /* ── HOW MANY LIVE WAYPOINTS LIE BETWEEN HERE AND THERE ──────────────────
+     Asked before a journey, to decide whether the cards need hushing for it.
+     Stepping to the neighbour passes nothing, so nothing is hushed and its
+     card opens in the same instant it always did; clicking something six
+     waypoints away passes five, and those five are what the hush is for. */
+  function stopsPassed(i) {
+    const here = nearestStop().at;
+    if (here < 0 || here === i || !stops[i] || !stops[here]) return 0;
+    const lo = Math.min(stops[here].fraction, stops[i].fraction);
+    const hi = Math.max(stops[here].fraction, stops[i].fraction);
+    return liveStops().filter(k => k !== here && k !== i &&
+                              stops[k].fraction > lo && stops[k].fraction < hi).length;
+  }
+
+  /* ── HUSHING THE CARDS FOR THE LENGTH OF A JOURNEY ───────────────────────
+     The same `scrubbing` the elevation graph raises while it is being dragged,
+     which the drawing loop already knows means "the walk is moving, do not
+     open anything". It is put back down when the scroll arrives — or when it
+     plainly is not going to, which is the part that matters: a smooth scroll
+     can be cut short by anybody who touches the wheel, and it says nothing at
+     all when that happens. So the arrival is watched for rather than waited
+     out, in three ways at once — near enough to the target, or not having
+     moved for a few checks, or simply having taken too long. Whichever comes
+     first, the hush ends and the card that was asked for opens. */
+  let travelWatch = 0;
+  function travelTo(target, arrive) {
+    scrubbing = true;
+    clearTimeout(travelWatch);
+    const began = performance.now();
+    let was = window.scrollY, still = 0, everMoved = false;
+    const look = () => {
+      const now = window.scrollY;
+      const age = performance.now() - began;
+      if (now !== was) { everMoved = true; still = 0; } else { still++; }
+      was = now;
+      const there = Math.abs(now - target) <= SETTINGS.arrivedWithin;
+      /* "IT HAS STOPPED MOVING" IS ONLY MEANINGFUL ONCE IT HAS MOVED. A smooth
+         scroll does not set off in the frame it is asked to, and on a busy
+         machine it can be a good deal later than that — so a stall test that
+         starts counting immediately reads "not moving yet" as "arrived",
+         drops the hush before the journey has begun, and the whole flicker
+         this exists to prevent happens anyway. Which is exactly what it did,
+         intermittently, which is the worst way to find out. The timeout below
+         is what covers a journey that genuinely never starts. */
+      const stopped = everMoved && age > SETTINGS.travelLeast &&
+                      still >= SETTINGS.travelStill;
+      if (there || stopped || age > SETTINGS.travelMost) {
+        scrubbing = false;
+        wake();
+        if (arrive) arrive();
+        return;
+      }
+      travelWatch = setTimeout(look, SETTINGS.travelCheck);
+    };
+    travelWatch = setTimeout(look, SETTINGS.travelCheck);
+  }
+
   function goToStop(i, smooth) {
     if (i < 0 || !stops[i]) return false;
     if (stops[i].kind === "wishful" && !wishfulOn) {
@@ -3105,10 +3243,17 @@ function start() {
       applyLayers();
       if (buildPanels) buildPanels();     // the switch redraws as on
     }
-    window.scrollTo({ top: pageAtStop(i), behavior: smooth ? "smooth" : "auto" });
-    openCard(i);
     named = i;                    // claim it, so the loop agrees rather than fights
     nameInAddress(i);
+    const target = pageAtStop(i);
+    const far = smooth && SETTINGS.hushWhilePassing && stopsPassed(i) > 0;
+    window.scrollTo({ top: target, behavior: smooth ? "smooth" : "auto" });
+    /* THE CARD OPENS ON ARRIVAL, NOT ON DEPARTURE, when there is anything to
+       travel past. It cannot open before: the hush clears every held card on
+       every frame it is up, so a card opened into it would be thrown away in
+       the next frame. */
+    if (far) travelTo(target, () => openCard(i));
+    else openCard(i);
     return true;
   }
 

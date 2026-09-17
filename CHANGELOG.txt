@@ -12,6 +12,99 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 18.3  EIGHT SMALLER THINGS, AND THE ABOUT PAGE AS IT WAS WRITTEN.
+
+       ── THE ROW OF BUTTONS ON A TRAIL PAGE ───────────────────────────────
+
+       ONE PAIR OF ARROWS, NOT TWO. Pressing play used to put a second back-
+       and-forward pair on the screen, an inch from the pair that was already
+       there, pointing the same way and very nearly doing the same job. The
+       tour's line of words now joins the row that exists: it has no arrows of
+       its own, and the three buttons that were already there drive the tour
+       while it runs. Press play and "PRESS ESC TO LEAVE AUTOPLAY" appears
+       along the row, to the right of the forward arrow.
+
+       The press is caught before it reaches the button, in capture and on the
+       document rather than on the button itself — a second listener on the
+       button would have run AFTER the engine's, which stops the tour, so the
+       tour would have ended a frame before it was told to go forward.
+
+       WHERE YOU ARE, ALWAYS, beside those arrows: "4 / 13". It used to appear
+       only while the tour was running, which is backwards — somebody being
+       driven down the trail can see that something is happening, and somebody
+       walking it themselves is the one with no idea whether there are two
+       waypoints left or twenty. It is written from the same figures that grey
+       the arrows out, so it cannot disagree with them, and it counts only the
+       stops that are live: switching the Wishful layer off changes the total.
+
+       IT CARRIES ITS OWN BACKGROUND, the arrows' own, because what is behind
+       it is the map — pale here, dark there. Plain grey writing over that is
+       legible over a ravine and gone completely over a lake.
+
+       THE THREE BUTTONS ARE THE SAME SIZE. The play button was a sixth larger
+       than its neighbours, which was meant to say "this is the one" and said
+       "this row was not lined up on purpose" instead.
+
+       ── AND WHAT THEY DO ─────────────────────────────────────────────────
+
+       CLICKING A WAYPOINT ON THE ELEVATION GRAPH NO LONGER OPENS EVERY CARD
+       ON THE WAY THERE. Going to a waypoint six stops down the trail means
+       scrolling past five, and with auto-load on each of those opened its card
+       and shut it again as it went by — half a second each, none of them the
+       one asked for. It behaves like dragging the graph now: the cards are
+       hushed for the length of the journey and the one asked for opens on
+       arrival. Only when there is something in between, so stepping to the
+       next waypoint still opens at once, as it always did.
+
+       ── THE MAIN MAP ─────────────────────────────────────────────────────
+
+       THE OPEN WAYPOINT IS MUCH HARDER TO LOSE. Its badge grows by nearly half
+       again rather than the sixth it used to — which was the same amount a
+       hover gives, so the open one was the same size as whatever the pointer
+       happened to be resting on — and the ring that opens out of it KEEPS
+       GOING for as long as its card is open, instead of flashing once. On the
+       tour, where the card changes by itself every few seconds, "which of
+       these am I reading?" is a question being asked continuously, so the
+       answer is continuous too. Both rings are wider than they were.
+
+       ── THE TWO INSTRUMENTS ──────────────────────────────────────────────
+
+       THE DIAL'S NEEDLE. Reported three times now, and this time the cause is
+       the real one: the animation has been running correctly all along, and
+       nobody could see it because it ran BEHIND A TRANSPARENT CARD. A card
+       does not appear, it fades in, over about half a second — and the page
+       asked for the needle's swing at the moment it decided to show the card,
+       which is the moment the fade begins. The needle therefore travelled all
+       the way up from the bottom of the scale while there was nothing on
+       screen; by the time there was, it had a fifth of its travel left and was
+       moving about two degrees. Which looks exactly like a needle that does
+       not move.
+
+       The coin got away with the same thing because its turn is two full
+       revolutions and its last fifth is still visibly a coin spinning. That is
+       the whole of why one of them has been reported as broken and the other
+       has not.
+
+       Nothing is asked to move now until the card it is drawn on has actually
+       faded in — measured, not guessed at — and the icons themselves refuse to
+       start while they cannot be seen, so the same thing cannot happen again
+       somewhere else.
+
+       THE COMPASS ON A TRAIL PAGE ANSWERS THE POINTER, the way the one on the
+       main map does. The rollover — the needle knocked off north, overshooting
+       and settling — has been written and sitting in the stylesheet since the
+       day the main map got it, and applied to the trail pages' badge as well.
+       It could never fire, because the interface layer takes no pointer events
+       at all and hands them out, and the badge had never been handed any. It
+       has now.
+
+       ── AND THE ABOUT PAGE ───────────────────────────────────────────────
+
+       IT IS THE ONE THAT WAS WRITTEN, now, rather than the summary of it that
+       was standing in: every section, in full, and all thirteen pictures. The
+       two screenshots of the same corner of the cemetery sit side by side,
+       because a comparison you have to scroll between is not a comparison.
+
  18.2  NINE CHANGES TO THE TOURS, THE MAP AND THE TWO READINGS.
 
        ── THE MAIN MAP ─────────────────────────────────────────────────────

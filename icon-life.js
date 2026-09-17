@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE ICONS THAT MOVE
-   version 1.2
+   version 1.3
 
    WHAT THIS IS. Two of the little drawings on this site are readings rather
    than decoration — the coin says what a connection would COST, the dial says
@@ -81,6 +81,30 @@
     /* A LITTLE STAGGER so a row of them does not move as one block. */
     stagger:      90,
     staggerMost:  4,
+
+    /* ── AND NOT UNTIL THE THING IS ACTUALLY ON SCREEN ─────────────────────
+       This is the fix for an animation that was running perfectly and that
+       nobody had ever seen. On a trail page and on the main map a card does
+       not appear — it FADES in, over something like half a second, and the
+       page asks for these animations at the moment it decides to show the
+       card, which is the moment the fade begins. The needle therefore did its
+       entire swing, from the bottom of the scale up to its reading, while the
+       card it is drawn on was still transparent; by the time there was
+       anything to look at, the needle had a fifth of its travel left and was
+       moving about two degrees. Which looks exactly like a needle that is not
+       moving at all.
+
+       The coin got away with it because its turn is two full revolutions and
+       its last fifth is still visibly a coin spinning. The dial did not, and
+       that is the whole of why one of them has been reported as broken three
+       times and the other has not.
+
+       So nothing plays until the icon is genuinely visible. `seenAt` is the
+       opacity it has to have reached; `waitMost` is how many frames to give it
+       before playing anyway, because an icon that is invisible for some reason
+       this file cannot see must not end up never animating at all. */
+    seenAt:       0.9,
+    waitMost:     150,          // frames — about two and a half seconds
   };
 
   const STILL = window.matchMedia &&
@@ -162,14 +186,41 @@
     });
   }
 
+  /* ── IS IT ACTUALLY ON SCREEN YET ────────────────────────────────────────
+     Not "is it in the viewport" — an observer answers that, and on these pages
+     it answers yes about a card that is sitting there at nought opacity. This
+     asks the other question: can it be SEEN. Opacity is multiplied up the
+     ancestors because that is how opacity works — a card at 0 makes everything
+     inside it 0 however solid the icon's own rule says it is — and anything
+     hidden outright is nought at once. */
+  function seen(node) {
+    let n = node, out = 1;
+    while (n && n.nodeType === 1) {
+      const s = getComputedStyle(n);
+      if (s.visibility === "hidden" || s.display === "none") return 0;
+      const o = parseFloat(s.opacity);
+      if (isFinite(o)) out *= o;
+      if (out < 0.02) return 0;
+      n = n.parentElement;
+    }
+    return out;
+  }
+
   /* ── PLAYING ONE ─────────────────────────────────────────────────────────
      A class on, and off again when it has finished. Off again matters: a class
      that stays on is a class that cannot be put on a second time, which is the
-     usual reason an animation only ever plays once. */
+     usual reason an animation only ever plays once.
+
+     AND IT WAITS FOR THE THING TO BE VISIBLE FIRST — see `seenAt` above, which
+     is where the reasoning is. The wait is a frame loop rather than a timer
+     because what it is waiting for is a transition, and a transition finishes
+     on a frame. `lifeWaiting` stops two requests queueing up behind the same
+     fade: the class is not on yet while it is waiting, so the check below
+     would not otherwise catch it. */
   function play(node, wait) {
     const dial = node.classList.contains("ht-dial");
     const on = dial ? "is-swinging" : "is-turning";
-    if (node.classList.contains(on)) return;
+    if (node.classList.contains(on) || node.dataset.lifeWaiting) return;
     const go = () => {
       node.classList.remove(on);
       void node.offsetWidth;            // let the browser notice it went away
@@ -177,7 +228,23 @@
       setTimeout(() => node.classList.remove(on),
                  (dial ? SETTINGS.dialMs : SETTINGS.coinMs) + 120);
     };
-    if (wait) setTimeout(go, wait); else go();
+    const whenSeen = () => {
+      node.dataset.lifeWaiting = "1";
+      let frames = 0;
+      const look = () => {
+        /* still attached? a card rebuilt underneath us takes its icons with
+           it, and a loop watching a detached node would run to the cap */
+        if (!node.isConnected) { delete node.dataset.lifeWaiting; return; }
+        if (seen(node) >= SETTINGS.seenAt || ++frames > SETTINGS.waitMost) {
+          delete node.dataset.lifeWaiting;
+          go();
+          return;
+        }
+        requestAnimationFrame(look);
+      };
+      requestAnimationFrame(look);
+    };
+    if (wait) setTimeout(whenSeen, wait); else whenSeen();
   }
 
   /* ── WATCHING FOR THEM TO COME INTO VIEW ─────────────────────────────────
