@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE FIRST HELLO
-   version 1.1
+   version 1.2
 
    WHAT THIS IS. The panel that greets somebody the first time they open the
    main map, and only the first time. It is the map's answer to the panel a
@@ -50,6 +50,9 @@ window.HappyTrailsHello = function (opts) {
              "to see what is there.",
     go:      "Continue",
     goLabel: "Close this and go to the map",
+    hold:    "Hold this open",
+    unhold:  "Let it carry on",
+    shut:    "Close",
   }, opts.words || {});
 
   const SETTINGS = Object.assign({
@@ -113,6 +116,25 @@ window.HappyTrailsHello = function (opts) {
       '<svg class="ht-helloEdge" aria-hidden="true" focusable="false">' +
         '<rect class="ht-helloRun" pathLength="1"></rect>' +
       '</svg>' +
+      /* TWO SMALL CONTROLS IN THE CORNER. The line going round the panel is a
+         clock, and a clock somebody is reading against ought to be stoppable —
+         four seconds is enough for three lines of text at a normal reading
+         pace and not enough for somebody who has just looked up from something
+         else. And a way to shut it now, for the reader who has read it. */
+      '<div class="ht-helloTools">' +
+        '<button class="ht-helloTool ht-helloHold" type="button">' +
+          '<svg class="ht-helloHoldStop" viewBox="0 0 24 24" aria-hidden="true">' +
+            '<rect x="6" y="5" width="4.4" height="14" rx="1.4"/>' +
+            '<rect x="13.6" y="5" width="4.4" height="14" rx="1.4"/></svg>' +
+          '<svg class="ht-helloHoldGo" viewBox="0 0 24 24" aria-hidden="true">' +
+            '<path d="M8 5.2v13.6L19 12z"/></svg>' +
+        '</button>' +
+        '<button class="ht-helloTool ht-helloShut" type="button">' +
+          '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" ' +
+            'stroke="currentColor" stroke-width="2.6" stroke-linecap="round">' +
+            '<path d="M6 6l12 12M18 6L6 18"/></svg>' +
+        '</button>' +
+      '</div>' +
       '<div class="ht-helloText">' +
         '<div class="ht-helloKicker"></div>' +
         '<h2 id="ht-helloTitle"></h2>' +
@@ -126,12 +148,16 @@ window.HappyTrailsHello = function (opts) {
   const edge = veil.querySelector(".ht-helloEdge");
   const run = veil.querySelector(".ht-helloRun");
   const go = veil.querySelector(".ht-helloGo");
+  const holdBtn = veil.querySelector(".ht-helloHold");
+  const shutBtn = veil.querySelector(".ht-helloShut");
 
   veil.querySelector(".ht-helloKicker").textContent = WORDS.kicker;
   veil.querySelector("#ht-helloTitle").textContent = WORDS.title;
   veil.querySelector(".ht-helloText p").textContent = WORDS.body;
   go.textContent = WORDS.go;
   go.setAttribute("aria-label", WORDS.goLabel);
+  shutBtn.title = WORDS.shut;
+  shutBtn.setAttribute("aria-label", WORDS.shut);
   veil.style.setProperty("--hello-draw", SETTINGS.stay + "ms");
   veil.style.setProperty("--hello-leave", SETTINGS.leave + "ms");
 
@@ -166,6 +192,7 @@ window.HappyTrailsHello = function (opts) {
     left = true;
     rememberIt();
     veil.classList.add("is-going");
+    clearTimeout(stillTimer);
     window.removeEventListener("resize", cutTheEdge);
     document.removeEventListener("keydown", onKey, true);
     setTimeout(() => {
@@ -178,7 +205,41 @@ window.HappyTrailsHello = function (opts) {
     if (e.key === "Escape") { e.stopPropagation(); leave(); }
   }
 
+  /* ── HOLDING IT OPEN ────────────────────────────────────────────────────
+     Because the panel leaves when the LINE arrives rather than on a timer
+     running alongside it, stopping the line is the whole of stopping the
+     panel — there is no second clock to remember. `is-held` on the veil is
+     what the stylesheet pauses the animation with.
+
+     The one case that needs its own handling is reduced motion, where there
+     is no line and a plain timer stands in for it. There the remainder has to
+     be worked out by hand, which is the small price of the animation not
+     existing to be paused. */
+  let held = false, stillTimer = 0, stillFrom = 0, stillLeft = SETTINGS.stay;
+
+  function holdIt(on) {
+    if (left || held === on) return;
+    held = on;
+    veil.classList.toggle("is-held", held);
+    holdBtn.title = held ? WORDS.unhold : WORDS.hold;
+    holdBtn.setAttribute("aria-label", holdBtn.title);
+    holdBtn.setAttribute("aria-pressed", held ? "true" : "false");
+    if (!STILL) return;
+    if (held) {
+      clearTimeout(stillTimer);
+      stillLeft -= Date.now() - stillFrom;
+    } else {
+      stillFrom = Date.now();
+      stillTimer = setTimeout(leave, Math.max(0, stillLeft));
+    }
+  }
+  holdBtn.title = WORDS.hold;
+  holdBtn.setAttribute("aria-label", WORDS.hold);
+  holdBtn.setAttribute("aria-pressed", "false");
+
   go.addEventListener("click", leave);
+  shutBtn.addEventListener("click", e => { e.stopPropagation(); leave(); });
+  holdBtn.addEventListener("click", e => { e.stopPropagation(); holdIt(!held); });
   veil.addEventListener("click", e => { if (e.target === veil) leave(); });
   /* capture, so Escape closes this before any page behind it hears about it */
   document.addEventListener("keydown", onKey, true);
@@ -190,7 +251,8 @@ window.HappyTrailsHello = function (opts) {
   run.addEventListener("animationend", leave);
   if (STILL) {
     veil.classList.add("is-still");
-    setTimeout(leave, SETTINGS.stay);
+    stillFrom = Date.now();
+    stillTimer = setTimeout(leave, SETTINGS.stay);
   }
 
   cutTheEdge();

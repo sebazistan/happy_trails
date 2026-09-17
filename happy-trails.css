@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 5.3
+   version 5.4
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -2173,6 +2173,122 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
   transition:opacity var(--button-fade);
 }
 #tm-stepCount[hidden]{ display:none; }
+
+/* ── THE PAUSE BUTTON ──────────────────────────────────────────────────────
+   It exists only while a tour is running, and it is a separate button from the
+   one that starts and stops the tour on purpose. Stopping and pausing are not
+   the same thing and should not be the same control: stopping closes the card
+   and gives you the page back, pausing leaves everything exactly where it is
+   so you can finish reading. Folding both onto one button would mean somebody
+   who wanted another twenty seconds with a waypoint pressing the button and
+   losing the waypoint.
+
+   Both faces live in it and the stylesheet shows whichever applies, so there
+   is no markup to swap at the moment of pressing — a swap loses the button's
+   focus on the way through. The same trick as the play button beside it. */
+/* NOT SHOWN UNTIL THERE IS A TOUR TO PAUSE. Written against the row's id
+   rather than as a bare `.tm-hold{display:none}`, which is what it was first
+   and which did nothing at all: `.tm-step` sets display:grid and appears later
+   in this file, so two rules of equal weight met and the later one won. The id
+   settles it, and says in passing that this button only exists inside a row. */
+#tm-stepper .tm-hold,
+#ht-stepper .tm-hold{ display:none; }
+#tm-stepper.is-touring .tm-hold,
+#ht-stepper.is-touring .tm-hold{ display:grid; }
+.tm-hold svg{ grid-area:1 / 1; }
+.tm-hold .tm-holdGo{ opacity:0; transform:scale(.6); }
+.tm-hold .tm-holdGo,
+.tm-hold .tm-holdStop{ transition:opacity 160ms ease, transform 200ms var(--panel-ease); }
+.tm-hold.is-held .tm-holdStop{ opacity:0; transform:scale(.6); }
+.tm-hold.is-held .tm-holdGo{ opacity:1; transform:scale(1); }
+.tm-hold .tm-holdGo{ margin-left:6%; }   /* a triangle looks off-centre centred */
+/* HELD READS AS HELD. The button fills in the way the play button does when it
+   is running, because "this tour is paused" is a state of the page and not
+   just of a button, and the one thing on screen that can say so is here. */
+.tm-hold.is-held{
+  background:var(--play-on); color:var(--play-on-ink); border-color:transparent;
+}
+.tm-hold.is-held:hover:not(:disabled){ background:var(--play-on); color:var(--play-on-ink); }
+
+/* ══ THE SAME ROW OF CONTROLS ON THE MAIN MAP ═════════════════════════════
+   The tour button used to sit on top of the three zoom controls in the bottom
+   RIGHT corner, which put it in the one place on the map where it looked like
+   a fourth zoom control. The three below it change how you are looking at the
+   map; this one takes you round it, and standing in that column it read as the
+   odd one out rather than as its own thing.
+
+   It is in the bottom left now, which is where the same button is on every
+   trail page — same corner, same size, same round grey button, same arrows
+   either side of it once it is running. Somebody who has pressed play on one
+   trail page knows where this is and what it will do, which is the whole
+   argument: there is one tour control on this site and it appears in one
+   place.
+
+   THE ARROWS AND THE COUNT ARE NOT THERE UNTIL THE TOUR IS. This is the one
+   way the map differs from a trail page, and it is not a whim: on a trail page
+   the arrows step the WALK, which exists whether a tour is running or not, and
+   the count says where on that walk you are. The map has no walk — there is
+   nothing an arrow could mean until a tour is running to have a next stop in.
+   So they arrive with it and leave with it, and `is-touring` on the row is
+   what says so.
+   ═══════════════════════════════════════════════════════════════════════════ */
+#ht-stepper{
+  position:fixed; left:var(--edge-gap); bottom:var(--edge-gap);
+  display:flex; align-items:center; gap:var(--stepper-gap);
+  /* the map underneath stays draggable everywhere the buttons are not */
+  pointer-events:none;
+}
+#ht-stepper > *{ pointer-events:auto; }
+/* the things that belong to the tour rather than to the map */
+#ht-stepper .tm-step.is-tourOnly,
+#ht-stepper #ht-stepCount{ display:none; }
+#ht-stepper.is-touring .tm-step.is-tourOnly{ display:grid; }
+#ht-stepper.is-touring #ht-stepCount{ display:block; }
+/* ── THE SAME BUTTONS, DRESSED FOR A MAP YOU CAN SEE THROUGH ───────────────
+   A trail page's row stands on a darkened map — #tm-shade is there to make the
+   readouts legible — so it can be a pale translucent white and be read
+   everywhere. This map has no such shade: the row stands directly on the
+   artwork, which is pale over the city and dark over the lake, and a 10%-white
+   button with white icons in it disappears completely over anything light.
+
+   So the SHAPE is the trail pages' — same size, same circle, same spacing,
+   same arrows either side of the same play button — and the FILL is the one
+   every other control on this map already uses, which is the dark panel with
+   the map blurred behind it. Looking the same and being legible are the same
+   requirement here, not competing ones. */
+body.page-map #ht-stepper .tm-step,
+body.page-map #ht-stepCount{
+  background:var(--panel); border-color:var(--panel-edge);
+  color:var(--text-quiet);
+  -webkit-backdrop-filter:blur(var(--panel-blur));
+  backdrop-filter:blur(var(--panel-blur));
+  box-shadow:var(--button-shadow);
+}
+body.page-map #ht-stepper .tm-step:hover:not(:disabled){
+  background:var(--accent); color:#fff; border-color:transparent;
+}
+/* the two states that mean something keep their own colour, over the top */
+body.page-map #ht-stepper .tm-play.is-on,
+body.page-map #ht-stepper .tm-play.is-on:hover:not(:disabled),
+body.page-map #ht-stepper .tm-hold.is-held,
+body.page-map #ht-stepper .tm-hold.is-held:hover:not(:disabled){
+  background:var(--play-on); color:var(--play-on-ink); border-color:transparent;
+}
+#ht-stepCount{
+  flex:0 0 auto; padding:6px 10px; border-radius:999px;
+  background:var(--stepper-bg); border:1px solid var(--stepper-edge);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  font:700 11px/1 var(--font-body); letter-spacing:.12em;
+  color:var(--text); font-variant-numeric:tabular-nums;
+  white-space:nowrap; user-select:none;
+}
+body.page-map #ht-stepCount{ color:var(--text); }
+/* THE NOTE JOINS THIS ROW TOO, exactly as it does on a trail page: no arrows
+   of its own, no second set of anything, just the words after the count. */
+body.page-map #ht-stepper .tm-tourNote{
+  position:static; transform:translateX(-8px); padding:7px 13px;
+}
+body.page-map #ht-stepper .tm-tourNote.is-on{ transform:none; }
 .tm-step{
   width:var(--stepper-size); height:var(--stepper-size);
   display:grid; place-items:center; padding:0; cursor:pointer;
@@ -2229,10 +2345,12 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
   width:calc(var(--stepper-size) * var(--play-bigger));
   height:calc(var(--stepper-size) * var(--play-bigger));
   position:relative;
-  /* #tm-ui takes no pointer events and hands them out; the engine hands them
-     to the two arrows as the band fades in, and this one takes its own,
-     because it is live from the first frame. */
-  pointer-events:auto;
+  /* IT USED TO TAKE ITS OWN POINTER EVENTS, so that it could be pressed from
+     the first frame while the two arrows were still fading in with the rest of
+     the band. That is why it appeared before the elevation graph did — a live
+     button standing on its own over the opening panel, offering a tour of a
+     trail nobody had started reading yet. The whole row arrives together now,
+     with the graph, and the row is what is handed the pointer. */
 }
 .tm-play svg{ grid-area:1 / 1; }        /* both faces in the same cell */
 .tm-play .tm-playStop{ opacity:0; transform:scale(.6); }
@@ -2253,6 +2371,65 @@ body.trail-wishful #tm-walker .tm-ring{ border-color:var(--route-line-wish); }
 @keyframes tm-touring{
   0%,100%{ box-shadow:0 0 0 0 rgba(78,207,78,.42); }
   55%    { box-shadow:0 0 0 9px rgba(78,207,78,0); }
+}
+
+/* ══ THE LINE THAT DRAWS ITSELF ROUND A CARD ON A TOUR ════════════════════
+   A tour holds each card for as long as that card is worth — which is worked
+   out from what is on it, so it is different every time and there is no way to
+   guess it by looking. This is the answer: a green line travelling round the
+   card's edge, arriving exactly as the card's time runs out.
+
+   It is the same object as the welcome panel's border on the main map, which
+   is the point of it: anybody who has seen that one leave when its line closed
+   the circuit already knows what a line going round something means here. The
+   colour is the difference — purple is the site's "not built yet", green is a
+   trail you can ride, and a tour is a tour of trails.
+
+   The maths is the panel's: one stroke, a dash pattern as long as itself, and
+   pathLength="1" so the animation is 0-to-1 whatever size the card happens to
+   be. tour-edge.js cuts the rectangle to the card it is going round.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --edge-line:   2px;      /* how heavy the line is */
+  --edge-glow:   7px;      /* and how far it bleeds, which is what makes it
+                              read as drawn rather than as a border */
+}
+.tm-edge{
+  position:absolute; inset:0; width:100%; height:100%;
+  /* ABOVE THE PHOTOGRAPH, BELOW NOTHING ELSE. The card's contents scroll and
+     page over underneath it; the line is on the card's edge, where there is
+     never anything to obscure. It takes no pointer events at all — it covers
+     the whole card, and a card you cannot click is a card with a slideshow
+     nobody can stop. */
+  z-index:4; pointer-events:none; overflow:visible; opacity:0;
+  transition:opacity 220ms ease;
+}
+.tm-card.is-timing .tm-edge{ opacity:1; }
+.tm-edgeRun{
+  fill:none; stroke:var(--route-line); stroke-width:var(--edge-line);
+  stroke-linecap:round;
+  stroke-dasharray:1; stroke-dashoffset:1;
+  filter:drop-shadow(0 0 var(--edge-glow) var(--route-glow));
+}
+/* a wishful waypoint's card gets the wishful colour, for the same reason its
+   pin and its line on the map do */
+body.trail-wishful .tm-edgeRun,
+.tm-card.is-wishful .tm-edgeRun{
+  stroke:var(--route-line-wish);
+  filter:drop-shadow(0 0 var(--edge-glow) var(--route-glow-wish));
+}
+.tm-card.is-timing .tm-edgeRun{
+  animation:ht-edgeRun var(--edge-draw, 8s) linear forwards;
+}
+/* PAUSED MEANS PAUSED. The line stops where it is rather than jumping back to
+   the start or running on — it is the same clock as the tour, so it has to do
+   the same thing the tour does. */
+.tm-card.is-held .tm-edgeRun{ animation-play-state:paused; }
+@keyframes ht-edgeRun{ to{ stroke-dashoffset:0; } }
+@media (prefers-reduced-motion:reduce){
+  /* no travelling line, but the card still says it is on a clock: a quiet
+     complete outline, which is the state the animation would have ended in */
+  .tm-card.is-timing .tm-edgeRun{ animation:none; stroke-dashoffset:0; opacity:.45; }
 }
 
 /* THE LINE THAT SAYS HOW TO LEAVE. Bottom centre, out of the way of both the
@@ -2331,22 +2508,13 @@ body.page-trail .tm-tourNote{ bottom:calc(var(--band-bottom) + 16px); }
   .tm-play.is-on{ animation:none; }
 }
 
-/* THE SAME BUTTON ON THE MAIN MAP, where it sits above the three zoom
-   controls — not one of them, because those change how you are looking at the
-   map and this one takes you round it. */
-.ht-play{ position:relative; }
-.ht-play svg{ grid-area:1 / 1; }
-.ht-play .tm-playStop{ opacity:0; transform:scale(.6); }
-.ht-play .tm-playGo,
-.ht-play .tm-playStop{ transition:opacity 160ms ease, transform 200ms var(--panel-ease); }
-.ht-play.is-on .tm-playGo{ opacity:0; transform:scale(.6); }
-.ht-play.is-on .tm-playStop{ opacity:1; transform:scale(1); }
-.ht-play .tm-playGo{ margin-left:6%; }
-.ht-play.is-on{
-  background:var(--pin-green); color:var(--pin-text); border-color:transparent;
-  animation:tm-touring var(--tour-pulse) ease-in-out infinite;
-}
-#ht-tourNote{ z-index:45; }        /* over the white bar, like the map's panels */
+/* THE MAIN MAP'S TOUR BUTTON IS NOW THE SAME BUTTON, in the same corner, made
+   of the same rules — see #ht-stepper above. It used to have a set of its own
+   here, sitting on top of the zoom controls in the other corner, and a second
+   set of rules describing a button that is meant to be identical is a second
+   set of rules that can drift. This is what is left: the map's row sits over
+   the site's white bar, which the trail pages' row does not have to. */
+#ht-stepper{ z-index:45; }
 @media (prefers-reduced-motion:reduce){ .ht-play.is-on{ animation:none; } }
 
 /* ══ COPYING A LINK TO ONE WAYPOINT ═══════════════════════════════════════
@@ -3163,7 +3331,14 @@ body.page-text.page-soon main{
   text-shadow:0 1px 6px rgba(0,0,0,.85);
   pointer-events:none;
 }
-#ht-hint{ left:var(--edge-gap); max-width:44vw; opacity:.85; }
+/* THE HINT SITS ABOVE THE TOUR'S ROW, which took the bottom-left corner the
+   hint used to have to itself. Lifted by the row's own height rather than by a
+   number typed in here, so making the buttons bigger moves the hint with them
+   instead of quietly sliding it back underneath. */
+#ht-hint{
+  left:var(--edge-gap); max-width:44vw; opacity:.85;
+  bottom:calc(var(--edge-gap) + var(--stepper-size) + 12px);
+}
 
 /* ── the coordinate readout (press C) ────────────────────────────────────── */
 #ht-coords{
@@ -3287,7 +3462,48 @@ body.page-text.page-soon main{
 #ht-hello.is-here .ht-helloRun{
   animation:ht-helloRun var(--hello-draw, 4600ms) linear forwards;
 }
+/* HELD MEANS HELD. The line stops where it is, and because the panel leaves
+   when the line ARRIVES rather than on a timer beside it, holding the line is
+   the whole of holding the panel — there is no second thing to remember to
+   stop. Which is the argument for tying the two together in the first place. */
+#ht-hello.is-held .ht-helloRun{ animation-play-state:paused; }
 @keyframes ht-helloRun{ to{ stroke-dashoffset:0; } }
+
+/* ── THE TWO SMALL CONTROLS IN THE CORNER ─────────────────────────────────
+   A panel that is going to leave by itself in four seconds should let you say
+   "not yet" and "now". They are small and quiet on purpose: the Continue
+   button is the way out this panel is offering, and two more buttons the same
+   weight would turn a greeting into a dialog box with three choices. These are
+   the fine print — the reader who wants them will find them in the corner
+   where a corner control lives, and everybody else will press Continue or wait
+   four seconds and never notice them. */
+.ht-helloTools{
+  position:absolute; top:14px; right:14px; z-index:4;
+  display:flex; gap:6px;
+}
+.ht-helloTool{
+  width:30px; height:30px; padding:0; border-radius:50%; cursor:pointer;
+  display:grid; place-items:center;
+  border:1px solid var(--panel-edge); background:rgba(255,255,255,.07);
+  color:var(--text-quiet);
+  transition:background var(--button-fade), color var(--button-fade),
+             border-color var(--button-fade);
+}
+.ht-helloTool:hover{ background:rgba(255,255,255,.16); color:var(--text); }
+.ht-helloTool:focus-visible{ outline:2px solid var(--route-line-wish); outline-offset:2px; }
+.ht-helloTool svg{ width:13px; height:13px; grid-area:1 / 1; fill:currentColor; }
+/* both faces of the pause button live in it, the same way the tour's do */
+.ht-helloHold .ht-helloHoldGo{ opacity:0; transform:scale(.6); }
+.ht-helloHold .ht-helloHoldGo,
+.ht-helloHold .ht-helloHoldStop{ transition:opacity 150ms ease, transform 180ms var(--panel-ease); }
+#ht-hello.is-held .ht-helloHold .ht-helloHoldStop{ opacity:0; transform:scale(.6); }
+#ht-hello.is-held .ht-helloHold .ht-helloHoldGo{ opacity:1; transform:scale(1); }
+#ht-hello.is-held .ht-helloHold{
+  background:var(--route-line-wish); color:#1a0c1f; border-color:transparent;
+}
+@media (max-width:480px){
+  .ht-helloTools{ top:10px; right:10px; }
+}
 
 /* ── the words, and the way on ────────────────────────────────────────────*/
 .ht-helloText{ position:relative; z-index:3; }
@@ -4335,12 +4551,14 @@ body.page-wishful{
      16px is its inner padding, and the sum is where every line of text in it
      begins. */
   body.page-trail #tm-stepper{ left:calc(var(--edge-gap) + 16px); }
-  /* AND THE NOTE IN IT GOES. It says how to leave the tour with a key, on a
-     screen with no keys — and on the narrowest screen there is, a line of
-     words after three buttons and a count is what pushes the row off the side.
-     The count stays, because that is the part worth having. The way out on a
-     phone is the play button itself, which is showing a stop square. */
-  body.page-trail #tm-stepper .tm-tourNote{ display:none; }
+  /* AND THE NOTE IN IT GOES, on BOTH rows. It says how to leave the tour with
+     a key, on a screen with no keys — and on the narrowest screen there is, a
+     line of words after four buttons and a count is what pushes the row off
+     the side of the window. The buttons and the count stay, because those are
+     the parts worth having. The way out on a phone is the play button itself,
+     which is showing a stop square, and the pause is right beside it. */
+  #tm-stepper .tm-tourNote,
+  #ht-stepper .tm-tourNote{ display:none; }
   /* THE BOTTOM PADDING HOLDS A STRIP CLEAR FOR THE STEPPER ARROWS, which
      sit over the card on a phone. The scroll hint used to be that strip;
      with it gone the card has to keep the space itself, or the arrows land
@@ -4424,7 +4642,10 @@ body.page-wishful{
      the zoom controls are. Rather than squeeze the panel, the controls step
      aside while it is open — on a phone you are reading the panel, not
      zooming, and they come straight back when it closes. */
-  body.ht-panel-open #ht-controls{
+  body.ht-panel-open #ht-controls,
+  /* and the tour's row, for the same reason on the other side: the panel
+     reaches nearly the full width here, and it starts at the left edge */
+  body.ht-panel-open #ht-stepper{
     opacity:0; pointer-events:none;
     transition:opacity var(--panel-slide) var(--panel-ease);
   }

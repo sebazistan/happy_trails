@@ -148,6 +148,7 @@
 <script src="icon-life.js"></script>
 <script src="first-hello.js"></script>
 <script src="tour-pace.js"></script>
+<script src="tour-edge.js"></script>
 <script src="waypoint-card.js"></script>
 </head>
 <body class="page-map">
@@ -222,15 +223,40 @@
   <div id="ht-panelBody"></div>
 </aside>
 
-<div id="ht-controls">
-  <!-- THE TOUR. Above the zoom buttons because it is not one of them: those
-       three change how you are looking at the map, this one takes you round
-       it. Both faces live in the button and the stylesheet shows whichever
-       applies, so there is nothing to swap at the moment of pressing. -->
-  <button class="ht-control ht-play" id="ht-play" type="button" aria-pressed="false">
+<!-- THE TOUR'S ROW, IN THE BOTTOM LEFT — the same row, in the same corner, as
+     every trail page has. It used to be a single button stacked on top of the
+     three zoom controls on the other side, which put it in the one place on
+     this map where it read as a fourth zoom control: those three change how
+     you are looking at the map, this one takes you round it.
+
+     THE ARROWS AND THE COUNT ARE HERE BUT NOT SHOWN until a tour is running —
+     `is-touring` on the row, put there by map-tour.js. That is the one way
+     this differs from a trail page, and not by choice: on a trail page the
+     arrows step the WALK, which exists whether a tour is running or not. This
+     map has no walk, so until a tour starts there is no next stop for an arrow
+     to mean. The pause button is added by map-tour.js itself, the same way
+     autoplay.js adds the trail pages' one, so the two cannot end up different.
+
+     Both faces live in the play button and the stylesheet shows whichever
+     applies, so there is nothing to swap at the moment of pressing — a swap
+     loses the button's focus on the way through. -->
+<div id="ht-stepper">
+  <button class="tm-step is-tourOnly" id="ht-stepBack" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg>
+  </button>
+  <button class="tm-step tm-play" id="ht-play" type="button" aria-pressed="false">
     <svg class="tm-playGo" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M8 5.2v13.6L19 12z"/></svg>
     <svg class="tm-playStop" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="2"/></svg>
   </button>
+  <button class="tm-step is-tourOnly" id="ht-stepOn" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+  <span id="ht-stepCount" role="status"></span>
+</div>
+
+<div id="ht-controls">
   <button class="ht-control" id="ht-zoom-in" type="button">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="M21 21l-4.35-4.35M8 11h6M11 8v6" stroke-linecap="round"/></svg>
   </button>
@@ -271,7 +297,7 @@
 
 const SETTINGS = {
 
-  version: "5.4",              // printed in the bottom-right corner
+  version: "5.5",              // printed in the bottom-right corner
 
   /* ── THE ARTWORK ────────────────────────────────────────────────────── */
 
@@ -583,16 +609,27 @@ const WORDS = {
              "can ride today; purple is one that ought to exist. Zoom in and " +
              "the waypoints appear \u2014 click one to see what is there.",
     go:      "Continue",
-    goLabel: "Close this and go to the map"
+    goLabel: "Close this and go to the map",
+    hold:    "Hold this open",
+    unhold:  "Let it carry on",
+    shut:    "Close"
   },
 
-  /* the tour of the whole network — the play button above the zoom controls */
+  /* the tour of the whole network — the row of buttons in the bottom left */
   playTour:     "Tour the network",
   stopTour:     "Stop the tour",
   tourEscape:   "Press Esc to leave the tour",
-  tourAt:       "{n} of {of}",
+  /* the same short form the trail pages use, because it is the same
+     readout in the same row and reading differently would be the one
+     thing about the two that did not match */
+  tourAt:       "{n} / {of}",
   tourBack:     "Previous waypoint",
   tourOn:       "Next waypoint",
+  /* pausing it, which is a different thing from stopping it: stopping closes
+     the card and gives the map back, pausing leaves everything where it is */
+  tourHold:     "Pause the tour",
+  tourGoOn:     "Carry on",
+  tourHeld:     "Paused — press play to carry on",
 
   north:        "N",                 /* the letter on the compass badge  */
   northLabel:   "North is up",       /* its screen-reader description    */

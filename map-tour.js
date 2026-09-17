@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — THE TOUR OF THE WHOLE NETWORK
-   version 1.1
+   version 1.2
 
    WHAT THIS IS. The trail pages walk one trail; this walks all of them. Press
    play on the main map and it flies from one featured waypoint to the next,
@@ -92,60 +92,102 @@
     }
     const WORDS = HT.words;
 
-    /* THE LINE AT THE FOOT OF THE SCREEN: where the tour has got to, how to
-       leave it, and two arrows for going on or back. The arrows are here
-       rather than anywhere else because this is the only thing on the screen
-       that belongs to the tour — everything else belongs to the map. */
+    /* ── THE ROW OF CONTROLS, WHICH IS THE TRAIL PAGES' ROW ────────────────
+       This tour used to put its own pair of arrows and its own count inside a
+       floating note at the bottom of the screen, while the play button sat by
+       itself on top of the zoom controls in the other corner. Two places, two
+       shapes, and nothing about either of them the same as the row every trail
+       page has.
+
+       It is one row now, in the bottom left, made of the same buttons: the
+       page writes the arrows, the play button and the count (see #ht-stepper
+       in index.html) and this file adds the pause and the words. Somebody who
+       has pressed play on a trail page knows where this is and what it does,
+       which is the whole argument — there is one tour control on this site and
+       it looks the same wherever it appears. */
+    const row = document.getElementById("ht-stepper");
+    const back = document.getElementById("ht-stepBack");
+    const on = document.getElementById("ht-stepOn");
+    const count = document.getElementById("ht-stepCount");
+    if (!row || !back || !on || !count) return;
+    back.title = WORDS.tourBack || "Previous";
+    back.setAttribute("aria-label", back.title);
+    on.title = WORDS.tourOn || "Next";
+    on.setAttribute("aria-label", on.title);
+
+    /* THE PAUSE BUTTON, made here for the same reason autoplay.js makes the
+       trail pages' one: it belongs to the tour and has no meaning without one.
+       A SEPARATE button from play/stop on purpose — stopping closes the card
+       and hands the map back, pausing leaves everything exactly where it is,
+       and somebody who wants another twenty seconds with a waypoint should not
+       have to lose the waypoint to get them. */
+    const holdBtn = document.createElement("button");
+    holdBtn.type = "button";
+    holdBtn.className = "tm-step tm-hold";
+    holdBtn.id = "ht-hold";
+    holdBtn.innerHTML =
+      '<svg class="tm-holdStop" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">' +
+        '<rect x="6" y="5" width="4.4" height="14" rx="1.4"/>' +
+        '<rect x="13.6" y="5" width="4.4" height="14" rx="1.4"/></svg>' +
+      '<svg class="tm-holdGo" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">' +
+        '<path d="M8 5.2v13.6L19 12z"/></svg>';
+    row.insertBefore(holdBtn, on.nextSibling);
+
+    /* and the words, which join the row after the count rather than floating
+       in the middle of the bottom of the screen with a second set of arrows */
     const note = document.createElement("div");
     note.className = "tm-tourNote";
     note.id = "ht-tourNote";
     note.setAttribute("role", "status");
-    const arrow = (way, d, label) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "tm-tourStep is-" + way;
-      b.title = label; b.setAttribute("aria-label", label);
-      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" ' +
-        'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
-        'stroke-linejoin="round"><path d="' + d + '"/></svg>';
-      return b;
-    };
-    const back = arrow("back", "M15 5 8 12l7 7", WORDS.tourBack || "Previous");
-    const on = arrow("on", "M9 5l7 7-7 7", WORDS.tourOn || "Next");
-    const count = document.createElement("b");
     const how = document.createElement("span");
-    how.textContent = WORDS.tourEscape || "Press Esc to leave autoplay";
-    note.appendChild(back);
-    note.appendChild(count);
-    note.appendChild(on);
+    how.textContent = WORDS.tourEscape || "Press Esc to leave the tour";
     note.appendChild(how);
 
-    let running = false, tween = 0, jump = 0;
-    const timers = [];
-    const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
-    const clearAll = () => { while (timers.length) clearTimeout(timers.pop()); };
+    let running = false, tween = 0, jump = 0, held = false;
 
-    /* ── WAITING, AND BEING CUT SHORT ──────────────────────────────────────
-       Every wait in the tour is one of these. `cutShort` is the handle on the
-       one currently running, so an arrow can end it early instead of the tour
-       having to poll a flag: the wait resolves, the loop carries on, and the
-       loop is the only place that has to know what "on" and "back" mean. */
-    let cutShort = null;
-    const hold = ms => new Promise(done => {
-      if (!running) { done(); return; }
-      const t = setTimeout(() => { cutShort = null; done(); }, ms);
-      timers.push(t);
-      cutShort = () => { clearTimeout(t); cutShort = null; done(); };
-    });
+    /* ── EVERY WAIT IN THE TOUR IS ON ONE CLOCK ────────────────────────────
+       The same clock the trail pages' tour runs on, from tour-pace.js, and for
+       the same reason: it can be stopped and started again where it stopped,
+       which setTimeout cannot. Pausing is then one instruction rather than
+       four kinds of timer that have to agree — and the two tours cannot end up
+       pausing differently, because they are pausing the same object. */
+    const clock = window.HappyTrailsPace.clock();
+    const later = (fn, ms) => clock.at(ms, fn);
+    const clearAll = () => clock.clear();
+    const hold = ms => (running ? clock.wait(ms) : Promise.resolve());
+
+    /* ── PAUSING ───────────────────────────────────────────────────────────
+       Three things stop together, because they are three views of the same
+       clock: the waits, the green line drawing itself round the card, and the
+       words at the end of the row. A line still filling on a tour that is not
+       progressing would be telling the reader something untrue. */
+    function holdTour(state) {
+      if (!running || held === !!state) return;
+      held = !!state;
+      if (held) clock.pause(); else clock.resume();
+      if (window.HappyTrailsEdge) window.HappyTrailsEdge.hold(held);
+      holdBtn.classList.toggle("is-held", held);
+      holdBtn.title = held ? (WORDS.tourGoOn || "Carry on")
+                           : (WORDS.tourHold || "Pause the tour");
+      holdBtn.setAttribute("aria-label", holdBtn.title);
+      holdBtn.setAttribute("aria-pressed", held ? "true" : "false");
+      how.textContent = held
+        ? (WORDS.tourHeld || "Paused — press play to carry on")
+        : (WORDS.tourEscape || "Press Esc to leave the tour");
+    }
+    holdBtn.addEventListener("click", e => { e.stopPropagation(); holdTour(!held); });
 
     /* AN ARROW. The pending slide and page turns go with it — they belong to a
        card that is about to be left — and then whatever the tour is waiting on
-       is cut short so the loop moves at once. */
+       is cut short so the loop moves at once. It also lets go of a pause:
+       "next" on a paused tour means go on, not go on and stop again in the
+       very next instruction, which is what the loop would otherwise do. */
     function step(by) {
       if (!running) return;
+      holdTour(false);
       jump = by;
       clearAll();
-      if (cutShort) cutShort(); 
+      clock.cut();
     }
     back.addEventListener("click", e => { e.stopPropagation(); step(-1); });
     on.addEventListener("click", e => { e.stopPropagation(); step(1); });
@@ -226,14 +268,22 @@
 
       HT.deck().showPage(card, 0);
       HT.deck().showSlide(card, 0);
-      const turn = (count, move) => {
-        window.HappyTrailsPace.moments(count, it.dwell).forEach(m => {
+
+      /* THE LINE ROUND THE CARD, over exactly the time this card has. Asked
+         for at the same moment, of the same file, with the same number as the
+         trail pages' tour asks — which is the point of both of them going
+         through tour-pace.js for the number and tour-edge.js for the line. */
+      if (window.HappyTrailsEdge) window.HappyTrailsEdge.draw(card, it.dwell);
+
+      const turn = (howMany, move) => {
+        window.HappyTrailsPace.moments(howMany, it.dwell).forEach(m => {
           later(() => { if (running) move(m.j); }, m.at);
         });
       };
       turn(it.pages, j => HT.deck().showPage(card, j));
       turn(it.slides, j => HT.deck().showSlide(card, j));
       await hold(it.dwell);
+      if (window.HappyTrailsEdge) window.HappyTrailsEdge.clear(card);
     }
 
     /* A DIFFERENT WALK EVERY TIME. Fisher-Yates, which is the shuffle that is
@@ -280,23 +330,39 @@
       button.setAttribute("aria-pressed", "true");
       button.setAttribute("aria-label", WORDS.stopTour || "Stop playing");
       button.title = WORDS.stopTour || "Stop playing";
-      document.body.appendChild(note);
+      /* the row grows the pieces that belong to the tour: the two arrows, the
+         count and the pause. Before this there is nothing an arrow could mean,
+         because this map has no walk to step along. */
+      row.classList.add("is-touring");
+      row.appendChild(note);
       requestAnimationFrame(() => note.classList.add("is-on"));
+      holdBtn.title = WORDS.tourHold || "Pause the tour";
+      holdBtn.setAttribute("aria-label", holdBtn.title);
+      holdBtn.setAttribute("aria-pressed", "false");
       fly();
     }
 
     function stop() {
       if (!running) return;
+      /* LET GO OF THE PAUSE FIRST. The clock is stopped while a tour is held,
+         and a stopped clock cannot run the timer that takes the note off the
+         screen a moment from now — so a tour stopped while paused would leave
+         its own note sitting there for ever. */
+      holdTour(false);
       running = false;
       clearAll();
       if (tween) cancelAnimationFrame(tween);
       tween = 0;
+      if (window.HappyTrailsEdge) window.HappyTrailsEdge.clear();
       button.classList.remove("is-on");
       button.setAttribute("aria-pressed", "false");
       button.setAttribute("aria-label", WORDS.playTour || "Tour the network");
       button.title = WORDS.playTour || "Tour the network";
       note.classList.remove("is-on");
-      later(() => { if (note.parentNode) note.parentNode.removeChild(note); }, 260);
+      setTimeout(() => {
+        if (note.parentNode) note.parentNode.removeChild(note);
+        row.classList.remove("is-touring");
+      }, 260);
       HT.show(-1);
     }
 

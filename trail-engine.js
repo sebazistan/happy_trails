@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TRAIL ENGINE — shared by every trail page on the site
-   version 4.7
+   version 4.8
 
    WHAT THIS IS. One copy of the machinery that walks a map along a route as
    you scroll. Every trail page loads this same file, so a visitor downloads it
@@ -937,6 +937,12 @@ const DEFAULT_WORDS = {
      the live stops. */
   stepAt:        "{n} / {of}",
   stepAtLabel:   "Waypoint {n} of {of}",
+  /* PAUSING THE TOUR, which is a different thing from stopping it and so has a
+     button of its own: stopping closes the card and hands the page back,
+     pausing leaves everything exactly where it is so you can finish reading. */
+  tourHold:      "Pause the tour",
+  tourGoOn:      "Carry on",
+  tourHeld:      "Paused — press play to carry on",
   /* the elevation graph, for a keyboard and a screen reader, and the word for
      ground that is not going anywhere much */
   graphLabel:    "Position along the trail",
@@ -2982,23 +2988,27 @@ function start() {
     el("cards").style.opacity = (1 - endFade).toFixed(3);
     const uiFade = (started * (1 - endFade)).toFixed(3);
     el("readouts").style.opacity = uiFade;
-    /* the stepper is part of the walk's furniture, so it arrives and leaves
-       with the readouts rather than sitting over the opening panel */
-    /* THE ARROWS FADE WITH THE READOUTS; THE TOUR BUTTON DOES NOT.
-       The arrows step from one waypoint to the next, which is meaningless
-       before the walk has started — so they arrive with the rest of the band.
-       The tour button is the opposite: it is most use to somebody who has just
-       arrived and has not begun, and offering it only after they have started
-       scrolling is offering it to the one person who no longer needs it. So it
-       sits there from the first frame, beside the opening panel, as the other
-       way in. */
+    /* THE WHOLE ROW ARRIVES WITH THE BAND, tour button and all.
+       It used to arrive in two halves: the arrows faded in with the readouts
+       and the elevation graph, and the tour button did not — it was live from
+       the first frame, on the argument that a tour is most use to somebody who
+       has just arrived and has not begun.
+
+       The argument was sound and the result was wrong. What it produced was a
+       single round button, and later a count beside it, standing on their own
+       in the corner of an opening screen with nothing else around them yet —
+       controls for a band that had not appeared. A control that arrives before
+       the thing it controls does not read as an early offer; it reads as
+       something that has not finished loading.
+
+       So the row arrives as one object, with the graph it sits above. And it
+       is the ROW that is handed the pointer, not each button: the things
+       inside it inherit that, which is what lets the count, the pause button
+       and the tour's note come along without each needing a line here. */
     const stepper = el("stepper");
     if (stepper) {
-      const live = +uiFade > 0.5 ? "auto" : "none";
-      stepper.querySelectorAll(".tm-step:not(.tm-play)").forEach(arrow => {
-        arrow.style.opacity = uiFade;
-        arrow.style.pointerEvents = live;
-      });
+      stepper.style.opacity = uiFade;
+      stepper.style.pointerEvents = +uiFade > 0.5 ? "auto" : "none";
     }
     /* The shading over the map exists to make the readouts legible against it.
        With the readouts gone at the finish it is just a stain across a picture

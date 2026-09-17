@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — HOW LONG A CARD IS WORTH
-   version 1.1
+   version 1.2
 
    WHAT THIS IS. One question, asked by both tours: given this card, how long
    should it be up, and when should its text and its pictures turn over?
@@ -42,9 +42,19 @@
    else the card contains, which is also what anybody watching a slideshow
    would expect of it.
 
+   AND A CLOCK TO RUN IT ON. `clock()` hands back a small scheduler that can be
+   STOPPED AND STARTED AGAIN, which is the one thing setTimeout cannot do. Both
+   tours can be paused now — somebody who wants longer with a card should be
+   able to have it without leaving the tour and finding the waypoint again —
+   and a pause is only real if EVERYTHING waiting pauses with it: the card's
+   own time, the page turns, the picture turns, the beat between waypoints. One
+   clock per tour, everything hung off it, and a pause is then a single
+   instruction rather than four places that have to agree.
+
    TO USE IT:  HappyTrailsPace.plan(card, settings)  →  { dwell, pages, slides,
    words }, or null if there is nothing there. `moments(count, dwell)` is the
-   companion: it hands back the moments at which to move.
+   companion: it hands back the moments at which to move. `clock()` is the
+   thing to run them on.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 window.HappyTrailsPace = (function () {
@@ -109,5 +119,93 @@ window.HappyTrailsPace = (function () {
     return out;
   }
 
-  return { plan: plan, moments: moments, DEFAULTS: DEFAULTS };
+  /* ── A CLOCK THAT CAN BE STOPPED ─────────────────────────────────────────
+     setTimeout has no pause. You can clear it, but it will not tell you how
+     much of it was left, so a paused tour built on plain timers either loses
+     the remainder or has to keep a second set of bookkeeping beside every
+     timer it sets — and there are four kinds of wait in a tour, so that is
+     four places to get it wrong.
+
+     This keeps the bookkeeping once. Every job knows how much time it has
+     left; pausing clears the real timer and subtracts what has elapsed;
+     resuming sets a fresh timer for the remainder. Nothing else in either tour
+     has to know that a pause is even possible.
+
+     THE FOUR THINGS IT DOES:
+       at(ms, fn)   something to happen later — a page turn, a slide turn
+       wait(ms)     a promise the tour awaits — a card's dwell, a beat
+       cut()        resolve the wait NOW: what an arrow does
+       clear()      drop everything pending: what stopping does
+
+     `wait` and `cut` are separate from `at` and `clear` on purpose. An arrow
+     means "this card is over, go on" — the pending turns belong to a card
+     about to be left and are dropped, while the wait must RESOLVE or the tour's
+     own loop never continues from the line it is sitting on. */
+  function clock() {
+    const jobs = [];
+    let held = false, waiting = null;
+    const now = () => (window.performance ? performance.now() : Date.now());
+
+    function arm(job) {
+      if (held || job.timer) return;
+      job.from = now();
+      job.timer = setTimeout(() => {
+        const i = jobs.indexOf(job); if (i >= 0) jobs.splice(i, 1);
+        job.timer = 0;
+        job.fn();
+      }, Math.max(0, job.left));
+    }
+    function forget(job) {
+      const i = jobs.indexOf(job); if (i >= 0) jobs.splice(i, 1);
+      if (job.timer) clearTimeout(job.timer);
+      job.timer = 0;
+    }
+    function at(ms, fn) {
+      const job = { left: Math.max(0, ms), fn: fn, timer: 0, from: 0 };
+      jobs.push(job);
+      arm(job);
+      return job;
+    }
+    function wait(ms) {
+      return new Promise(done => {
+        const job = at(ms, () => { waiting = null; done(); });
+        waiting = { job: job, done: done };
+      });
+    }
+    function cut() {
+      if (!waiting) return;
+      const w = waiting;
+      waiting = null;
+      forget(w.job);
+      w.done();
+    }
+    return {
+      at: at,
+      wait: wait,
+      cut: cut,
+      /* CLEAR LEAVES `waiting` ALONE. The job behind it is dropped, so it can
+         no longer fire by itself, but cut() can still resolve it — which is
+         exactly the order an arrow does things in. */
+      clear: function () { jobs.slice().forEach(forget); },
+      pause: function () {
+        if (held) return;
+        held = true;
+        const t = now();
+        jobs.forEach(job => {
+          if (!job.timer) return;
+          clearTimeout(job.timer);
+          job.timer = 0;
+          job.left -= t - job.from;      // what is still owed
+        });
+      },
+      resume: function () {
+        if (!held) return;
+        held = false;
+        jobs.slice().forEach(arm);
+      },
+      held: function () { return held; },
+    };
+  }
+
+  return { plan: plan, moments: moments, clock: clock, DEFAULTS: DEFAULTS };
 })();

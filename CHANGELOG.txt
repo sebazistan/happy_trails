@@ -12,6 +12,76 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 18.5  A CLOCK YOU CAN SEE, AND ONE YOU CAN STOP.
+
+       ── THE LINE ROUND THE CARD ──────────────────────────────────────────
+
+       ON A TOUR, THE OPEN CARD DRAWS A GREEN LINE ROUND ITSELF, and when the
+       line closes the circuit the tour moves on. A tour holds each card for as
+       long as that card is worth — worked out from what is actually written on
+       it, so it is different every time — and there was no way to know how
+       long that was except by watching it happen. This is the answer, and it
+       is a progress bar that is not shaped like one: no grey trough, no moving
+       blue block lying across a photograph. Just the card's own edge, filling.
+
+       IT IS THE WELCOME PANEL'S BORDER, on purpose. The panel that greets
+       everybody on the main map draws a line round itself and leaves when the
+       line arrives; anybody who has watched that once already knows what a
+       line going round something means here. Purple is the site's "not built
+       yet" and green is a trail you can ride, so the tour's is green.
+
+       ── AND A PAUSE, ON BOTH TOURS ───────────────────────────────────────
+
+       A BUTTON OF ITS OWN, beside the play button, because stopping and
+       pausing are not the same thing and should not be the same control.
+       Stopping closes the card and hands the page back. Pausing leaves
+       everything exactly where it is so you can finish reading — which is the
+       whole reason for it, and which somebody would lose if the one button did
+       both.
+
+       EVERYTHING STOPS TOGETHER. The card's own time, the page turns, the
+       picture turns, the beat between waypoints, and the green line. They are
+       five views of one clock now — tour-pace.js hands both tours a scheduler
+       that can be stopped and started again from where it stopped, which is
+       the one thing setTimeout cannot do. Without it, pausing would be four
+       kinds of timer that all had to agree, and the two tours would have had
+       to agree with each other as well.
+
+       ── THE MAIN MAP'S CONTROLS ARE THE TRAIL PAGES' CONTROLS ────────────
+
+       THE TOUR BUTTON HAS MOVED TO THE BOTTOM LEFT, out of the stack of zoom
+       controls in the other corner. Standing on top of those three it read as
+       a fourth zoom control, which it is not: those change how you are looking
+       at the map, this one takes you round it. It is the same round button, in
+       the same corner, at the same size as the one on every trail page.
+
+       AND THE ARROWS APPEAR WITH THE TOUR, either side of it, with the count
+       and the pause after them. They are not there beforehand for a reason:
+       on a trail page the arrows step the WALK, which exists whether a tour is
+       running or not. This map has no walk, so until a tour starts there is
+       nothing a next arrow could mean.
+
+       ── AND THREE SMALLER THINGS ─────────────────────────────────────────
+
+       THE ROW ARRIVES WITH THE ELEVATION GRAPH, not before it. The arrows used
+       to fade in with the band and the tour button did not — it was live from
+       the first frame, on the argument that a tour is most use to somebody who
+       has not begun. Sound argument, wrong result: what it produced was a
+       button, and later a count beside it, standing alone in the corner of an
+       opening screen with nothing around them yet. A control that arrives
+       before the thing it controls does not read as an early offer. It reads
+       as something that has not finished loading.
+
+       THE WELCOME PANEL HAS A PAUSE AND A CLOSE, small, in its corner. Four
+       seconds is enough for three lines at a reading pace and not enough for
+       somebody who has just looked up from something else. And because the
+       panel leaves when its line ARRIVES rather than on a timer beside it,
+       holding the line is the whole of holding the panel — there is no second
+       clock to remember.
+
+       THE MAP'S HINT LINE MOVED UP by the height of the row, which had taken
+       the corner it was standing in.
+
  18.4  THE ABOUT PAGE'S PICTURES NOW BELONG TO THE SITE.
 
        TWELVE FILES, IN media/about/, RATHER THAN TWELVE LINKS to the Webflow
