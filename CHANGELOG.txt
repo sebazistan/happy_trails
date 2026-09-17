@@ -12,6 +12,42 @@ the Beltline page's own, which is what the entries were written against; the
 folder's version (site-assets-v1.x) is on VERSION.txt.
 
 VERSION HISTORY
+ 18.4  THE ABOUT PAGE'S PICTURES NOW BELONG TO THE SITE.
+
+       TWELVE FILES, IN media/about/, RATHER THAN TWELVE LINKS to the Webflow
+       address they used to sit at. A page whose pictures live somewhere else
+       is a page that goes blank the day somewhere else changes its mind, and
+       there was no way to check them from here either — the machine this is
+       built on cannot reach that host, so they could be pointed at and never
+       looked at. They are looked at now.
+
+       EACH ONE IS STORED AS WHAT IT IS, which is worth about a third of the
+       weight. A watercolour or a photograph is a JPEG. A screenshot of a map —
+       a few dozen flat colours and a great deal of four-pixel text — is a
+       quantised PNG, which is the one case where JPEG is visibly the wrong
+       tool: it puts a halo round every street name. One of them came in as a
+       1.5 MB PNG and leaves as 394 kB with nothing lost, because a map has
+       nowhere near 16 million colours in it.
+
+       AND A FILE THAT WAS ALREADY RIGHT WAS LEFT ALONE. Re-encoding a JPEG
+       cannot put anything back; it can only lose a little more, and as often
+       as not comes out LARGER, because the second encoder is now also trying
+       to reproduce the first one's mistakes faithfully. Four of these did
+       exactly that on the first pass and were left as they arrived. 5.1 MB of
+       pictures became 3.8 MB.
+
+       THE PICTURES ARE WHERE THE WORDS ARE ABOUT THEM, which meant moving two.
+       The Humber Bay Arch Bridge now appears under the passage that argues for
+       building another one, rather than at the top of the page where it was
+       decoration. The three panels of a trail meeting a river and getting a
+       bridge sit under the sentence that says the first obstacle is water and
+       the first thing anybody builds is a bridge.
+
+       AND THE COMPARISON IS AN ACTUAL COMPARISON. The Garden of Remembrance as
+       Google draws it — a cluster of bike trails — and a photograph of the
+       place itself, side by side, which is the whole of the argument in that
+       section and was two paragraphs of description before.
+
  18.3  EIGHT SMALLER THINGS, AND THE ABOUT PAGE AS IT WAS WRITTEN.
 
        ── THE ROW OF BUTTONS ON A TRAIL PAGE ───────────────────────────────
