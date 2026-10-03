@@ -1,0 +1,418 @@
+<!doctype html>
+<!-- Happy Trails v9.9 — built 2026-10-03 10:42 -->
+<html lang="en">
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     HAPPY TRAILS — ABOUT
+     version 2.4
+
+     A reading page. It shares the navigation bar and the palette with the map
+     pages through happy-trails.css; everything else it needs is in that file's
+     section ④, under body.page-text.
+
+     There is no script here on purpose: a page of words does not need one.
+
+     TO EDIT: the words are the words. Change them in place.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>About — Happy Trails</title>
+<meta name="description" content="Why this map exists, how it is drawn, and what it is for.">
+<link rel="stylesheet" href="happy-trails.css?v=9.9">
+<link rel="stylesheet" href="happy-trails.css?v=9.9">
+<!-- how this page looks when someone shares the link, and in a browser tab.
+     The image is 1200x630, which is the shape every one of them crops to.
+     The addresses have to be absolute: a relative og:image is ignored by most
+     scrapers, so a preview that looks right locally comes out blank in Slack.
+     They are all built from BASE in paths.py — change it there. -->
+<link rel="icon" href="favicon.svg?v=9.9" type="image/svg+xml">
+<link rel="alternate icon" href="favicon-32.png?v=9.9" sizes="32x32">
+<link rel="apple-touch-icon" href="favicon-180.png?v=9.9">
+<meta name="theme-color" content="#1d2124">
+<link rel="canonical" href="https://happytrailstoronto.com/about.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Happy Trails">
+<meta property="og:title" content="About — Happy Trails">
+<meta property="og:description" content="Why this map exists, how it is drawn, and what it is for.">
+<meta property="og:url" content="https://happytrailstoronto.com/about.html">
+<meta property="og:image" content="https://happytrailstoronto.com/social/site.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About — Happy Trails">
+<meta name="twitter:description" content="Why this map exists, how it is drawn, and what it is for.">
+<meta name="twitter:image" content="https://happytrailstoronto.com/social/site.png">
+<!-- Counting visits. Inert until analytics.js names a provider —
+     one file, one line, every page. -->
+<script src="js/analytics.js?v=9.9" defer></script>
+</head>
+<body class="page-text">
+
+<!-- the same bar as every other page on the site -->
+<header id="ht-bar">
+  <a id="ht-brand" href="index.html">Happy Trails</a>
+  <nav id="ht-nav">
+    <a href="index.html">Map</a>
+    <a href="trails.html">Trails</a>
+    <a href="wishful.html">Wishful</a>
+    <a href="about.html" class="is-here" aria-current="page">About</a>
+    <a href="contact.html">Contact</a>
+    <a class="ht-coffee" href="https://buymeacoffee.com/sebazistan" target="_blank" rel="noopener"><span class="nav-full">Buy me a coffee</span><span class="nav-short">Coffee</span></a>
+  </nav>
+</header>
+
+<main>
+  <!-- ── THE OTHER PAGE, OFFERED FIRST ────────────────────────────────────
+       The two "about" pages answer different questions. This one is why: why
+       the network looks the way it does and why any of it matters. The other is
+       how: what every mark on the map means, and how to work it. Somebody
+       handed a map with eleven kinds of line on it wants the second one before
+       they read a word of this, so it is the first thing on the page, at the
+       size of a heading, and each page says in its title which of the two it is. -->
+  <a class="pt-bigLink" href="about-the-map.html">
+    <span class="pt-bigLinkKicker">The user's guide</span>
+    <span class="pt-bigLinkTitle">About this map</span>
+    <span class="pt-bigLinkNote">What every line, dot and colour means, how
+      Wishful thinking works, and how to let the map walk a trail for
+      you.</span>
+    <svg class="pt-bigLinkArrow" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+         stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+         stroke-linejoin="round"><path d="M5 12h13M12 5l7 7-7 7"/></svg>
+  </a>
+
+  <div class="pt-head">
+    <div class="pt-kicker">About the project</div>
+    <h1>About this project</h1>
+    <p class="pt-lede">Happy Trails is a subway-map-style guide to Toronto's
+      multi-use trails. It isn't a replacement for a conventional map. It is
+      meant to make clear where the trails go, where they stop, and
+      <em>why</em>. Understanding why the network looks the way it does is the
+      first step to seeing how it could grow.</p>
+  </div>
+
+  <figure class="pt-figure">
+    <img src="page images/trail.jpg?v=9.9" alt="A watercolour of a cyclist on a paved trail through trees" loading="lazy">
+    <figcaption>What all of this is for.</figcaption>
+  </figure>
+
+  <section class="pt-section">
+    <p>This site is about the trails, not the city's bike lanes. Bike lanes
+      are ordinary city infrastructure, or should be, and the provincial fight
+      over them is a story for another place.</p>
+    <p>The trails are a pleasure. They are busy on a fine day, they offer real
+      respite from the noise and chaos of the city, and they are a great way
+      to get some exercise. In places they are also the fastest way across
+      town on a bike. Properly connected, they could carry a real share of
+      Toronto's trips and take some pressure off its famously congested
+      roads.</p>
+    <p>The network isn't ready for that yet. Development, highways, railways
+      and golf courses cut it into pieces. Golf courses are a particular
+      problem: they occupy long stretches of ravine floor, replace natural river
+      banks with lawn, and close off some of the best green space the city has.
+      The City itself owns seven courses, five it runs and two it leases,
+      covering about
+      <a href="https://spacing.ca/toronto/2020/09/30/re-purposing-torontos-city-owned-golf-courses/" target="_blank" rel="noopener">150 hectares of public parkland</a>.</p>
+
+    <figure class="pt-figure">
+      <img src="page images/hydro-corridor.jpg?v=9.9" alt="A watercolour of a cyclist on a trail under hydro towers, the city behind" loading="lazy">
+      <figcaption>A hydro corridor: land nobody could build on, and so land the trails could have. On a sunny day when the weather is warm, they are glorious.</figcaption>
+    </figure>
+  </section>
+
+  <section class="pt-section">
+    <h2>What are the multi-use trails of the GTA?</h2>
+    <p>Toronto is not known as a cycling city. It is better known for gridlock,
+      and for a provincial government that passed Bill 212 in 2024 to remove
+      the protected bike lanes on
+      <a href="https://www.cycleto.ca/cycle_toronto_v_ontario" target="_blank" rel="noopener">Bloor Street, Yonge Street and University Avenue</a>.
+      A court found the removals unconstitutional in July 2025; in 2026
+      <a href="https://www.cbc.ca/news/canada/toronto/bike-lane-removal-appeal-court-decision-9.7307310" target="_blank" rel="noopener">the Court of Appeal sided with the province</a>.</p>
+    <p>Even so, the city has a great deal to work with: roughly
+      <a href="https://www.toronto.ca/services-payments/streets-parking-transportation/cycling-in-toronto/cycling-infrastructure-definitions/network-status/" target="_blank" rel="noopener">400 km of off-road trails and about 250 km of bike lanes and cycle tracks</a>
+      at the end of 2025. That still lags other Canadian cities (Calgary passed
+      <a href="https://newsroom.calgary.ca/city-of-calgary-celebrates-1000-km-of-paved-pathway/" target="_blank" rel="noopener">1,000 km of paved pathway</a>
+      in 2020), but the geography is favourable, the winters are milder than
+      their reputation, and the trail network keeps growing while new on-street
+      lanes stall.</p>
+    <p>Multi-use trails, the subject of this site, are the mostly paved, mostly
+      car-free paths shared by walkers, runners, wheelchairs, scooters, bikes,
+      e-bikes and teenagers escaping their parents: anything, in other words,
+      except the cars, trucks and taxis you share the road with on the way to
+      the grocery store. Most exist where building was impossible or unwelcome: in
+      flood-prone ravines, and under the high-voltage lines of hydro corridors.
+      Others follow old railways, like the Beltline, or the lakeshore, like the
+      Waterfront Trail, which has seen major upgrades over the past decade.</p>
+    <p>The ravines are the heart of it. Toronto's ravine system covers about
+      <a href="https://en.wikipedia.org/wiki/Toronto_ravine_system" target="_blank" rel="noopener">11,000 hectares, some 17% of the city</a>,
+      and is often described as the largest urban ravine system in the world.
+      Much of it is public because of Hurricane Hazel. The 1954 storm killed 81
+      people across the region, and in its aftermath the new conservation
+      authority
+      <a href="https://trca.ca/news/hurricane-hazel-70-years/" target="_blank" rel="noopener">bought flood-plain land and barred building on it</a>,
+      turning at-risk neighbourhoods into green space. Planners put an elevated
+      highway along the waterfront and pushed the lower Don into a straightened
+      channel, but the ravines were land they could not build on, and that is
+      where the trails are.</p>
+  </section>
+
+  <section class="pt-section">
+    <h2>Why not just use Google Maps?</h2>
+    <p>Google Maps is an extraordinary piece of work, but cycling is not its
+      focus. Its cycling layer is crowded, trails are missing or mislabelled,
+      and some paths are marked in ways that are simply wrong.</p>
+
+    <figure class="pt-figure">
+      <img src="page images/google-city.png?v=9.9" alt="Google Maps with its cycling layer switched on, across Toronto" loading="lazy">
+      <figcaption>Google's cycling layer, across the whole city. A map of the
+        entire planet is a real accomplishment; cycling is clearly not the
+        focus.</figcaption>
+    </figure>
+
+    <figure class="pt-figure">
+      <img src="page images/google-cemetery.jpg?v=9.9" alt="Google Maps at Mount Pleasant Cemetery" loading="lazy">
+      <figcaption>Mount Pleasant Cemetery, as Google draws it: a cyclist's paradise on the west side, and no Beltline through the middle.</figcaption>
+    </figure>
+
+    <p>Mount Pleasant Cemetery is a good example. The western half is drawn as
+      a cyclist's paradise, while the Beltline route through the middle, which
+      is how most cyclists actually cross the cemetery, is missing. The Garden
+      of Remembrance appears as a cluster of bike paths. It is not.</p>
+
+    <figure class="pt-figure pt-pair">
+      <img src="page images/google-remembrance.jpg?v=9.9" alt="Google Maps showing a cluster of paths at the Garden of Remembrance" loading="lazy">
+      <img src="page images/remembrance.jpg?v=9.9" alt="A photograph of the Garden of Remembrance: a formal garden with urns and planting" loading="lazy">
+      <figcaption>The Garden of Remembrance, twice. What is drawn as a
+        cluster of bike trails, and what is actually there.</figcaption>
+    </figure>
+
+    <p>Errors like these are common across the city. I have sent corrections
+      through Google's own feedback tools, without success, and the problems
+      are too widespread to fix one at a time. For cycling, it simply isn't
+      reliable enough.</p>
+  </section>
+
+  <section class="pt-section">
+    <h2>What about the Toronto Cycling Map?</h2>
+    <p>The City's official cycling map is better, and I keep a printed copy at
+      home. Trails are clearly marked in orange and most of the clutter is
+      gone. It could be improved by marking routes as primary or secondary and
+      removing a little more of the noise, but it does the job.</p>
+
+    <figure class="pt-figure">
+      <img src="page images/cycling-map.png?v=9.9" alt="The City of Toronto cycling map" loading="lazy">
+      <figcaption>The official cycling map. Clear, and a PDF.</figcaption>
+    </figure>
+
+    <p>But it is essentially a paper map published as a large PDF: slow to
+      load, awkward on a phone, and not interactive. Montreal publishes a
+      similar map and does it much better.</p>
+
+    <figure class="pt-figure">
+      <img src="page images/cycling-map-east.png?v=9.9" alt="A detail of the cycling map across the east end, showing the Taylor Creek trail" loading="lazy">
+      <figcaption>The east end, close up. The Taylor Creek trail runs out between Pharmacy and Victoria Park, and nothing here says why.</figcaption>
+    </figure>
+
+    <p>Nor does it explain why the trails go where they do: why, for instance,
+      the Taylor Creek trail stops between Pharmacy Avenue and Victoria Park
+      Avenue. Happy Trails answers that.</p>
+  </section>
+
+  <section class="pt-section">
+    <h2>The goal of Happy Trails</h2>
+    <p>Happy Trails is half map, half infographic. It shows where the trails go
+      and why the network is fragmented, in a form that is useful whether you
+      ride every weekend or have never been down into a ravine. It draws on a
+      range of sources to show the trails as they are and as they are planned
+      to be, and how barriers have been, or could be, overcome. Above all, it
+      tries to show how different parts of the city affect each other: how a
+      highway interchange or a rail yard in one neighbourhood can strand a
+      trail in the next.</p>
+
+    <figure class="pt-figure">
+      <img src="page images/wishful-switch.jpg?v=9.9" alt="A close photograph of the Layers palette with Wishful Thinking being switched on" loading="lazy">
+      <figcaption>One switch on the Layers palette, and everything that could be built appears beside everything that is.</figcaption>
+    </figure>
+
+    <p>It also looks ahead. Switch on <strong>Wishful thinking</strong> in the
+      Layers panel and proposed fixes appear alongside the existing network:
+      the bridges, crossings and connections that would join the pieces up.
+      Some come from planning documents; some are my own.</p>
+  </section>
+
+  <section class="pt-section">
+    <h2>What the future holds</h2>
+    <p>The challenge now is to turn a fragmented set of trails into a network
+      that is greater than the sum of its parts. Some gaps will be hard: the
+      lower Humber, for example, is hemmed in by housing that dates back to the
+      1800s. Others are easier. Trails should be able to pass through the
+      City's own golf courses in the ravines; on public land, that should be a
+      condition, not a favour.</p>
+
+    <figure class="pt-figure">
+      <img src="page images/arch-bridge.jpg?v=9.9" alt="A watercolour of the Humber Bay Arch Bridge at sunset, reflected in the lake" loading="lazy">
+      <figcaption>The Humber Bay Arch Bridge. Thirty years old, and still the boldest thing the network has.</figcaption>
+    </figure>
+
+    <p>Cycling is more popular than ever, and several major trail projects are
+      under way across the GTA. The Meadoway is turning
+      <a href="https://themeadoway.ca/faqs/" target="_blank" rel="noopener">16 km of Scarborough hydro corridor</a>
+      into a continuous trail and meadow from the Don Valley to Rouge National
+      Urban Park, and new trails along the East Don will connect to it. Closing
+      the hardest gaps will take bridges and tunnels, but the progress is
+      real.</p>
+    <p>Some Wishful thinking entries may seem ambitious. Why build a bridge over
+      the Allen when Beltline users can cross on a road bridge? Because we
+      should want to live in a city that puts walking, cycling and healthy,
+      active lives first. Toronto is not short of money; it is a place that
+      can do more for its residents, and a vision that celebrates access to
+      nature is worth having.</p>
+    <p>So I'd urge anyone using this site to think a little bigger and to ask
+      for a little more. If we can afford the many concrete vehicle bridges
+      over the Allen, we can afford a much smaller and cheaper one for people.
+      If we can spend billions on highways, we can afford the comparatively
+      modest infrastructure the trails need.</p>
+    <p>The best symbol of that ambition is the Humber Bay Arch Bridge.
+      Completed in 1994, its
+      <a href="https://en.wikipedia.org/wiki/Humber_Bay_Arch_Bridge" target="_blank" rel="noopener">100-metre span</a>
+      carries the Martin Goodman Trail over the mouth of the Humber and has become
+      one of the city's most
+      <a href="https://www.blogto.com/city/2019/08/humber-bay-arch-bridge-toronto/" target="_blank" rel="noopener">enduring landmarks</a>,
+      busy with visitors taking in the view and with people on foot and on
+      bikes heading along the waterfront. That was thirty years ago. It's time
+      to plan the next one, and the one after that. Imagine a project of that
+      scale every decade, or every few years.</p>
+    <p>Awareness matters too. When my wife and I moved to Toronto, long-time
+      residents told us to stay out of the lake. Times changed, and the lake is
+      now a place to swim. The trails are at the same point: better than most
+      people know. I'm an avid cyclist, and it still took me longer than it
+      should have to discover them, and I suspect public awareness of the
+      network lags well behind the network itself. Happy Trails is a small
+      attempt to spread the word, and to get more people out on the trails.</p>
+  </section>
+
+  <section class="pt-section">
+    <h2>What could have been…</h2>
+    <p>It's worth imagining the network Toronto might have had if trails had
+      been part of planning from the start, rather than squeezed into land
+      nobody else wanted or inherited from a failed railway. Bicycles are
+      older than cars, and the value of green space is not a new idea. Other
+      cities acted on both.</p>
+    <p><strong>Planned from the start.</strong> In 1883 Minneapolis began the
+      <a href="https://www.tclf.org/landscapes/grand-rounds" target="_blank" rel="noopener">Grand Rounds</a>,
+      a 50-mile ring of parkways linking the city's lakes, the Mississippi and
+      Minnehaha Falls, set aside before the land around it filled in. Boston's
+      <a href="https://www.boston.gov/departments/parks-and-recreation/emerald-necklace" target="_blank" rel="noopener">Emerald Necklace</a>,
+      shaped by Frederick Law Olmsted in the same decades, strings nine parks
+      along seven miles of parkways and waterways. Copenhagen's 1947
+      <a href="https://en.wikipedia.org/wiki/Finger_Plan" target="_blank" rel="noopener">Finger Plan</a>
+      steered growth along five rail corridors and kept the green wedges
+      between them for farming and recreation; today the region is building
+      <a href="https://supercykelstier.dk/english/about-us/" target="_blank" rel="noopener">more than 850 km of cycle superhighways</a>
+      across 30 municipalities.</p>
+    <p><strong>Rings and belts.</strong> Madrid built the
+      <a href="https://en.wikipedia.org/wiki/Cycling_in_Madrid" target="_blank" rel="noopener">Anillo Verde Ciclista</a>,
+      a continuous 64 km cycling ring around the city, between 1995 and 2007.
+      Frankfurt's protected
+      <a href="https://www.visitfrankfurt.travel/en/poi/gruenguertel-frankfurt" target="_blank" rel="noopener">GrünGürtel</a>
+      carries a circular trail of about 64 km through forest, meadow and river
+      valley. Calgary's 138 km
+      <a href="https://newsroom.calgary.ca/city-of-calgary-celebrates-1000-km-of-paved-pathway/" target="_blank" rel="noopener">Rotary Mattamy Greenway</a>
+      loops through more than 55 neighbourhoods, and Ottawa's
+      <a href="https://en.wikipedia.org/wiki/Capital_Pathway" target="_blank" rel="noopener">Capital Pathway</a>
+      runs about 220 km along the region's rivers and canal.</p>
+    <p><strong>Scars turned into paths.</strong> Berlin turned the line of its
+      Wall into the
+      <a href="https://www.visitberlin.de/en/berlin-wall-bike-tour" target="_blank" rel="noopener">160 km Mauerweg</a>.
+      Paris opened the
+      <a href="https://en.wikipedia.org/wiki/Coul%C3%A9e_verte_Ren%C3%A9-Dumont" target="_blank" rel="noopener">Coulée verte René-Dumont</a>
+      on a disused railway viaduct in 1993, the first park of its kind anywhere.
+      Atlanta is turning a 22-mile loop of old rail corridors into the
+      <a href="https://en.wikipedia.org/wiki/Atlanta_Beltline" target="_blank" rel="noopener">Atlanta Beltline</a>,
+      an idea that began as a student's master's thesis in 1999. Seoul tore
+      down an elevated expressway and in 2005 reopened the
+      <a href="https://en.wikipedia.org/wiki/Cheonggyecheon" target="_blank" rel="noopener">Cheonggyecheon</a>,
+      a restored stream with nearly 11 km of waterside walk through the city
+      centre.</p>
+    <p><strong>Networks by design.</strong> Singapore has been joining its parks
+      with a
+      <a href="https://en.wikipedia.org/wiki/Park_Connector_Network" target="_blank" rel="noopener">park connector network</a>
+      since 1991, and the Netherlands counts some
+      <a href="https://longreads.cbs.nl/the-netherlands-in-numbers-2023/where-can-we-ride-our-bikes/" target="_blank" rel="noopener">153,000 km of paths and roads</a>
+      where cyclists are welcome. None of this happened by accident.</p>
+    <p>Imagine another ten Beltlines criss-crossing Toronto, or a ring of trail
+      around the old city like Madrid's. It's too late to plan the network from
+      scratch, but these examples show that cities can reclaim railways,
+      highways and river valleys decades after the fact. It isn't too late to
+      connect, improve and extend what we have.</p>
+    <p>What these places share is not wealth or geography so much as a series
+      of decisions: land set aside before it was needed, corridors kept when
+      their first use ended, and roads given back when they no longer earned
+      their place. Toronto has made some of those decisions already, with the
+      Beltline, the Meadoway and the Humber Bay Arch Bridge. The difference is
+      making them on purpose, as a network, rather than one fragment at a
+      time.</p>
+  </section>
+
+  <section class="pt-section">
+    <h2>The trails in 2026</h2>
+    <p>Out on the trails in 2026, you'll notice they often feel cobbled
+      together. That's no surprise, given how trails come to exist. Most began
+      as informal footpaths worn in over decades, sometimes many decades. As the city grew around them, those paths multiplied into a
+      muddy tangle, until the municipality replaced them with a single paved
+      trail and discouraged the rest.</p>
+    <p>That first trail was built for the neighbourhood around it, with little
+      thought for how it might connect to others, and no attempt to match
+      trails elsewhere in the city. Some are narrow; some have needlessly steep
+      pitches, awkward gates or other quirks. Signs are poor or missing. And
+      where the trail meets an obstacle, it simply stops. The first obstacle is usually water, so the first real
+      piece of trail infrastructure is usually a bridge.</p>
+
+    <figure class="pt-figure">
+      <img src="page images/bridge-story.jpg?v=9.9" alt="Three watercolour panels: a ravine with no crossing, a path stopping at the water, and then a bridge" loading="lazy">
+      <figcaption>How a trail grows, in three steps. The first obstacle is water, and the first real thing anybody builds is a bridge.</figcaption>
+    </figure>
+
+    <p>As a trail grows it meets harder obstacles: highways, railways, golf
+      courses and development pressed up against natural areas. That is where
+      we are now. The easy part is done; the next step is to connect the
+      network. As bikes and e-bikes carry more people further, and a wider
+      range of ages out onto the trails, demand will only grow. Now is the time
+      to fix the mistakes of the past, even where that is difficult. Let's not
+      be afraid of change. It's worth it.</p>
+  </section>
+
+  <section class="pt-section">
+    <h2>Who am I?</h2>
+    <p>This is a hobby project, built from a love of riding the trails and a
+      frustration with both the maps and the gaps. I believe well-planned,
+      connected trail networks make cities better, and that with continued
+      support and advocacy Toronto can have one that is beautiful, accessible
+      and extensive. Toronto always seems to be on the verge of greatness; this
+      is another chance to get it right.</p>
+    <p>To get in touch, visit <a href="contact.html">the contact page</a>.</p>
+
+    <figure class="pt-figure">
+      <img src="page images/us.jpg?v=9.9" alt="A watercolour portrait of the author and his wife, with a bike behind them" loading="lazy">
+      <figcaption>Happy trails.</figcaption>
+    </figure>
+  </section>
+
+
+  <section class="pt-support">
+    <svg class="pt-cup" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9Z"/><path d="M17 10h1.6a2.4 2.4 0 0 1 0 4.8H17"/><path d="M8 3v2.2M11.5 2.6v2.6M15 3v2.2"/></svg>
+    <div>
+      <h2>Buy me a coffee</h2>
+      <p>This map is drawn by hand and given away. If it has been useful — if it found you a route, or settled an argument about a missing bridge — you can put something in the tin.</p>
+      <a class="pt-coffee" href="https://buymeacoffee.com/sebazistan" target="_blank" rel="noopener">
+        Buy me a coffee</a>
+    </div>
+  </section>
+
+  <footer class="pt-foot">
+    <span>Happy Trails — the multi-use trails of the Greater Toronto Area.</span>
+    <span><a href="index.html">Main map</a> · <a href="contact.html">Get in touch</a></span>
+  </footer>
+</main>
+
+</body>
+</html>

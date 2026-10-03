@@ -1,0 +1,85 @@
+<!doctype html>
+<!-- Happy Trails v9.9 — built 2026-10-03 10:42 -->
+<html lang="en">
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     HAPPY TRAILS — NOT FOUND
+     version 1.2
+
+     What somebody sees when they follow a link to an address that is not here.
+     GitHub Pages serves this file for any address it cannot match, because it
+     is called 404.html and sits at the top of the repository. Nothing has to be
+     configured and nothing links to it.
+
+     It is the coming soon page with different words, deliberately: the two
+     have the same job (you have arrived somewhere that is not what you were
+     after) and a trail network finding its own way across the screen is a
+     better thing to meet than an apology. It shares coming-soon.js.
+
+     EVERY ADDRESS ON THIS PAGE STARTS WITH A SLASH, and it must not be tidied
+     to match the other pages. It is served for any address that does not exist
+     (/walks/beltline/summer, say), and a relative address from there resolves
+     to /walks/beltline/happy-trails.css, which does not exist either. The
+     result would be the right words with no stylesheet, drawing or navigation,
+     which looks like a broken site rather than a missing page.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Not found — Happy Trails</title>
+<meta name="description" content="There is nothing at this address on Happy Trails — but the map is still here.">
+<!-- A wrong address is not a page: it should never be indexed or turn up as a
+     link preview, so it has no og: tags and says so. -->
+<meta name="robots" content="noindex, follow">
+<link rel="stylesheet" href="/happy-trails.css?v=9.9">
+<link rel="icon" href="/favicon.svg?v=9.9" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon-32.png?v=9.9" sizes="32x32">
+<link rel="apple-touch-icon" href="/favicon-180.png?v=9.9">
+<meta name="theme-color" content="#1d2124">
+<script src="/js/analytics.js?v=9.9" defer></script>
+</head>
+<body class="page-text page-soon page-lost">
+
+<header id="ht-bar">
+  <a id="ht-brand" href="/index.html">Happy Trails</a>
+  <nav id="ht-nav">
+    <a href="/index.html">Map</a>
+    <a href="/trails.html">Trails</a>
+    <a href="/wishful.html">Wishful</a>
+    <a href="/about.html">About</a>
+    <a href="/contact.html">Contact</a>
+    <a class="ht-coffee" href="https://buymeacoffee.com/sebazistan" target="_blank" rel="noopener"><span class="nav-full">Buy me a coffee</span><span class="nav-short">Coffee</span></a>
+  </nav>
+</header>
+
+<main>
+  <h1 class="cs-title">Off the trail</h1>
+
+  <!-- The span is the line length: the paragraph is as wide as the title so the
+       two share a left edge, and the span stops the sentence running the whole
+       width of a large screen. -->
+  <p class="cs-lost"><span>There is nothing at this address. A link somewhere
+     has a typo in it, or a page has been renamed since it was written down.
+     The map is still where you left it.</span></p>
+
+  <p class="cs-ways">
+    <a class="cs-way" href="/index.html">The map</a>
+    <a class="cs-way" href="/trails.html">All the trails</a>
+  </p>
+
+  <!-- The same drawing as the coming soon page: a canvas and nothing else,
+       found by id by coming-soon.js. With the script missing or JavaScript off,
+       what is left is a sentence and two links, which is the part that matters. -->
+  <div class="cs-stage">
+    <canvas id="cs-canvas" role="img"
+            aria-label="A trail network drawing itself: green trails forking and
+                        joining, bike lanes, expressways and railways coming and
+                        going, and red blocks where golf courses stand in the
+                        way."></canvas>
+  </div>
+</main>
+
+<script src="/js/coming-soon.js?v=9.9"></script>
+<script>HappyTrailsComingSoon(document.getElementById("cs-canvas"));</script>
+
+</body>
+</html>

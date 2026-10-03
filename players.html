@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!-- Happy Trails v9.9 — built 2026-10-03 10:42 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Players — Happy Trails</title>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     THE PLAYER BENCH
+
+     Not part of the site. Keep it open in another tab while drawing: a walk
+     cycle is much easier to draw against a loop you can slow down and scrub
+     through than by hunting for it on a trail page.
+
+     Everybody in artwork/players/ turns up here by themselves: the build packs
+     the folder into players.js and this page shows whatever is in it. Draw a new
+     character, run the build, refresh.
+
+     It works from file:// as well as a server, which is why the drawings are
+     inlined into players.js rather than fetched.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<link rel="stylesheet" href="players-preview.css?v=9.9">
+</head>
+<body>
+
+<header class="pb-top">
+  <h1>The player bench</h1>
+  <p class="pb-sub">Everybody in <code>artwork/players/</code>, walking on the
+     spot. Nothing here is measured in seconds: drag the speed and every
+     figure re-times itself, because each one is driven by how far it has
+     gone and not by a clock.</p>
+
+  <div class="pb-controls">
+    <label class="pb-ctl">
+      <span>Speed</span>
+      <input id="pb-speed" type="range" min="0" max="320" value="90" step="1">
+      <output id="pb-speedOut">90 px/s</output>
+    </label>
+
+    <label class="pb-ctl pb-wide">
+      <span>Scrub</span>
+      <input id="pb-scrub" type="range" min="0" max="1000" value="0" step="1">
+      <output id="pb-scrubOut">0 px</output>
+    </label>
+
+    <button id="pb-play" class="pb-btn" type="button">Pause</button>
+    <button id="pb-back" class="pb-btn pb-step" type="button" title="one small step back">&minus;</button>
+    <button id="pb-fwd"  class="pb-btn pb-step" type="button" title="one small step on">+</button>
+
+    <label class="pb-ctl pb-check">
+      <input id="pb-guides" type="checkbox" checked>
+      <span>Ground &amp; anchor</span>
+    </label>
+    <label class="pb-ctl pb-check">
+      <input id="pb-big" type="checkbox">
+      <span>Draw it large</span>
+    </label>
+  </div>
+</header>
+
+<main id="pb-stages" class="pb-stages">
+  <!-- one stage per drawing, written by players-preview.js -->
+</main>
+
+<footer class="pb-foot">
+  <p><strong>The four names that are the whole interface.</strong>
+     <code>part-&lt;name&gt;</code> is a thing that can move;
+     <code>pivot-&lt;name&gt;</code> is a dot saying where it turns, never drawn;
+     <code>ground</code> is the line the feet stand on;
+     <code>anchor</code> is the single point that rides the route.
+     Nesting is the skeleton — a shin drawn inside a thigh follows the thigh.</p>
+  <p>How each one moves is in <code>build/players_data.py</code>. How far apart
+     they live on the trail is in the same file, under <code>CAST</code>.</p>
+</footer>
+
+<script src="js/players.js?v=9.9"></script>
+<script src="js/player-rig.js?v=9.9"></script>
+<script src="js/players-preview.js?v=9.9"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# Things that must never go into the published repository.
+# GitHub Pages serves everything committed, and git keeps every version forever,
+# so one big working file committed once stays in the history for good.
+
+# working files for the drawings and videos; only the exported results belong here
+*.aep
+*.psd
+*.ai
+*.prproj
+*.blend
+*.zip
+*.mov
+*.avi
+*.mkv
+
+# the raw camera originals, if they are ever copied in by mistake
+*.raw
+*.dng
+*.cr2
+*.nef
+*.arw
+
+# editor and system leftovers
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp

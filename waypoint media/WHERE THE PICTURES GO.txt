@@ -1,0 +1,23 @@
+WAYPOINT MEDIA
+══════════════════════════════════════════════════════════════════════════
+
+This folder holds the photographs, video and watercolours the waypoint cards
+show. One folder per place, and inside each:
+
+    pics/          photographs
+    vids/          video
+    watercolor/    the paintings
+
+The folders are named for PLACES — "don", "e don", "Beltline", "etobicoke
+creek" — and the pages are named for ROUTES, and the two do not always agree:
+three pages draw on the Don's folder and two on Etobicoke Creek's. Which page
+uses which folder is written down in build/media_picks.py, beside the list of
+which picture each waypoint shows.
+
+The files themselves are not in the build. They are far too large to carry
+around with the code, they are already on the machine that makes the site, and
+nothing here needs to read them — the pages only need their NAMES. So this
+folder ships nearly empty and fills up on the machine that has the pictures.
+
+File names keep their spaces and their brackets. "don (94).jpg" is what the
+scanner called it, and the page encodes the name on its way into the html.

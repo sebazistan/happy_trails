@@ -1,0 +1,21 @@
+TRAIL LINK IMAGES
+══════════════════════════════════════════════════════════════════════════
+
+One picture per trail: the tile on the Trails page, and the picture behind
+the opening card of that trail's own page. 1000 × 560, named for the trail's
+slug — beltline.jpg, lower-don.jpg — plus soon.jpg, which is the tile for a
+trail that has no page yet.
+
+THESE ARE FILES, NOT OUTPUT. Replace one and it is replaced; the build copies
+this folder into the site as it stands and does not draw over anything it
+finds here. That is the whole point of the folder existing separately from
+`waypoint media/`: these are chosen and cropped deliberately, one per trail,
+and they are not part of the pool the waypoint cards draw from.
+
+A trail with NO file here still gets a drawing — a generated view of a ravine
+or a hydro corridor, seeded off the trail so each is its own. That is what a
+new trail wants on the day it is added and before anybody has painted it. Put
+a file here and the drawing stops being made.
+
+The ones here now were picked at random from the watercolours and cropped to
+the tile's shape. They are a starting point.

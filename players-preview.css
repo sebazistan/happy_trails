@@ -1,0 +1,160 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE PLAYER BENCH — how it looks
+   version 1.1
+
+   A workshop page, not a page of the site, so it borrows none of the site's
+   stylesheet: nothing here should be able to break happy-trails.css and
+   nothing there should be able to quietly restyle the bench. The one thing it
+   does share is the paper colour, because a figure judged against a different
+   white is a figure that will look wrong when it gets to the trail.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --pb-paper:  #fbfaf7;     /* the site's paper, so the ink is judged fairly */
+  --pb-ink:    #26241f;
+  --pb-faint:  #8d887c;
+  --pb-rule:   #e2ded4;
+  --pb-trail:  #ffffff;     /* the white route line a player walks on */
+  --pb-edge:   #cfcabe;
+  --pb-mark:   #e8503a;     /* the anchor dot, the same red as the walker */
+  --pb-stage:  132px;       /* how tall one lane is */
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--pb-paper);
+  color: var(--pb-ink);
+  font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+code {
+  font: 13px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  background: #fff;
+  border: 1px solid var(--pb-rule);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+/* ── THE HEADER, AND THE CONTROLS ────────────────────────────────────────── */
+
+.pb-top {
+  padding: 26px 26px 18px;
+  border-bottom: 1px solid var(--pb-rule);
+  background: #fff;
+}
+.pb-top h1 { margin: 0 0 6px; font-size: 21px; font-weight: 650; letter-spacing: -.01em; }
+.pb-sub { margin: 0 0 16px; max-width: 62ch; color: var(--pb-faint); font-size: 14px; }
+
+.pb-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+}
+.pb-ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.pb-ctl > span { color: var(--pb-faint); }
+.pb-ctl input[type="range"] { width: 150px; }
+.pb-wide input[type="range"] { width: 260px; }
+.pb-ctl output {
+  min-width: 8ch;
+  font: 12px/1 ui-monospace, Menlo, Consolas, monospace;
+  color: var(--pb-ink);
+}
+.pb-check { gap: 6px; cursor: pointer; }
+.pb-check span { color: var(--pb-ink); }
+
+.pb-btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 13px;
+  border: 1px solid var(--pb-edge);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--pb-ink);
+  cursor: pointer;
+}
+.pb-btn:hover { border-color: var(--pb-ink); }
+.pb-step { padding: 5px 11px; font-size: 15px; line-height: 1; }
+
+/* ── ONE LANE PER PLAYER ─────────────────────────────────────────────────── */
+
+.pb-stages { padding: 8px 26px 0; }
+
+.pb-lane { border-bottom: 1px solid var(--pb-rule); padding: 16px 0 20px; }
+
+.pb-name {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 650;
+}
+.pb-facts {
+  font: 12px/1 ui-monospace, Menlo, Consolas, monospace;
+  color: var(--pb-faint);
+  font-weight: 400;
+}
+
+/* THE STAGE. The player is absolutely placed inside it and the trail line is
+   drawn across it, so what you are looking at is as close as this page can get
+   to what the trail page will show: a figure standing on a white route. */
+.pb-stage {
+  position: relative;
+  height: var(--pb-stage);
+  background: var(--pb-paper);
+  overflow: hidden;
+}
+.pb-stage.is-big { height: calc(var(--pb-stage) * 2); }
+
+.pb-trail {
+  position: absolute;
+  left: 0; right: 0;
+  height: 9px;
+  background: var(--pb-trail);
+  border-top: 1px solid var(--pb-edge);
+  border-bottom: 1px solid var(--pb-edge);
+}
+
+.pb-rider {
+  position: absolute;
+  left: 0;
+  width: 0; height: 0;          /* a point: the figure hangs off its anchor */
+}
+.pb-rider svg { position: absolute; overflow: visible; }
+
+/* THE ANCHOR MARK — where the drawing says it touches the route. Only shown
+   when the guides are on, because it is the first thing to check and the first
+   thing that gets in the way. */
+.pb-anchor {
+  position: absolute;
+  width: 7px; height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: var(--pb-mark);
+  opacity: 0;
+}
+.pb-stage.is-guided .pb-anchor { opacity: .85; }
+.pb-stage:not(.is-guided) .pb-trail { background: transparent; border-color: transparent; }
+
+/* ── THE FOOTER ──────────────────────────────────────────────────────────── */
+
+.pb-foot {
+  padding: 20px 26px 40px;
+  color: var(--pb-faint);
+  font-size: 13px;
+  max-width: 78ch;
+}
+.pb-foot p { margin: 0 0 8px; }
+
+.pb-missing {
+  padding: 40px 26px;
+  color: var(--pb-mark);
+}
+
+@media (max-width: 640px) {
+  .pb-top, .pb-stages, .pb-foot { padding-left: 16px; padding-right: 16px; }
+  .pb-ctl input[type="range"], .pb-wide input[type="range"] { width: 120px; }
+}

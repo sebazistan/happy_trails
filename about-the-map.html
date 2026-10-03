@@ -1,0 +1,408 @@
+<!doctype html>
+<!-- Happy Trails v9.9 — built 2026-10-03 10:42 -->
+<html lang="en">
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     HAPPY TRAILS — ABOUT THIS MAP
+     version 1.2
+
+     The user's guide: what every mark on the map means and how to work it.
+
+     The other about page answers a different question: about.html is why (why
+     the network looks the way it does, why the gaps are where they are), this
+     one is how. They link to each other at the top and each says in its title
+     which of the two it is, because two pages both called "About" is how a
+     reader ends up reading the wrong one.
+
+     It is a reading page like the other: the same bar, the same palette, the
+     same body.page-text rules in happy-trails.css, and no script of its own.
+
+     The pictures of the crossings live in page images/crossings/: six
+     watercolours of the same stretch of road, so the only thing that changes
+     from one to the next is how much help you get crossing it, which is exactly
+     what the dot on the map is telling you.
+
+     TO EDIT: the words are the words. Change them in place.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>About this map — Happy Trails</title>
+<meta name="description" content="A guide to reading the map: what every line, dot and colour means, how Wishful thinking works, and how to let the map walk a trail for you.">
+<link rel="stylesheet" href="happy-trails.css?v=9.9">
+<link rel="icon" href="favicon.svg?v=9.9" type="image/svg+xml">
+<link rel="alternate icon" href="favicon-32.png?v=9.9" sizes="32x32">
+<link rel="apple-touch-icon" href="favicon-180.png?v=9.9">
+<meta name="theme-color" content="#1d2124">
+<link rel="stylesheet" href="happy-trails.css?v=9.9">
+<!-- how this page looks when someone shares the link, and in a browser tab.
+     The image is 1200x630, which is the shape every one of them crops to.
+     The addresses have to be absolute: a relative og:image is ignored by most
+     scrapers, so a preview that looks right locally comes out blank in Slack.
+     They are all built from BASE in paths.py — change it there. -->
+<link rel="icon" href="favicon.svg?v=9.9" type="image/svg+xml">
+<link rel="alternate icon" href="favicon-32.png?v=9.9" sizes="32x32">
+<link rel="apple-touch-icon" href="favicon-180.png?v=9.9">
+<meta name="theme-color" content="#1d2124">
+<link rel="canonical" href="https://happytrailstoronto.com/about-the-map.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Happy Trails">
+<meta property="og:title" content="About this map — Happy Trails">
+<meta property="og:description" content="A guide to reading the map: what every line, dot and colour means, how Wishful thinking works, and how to let the map walk a trail for you.">
+<meta property="og:url" content="https://happytrailstoronto.com/about-the-map.html">
+<meta property="og:image" content="https://happytrailstoronto.com/social/site.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About this map — Happy Trails">
+<meta name="twitter:description" content="A guide to reading the map: what every line, dot and colour means, how Wishful thinking works, and how to let the map walk a trail for you.">
+<meta name="twitter:image" content="https://happytrailstoronto.com/social/site.png">
+<script src="js/analytics.js?v=9.9" defer></script>
+</head>
+<body class="page-text">
+
+<!-- the same bar as every other page on the site -->
+<header id="ht-bar">
+  <a id="ht-brand" href="index.html">Happy Trails</a>
+  <nav id="ht-nav">
+    <a href="index.html">Map</a>
+    <a href="trails.html">Trails</a>
+    <a href="wishful.html">Wishful</a>
+    <a href="about.html" class="is-here" aria-current="page">About</a>
+    <a href="contact.html">Contact</a>
+    <a class="ht-coffee" href="https://buymeacoffee.com/sebazistan" target="_blank" rel="noopener"><span class="nav-full">Buy me a coffee</span><span class="nav-short">Coffee</span></a>
+  </nav>
+</header>
+
+<main>
+  <!-- back to the other one, in the same shape as the link that came here -->
+  <a class="pt-bigLink" href="about.html">
+    <span class="pt-bigLinkKicker">The other half</span>
+    <span class="pt-bigLinkTitle">About this project</span>
+    <span class="pt-bigLinkNote">Why the network looks the way it does, where
+      the gaps came from, and what it would take to close them.</span>
+    <svg class="pt-bigLinkArrow" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+         stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+         stroke-linejoin="round"><path d="M5 12h13M12 5l7 7-7 7"/></svg>
+  </a>
+
+  <div class="pt-head">
+    <div class="pt-kicker">The user's guide</div>
+    <h1>About this map</h1>
+    <p class="pt-lede">The map is drawn the way a subway map is drawn: not to
+      scale, but to make the shape of the network readable at a glance. That
+      buys a lot of clarity and costs you the ability to guess what anything
+      means. This page is the key.</p>
+  </div>
+
+  <section class="pt-section">
+    <h2>The lines</h2>
+    <p>Every line on the map is a way of getting somewhere without a car, and
+      the kind of line tells you what sort of way it is.</p>
+
+    <ul class="pt-legend">
+      <li><img src="icons/trails.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Trail</b><span>A paved, car-free path. The green lines are the
+          backbone of the map and the reason it exists.</span></div></li>
+      <li><img src="icons/unpaved.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Unpaved trail</b><span>Gravel or dirt. Rideable on most bikes,
+          less pleasant after rain, and not always cleared in winter.</span></div></li>
+      <li><img src="icons/under-construction.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Under construction</b><span>Being built now. It should join the
+          green network when it opens.</span></div></li>
+      <li><img src="icons/lanes.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Bike lane</b><span>On-road, and shown only where it does the job
+          of a trail — joining two pieces of the off-road network. This is not a
+          map of the city's bike lanes.</span></div></li>
+      <li><img src="icons/connections.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Connection</b><span>A short link between two trails that is
+          neither trail nor lane: a park path, a quiet street, a way through.</span></div></li>
+      <li><img src="icons/road-connection.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Road connection</b><span>The same idea, on a road you share with
+          traffic. Usable, but you are in the road.</span></div></li>
+      <li><img src="icons/dangerous.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Dangerous connection</b><span>A link that exists and that most
+          people should not take. Shown because pretending it is not there does
+          not help anybody.</span></div></li>
+      <li><img src="icons/wishful.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Wishful thinking</b><span>A trail that does not exist. Purple,
+          everywhere on this site, means a proposal — see below.</span></div></li>
+      <li><img src="icons/bridge.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Bridge</b><span>The trail is carried over something — a river,
+          a road, a railway.</span></div></li>
+      <li><img src="icons/stairs.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Stairs</b><span>You will be carrying your bike.</span></div></li>
+      <li><img src="icons/barrier.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>Barrier</b><span>A gate, a bollard or a chicane. Worth knowing
+          about on a cargo bike or a trike.</span></div></li>
+    </ul>
+
+    <p>Behind them, in grey and blue, is the city: roads, highways, railways,
+      rivers and golf courses. None of it is there to be ridden. It is there
+      because the shape of the trail network is explained almost entirely by
+      what it has had to get around, and a trail map with nothing else on it
+      hides the whole argument.</p>
+  </section>
+
+  <section class="pt-section">
+    <h2>The dots: how you get across the road</h2>
+    <p>The small circles along a trail are the places it meets a road. What
+      colour the circle is tells you what is waiting for you there, and it is
+      the single most useful thing on the map if you are riding with children
+      or on anything wider than a bicycle.</p>
+
+    <ul class="pt-dots">
+      <li><span class="pt-dot is-red"></span>
+        <div><b>Red — nothing at all</b><span>The trail meets the road and
+          stops. No markings, no signal, no island. You wait for a gap and you
+          take your chances, and on a busy road that can mean a long
+          wait.</span></div></li>
+      <li><span class="pt-dot is-green"></span>
+        <div><b>Green — you are helped across</b><span>Something is there to
+          get you over: paint, a signal, a tunnel or a bridge. The four kinds
+          are below.</span></div></li>
+      <li><span class="pt-dot is-white"></span>
+        <div><b>White — a junction</b><span>Not a road crossing at all. Two
+          trails meet here and you can go either way.</span></div></li>
+    </ul>
+
+    <!-- ── THE SIX CROSSINGS ────────────────────────────────────────────
+         Small pictures and long captions: the photograph only has to say "this
+         kind of thing", while the words say what it means for somebody deciding
+         whether to take a seven-year-old down this trail. Each says what is
+         there, how well it works, and where it sits against the other five. -->
+    <ul class="pt-crossings">
+      <li>
+        <img src="page images/crossings/1.jpg?v=9.9" loading="lazy"
+             alt="A watercolour of a trail meeting a road with no crossing of any kind">
+        <div>
+          <b>A red dot — nothing at all</b>
+          <span>The path arrives at the kerb and the road simply carries on:
+            no markings, no island, no sign telling drivers that anybody comes
+            out here. You wait for a gap in both directions and go when you
+            think you can, which is a different proposition on a quiet
+            residential street than on a four-lane arterial. This is the one
+            colour on the map worth planning around — a trail with two or
+            three red dots on it is not a trail you hand to a child, however
+            good the rest of it is.</span>
+        </div>
+      </li>
+    </ul>
+
+    <p>A green dot is any of the five below. They are <em>not</em> equally
+      good, and the order here is roughly the order you would want them in:
+      paint is an argument, a signal is an instruction, and a bridge or a
+      tunnel means the question never comes up. What they have in common is
+      that somebody thought about the person on the trail.</p>
+
+    <ul class="pt-crossings">
+      <li>
+        <img src="page images/crossings/2.jpg?v=9.9" loading="lazy"
+             alt="A watercolour of a painted zebra crossing where a trail crosses a road">
+        <div>
+          <b>Green — a painted crossing</b>
+          <span>Markings across the road and a sign on the approach, so drivers
+            are told that people cross here. Nothing makes them stop, and at
+            speed the paint is doing all of the work on its own — which is why
+            this is the weakest of the greens. It is still a long way better
+            than a red dot: you have somewhere definite to stand, and drivers
+            have been warned.</span>
+        </div>
+      </li>
+      <li>
+        <img src="page images/crossings/3.jpg?v=9.9" loading="lazy"
+             alt="A watercolour of a crossing with overhead amber warning lights">
+        <div>
+          <b>Green — a crossover with lights</b>
+          <span>The paint, plus overhead beacons you press to set flashing
+            before you go. Traffic is required to stop, and mostly does,
+            because the lights make it obvious who has right of way rather
+            than leaving it to be negotiated. A good, cheap answer on a two-
+            or three-lane road; less convincing where four lanes mean the
+            driver in the far lane cannot see why the near one has
+            stopped.</span>
+        </div>
+      </li>
+      <li>
+        <img src="page images/crossings/4.jpg?v=9.9" loading="lazy"
+             alt="A watercolour of a signalised crossing with traffic lights and cycle markings">
+        <div>
+          <b>Green — a full signal</b>
+          <span>Traffic lights with a phase of their own, usually a pedestrian
+            signal, and often a marked track across the junction for bikes. It
+            is the best thing on this list that keeps you at road level: the
+            crossing is part of how the junction works rather than an
+            interruption to it. The cost is the wait, which on a big
+            intersection can be most of a minute.</span>
+        </div>
+      </li>
+      <li>
+        <img src="page images/crossings/5.jpg?v=9.9" loading="lazy"
+             alt="A watercolour of a trail passing under a road through an underpass">
+        <div>
+          <b>Green — under it</b>
+          <span>The trail drops under the road and never meets the traffic at
+            all, so there is no waiting, no judging a gap and nothing to teach
+            a child about. Underpasses are usually an accident of the
+            landscape — a valley the road had to bridge anyway — which is why
+            the ravine trails have so many of them. The one thing to know is
+            that they flood: after heavy rain a valley underpass can be the
+            reason a trail is shut.</span>
+        </div>
+      </li>
+      <li>
+        <img src="page images/crossings/6.jpg?v=9.9" loading="lazy"
+             alt="A watercolour of a footbridge carrying a trail over a road">
+        <div>
+          <b>Green — over it</b>
+          <span>A bridge does the same job the other way up, and it is the most
+            expensive thing on this page by a wide margin — which is exactly
+            why a new one is worth noticing. It also costs the rider something,
+            since a bridge has to be climbed and a tunnel does not; the ramps
+            are long, and on a loaded bike you feel them. Still the answer
+            where there is no valley to drop into.</span>
+        </div>
+      </li>
+    </ul>
+
+    <p class="pt-aside">Which crossing a dot stands for is not written on the
+      map — the map says only red, green or white. These six are what the
+      green ones turn out to be when you get there.</p>
+
+  </section>
+
+  <section class="pt-section">
+    <h2>Wishful thinking</h2>
+    <p>Half of what this map is for is the trails that are <em>not</em> there.
+      Switch <b>Wishful thinking</b> on — it is in the Layers panel, behind
+      the stacked-squares button on the left of any map — and the proposals
+      appear in purple.</p>
+    <p>Purple means the same thing everywhere on this site, without exception:
+      <b>this does not exist</b>. A purple line is a trail nobody has built. A
+      purple waypoint marks a specific problem, with a picture of what is there
+      now and, where it is worth drawing, a picture of what it could be —
+      drag the slider across the photograph to see one become the other. A
+      purple button where two trails meet leads to a proposed trail rather than
+      a real one, and it only appears while Wishful thinking is switched on,
+      because an offer to take you to a trail the map is currently not
+      admitting exists is no offer at all.</p>
+    <p>Every proposal is also listed on the
+      <a href="wishful.html">Wishful thinking page</a>, where you can sort them
+      by what they would cost and how much good they would do. Some are a coat
+      of paint and a sign. Some are a bridge. They are one person's opinion,
+      offered as a starting point for an argument rather than the end of
+      one.</p>
+  </section>
+
+  <section class="pt-section">
+    <h2>Walking a trail</h2>
+    <p>Every trail has its own page, and a trail page is not a map you look at
+      — it is a trail you walk. Scroll, and the map moves under you from one
+      end to the other. The distance, the height and how far along you are
+      count up as you go, and a waypoint's card arrives by itself when you
+      reach it. It is the whole point of the site, and it costs nothing to try:
+      open any trail and scroll.</p>
+
+    <ul class="pt-legend">
+      <li><img src="icons/waypoint.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>A waypoint</b><span>Somewhere worth stopping, with pictures and
+          a few words. Click its circle on the map to open it at any time, or
+          just keep scrolling and let it come to you.</span></div></li>
+      <li><img src="icons/waypoint-wishful.svg?v=9.9" alt="" width="40" height="40">
+        <div><b>A wishful waypoint</b><span>The same thing about a problem: what
+          is wrong here, what it would take to fix, and often a before and
+          after you can drag between.</span></div></li>
+    </ul>
+
+    <h3>Autoplay</h3>
+    <p>If you would rather not scroll, press <b>play</b> in the row of buttons
+      at the bottom of a trail page and the map walks itself. It travels at a
+      steady pace, slows as it comes into a waypoint, holds there long enough
+      to read the card, and moves on. The same row is on the main map, where
+      it flies between the featured waypoints across the whole city rather
+      than along one trail.</p>
+
+    <ul class="pt-legend">
+      <li><img src="icons/ui-play.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>Play</b><span>Start the tour from wherever you are standing —
+          not from the top, unless that is where you are.</span></div></li>
+      <li><img src="icons/ui-pause.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>Hold</b><span>The same button while it is playing. The card
+          stays where it is for as long as you want it; press again to carry
+          on.</span></div></li>
+      <li><img src="icons/ui-back.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>Back</b><span>To the waypoint before this one. It works whether
+          or not a tour is running, and a tour that is held stays held — "show
+          me the last one" is not "start the clock again".</span></div></li>
+      <li><img src="icons/ui-next.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>On</b><span>The next waypoint, the same way. The count between
+          the two arrows says where you are and how many there
+          are.</span></div></li>
+      <li><img src="icons/ui-stop.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>Stop</b><span>Leave the tour altogether, which Escape also
+          does. Expanding a card during a tour is remembered while it runs —
+          the ones after it open expanded too — and forgotten the moment you
+          stop.</span></div></li>
+    </ul>
+
+    <p><b>Taking hold of the page yourself — scrolling, dragging the elevation
+      graph, opening a card — stops the tour immediately</b>, because a page
+      that keeps driving while you are trying to steer is infuriating. Nothing
+      is lost: press play again and it carries on from where you now are.</p>
+
+    <h3>The rest of the furniture</h3>
+    <!-- The icons here are the buttons themselves, drawn by build/make_ui_icons.py
+         out of the same paths the pages draw. -->
+    <ul class="pt-legend">
+      <li><img src="icons/ui-compass.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>The compass</b><span>Top left of every map, and on a trail page
+          it is also a switch: click it and a cyclist rides the trail in place
+          of the red dot, at whatever speed you are scrolling.</span></div></li>
+      <li><img src="icons/ui-legend.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>Legend</b><span>Under the compass. Every kind of line and dot on
+          the map, with what it means — the same list as the top of this
+          page, available without leaving the map.</span></div></li>
+      <li><img src="icons/ui-layers.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>Layers</b><span>Under that, and the one worth opening. Wishful
+          thinking lives here, along with bike lanes, unpaved trails, the
+          hydro corridors, the railways and the golf courses that so many
+          routes have to go round.</span></div></li>
+      <li><img src="icons/ui-zoom-in.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>Zoom</b><span>Bottom right. On a trail page the map steps BACK
+          from the walk's own view, to show you where a bend is heading, and
+          never closer — the walk has already chosen the closest useful
+          view.</span></div></li>
+      <li><img src="icons/ui-fit.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>FIT</b><span>Back to the view the page had chosen for you: the
+          whole city on the main map, and the walk's own framing on a trail.
+          On a touch screen you can pinch instead.</span></div></li>
+      <li><img src="icons/ui-junction.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>A junction button</b><span>A blue pill where one trail meets
+          another. Follow it and you are on that trail's page at the point
+          where the two touch, which is how you get across the network without
+          going back to the main map.</span></div></li>
+      <li><img src="icons/ui-junction-wish.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>A purple junction button</b><span>The same thing leading to a
+          proposal rather than to a trail. It only appears while Wishful
+          thinking is on — a button offering to take you to a trail the map is
+          currently not admitting exists would be an odd offer.</span></div></li>
+      <li><img src="icons/ui-expand.svg?v=9.9" alt="" width="44" height="44">
+        <div><b>Expand a card</b><span>Top right of any waypoint card. It fills
+          the window with the photograph, which is the only way to see what is
+          actually in some of them. Press it again, or Escape, to put it
+          back.</span></div></li>
+    </ul>
+  </section>
+
+  <section class="pt-section">
+    <h2>What the map is not</h2>
+    <p>It is not to scale, it is not routing software, and it is not
+      authoritative. Distances are measured along the drawn line and are close
+      enough to be useful and wrong enough not to plan by. Surfaces change,
+      trails close, and construction moves. If something here is out of date or
+      simply wrong, <a href="contact.html">tell me</a> — that is the fastest
+      way this gets better.</p>
+  </section>
+</main>
+
+</body>
+</html>
