@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HAPPY TRAILS — one stylesheet for the whole site
-   version 9.4
+   version 9.5
 
    Every page loads this file and nothing else. Which page is which is decided
    by a class on <body>:
@@ -213,6 +213,12 @@ body :is(#ht-brand, #tm-barBrand,
   --shot-height:       132px;   /* the picture at the top of a trail card */
   --over-veil-ink:     #f2f0ea;   /* title text over the top veil */
   --over-veil-kicker:  #e0a323;
+  /* THE LAYER THE CORNER INFO SITS ON, on a trail page: above the dark veil
+     behind an expanded card (6), the card itself (8) and the panel (7), level
+     with the tour buttons (9). Added in 9.10 because the kicker, title and
+     the Main map / Download buttons were being dimmed by that veil, and the
+     way back to the main map must never look switched off. */
+  --corner-layer:      9;
   /* Buy me a coffee. Their own yellow, warmed slightly to sit with the site's
      amber rather than shout over it. */
   --coffee-nav:        #e8503a;   /* in the white bar — the site's orange   */
@@ -2254,6 +2260,12 @@ body.page-trail #tm-cards.is-big{ bottom:calc(var(--edge-gap) + var(--map-card-f
    SHADOW: soft edges on type this size read as a smudge. If a trail's
    artwork swallows the title, darken the veil (--screen-veil-corner) rather
    than put the shadow back. */
+/* The block is lifted as a whole (title, kicker and link buttons) by making
+   #tm-brand positioned: #tm-topbar has no z-index of its own, so the brand
+   joins the interface layer and --corner-layer puts it above the veil. Only
+   the brand is lifted, not the whole top band, so nothing wide and invisible
+   ends up over the cards. */
+body.page-trail #tm-brand{ position:relative; z-index:var(--corner-layer); }
 body.page-trail #tm-brand h1{
   color:var(--over-veil-ink);
 }
