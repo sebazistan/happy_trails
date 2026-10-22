@@ -442,6 +442,7 @@
     if (sw > 0 && sh > 0) C.drawPre(ctx, s.pre, 'cv', sx0, sy0, sw, sh);
     const vis = (x, y, r) => x > vx0 - r && x < vx0 + vw + r && y > vy0 - r && y < vy0 + vh + r;
     if (s.type === 'coast') drawWaves(ctx, s, t, vx0, vy0, vw, vh);
+    if (C.drawThings) C.drawThings(ctx, s, t, vis);   // placed things: stakes, hammocks, racks… (things.js)
     // decals: craters, scorch, blood
     for (const d of s.decals) if (vis(d.x, d.y, d.r)) {
       ctx.globalAlpha = d.a * (d.fade ? Math.max(0.15, 1 - (G.time - d.t0) / d.fade) : 1);

@@ -11,6 +11,7 @@
   // danger: how much the order exposes people (multiplier on the danger estimate)
   // THE ORDER TABLE (see docs/COMMANDS.md). Each order: tab (which command-bar tab), name, need ('point' click the ground, 'actor' click a soldier, 'pad' click a camp plot, 'none' immediate), danger (how much it exposes people, ×0 … 1), work (seconds a task takes), instant (supply orders that apply at once) and a description.
   C.ORDERS = {
+    macro:   { tab: 'hidden', n: 'Action', need: 'none', danger: 0.3, d: 'A recorded or preset action (see the Actions panel, K).' },
     move:    { tab: 'move',  n: 'Move',            need: 'point', danger: 0.8, d: 'Walk to a place. Shift queues waypoints.' },
     follow:  { tab: 'move',  n: 'Follow me',       need: 'none',  danger: 0,   d: 'Drop what you are doing and stay close to the leader.' },
     hold:    { tab: 'move',  n: 'Hold here',       need: 'point', danger: 0.5, d: 'Go to a spot and hold it. Fire at will.' },
@@ -259,7 +260,7 @@
 
   // ---------------------------------------------------------------- execution (called from rebelUpdate)
   // Tasks that are dropped when the shooting starts.
-  const NONCOMBAT = { dig: 1, latrine: 1, water: 1, carry: 1, build: 1, rest: 1, treat: 1, help: 1, feed: 1 };
+  const NONCOMBAT = { dig: 1, latrine: 1, water: 1, carry: 1, build: 1, rest: 1, treat: 1, help: 1, feed: 1, macro: 1 };
   // Walk toward a point with the AI's path helpers; true on arrival.
   function goto(s, a, o, x, y, dt, mult) {
     const AIx = AI();
@@ -334,6 +335,7 @@
         if (o.phase === 'work') { a.moving = false; a.working = true; o.w += dt; if (o.w >= def.work) { o.phase = 'back'; a.working = false; } return true; }
         if (goto(s, a, o, lead.x, lead.y, dt, 1)) { const sq = g.squads[a.squad]; let n = 0; if (sq) for (const id of sq.members) { const q = C.P(id); if (q.status === 'alive') { q.needs.water = clamp(q.needs.water + 20, 0, 100); n++; } } p.needs.water = clamp(p.needs.water + 25, 0, 100); C.log(`${C.tagName(p)} brought water for ${n}.`, 'good'); endOrder(a); } return true;
       }
+      case 'macro': return C.macroRun(s, a, o, dt, lead, tgt);   // recorded/preset action (actions.js)
       case 'carry': {
         if (o.phase === 'go') { if (goto(s, a, o, o.x, o.y, dt, 1)) { o.phase = 'back'; o.haul = []; for (const it of s.items.slice()) if (Math.hypot(it.x - a.x, it.y - a.y) < 80 && o.haul.length < 4 && ['food', 'ammo', 'med', 'fuel', 'money', 'gun'].includes(it.k)) { o.haul.push(it); s.items.splice(s.items.indexOf(it), 1); } if (!o.haul.length) { C.log(`${C.tagName(p)} found nothing to carry there.`, 'info'); endOrder(a); } } return true; }
         if (goto(s, a, o, lead.x, lead.y, dt, 0.9)) { for (const it of o.haul) C.ui.take(it); C.log(`${C.tagName(p)} brought back ${o.haul.length} load${o.haul.length > 1 ? 's' : ''}.`, 'good'); endOrder(a); } return true;

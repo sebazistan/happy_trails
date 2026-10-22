@@ -53,6 +53,18 @@
     molo:   { n: 'Molotov',       icon: '🍾', w: 1.0,  res: 'molo', d: 'A bottle of fuel and rag.' },
     shell:  { n: 'Mortar shell',  icon: '🚀', w: 3.0,  res: 'shell', d: 'A 60 mm mortar bomb. Heavy.' },
     rocket: { n: 'Bazooka rocket', icon: '🎯', w: 2.5, res: 'rocket', d: 'A 2.36-inch rocket for the bazooka.' },
+    // --- tools and materials for work in the world (farming, camp life, teaching) ---
+    hoe:    { n: 'Hoe (azada)',    icon: '⛏', w: 2.0,  res: 'hoe',    d: 'For clearing and planting a plot.' },
+    axe:    { n: 'Axe (hacha)',    icon: '🪓', w: 2.5,  res: 'axe',    d: 'For felling trees; a machete does it slowly.' },
+    seed:   { n: 'Seed',           icon: '🌱', w: 0.4,  res: 'seed',   d: 'Maize, beans, malanga and yuca cuttings, by the handful.' },
+    bucket: { n: 'Bucket',         icon: '🪣', w: 1.5,  res: 'bucket', d: 'To carry water to animals, crops and the kitchen.' },
+    bwater: { n: 'Water in bucket', icon: '💦', w: 1.0, res: null,     d: 'A bucket of water (needs a bucket to carry).' },
+    feed:   { n: 'Pig feed',       icon: '🥣', w: 1.0,  res: 'feed',   d: 'Scraps, bran and boiled roots for the pigs.' },
+    lena:   { n: 'Firewood (leña)', icon: '🪵', w: 1.5, res: 'lena',   d: 'Dry wood for the kitchen fire.' },
+    stake:  { n: 'Survey stake',   icon: '🚩', w: 0.5,  res: 'stake',  d: 'A stick with a red rag, to mark a boundary.' },
+    hammock:{ n: 'Hammock (hamaca)', icon: '🛏', w: 1.5, res: 'hammock', d: 'Canvas hammock; keeps a man off the wet ground.' },
+    primer: { n: 'Reading primer', icon: '📖', w: 0.2,  res: 'primer', d: 'A primer (cartilla) for teaching letters.' },
+    pamph:  { n: 'Pamphlets',      icon: '📰', w: 0.05, res: 'pamph',  d: 'Printed leaflets and manifestos.' },
   };
   C.ITEM_KEYS = Object.keys(C.ITEMS);
 
@@ -175,6 +187,7 @@
   C.invTick = function (s, a, dt) {
     const p = a.p; if (!(a.side === 'rebel' || a.isPlayer) || a.dead) return;
     C.initInv(p); const g = G();
+    if (C.routineTick) C.routineTick(a);
     a.invT = (a.invT || 0) - dt; if (a.invT > 0) return; a.invT = 1.2;          // the expensive part runs about once a second
     const n = p.needs, r = p.rat;
 

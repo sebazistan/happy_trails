@@ -344,6 +344,7 @@
   // Right-click handler (see above).
   C.commandAt = function (wx, wy, shift) {
     const g = G(), s = g.scene; if (g.paused) { C.ui.toast('No orders while paused — time is part of the pressure'); return; }
+    if (g.rec && g.rec.on && C.recGoto) { C.recGoto(wx, wy); return; }   // recording an action: the click is a step
     if (g.cmd.pending) { if (g.cmd.pending.pts && g.cmd.pending.pts.length) C.cmdFinish(); else C.cmdCancel(); return; }
     let tgt = null, bd = 16; for (const a of s.actors) { if (a.side !== 'army' || a.dead || a.inside || !C.visible(a)) continue; const d = Math.hypot(a.x - wx, a.y - 8 - wy); if (d < bd) { bd = d; tgt = a; } }
     if (tgt) { C.selActors().forEach((a) => { a.p.focusT = g.time; }); const sq = g.squads[g.curSquad]; if (sq) sq.focus = tgt; C.issue({ type: 'focus', tgt, x: tgt.x, y: tgt.y }); return; }
@@ -494,6 +495,7 @@
     if (g.resting) { for (const id of C.partyIds()) { const a = C.P(id).actor; if (a) { a.sleeping = true; a.moving = false; } } g.player.sleeping = true; g.player.p.needs.energy = Math.min(100, g.player.p.needs.energy + dt * 6); if (g.hour >= 6 && g.hour < 7 || s.alert > 0.35 || g.combatT > 0) { g.resting = false; C.log('You wake.', 'info'); } }
     if (s.pro) prologueUpdate(dt);
     playerUpdate(dt);
+    if (C.playerActTick) C.playerActTick(dt);
     C.updateScene(s, dt); C.fogUpdate(s, dt); C.bondTick(s, dt); C.updateBullets(s, dt); C.updateFx(s, dt);
     g.combatT = Math.max(0, g.combatT - dt); g.shake = Math.max(0, g.shake - dt * 1.6); g.flash = Math.max(0, g.flash - dt * 1.6); g.hurt = Math.max(0, g.hurt - dt * 0.18);
     for (const m of g.orderMarks) m.t += dt; g.orderMarks = g.orderMarks.filter((m) => m.t < 2.2);
