@@ -82,7 +82,7 @@
       const t = ref.mode === 'specific' ? C.thingById(s, ref.id) : near(s.things || [], (q) => q.k === ref.tk);
       return t ? { kind: 'thing', tk: t.k, o: t, x: t.x, y: t.y } : null;
     }
-    if (ref.kind === 'animal') { const an = near(s.animals.filter((q) => !q.dead), (q) => q.k === ref.ak); return an ? { kind: 'animal', o: an, x: an.x, y: an.y } : null; }
+    if (ref.kind === 'animal') { const an = near(s.animals.filter((q) => !!q.dead === !!ref.dead), (q) => ref.ak === '*' || q.k === ref.ak); return an ? { kind: 'animal', o: an, x: an.x, y: an.y } : null; }
     if (ref.kind === 'actor') { const q = C.P(ref.pid).actor; return q && !q.dead && q.scene === s ? { kind: 'actor', o: q, x: q.x, y: q.y } : null; }
     if (ref.kind === 'tree') { const t = near(s.props.filter((p) => TREE[p.k])); return t ? { kind: 'tree', o: t, x: t.x, y: t.y } : null; }
     if (ref.kind === 'water') {
@@ -246,7 +246,7 @@
   const need = (k, why) => (a) => (has(a, k) ? null : why);
   C.TAKEABLE = {
     barbacoa: [['food', 2, 'rations'], ['food', 6, 'rations'], ['seed', 4, 'seed'], ['feed', 2, 'pig feed'], ['med', 1, 'medicine']],
-    toolrack: [['hoe', 1, 'a hoe'], ['axe', 1, 'an axe'], ['bucket', 1, 'a bucket'], ['stake', 4, 'stakes'], ['hammock', 1, 'a hammock'], ['primer', 1, 'a primer']],
+    toolrack: [['hoe', 1, 'a hoe'], ['axe', 1, 'an axe'], ['bucket', 1, 'a bucket'], ['stake', 4, 'stakes'], ['hammock', 1, 'a hammock'], ['primer', 1, 'a primer'], ['snare', 2, 'snares'], ['line', 1, 'a fishing line']],
     woodpile: [['lena', 2, 'firewood']],
   };
   const THING_CAN_TAKE = Object.keys(C.TAKEABLE).map((k) => 'thing:' + k);
@@ -259,7 +259,7 @@
   });
   C.registerVerb({
     id: 'put', n: 'Put away', icon: '📥', kinds: ['thing:barbacoa', 'thing:woodpile', 'thing:toolrack'], reach: 16, dur: 2,
-    variants: (tg) => { const acc = { barbacoa: ['food', 'seed', 'feed', 'med'], woodpile: ['lena'], toolrack: ['hoe', 'axe', 'bucket', 'stake', 'hammock', 'primer'] }[tg.tk] || []; return acc.map((item) => ({ param: { item }, label: `Put away ${C.ITEMS[item].n.toLowerCase()}` })); },
+    variants: (tg) => { const acc = { barbacoa: ['food', 'seed', 'feed', 'med'], woodpile: ['lena'], toolrack: ['hoe', 'axe', 'bucket', 'stake', 'hammock', 'primer', 'snare', 'line'] }[tg.tk] || []; return acc.map((item) => ({ param: { item }, label: `Put away ${C.ITEMS[item].n.toLowerCase()}` })); },
     check: (a, tg, p) => (p && !has(a, p.item) ? `Nothing to put away (${C.ITEMS[p.item].n})` : null),
     done: (a, tg, p) => { C.transfer({ kind: 'person', p: a.p }, { kind: 'stores' }, p.item, 999); return null; },
   });
@@ -270,17 +270,17 @@
   });
   C.registerVerb({
     id: 'give_water', n: 'Give water', icon: '💦', kinds: ['animal', 'actor'], reach: 16, dur: 3,
-    check: (a) => (has(a, 'bwater') ? null : 'No water in the bucket.'),
+    check: (a, tg) => (tg.kind === 'animal' && tg.o.dead ? 'It is dead.' : has(a, 'bwater') ? null : 'No water in the bucket.'),
     done: (a, tg) => { const i = inv(a); i.bwater--; if (tg.kind === 'animal') { tg.o.watered = G().time; } else { tg.o.p.needs.water = clamp(tg.o.p.needs.water + 30, 0, 100); C.bondEvent && C.bondEvent(a.p, tg.o.p, 'shared', 0.8); } return null; },
   });
   C.registerVerb({
     id: 'feed', n: 'Feed', icon: '🥣', kinds: ['animal', 'thing:trough'], reach: 16, dur: 4,
-    check: (a, tg) => (tg.kind === 'animal' && tg.o.def.wild ? "It's wild." : has(a, 'feed') ? null : 'No feed.'),
+    check: (a, tg) => (tg.kind === 'animal' && tg.o.dead ? 'It is dead.' : tg.kind === 'animal' && tg.o.def.wild ? "It's wild." : has(a, 'feed') ? null : 'No feed.'),
     done: (a, tg) => { inv(a).feed--; if (tg.kind === 'animal') { tg.o.fat = Math.min(1, (tg.o.fat || 0.3) + 0.12); tg.o.fed = G().time; } else tg.o.d.feed = (tg.o.d.feed || 0) + 1; return null; },
   });
   C.registerVerb({
     id: 'butcher', n: 'Butcher', icon: '🔪', kinds: ['animal'], reach: 16, dur: 6,
-    check: (a, tg) => (tg.o.def.wild ? 'Shoot wild game instead.' : tg.o.dead ? 'Already dead.' : null),
+    check: (a, tg) => (tg.o.dead ? 'Already dead — dress it.' : tg.o.def.wild ? 'Wild — shoot or snare it first.' : null),
     done: (a, tg) => { const an = tg.o, g = G(); const f = 0.6 + 0.8 * (an.fat || 0.3); an.def = Object.assign({}, an.def, { food: Math.round(an.def.food * f) }); C.forageTransaction(a, an, 'animal'); an.dead = true; an.hp = 0; const s = a.scene; s.decals.push({ k: 'blood', x: an.x, y: an.y, r: 3, a: 0.5, rot: 0, t0: g.time, fade: 400 }); return null; },
   });
   C.registerVerb({

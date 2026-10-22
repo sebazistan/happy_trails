@@ -11,9 +11,16 @@
     cow: { n: 'vaca', sz: 7, col: [236, 232, 220], patch: [60, 50, 44], horns: true, food: 40, spd: 10 },
     pig: { n: 'cerdo', sz: 4.5, col: [232, 160, 160], food: 18, spd: 14 },
     hen: { n: 'gallina', sz: 2.5, col: [250, 246, 238], food: 4, spd: 16 },
-    hutia: { n: 'jutía', sz: 3, col: [120, 90, 60], food: 6, spd: 30, wild: true },
-    boar: { n: 'puerco jíbaro', sz: 5, col: [90, 66, 54], food: 22, spd: 34, wild: true },
-    turkey: { n: 'guanajo', sz: 3.4, col: [100, 70, 50], food: 8, spd: 24, wild: true },
+    // WILD GAME of Oriente (Spanish names as used in the campo). `act`: when it moves about (day/dusk/night); `bird`: flushes and flies when
+    // approached; `hab`: tiles it lives on; `snare`: can be taken in a trap. Food is rations when dressed. See js/hunting.js and docs/HUNTING.md.
+    hutia:    { n: 'jutía conga', sz: 3, col: [120, 90, 60], food: 6, spd: 30, wild: true, act: 'dusk', hab: ['FOR'], snare: true },          // Capromys pilorides, the great Cuban tree-rat
+    boar:     { n: 'puerco jíbaro', sz: 5, col: [90, 66, 54], food: 22, spd: 34, wild: true, act: 'dusk', hab: ['FOR'], fierce: true },       // feral pig; a wounded one charges
+    guinea:   { n: 'gallina de guinea', sz: 2.8, col: [88, 92, 104], food: 5, spd: 22, wild: true, act: 'day', hab: ['G', 'FOR'], bird: true, snare: true },   // feral guinea fowl, in flocks
+    paloma:   { n: 'paloma torcaza', sz: 2.2, col: [140, 140, 150], food: 3, spd: 40, wild: true, act: 'day', hab: ['FOR'], bird: true },                      // white-crowned pigeon / mourning dove
+    codorniz: { n: 'codorniz', sz: 1.8, col: [150, 110, 70], food: 2, spd: 34, wild: true, act: 'day', hab: ['G', 'CANE'], bird: true, snare: true },          // bobwhite quail of the cane and pasture
+    yaguasa:  { n: 'yaguasa', sz: 3, col: [130, 100, 80], food: 7, spd: 36, wild: true, act: 'dusk', hab: ['SHAL', 'SAND'], bird: true },                       // West Indian whistling duck
+    iguana:   { n: 'iguana', sz: 3.6, col: [110, 124, 84], food: 8, spd: 12, wild: true, act: 'day', hab: ['ROCK', 'SAND', 'G'] },                              // Cuban rock iguana
+    cangrejo: { n: 'cangrejo de tierra', sz: 1.6, col: [190, 90, 70], food: 2, spd: 10, wild: true, act: 'night', hab: ['SAND', 'SHAL'], crab: true },         // land crab of the coastal swamp
   };
   C.ANIMALS = ANIMALS;
 
@@ -166,13 +173,17 @@
   // Chickens and pigs near homes, cows in village fields, wild game in the Sierra (hutías, boars, turkeys).
   function spawnAnimals(s) {
     const R = C.RNG(C.hashStr(s.sid) + 77);
-    const add = (k, x, y) => s.animals.push({ k, def: ANIMALS[k], x, y, hx: x, hy: y, face: 1, anim: 0, moving: false, dead: false, wait: R() * 4, hp: k === 'cow' ? 80 : 30, tx: x, ty: y, wild: !!ANIMALS[k].wild });
+    const add = (k, x, y) => s.animals.push({ k, def: ANIMALS[k], x, y, hx: x, hy: y, face: 1, anim: 0, moving: false, dead: false, wait: R() * 4, hp: k === 'cow' ? 80 : k === 'boar' ? 45 : 30, hpMax: k === 'cow' ? 80 : k === 'boar' ? 45 : 30, tx: x, ty: y, wild: !!ANIMALS[k].wild });
     if (s.type === 'village' || s.type === 'fishing') {
       for (const hm of s.homes.slice(0, 30)) { const b = s.blds[hm.bld]; if (R() < 0.6) { const n = R.irange(1, 3); for (let i = 0; i < n; i++) add('hen', (b.x + b.w / 2) * T + R.range(-30, 30), (b.y + b.h + 1.5) * T + R.range(0, 16)); } if (R() < 0.18) add('pig', (b.x + b.w + 1.5) * T, (b.y + b.h / 2) * T); }
       if (s.type === 'village') for (let i = 0; i < 6; i++) { const q = s.randomFree([TL.G]); add('cow', q.x * T + 8, q.y * T + 8); }
     }
-    if (s.type === 'sierra') { for (let i = 0; i < 9; i++) { const q = s.randomFree([TL.FOR]); add('hutia', q.x * T + 8, q.y * T + 8); } for (let i = 0; i < 4; i++) { const q = s.randomFree([TL.FOR]); add('boar', q.x * T + 8, q.y * T + 8); } for (let i = 0; i < 3; i++) { const q = s.randomFree([TL.G, TL.FOR]); add('turkey', q.x * T + 8, q.y * T + 8); } }
-    if (s.type === 'cane') for (let i = 0; i < 3; i++) { const q = s.randomFree([TL.G]); add('hen', q.x * T + 8, q.y * T + 8); }
+    // wild game by habitat (counts are per scene; see js/hunting.js for how they behave)
+    const seed = (k, n, tiles) => { for (let i = 0; i < n; i++) { const q = s.randomFree(tiles.map((t) => TL[t])); if (q) add(k, q.x * T + 8, q.y * T + 8); } };
+    if (s.type === 'sierra') { seed('hutia', 9, ['FOR']); seed('boar', 4, ['FOR']); seed('guinea', 5, ['G', 'FOR']); seed('paloma', 6, ['FOR']); seed('codorniz', 4, ['G']); seed('iguana', 3, ['ROCK', 'G']); }
+    if (s.type === 'village') { seed('guinea', 3, ['G']); seed('codorniz', 4, ['G']); seed('paloma', 3, ['G']); }
+    if (s.type === 'fishing') { seed('cangrejo', 10, ['SAND']); seed('yaguasa', 4, ['SHAL']); seed('iguana', 2, ['SAND']); }
+    if (s.type === 'cane') { for (let i = 0; i < 3; i++) { const q = s.randomFree([TL.G]); add('hen', q.x * T + 8, q.y * T + 8); } seed('codorniz', 6, ['G', 'CANE']); seed('paloma', 3, ['G']); seed('guinea', 3, ['G']); seed('cangrejo', 8, ['SAND', 'SHAL']); seed('yaguasa', 3, ['SHAL']); }
   }
   // Create a vehicle in a scene: type, position, heading, a random partly-full tank, four good tyres, no occupants.
   C.addVehicle = function (s, type, x, y, ang, opt) {
@@ -311,7 +322,7 @@
       else if (a.side === 'rebel') rebelUpdate(s, a, dt);
       else civUpdate(s, a, dt);
     }
-    updateAnimals(s, dt); updateVehicles(s, dt);
+    updateAnimals(s, dt); if (C.huntUpdate) C.huntUpdate(s, dt); updateVehicles(s, dt);
     // spotted decay
     for (const a of acts) if (a.spotted > 0) a.spotted -= dt;
   };

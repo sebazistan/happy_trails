@@ -89,7 +89,7 @@
   C.targetsAt = function (wx, wy) {
     const g = G(), s = g.scene, out = [];
     for (const th of s.things || []) if (Math.hypot(th.x - wx, th.y - 4 - wy) < 13) out.push({ kind: 'thing', tk: th.k, o: th, x: th.x, y: th.y, label: (C.THINGS[th.k] || {}).n || th.k });
-    for (const an of s.animals) if (!an.dead && Math.hypot(an.x - wx, an.y - wy) < 10) out.push({ kind: 'animal', o: an, x: an.x, y: an.y, label: C.aName ? C.aName(an.k) : an.k });
+    for (const an of s.animals) if (Math.hypot(an.x - wx, an.y - wy) < 10) out.push({ kind: 'animal', o: an, x: an.x, y: an.y, label: (C.aName ? C.aName(an.k) : an.k) + (an.dead ? ' (carcass)' : '') });
     for (const a of s.actors) if (!a.dead && !a.inside && !a.inVeh && Math.hypot(a.x - wx, a.y - 8 - wy) < 12) out.push({ kind: 'actor', o: a, x: a.x, y: a.y, label: C.tagName(a.p) });
     for (const p of s.props) if (TREE[p.k] && Math.hypot(p.x - wx, p.y - wy) < 11) { out.push({ kind: 'tree', o: p, x: p.x, y: p.y, label: p.k === 'palm' ? 'Palm' : 'Tree' }); break; }
     const tt = C.tileAt(s, wx, wy); if (tt === TL.SHAL || tt === TL.DEEP) out.push({ kind: 'water', o: { x: wx, y: wy }, x: wx, y: wy, label: 'Water' });

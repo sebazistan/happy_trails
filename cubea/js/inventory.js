@@ -64,6 +64,8 @@
     stake:  { n: 'Survey stake',   icon: '🚩', w: 0.5,  res: 'stake',  d: 'A stick with a red rag, to mark a boundary.' },
     hammock:{ n: 'Hammock (hamaca)', icon: '🛏', w: 1.5, res: 'hammock', d: 'Canvas hammock; keeps a man off the wet ground.' },
     primer: { n: 'Reading primer', icon: '📖', w: 0.2,  res: 'primer', d: 'A primer (cartilla) for teaching letters.' },
+    snare: { n: 'Snare (trampa)',  icon: '🪤', w: 0.4, res: 'snare', d: 'Wire or fibre snare for jutías, guinea fowl and quail. Silent.' },
+    line: { n: 'Fishing line', icon: '🎣', w: 0.2, res: 'line', d: 'Line and hook for the river and the shore.' },
     pamph:  { n: 'Pamphlets',      icon: '📰', w: 0.05, res: 'pamph',  d: 'Printed leaflets and manifestos.' },
   };
   C.ITEM_KEYS = Object.keys(C.ITEMS);

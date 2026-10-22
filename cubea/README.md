@@ -60,6 +60,7 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 * **Camp life:** latrines and foul ground, dysentery, spoilage on racks vs ground, firewood and daylight smoke, hammocks, night watch, literacy lessons, sick call (`js/camp.js`).
 * **Land reform in the field:** serve notice → survey plots with stakes → grant to families → sow, water, harvest; a deed without seed loses faith (`js/farm.js`).
 * **Ideology:** six values per person, the creed you preach vs the deeds you do, speeches, pamphlets, posters, letters, a state-dependent voice, a promise ledger (`js/ideology.js`, `docs/IDEOLOGY.md`).
+* **Hunting & Cuban wild game:** jutía conga, jíbaro (charges when wounded), guinea fowl, pigeon, quail, whistling duck, iguana, land crabs; activity hours, flushing birds, blood trails, carcasses → dress → fresh meat that rots unless smoked; snares, fishing (`js/hunting.js`, `docs/HUNTING.md`).
 * **A finished-game shell:** pause menu, settings (volume, UI size, shake, contrast, Spanish level, autosave), **key rebinding**, 3 save slots + autosave (`js/settings.js`).
 * **8 locations + the coast**, each a large map; terrain is painted in cached chunks.
 
@@ -68,7 +69,7 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 ```
 cubea/
   index.html              page + CSS
-  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack things actions camp farm ideology settings main
+  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack things actions camp farm ideology hunting settings main
                           (classic scripts → works from file://)
   docs/                   DESIGN_BIBLE · DECISIONS · COMMANDS · SCHEMA · UNREAL_CODE_BIBLE · ROSTER · RISKS · IDEAS_AND_QUESTIONS · RESEARCH · PLAYER_AGENCY · IDEOLOGY
   tools/
@@ -93,6 +94,7 @@ node tools/harness/actions.js          # recorder: success, missing bucket → s
 node tools/harness/camp.js             # latrines, foul ground, spoilage, fuel, watch, school
 node tools/harness/farm.js             # notice → survey → grant → sow → harvest, drought
 node tools/harness/ideology.js         # creed, letters vs speeches, hypocrisy, promises, voice
+node tools/harness/hunting.js         # fauna, flush, dress, rot, smoke, snares, charging boar
 node tools/harness/settings.js         # save/load round trip, key rebinding
 node tools/harness/sea.js               # the crossing, six landings, hand-off to Alegría de Pío
 node tools/harness/ripple.js            # the family-graph ripple of a single killing

@@ -51,7 +51,7 @@
     o_gerente: ['U.S. company manager', 'Gerente norteamericano', 3], o_turista: ['American tourist', 'Turista norteamericano', 3], o_marino: ['U.S. sailor', 'Marino norteamericano', 3], o_asesor: ['U.S. adviser', 'Asesor norteamericano', 3],
     // --- vehicles & animals
     v_jeep: ['Willys jeep', 'Jeep Willys', 1], v_truck: ['Truck', 'Camión', 2], v_car: ["Car ('55 Chevrolet)", "Auto (Chevrolet '55)", 2], v_bus: ['Bus', 'Guagua', 3], v_armyjeep: ['Army jeep', 'Jeep militar', 2], v_armytruck: ['Army truck', 'Camión militar', 2], v_oxcart: ['Ox-cart', 'Carreta de bueyes', 3], v_boat: ['Fishing boat', 'Lancha de pesca', 3], v_granma: ['Granma (yacht)', 'Granma (yate)', 1], v_patrolboat: ['Coast-guard boat', 'Guardacostas', 2],
-    a_cow: ['cow', 'vaca', 1], a_pig: ['pig', 'cerdo', 2], a_hen: ['hen', 'gallina', 2], a_hutia: ['hutia', 'jutía', 3], a_boar: ['wild boar', 'puerco jíbaro', 3], a_turkey: ['turkey', 'guanajo', 3],
+    a_cow: ['cow', 'vaca', 1], a_pig: ['pig', 'cerdo', 2], a_hen: ['hen', 'gallina', 2], a_hutia: ['hutia', 'jutía', 3], a_boar: ['wild boar', 'puerco jíbaro', 3], a_guinea: ['guinea fowl', 'gallina de guinea', 3], a_paloma: ['pigeon', 'paloma torcaza', 3], a_codorniz: ['quail', 'codorniz', 3], a_yaguasa: ['whistling duck', 'yaguasa', 3], a_iguana: ['iguana', 'iguana', 3], a_cangrejo: ['land crab', 'cangrejo de tierra', 3],
   };
   C.LEX = L;
   // helper to format by tier & level

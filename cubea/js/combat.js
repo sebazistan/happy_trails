@@ -198,7 +198,7 @@
           }
         }
         if (dead) break;
-        for (const an of s.animals) { if (an.dead) continue; if ((b.x - an.x) ** 2 + (b.y - an.y - 3) ** 2 < (an.def.sz + 1) ** 2) { an.hp -= b.dmg; an.flee = 5; if (an.hp <= 0) { an.dead = true; s.decals.push({ k: 'blood', x: an.x, y: an.y, r: 3, a: 0.6, rot: 1, t0: G().time, fade: 400 }); if (an.def.food) s.items.push({ k: 'food', x: an.x, y: an.y, label: 'Carne de ' + an.def.n, amount: an.def.food }); if (b.owner && b.owner.isPlayer) C.emit && C.emit('hunt', { animal: an }); } dead = true; break; } }
+        for (const an of s.animals) { if (an.dead) continue; if ((b.x - an.x) ** 2 + (b.y - an.y - 3) ** 2 < (an.def.sz + 1) ** 2) { an.hp -= b.dmg; an.flee = 5; if (an.hp <= 0) { an.dead = true; s.decals.push({ k: 'blood', x: an.x, y: an.y, r: 3, a: 0.6, rot: 1, t0: G().time, fade: 400 }); an.deadT = G().time; if (b.owner && b.owner.isPlayer) C.emit && C.emit('hunt', { animal: an }); } dead = true; break; } }
         if (dead) break;
         for (const o of s.objs) { if (o.dead) continue; if (Math.abs(b.x - o.x) < o.w / 2 && Math.abs(b.y - o.y) < o.h / 2) { o.hp -= b.dmg * 0.5; C.fx.spark(s, b.x, b.y, Math.atan2(-b.vy, -b.vx), 2); if (o.hp <= 0) C.destroyObj(s, o, b.owner); dead = true; break; } }
       }
@@ -311,7 +311,7 @@
     }
     for (const v of s.vehicles) { if (v.gone) continue; const d = Math.hypot(v.x - x, v.y - y); if (d > rad * 1.5) continue; const k = clamp(1 - d / (rad * 1.5), 0, 1); if (opt.vehicle === v) continue; v.hp -= dmg * k * 1.3; if (v.def.wheels) v.tires.forEach((q, i) => { if (Math.random() < k * 0.7) v.tires[i] = 0.05; }); if (k > 0.3 && v.fuel > 2 && Math.random() < 0.5) v.burning = 8; v.engine = Math.max(0, v.engine - k * 0.6); if (v.hp <= 0 && !v.wreck) C.wreckVehicle(s, v); }
     for (const o of s.objs) { if (o.dead) continue; const d = Math.hypot(o.x - x, o.y - y); if (d > rad * 1.3) continue; o.hp -= dmg * clamp(1 - d / (rad * 1.3), 0, 1) * 1.4; if (o.hp <= 0) C.destroyObj(s, o, owner); }
-    for (const an of s.animals) { if (an.dead) continue; const d = Math.hypot(an.x - x, an.y - y); if (d < rad) { an.hp -= dmg * (1 - d / rad); an.flee = 5; if (an.hp <= 0) { an.dead = true; if (an.def.food) s.items.push({ k: 'food', x: an.x, y: an.y, label: 'Carne de ' + an.def.n, amount: an.def.food }); } } }
+    for (const an of s.animals) { if (an.dead) continue; const d = Math.hypot(an.x - x, an.y - y); if (d < rad) { an.hp -= dmg * (1 - d / rad); an.flee = 5; if (an.hp <= 0) { an.dead = true; an.deadT = G().time; } } }
     // shrapnel
     const nf = opt.frags || 0;
     for (let i = 0; i < nf; i++) { const ang = (i / nf) * 6.283 + Math.random() * 0.4; s.bullets.push({ x: x + Math.cos(ang) * 4, y: y + Math.sin(ang) * 4, vx: Math.cos(ang) * 620, vy: Math.sin(ang) * 620, dmg: 20 + Math.random() * 10, owner: owner || null, side: null, life: rad * 1.7 / 620, dist: 20, frag: true }); }

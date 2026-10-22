@@ -92,3 +92,6 @@ These work best as a **network layer**, not as a ninth faction. People already b
 | Simplify/modernise UI; settings and real-game features | Grouped wheel (second ring for variants), pause menu, settings, key rebinding, saves, autosave | `settings.js`, `things.js` |
 
 Choices to note: (1) **orders still cannot be given while paused**; recording happens in real time. (2) Conversation stays a menu (what you *say*); everything else is a verb. (3) The creed has no slider: it is the average of what you actually said. (4) Historical details marked [recalled] in `RESEARCH.md` must be verified against the primary texts before release.
+
+## Round 5: hunting and accurate fauna
+Wild game now matches what an Oriente guerrilla could eat (see `HUNTING.md`); turkey removed (not Cuban). Kills leave carcasses that must be dressed; meat rots unless smoked; snares/fishing give a silent alternative to shooting. Cartridges and noise are the cost of the rifle.

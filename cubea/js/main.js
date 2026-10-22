@@ -296,7 +296,7 @@
     if ((t === TL.G || t === TL.CANE) && Math.abs(v.spd) > 50 && Math.random() < dt * 0.05 && !def.water) { const wi = Math.floor(Math.random() * 4); if (v.tires[wi] > 0.2) { v.tires[wi] = 0.05; C.log('¡Goma ponchada! A tire blew on the rough ground.', 'bad'); } }
     // run over pedestrians
     if (Math.abs(v.spd) > 38) for (const o of s.actors) { if (o.dead || o.inside || o.inVeh || o === a) continue; if (Math.hypot(o.x - v.x, o.y - v.y) < def.w * 0.5 + 3) { if (o.side === 'rebel' && o.squad >= 0) continue; C.hurt(o, Math.abs(v.spd) * 0.5, a, v.ang, 'blast'); C.say(a, '¡Dios mío!', '#7a1d1d', 1.6); } }
-    for (const an of s.animals) if (!an.dead && Math.abs(v.spd) > 30 && Math.hypot(an.x - v.x, an.y - v.y) < def.w * 0.5) { an.hp = 0; an.dead = true; if (an.def.food) s.items.push({ k: 'food', x: an.x, y: an.y, label: 'Carne de ' + an.def.n, amount: an.def.food }); }
+    for (const an of s.animals) if (!an.dead && Math.abs(v.spd) > 30 && Math.hypot(an.x - v.x, an.y - v.y) < def.w * 0.5) { an.hp = 0; an.dead = true; an.deadT = G().time; }
     v.lights = g.hour < 6.5 || g.hour > 18.5;
     a.moving = false; a.x = v.x; a.y = v.y;
     // passengers ride along
@@ -488,6 +488,7 @@
     const prevDay = g.day; syncClock(); if (g.sea && g.sea.active) C.seaUpdate(dt);
     // meals
     for (const h of [7, 13, 19]) if (prevMin % 1440 < h * 60 && g.min % 1440 >= h * 60 || prevDay !== g.day && h === 7 && false) C.mealTime();
+    if (C.huntTick) C.huntTick(s, g.min - prevMin);   // meat rots, snares fire (hunting.js)
     if (C.campTick) C.campTick(s, g.min - prevMin);   // camp life: hourly consequences of what is on the ground (camp.js)
     if (g.day !== prevDay) { dailyHooks(); }
     // weather

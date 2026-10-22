@@ -315,7 +315,7 @@
     s.items.splice(i, 1);
   }
   // Collect the meat of a dead animal.
-  function takeMeat(an) { const g = G(), s = g.scene; const i = s.animals.indexOf(an); if (i < 0) return; g.res.food += an.def.food; s.animals.splice(i, 1); ui.toast(`+${an.def.food} food (${an.def.n})`); if (an.def.wild === false) { C.log('You took the meat of a dead ' + an.def.n + '.', 'info'); } }
+  function takeMeat(an) { if (C.VERB && C.VERB.dress) { C.doVerb(C.VERB.dress, { kind: 'animal', o: an, x: an.x, y: an.y }); return; } const g = G(), s = g.scene; const i = s.animals.indexOf(an); if (i < 0) return; g.res.food += an.def.food; s.animals.splice(i, 1); ui.toast(`+${an.def.food} food (${an.def.n})`); if (an.def.wild === false) { C.log('You took the meat of a dead ' + an.def.n + '.', 'info'); } }
   // A corpse: search it (supplies, weapon), bury it with respect (its family hears someone cared), or leave it.
   function corpseMenu(a) {
     const g = G(), p = a.p; const opts = [];
