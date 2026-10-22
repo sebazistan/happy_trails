@@ -101,3 +101,8 @@ NPCs get eyes (cones, light, walls), ears and judgement, and a repertoire of ~30
 
 ## Round 7: menus → world (first three)
 Crafting became benches, rationing became a cook pot with servings at mealtime, foraging became a face-to-face trade (`workshop.js`). Still to move: prisoners/trials, recruitment at the camp edge, the travel map, couriers, broadcasts/posters, the sick bay, governing.
+
+## Round 8: weather, states, and the rest of the menus
+* **Climate** (`climate.js`): Cuban monthly normals, nortes and heat waves; body (heat, chill, wet, feet, sleep debt, hygiene) and mind (happiness, boredom, grief, trauma) tracked on every person; effects on aim, reload, speed, sentries, thirst, food and firewood burn, vehicle heat/battery/fuel, army morale — for both sides. Status-word bubbles (5 s, only for strong values, every 45–120 real seconds) over your own people; the whole state panel on rollover.
+* **Menus → world** (finished): prisoners and trials (`captives.js`), recruitment at the gate (`recruits.js`), the road as a place with checkpoints, mule trains, couriers on foot (`journeys.js`), Radio Rebelde broadcasts, the sick bay with stretchers and cots, and the eight governing matters as petition banners at Havana's buildings (`services.js`).
+* The manifesto panel (P) and factions panel stay as overviews of what you have said and how people stand.

@@ -114,10 +114,11 @@
     if (C.ui) { C.ui.refresh(); C.ui.setWhere && C.ui.setWhere(); }
     if (sid === 'sierra' && !s.introduced) { s.introduced = true; }
     C.log('You arrive at ' + s.name + '.', 'info');
+    if (C.afterEnter) C.afterEnter(s);
   };
   // In towns and cities rebels hide their long guns (stashed on the person and restored when they leave) and become 'covert'; the player keeps a concealed pistol.
   function applyUrbanRules(s) {
-    const urban = s.type === 'town' || s.type === 'city' || s.type === 'capital'; const g = G();
+    const urban = s.type === 'town' || s.type === 'city' || s.type === 'capital' || s.type === 'road'; const g = G();   // on the road rifles ride under blankets too
     for (const a of s.actors) {
       if (a.side !== 'rebel' && !a.isPlayer) continue;
       a.covertNow = urban;
@@ -252,7 +253,7 @@
     // exits
     for (const e of s.exits) {
       if (e.scripted) continue;
-      if (a.x > e.x * T && a.x < (e.x + e.w) * T && a.y > e.y * T && a.y < (e.y + e.h) * T) { if (!g.exitPrompt) { g.exitPrompt = true; C.ui.openMap(e.dest); } }
+      if (a.x > e.x * T && a.x < (e.x + e.w) * T && a.y > e.y * T && a.y < (e.y + e.h) * T) { if (s.type === 'road' && C.journeyExit) C.journeyExit(e); else if (!g.exitPrompt) { g.exitPrompt = true; C.ui.openMap(e.dest); } }
     }
     if (!s.exits.some((e) => a.x > e.x * T && a.x < (e.x + e.w) * T && a.y > e.y * T && a.y < (e.y + e.h) * T)) g.exitPrompt = false;
     // spotted marks
@@ -383,6 +384,7 @@
   };
   // Travel to another settlement by foot or vehicle: cost from the edge graph, fuel, rations (a hungry journey costs hunger and energy), time passing, a chance of an incident (checkpoint with bribe/bluff/turn-back, breakdown, kindness), then arrive.
   C.travelTo = function (dest, mode, squadsGoing) {
+    if (C.travelToRoad && C.travelToRoad(dest, mode, squadsGoing)) return;   // the road is a place (journeys.js)
     const g = G(), cur = g.scene.sid; const cost = C.travelCost(cur, dest);
     const going = squadsGoing ? g.squads.filter((sq) => squadsGoing.includes(sq.id)).flatMap((sq) => sq.members) : [];
     const veh = mode === 'vehicle' ? g.vehicle : null;
@@ -456,7 +458,7 @@
   // Once per game day: loyalty tick and bonds decay, the layered reveal of interface systems (support meter day 8, factions day 25…), weather, the Director's daily pick, outpost mission check, end conditions.
   function dailyHooks() {
     const g = G();
-    C.dayTick(); C.bondDaily(); if (C.farmDaily) C.farmDaily(); if (C.creedDaily) C.creedDaily(); if (C.climateDaily) C.climateDaily(); if (C.recruitDaily) C.recruitDaily();
+    C.dayTick(); C.bondDaily(); if (C.farmDaily) C.farmDaily(); if (C.creedDaily) C.creedDaily(); if (C.climateDaily) C.climateDaily(); if (C.recruitDaily) C.recruitDaily(); if (C.muleDaily) C.muleDaily();
     // the layered reveal: systems unlock as the story advances
     { const TH = [[3, 8, 'Locals: peasants remember how you treat them (support meter, loyalty details).'], [4, 25, 'Factions: peasants, workers, students, elites, landowners, the Church and the army are now tracked (⚖ Factions).'], [5, 60, 'Politics: you can now announce a platform (📜 Manifesto). Announced planks become promises.'], [6, 100, 'The island: the cities, the pipeline from Havana, the unions and the students are in play.']];
       for (const [L, d, msg] of TH) if (g.unlocked.layer < L && g.day >= d) { g.unlocked.layer = L; C.log('NEW SYSTEM — ' + msg, 'good'); C.ui.toast('New system unlocked'); C.ui.refresh(); } }
@@ -495,6 +497,8 @@
     if (C.huntTick) C.huntTick(s, g.min - prevMin);   // meat rots, snares fire (hunting.js)
     if (C.campTick) C.campTick(s, g.min - prevMin);   // camp life: hourly consequences of what is on the ground (camp.js)
     if (g.day !== prevDay) { dailyHooks(); }
+    if (C.sickTick) C.sickTick(s, dt);
+    if (C.journeyTick) C.journeyTick(s, dt); if (C.muleTick) C.muleTick(s, dt); if (C.courierTick) C.courierTick(s, dt);   // the road, mule trains, couriers (journeys.js)
     if (C.recruitTick) C.recruitTick(s, dt);          // volunteers arrive at the camp's edge (recruits.js)
     if (C.climateTick) C.climateTick(s, dt);          // temperature and feels-like (climate.js)
     // weather

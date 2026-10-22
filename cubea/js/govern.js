@@ -9,7 +9,7 @@
     C.usInit && C.usInit(); C.racketInit && C.racketInit();
     const t = C.factionTable(); const avg = t.rows.reduce((a, r) => a + r.mean * (r.n || 1), 0) / Math.max(1, t.rows.reduce((a, r) => a + (r.n || 1), 0));
     const party = C.squadPeople().length;
-    g.gov = { step: 0, log: [], m: {
+    g.gov = { step: 0, done: [false, false, false, false, false, false, false, false], cur: -1, log: [], m: {
       sup: clamp(50 + avg * 0.55, 5, 95),                                     // popular support
       rdy: clamp(18 + Math.min(30, party * 0.7) + (g.regime.armyMorale < 40 ? 6 : 0), 5, 90),   // militia and army readiness
       unity: clamp(66 - (g.merc || 0) * 0.35 - (g.us.strings || 0) * 4 - (g.stats.executed || 0) * 0.2, 10, 90),
@@ -17,6 +17,7 @@
       usT: clamp(18 + (g.us.interests || 0) * 8 + (g.us.outrage || 0) * 6 - (g.us.strings || 0) * 3, 5, 100),   // tension with Washington
       econ: 50,
     } };
+    if (C.govPlaces) C.govPlaces(g.scene);
     g.minPerSec = 0; g.speed = 1;
     C.ui.card({ title: 'Havana, January 1959', icon: '🏙', body: 'The column rolls into Havana under a rain of paper. The war is over and the government is yours — a country with a ruined sugar economy, a million people out of work every dead season, a Church, an army with no head, a great American embassy, and sixty thousand cheering people who all want something different.\n\nA few decisions will fix what kind of state you are when someone comes for it.', choices: [{ label: 'Begin', fn: () => next() }] });
   };
@@ -69,14 +70,20 @@
   function adj(d, key, level) {
     const g = G(), m = g.gov.m; for (const k in d) m[k] = clamp(m[k] + d[k], 0, 100);
     if (g.platform && g.platform.declared) { const idx = C.PLANK_IDX[key]; if (idx !== undefined) { if (g.platform.real[idx] !== level) C.adjustRep('honesty', g.platform.declared[idx] && g.platform.pub[idx] > level ? -4 : 0); } }
-    g.gov.step++; next();
+    const i = g.gov.cur >= 0 ? g.gov.cur : g.gov.step; g.gov.done[i] = true; g.gov.cur = -1; g.gov.step = g.gov.done.filter(Boolean).length; next();
   }
   // Show the next decision, or the flash-forward after the last.
   function next() {
-    const g = G(); const i = g.gov.step;
-    if (i < STEPS.length) { const c = STEPS[i](); C.ui.card(c); return; }
-    flashForward();
+    const g = G(); const left = g.gov.done.filter((d) => !d).length;
+    if (!left) { flashForward(); return; }
+    // the matters are decided at their places (services.js): banners stand at the buildings where each waits
+    if (C.govPlaces) C.govPlaces(g.scene);
+    const where = (C.GOV_PLACES || []).map(([k, label], i) => (g.gov.done[i] ? null : label)).filter(Boolean);
+    C.log(`${left} matter${left > 1 ? 's' : ''} still wait${left > 1 ? '' : 's'} for you in Havana: ${where.join('; ')}. Walk to the red banners and hold audience.`, 'info');
+    if (g.scene && g.scene.sid !== 'habana') C.ui.toast('The matters of state wait in Havana.');
   }
+  /** Take up one of the eight matters (called by the "hold audience" verb at its banner). */
+  C.govDecide = function (i) { const g = G(); if (!g.gov || g.gov.done[i]) return; g.gov.cur = i; C.ui.card(STEPS[i]()); };
 
   // The April 1961 card: two years and three months later; the CIA-backed brigade is coming.
   function flashForward() {

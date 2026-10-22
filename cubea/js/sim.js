@@ -630,6 +630,7 @@
       if (g.day < c.due) { keep.push(c); continue; }
       const p = C.P(c.id);
       if (Math.random() < c.risk) { C.log(`The courier ${C.tagName(p)} was caught at a checkpoint. The money is lost.`, 'bad'); g.regime.heat = clamp(g.regime.heat + 6, 0, 100); if (Math.random() < 0.5) { p.status = 'jailed'; C.log(`${C.tagName(p)} was arrested.`, 'bad'); C.addEvent({ type: 'arrest', victim: p, perpSide: 'army', sev: 45, pub: 0.2, x: 0, y: 0, settlement: p.settlement, text: `${C.tagName(p)} arrested at a checkpoint`, memText: `${C.tagName(p)} was arrested` }); } }
+      else if (C.courierArrives) { C.courierArrives(c.id, c.amount); C.log(`${C.tagName(p)} is on the last stretch of the trail to the Sierra with the money.`, 'info'); }
       else { g.res.money += c.amount; g.stats.pesos += c.amount; C.log(`${c.amount} pesos from Havana reach the Sierra.`, 'good'); }
     }
     g.pipe.couriers = keep;
@@ -639,6 +640,7 @@
   // ---------------- travel ----------------
   // (see above)
   C.travelCost = function (from, to) { // shortest foot days / vehicle hours over the edge graph
+    if (!C.PLAYABLE.includes(from) || !C.PLAYABLE.includes(to)) return { days: 1, hours: 4 };
     const nodes = C.PLAYABLE, dist = {}, vh = {}, prev = {};
     for (const n of nodes) { dist[n] = 1e9; vh[n] = 1e9; }
     dist[from] = 0; vh[from] = 0; const Q = new Set(nodes);

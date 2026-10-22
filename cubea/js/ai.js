@@ -454,7 +454,7 @@
         if (!(o.side === 'rebel' || o.isPlayer)) continue;
         const d = Math.hypot(o.x - a.x, o.y - a.y); if (d > 420) continue;
         let range = detectRange(a, o, s);
-        const urban = s.type === 'town' || s.type === 'city' || s.type === 'capital';
+        const urban = s.type === 'town' || s.type === 'city' || s.type === 'capital' || s.type === 'road';
         // undercover rebels in towns: only suspicious if armed in view or behaving oddly
         if (urban && (o.covertNow || o.p.covert) && !o.weaponOut && !(o.shooting > 0) && o.exposed <= 0) {
           const sf = C.suspicionFactor(o, s);
@@ -742,7 +742,7 @@
         v.ambient = true; if (C.vehBlocked && C.vehBlocked(v)) { v.spd *= 0.9; continue; }
         if ((v.def.tank && v.fuel <= 0.5) || v.tires.some((q) => q < 0.2)) { v.spd *= 0.9; continue; }
         v.wait -= dt; if (v.wait > 0) continue;
-        if (!v.route || v.ri >= v.route.length) { const q = s.randomFree([TL.ROAD, TL.PAVED]); const r = C.findPath(s, v.x, v.y, q.x * T + 8, q.y * T + 8, 'car'); if (!r) { v.wait = 5; continue; } v.route = r; v.ri = 0; }
+        if (!v.route || v.ri >= v.route.length) { const q = s.randomFree(s.type === 'road' ? [TL.TRAIL] : [TL.ROAD, TL.PAVED]); if (!q) { v.wait = 5; continue; } const r = C.findPath(s, v.x, v.y, q.x * T + 8, q.y * T + 8, 'car'); if (!r) { v.wait = 5; continue; } v.route = r; v.ri = 0; }
         const w = v.route[v.ri]; const dx = w.x - v.x, dy = w.y - v.y, d = Math.hypot(dx, dy);
         if (d < 5) { v.ri++; continue; }
         // yield to pedestrians

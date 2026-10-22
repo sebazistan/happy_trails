@@ -65,6 +65,8 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 * **Vehicles as machines:** period models, overheating and a dozen faults with real and improvised repairs, cargo, trunk and passengers, driver orders, riding along (`js/garage.js`).
 * **Town life:** restaurants, bakeries, butchers, market, garages, post office, bars; 14 more trades with shifts; night watchmen; horse carts and mounted men; ≈200 civilians per town (`js/townlife.js`, `docs/AWARENESS_VEHICLES_TOWNS.md`).
 * **Workshop, kitchen and trade in the world:** benches built on the ground (reloading bench, forge, press, sewing table, cook pot) and used by hand with skill and risk; hot meals served from the pot at mealtime; face-to-face trade (pay, vale, gift, barter, gunpoint) (`js/workshop.js`).
+* **Climate and states:** Cuban monthly temperatures, norte cold fronts and summer heat waves; heat, cold, wet, foot and sleep strain; effects on aim, reload, speed, sentries, thirst, food, firewood, vehicles; status-word bubbles over your people and a full rollover panel (`js/climate.js`, `docs/VARIABLES.md`).
+* **Prisoners, recruits, journeys, services:** prisoners are people you take, tie, feed, question and try or release (`js/captives.js`); volunteers walk into camp and you interview them (`js/recruits.js`); the road between places is a scene with checkpoints, mule trains and couriers on foot (`js/journeys.js`); Radio Rebelde, the sick bay with stretchers and cots, and the governing matters as places in Havana (`js/services.js`).
 * **A finished-game shell:** pause menu, settings (volume, UI size, shake, contrast, Spanish level, autosave), **key rebinding**, 3 save slots + autosave (`js/settings.js`).
 * **8 locations + the coast**, each a large map; terrain is painted in cached chunks.
 
@@ -73,7 +75,7 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 ```
 cubea/
   index.html              page + CSS
-  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack things actions camp farm ideology hunting aware garage townlife workshop settings main
+  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack things actions camp farm ideology hunting aware garage townlife workshop captives recruits journeys climate services settings main
                           (classic scripts → works from file://)
   docs/                   DESIGN_BIBLE · DECISIONS · COMMANDS · SCHEMA · UNREAL_CODE_BIBLE · ROSTER · RISKS · IDEAS_AND_QUESTIONS · RESEARCH · PLAYER_AGENCY · IDEOLOGY
   tools/
@@ -103,6 +105,11 @@ node tools/harness/aware.js          # cones, hearing, town vs country, covert b
 node tools/harness/garage.js         # overheating, repairs, cargo, trunk, driver orders
 node tools/harness/town.js           # buildings, trades, population, traffic, schedules
 node tools/harness/workshop.js       # benches, making, accidents, cooking, serving, trading
+node tools/harness/climate.js        # temperature, strain, effects on fighting, status words
+node tools/harness/captives.js       # capture, question, escape, release, trial
+node tools/harness/recruits.js       # volunteers at the gate
+node tools/harness/journeys.js       # road scene, checkpoint, mule train, courier
+node tools/harness/services.js       # radio, sick bay, governing places
 node tools/harness/settings.js         # save/load round trip, key rebinding
 node tools/harness/sea.js               # the crossing, six landings, hand-off to Alegría de Pío
 node tools/harness/ripple.js            # the family-graph ripple of a single killing
