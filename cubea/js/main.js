@@ -296,14 +296,28 @@
 
   // ---------------- orders from the mouse ----------------
   C.commandAt = function (wx, wy, shift) {
-    const g = G(), s = g.scene; if (g.paused) { C.ui.toast('No orders while paused — time is part of the pressure'); return; } const sq = g.squads[g.curSquad]; if (!sq || !sq.members.length) return;
-    let tgt = null, bd = 16; for (const a of s.actors) { if (a.side !== 'army' || a.dead || a.inside) continue; const d = Math.hypot(a.x - wx, a.y - 8 - wy); if (d < bd) { bd = d; tgt = a; } }
-    if (tgt) { sq.focus = tgt; C.giveOrder(sq.id, { type: 'move', x: tgt.x, y: tgt.y }); g.orderMarks.push({ x: tgt.x, y: tgt.y, t: 0, col: '#ff5a4a' }); C.ui.toast('Focus fire!'); }
-    else {
-      if (shift) { sq.scoutAng = Math.atan2(wy - g.player.y, wx - g.player.x); g.orderMarks.push({ x: wx, y: wy, t: 0, col: '#6ad0ff' }); C.ui.toast('Scout direction set'); return; }
-      sq.focus = null; const r = C.giveOrder(sq.id, { type: 'move', x: wx, y: wy }); g.orderMarks.push({ x: wx, y: wy, t: 0, col: '#ffe07a' });
-      if (r && r.refused) C.ui.toast(`${r.refused} of ${r.ok + r.refused} hesitated`);
-    }
+    const g = G(), s = g.scene; if (g.paused) { C.ui.toast('No orders while paused — time is part of the pressure'); return; }
+    if (g.cmd.pending) { if (g.cmd.pending.pts && g.cmd.pending.pts.length) C.cmdFinish(); else C.cmdCancel(); return; }
+    let tgt = null, bd = 16; for (const a of s.actors) { if (a.side !== 'army' || a.dead || a.inside || !C.visible(a)) continue; const d = Math.hypot(a.x - wx, a.y - 8 - wy); if (d < bd) { bd = d; tgt = a; } }
+    if (tgt) { C.selActors().forEach((a) => { a.p.focusT = g.time; }); const sq = g.squads[g.curSquad]; if (sq) sq.focus = tgt; C.issue({ type: 'focus', tgt, x: tgt.x, y: tgt.y }); return; }
+    C.issue({ type: 'move', x: wx, y: wy }, { queue: shift });
+  };
+  // pending (button-armed) orders
+  C.cmdArm = function (type) {
+    const g = G(), def = C.ORDERS[type]; if (g.paused) { C.ui.toast('No orders while paused'); return; }
+    if (def.need === 'none') { C.issue({ type }); return; }
+    g.cmd.pending = { type, pts: type === 'patrol' ? [] : null }; C.ui.toast(`${def.n}: ${def.need === 'actor' ? 'click a soldier' : def.need === 'pad' ? 'click a camp plot' : type === 'patrol' ? 'click the points, Enter to finish' : 'click the map'} (Esc/RMB cancels, Shift keeps placing)`); C.ui.refreshCmd && C.ui.refreshCmd();
+  };
+  C.cmdCancel = function () { const g = G(); if (g.cmd.pending) { g.cmd.pending = null; C.ui.toast('Cancelled'); C.ui.refreshCmd && C.ui.refreshCmd(); } };
+  C.cmdFinish = function () { const g = G(), p = g.cmd.pending; if (!p) return; if (p.type === 'patrol') { if (p.pts.length < 2) { const sel = C.selActors()[0]; if (sel) p.pts.unshift({ x: sel.x, y: sel.y }); } if (p.pts.length >= 2) { g.cmd.pending = null; C.issue({ type: 'patrol', pts: p.pts, x: p.pts[0].x, y: p.pts[0].y }); C.ui.refreshCmd && C.ui.refreshCmd(); } else C.ui.toast('Click at least one point'); } };
+  C.cmdClick = function (wx, wy, shift) {
+    const g = G(), s = g.scene, p = g.cmd.pending; if (!p) return false; const def = C.ORDERS[p.type];
+    if (def.need === 'actor') { const t = g.hover && g.hover.side === 'army' && !g.hover.dead && C.visible(g.hover) ? g.hover : null; if (!t) { C.ui.toast('Click a soldier you can see'); return true; } C.issue({ type: p.type, tgt: t, x: t.x, y: t.y }); }
+    else if (def.need === 'pad') { const tx = wx / C.T, ty = wy / C.T; const b = s.blds.find((q) => q.key === 'pad' && !q.built && tx >= q.x - 1 && tx <= q.x + q.w + 1 && ty >= q.y - 1 && ty <= q.y + q.h + 1); if (!b) { C.ui.toast('Click one of the empty camp plots'); return true; } C.issue({ type: 'build', pad: b, x: (b.x + b.w / 2) * C.T, y: (b.y + b.h + 1) * C.T }); }
+    else if (p.type === 'patrol') { p.pts.push({ x: wx, y: wy }); g.orderMarks.push({ x: wx, y: wy, t: 0, col: '#7fd0ff' }); return true; }
+    else C.issue({ type: p.type, x: wx, y: wy }, { queue: shift });
+    if (!shift) { g.cmd.pending = null; C.ui.refreshCmd && C.ui.refreshCmd(); }
+    return true;
   };
 
   // ---------------- travel ----------------
@@ -350,9 +364,9 @@
   // ---------------- camp building & crafting ----------------
   C.BUILD_COST = { cocina: [20, 10], enfermeria: [30, 12], taller: [35, 14], radiocamp: [90, 22], escuelacamp: [25, 12], imprenta: [45, 16], polvorin: [25, 10], tienda_c: [10, 6] };
   C.buildAtPad = function (b) {
-    const g = G(), s = g.scene; const k = b.slot; const cost = C.BUILD_COST[k]; if (!cost || b.built) return false;
-    if (g.res.money < cost[0] || g.res.scrap < cost[1] * 0.25) { C.ui.toast(`Need ${cost[0]} pesos and ${Math.ceil(cost[1] * 0.25)} scrap/materials`); return false; }
-    g.res.money -= cost[0]; g.res.scrap -= Math.ceil(cost[1] * 0.25);
+    const g = G(), s = g.scene; const k = b.slot; const cost0 = C.BUILD_COST[k]; if (!cost0 || b.built) return false; const cost = C.padCost(b);
+    if (g.res.money < cost[0] || g.res.scrap < cost[1]) { C.ui.toast(`Need ${cost[0]} pesos and ${cost[1]} scrap/materials`); return false; }
+    g.res.money -= cost[0]; g.res.scrap -= cost[1];
     const d = C.BLD[k]; b.key = k; b.label = d.n; b.fill = d.fill; b.roof = d.roof; b.open = false; b.built = true; b.tag = d.tag; s.rect(b.x, b.y, b.w, b.h, TL.BLD); b.door = { tx: b.x + (b.w >> 1), ty: b.y + b.h }; s.pre = null; s.mini = null; g.base.built[k] = true; g.base.level++;
     C.log(`Built: ${d.n}.`, 'good'); return true;
   };
@@ -421,7 +435,7 @@
     if (g.resting) { for (const id of C.partyIds()) { const a = C.P(id).actor; if (a) { a.sleeping = true; a.moving = false; } } g.player.sleeping = true; g.player.p.needs.energy = Math.min(100, g.player.p.needs.energy + dt * 6); if (g.hour >= 6 && g.hour < 7 || s.alert > 0.35 || g.combatT > 0) { g.resting = false; C.log('You wake.', 'info'); } }
     if (s.pro) prologueUpdate(dt);
     playerUpdate(dt);
-    C.updateScene(s, dt); C.updateBullets(s, dt); C.updateFx(s, dt);
+    C.updateScene(s, dt); C.fogUpdate(s, dt); C.updateBullets(s, dt); C.updateFx(s, dt);
     g.combatT = Math.max(0, g.combatT - dt); g.shake = Math.max(0, g.shake - dt * 1.6); g.flash = Math.max(0, g.flash - dt * 1.6); g.hurt = Math.max(0, g.hurt - dt * 0.18);
     for (const m of g.orderMarks) m.t += dt; g.orderMarks = g.orderMarks.filter((m) => m.t < 2.2);
     for (const sp of s.spotted || []) sp.t -= dt; if (s.spotted) s.spotted = s.spotted.filter((q) => q.t > 0);
@@ -456,9 +470,9 @@
   window.addEventListener('keydown', (e) => {
     const g = G(); if (!g) return;
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
-    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; keys[k] = true; if (e.key === 'Shift') keys.Shift = true;
+    const k = (e.shiftKey && /^Digit[1-9]$/.test(e.code)) ? e.code.slice(5) : (e.key.length === 1 ? e.key.toLowerCase() : e.key); keys[k] = true; if (e.key === 'Shift') keys.Shift = true;
     if (e.key === ' ') e.preventDefault();
-    if (k === 'Escape') { C.ui.closeModal(); return; }
+    if (k === 'Escape') { if (g.cmd && g.cmd.pending) { C.cmdCancel(); return; } C.ui.closeModal(); return; }
     if (g.over) return;
     if (g.modalOpen) return;
     const pl = g.player;
@@ -478,7 +492,9 @@
       case 'b': C.ui.openBase(); break;
       case 'h': C.ui.openHelp(); break;
       case 'tab': { e.preventDefault(); cyclePartner(); break; }
-      case '1': case '2': case '3': case '4': g.curSquad = (+k) - 1; C.ui.toast('Squad: ' + C.gName(g.squads[g.curSquad])); C.ui.refresh(); break;
+      case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': { const n = (+k) - 1; if (!g.squads[n]) break; if (e.shiftKey) { C.assignGroup(n, C.selIds()); C.ui.toast('Selection assigned to ' + C.gName(g.squads[n])); } else { C.selectGroup(n); C.ui.toast('Group: ' + C.gName(g.squads[n]) + ' (' + g.squads[n].members.length + ')'); } C.ui.refresh(); break; }
+      case 'Enter': C.cmdFinish(); break;
+      case 'Backspace': e.preventDefault(); C.stopOrders(); break;
       case 'u': g.unlocked.layer = 6; C.ui.refresh(); C.ui.toast('All systems revealed'); break;
       case 'k': if (pl && !pl.dead && e.shiftKey) { pl.p.hp = 9999; C.ui.toast('God mode'); } break;
       default: break;
@@ -497,17 +513,26 @@
     C.ui.interact(t);
   }
   const cv = document.getElementById('game');
-  cv.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; const tip = document.getElementById('tip'); const g = G(); if (!g || !g.scene) return; const a = g.hover; if (a && !g.modalOpen) { tip.style.display = 'block'; tip.style.left = Math.min(window.innerWidth - 270, e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.innerHTML = C.ui.tipFor(a); } else tip.style.display = 'none'; });
+  cv.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; if (mouse.box && G()) G().box = { x0: Math.min(mouse.box.sx, e.clientX), y0: Math.min(mouse.box.sy, e.clientY), x1: Math.max(mouse.box.sx, e.clientX), y1: Math.max(mouse.box.sy, e.clientY) }; const tip = document.getElementById('tip'); const g = G(); if (!g || !g.scene) return; const a = g.hover; if (a && !g.modalOpen) { tip.style.display = 'block'; tip.style.left = Math.min(window.innerWidth - 270, e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.innerHTML = C.ui.tipFor(a); } else tip.style.display = 'none'; });
   cv.addEventListener('mousedown', (e) => {
     const g = G(); if (!g || g.modalOpen || g.over) return; C.snd && C.snd.init();
+    if (e.button === 0 && g.cmd.pending) { C.cmdClick(mouse.wx, mouse.wy, e.shiftKey); return; }
+    if (e.button === 0 && e.ctrlKey) { mouse.box = { sx: e.clientX, sy: e.clientY, wx: mouse.wx, wy: mouse.wy }; return; }
     if (e.button === 0) {
       const pl = g.player;
       if (pl && pl.weaponOut && !g.vehicle && !e.shiftKey && !g.paused) { mouse.down = true; if (pl.weapon && C.WEAPONS[pl.weapon.k].rof >= 1) { mouse.down = true; } C.tryFire(g.scene, pl, mouse.wx, mouse.wy); if (C.WEAPONS[pl.weapon ? pl.weapon.k : 'pistol'].rof < 1) mouse.down = false; }
       else { if (g.hover) select(g.hover); else select(null); }
-      if (e.shiftKey && g.hover) select(g.hover);
+      if (e.shiftKey && g.hover) { select(g.hover); const hp = g.hover.p; if (g.hover.side === 'rebel' && !g.hover.isPlayer) { const cur = C.selIds(); C.setSel(cur.includes(hp.id) ? cur.filter((x) => x !== hp.id) : cur.concat(hp.id)); } }
     } else if (e.button === 2) { C.commandAt(mouse.wx, mouse.wy, e.shiftKey); }
   });
-  window.addEventListener('mouseup', () => { mouse.down = false; });
+  window.addEventListener('mouseup', (e) => {
+    mouse.down = false; const g = G(); if (!g || !mouse.box) { return; }
+    const b = mouse.box; mouse.box = null; g.box = null;
+    const x0 = Math.min(b.wx, mouse.wx), x1 = Math.max(b.wx, mouse.wx), y0 = Math.min(b.wy, mouse.wy), y1 = Math.max(b.wy, mouse.wy);
+    if (Math.hypot(e.clientX - b.sx, e.clientY - b.sy) < 6) { if (g.hover && g.hover.side === 'rebel' && !g.hover.isPlayer) { const cur = C.selIds(); const id = g.hover.p.id; C.setSel(cur.includes(id) ? cur.filter((x) => x !== id) : cur.concat(id)); } return; }
+    const ids = g.scene.actors.filter((a) => a.side === 'rebel' && !a.isPlayer && !a.dead && !a.inside && a.squad >= 0 && a.x >= x0 && a.x <= x1 && a.y - 8 >= y0 && a.y - 8 <= y1).map((a) => a.p.id);
+    C.setSel(ids); C.ui.toast(ids.length ? `${ids.length} selected` : 'Nobody in the box');
+  });
   cv.addEventListener('contextmenu', (e) => e.preventDefault());
   cv.addEventListener('wheel', (e) => { const g = G(); if (!g) return; e.preventDefault(); g.cam.z = clamp(g.cam.z * (e.deltaY < 0 ? 1.1 : 0.9), 1.1, 4.2); }, { passive: false });
   document.getElementById('minimap').addEventListener('click', () => C.ui.openMap());

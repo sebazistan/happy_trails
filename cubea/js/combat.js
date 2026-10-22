@@ -151,7 +151,7 @@
   C.hurt = function (a, dmg, src, ang, kind) {
     if (a.dead) return;
     const s = a.scene, p = a.p, g = G();
-    const prone = a.prone || a.hide; if (prone && kind === 'bullet') dmg *= 0.85;
+    const prone = a.prone || a.hide; if (prone && kind === 'bullet') dmg *= 0.85; if (kind === 'bullet' && C.inFoxhole && C.inFoxhole(a)) dmg *= 0.5;
     p.hp -= dmg; a.pain = Math.min(1, a.pain + dmg / 55); p.stress = Math.min(100, p.stress + dmg * 0.45); p.fear = Math.min(100, p.fear + dmg * 0.25); p.morale = Math.max(0, p.morale - dmg * 0.22);
     a.lastHit = g.time; a.lastAttacker = src; a.hurtT = 2; a.panic = Math.min(1, a.panic + (a.side === 'civ' ? 0.9 : 0.15)); a.exposed = Math.max(a.exposed || 0, 3);
     a.wounded = true;

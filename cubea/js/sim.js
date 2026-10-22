@@ -21,7 +21,7 @@
         { id: 2, name: 'Retaguardia', col: '#5ab0e8', members: [], stance: 'follow', fireNow: false },
         { id: 3, name: 'Sanidad', col: '#7fd07a', members: [], stance: 'follow', fireNow: false },
       ],
-      curSquad: 0,
+      curSquad: 0, sel: [], cmd: { pending: null, tab: 'move', vol: 0 }, hygiene: 70,
       res: { food: 24, money: 140, ammo: 60, guns: 1, med: 5, fuel: 12, gren: 3, dyn: 0, pamph: 0, vales: 0, cloth: 6, scrap: 8 },
       policy: { forage: 'pay' },
       platform: { pub: [0, 0, 0, 0, 0, 0, 0, 0], real: [0, 0, 0, 0, 0, 0, 0, 0], declared: [false, false, false, false, false, false, false, false], dayDeclared: [-1, -1, -1, -1, -1, -1, -1, -1] },
@@ -350,7 +350,7 @@
     for (const it of g.queue) { if (it.due <= now) { const q = C.P(it.id); if (q && q.status !== 'dead') applyMemory(q, it.mem, it.w); } else rest.push(it); }
     g.queue = rest;
     processVales();
-    C.atrocityTick();
+    C.atrocityTick(); C.ordersDaily();
     // trust in each faction: promises vs deeds
     updateTrust();
     // regime meters

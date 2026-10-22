@@ -110,10 +110,12 @@
       h += `</div><div class="sub" id="sqs${sq.id}"></div></div>`;
     }
     if (g.unlocked.layer >= 3) h += `<h3 style="margin-top:8px">Policy</h3><div class="sub">When foraging:</div><div class="stances" id="polf">${['pay', 'vale', 'take'].map((k) => `<button class="btn sm ${g.policy.forage === k ? 'on' : ''}" data-pol="${k}" title="${k === 'pay' ? 'Pay pesos: trust and goodwill' : k === 'vale' ? 'Promise to repay in 30 days' : 'Take it: fast, feared, resented'}">${k === 'pay' ? 'Pay' : k === 'vale' ? 'Owe (vale)' : 'Take'}</button>`).join('')}</div>`;
-    h += `<div class="sub" style="margin-top:8px">RMB: order the selected squad (shift = scout direction; on an enemy = focus fire). <kbd>F</kbd> springs an ambush. Squads may hesitate if hungry, scared or exhausted — look for the speech bubble.</div>`;
+    h += `<button class="btn sm" id="newgrp" style="margin-top:4px">+ New group from selection</button>`;
+    h += `<div class="sub" style="margin-top:8px">RMB: move the selection (Shift queues; on an enemy = focus fire). Ctrl-drag boxes a selection; Shift+1–9 saves it as a group; use the command bar below for patrols, ambushes, digging, water and more. <kbd>F</kbd> springs an ambush. Squads may hesitate if hungry, scared or exhausted — look for the speech bubble.</div>`;
     el.innerHTML = h;
-    el.querySelectorAll('.squad').forEach((d) => d.onclick = (e) => { if (e.target.closest('button')) return; g.curSquad = +d.dataset.sq; buildLeft(); });
-    el.querySelectorAll('.stances button[data-st]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); if (g.paused) { ui.toast('No orders while paused'); return; } const sq = g.squads[+b.dataset.sq]; sq.stance = b.dataset.st; g.curSquad = sq.id; ui.toast(`${C.gName(sq)}: ${C.stName(sq.stance)}`); buildLeft(); });
+    el.querySelectorAll('.squad').forEach((d) => d.onclick = (e) => { if (e.target.closest('button')) return; C.selectGroup(+d.dataset.sq); buildLeft(); });
+    el.querySelectorAll('.stances button[data-st]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); if (g.paused) { ui.toast('No orders while paused'); return; } const sq = g.squads[+b.dataset.sq]; sq.stance = b.dataset.st; g.curSquad = sq.id; for (const id of sq.members) { const aa = C.P(id).actor; if (aa) { aa.stanceOv = null; aa.watching = false; } } ui.toast(`${C.gName(sq)}: ${C.stName(sq.stance)}`); buildLeft(); });
+    const ng = el.querySelector('#newgrp'); if (ng) ng.onclick = () => { const ids = C.selIds(); if (!ids.length) { ui.toast('Select people first'); return; } const nm = window.prompt('Name this group', 'Group ' + (g.squads.length + 1)); if (nm === null) return; const sq = C.newGroup(nm.trim() || undefined, ids); if (sq) { g.curSquad = sq.id; buildLeft(); } };
     el.querySelectorAll('[data-pol]').forEach((b) => b.onclick = () => { g.policy.forage = b.dataset.pol; buildLeft(); });
   }
   function updateLeftLive() {
@@ -248,6 +250,11 @@
       case 'obj': return objMenu(o);
     }
   };
+  ui.take = function (it) {
+    const g = G();
+    if (it.k === 'food') g.res.food += it.amount || 5; else if (it.k === 'ammo') g.res.ammo += it.amount || 10; else if (it.k === 'med') g.res.med += it.amount || 1; else if (it.k === 'fuel') g.res.fuel += it.amount || 5; else if (it.k === 'money') g.res.money += it.amount || 20;
+    else if (it.k === 'gun') { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (it.wk !== 'machete') g.res.guns++; }
+  };
   function pickUp(it) {
     const g = G(), s = g.scene; const i = s.items.indexOf(it); if (i < 0) return;
     if (it.k === 'food') { g.res.food += it.amount || 5; ui.toast(`+${it.amount || 5} food`); }
@@ -287,8 +294,8 @@
     ]);
   }
   function padMenu(b) {
-    const g = G(); const k = b.slot; const d = C.BLD[k]; const cost = C.BUILD_COST[k] || [0, 0];
-    ui.menu(`Build: ${d.n}`, `Cost: ${cost[0]} pesos + ${Math.ceil(cost[1] * 0.25)} scrap (you have ${Math.round(g.res.money)} pesos, ${g.res.scrap} scrap).<br>${padEffect(k)}`, [{ label: b.built ? 'Already built' : 'Build it', disabled: b.built, fn: () => { C.buildAtPad(b); } }]);
+    const g = G(); const k = b.slot; const d = C.BLD[k]; const cost = C.padCost(b); cost[1] = cost[1] * 4;
+    ui.menu(`Build: ${d.n}`, `Cost: ${cost[0]} pesos + ${Math.ceil(cost[1] * 0.25)} scrap${b.labor ? ` (labour has cut it ${Math.round(Math.min(.5, b.labor * .15) * 100)}%)` : ''} (you have ${Math.round(g.res.money)} pesos, ${g.res.scrap} scrap).<br>${padEffect(k)}`, [{ label: b.built ? 'Already built' : 'Build it', disabled: b.built, fn: () => { C.buildAtPad(b); } }]);
   }
   function padEffect(k) { return { cocina: 'Rations stretch further: meals cost less.', enfermeria: 'Wounded recover faster; bleeding is treated.', taller: 'Craft cartridges, grenades, dynamite.', radiocamp: 'Radio Rebelde: broadcast to the whole island (history: Feb 1958).', escuelacamp: 'Teach recruits to read: hope and dignity rise daily.', imprenta: 'Print pamphlets for students and strikers.', polvorin: 'A hidden ammo store.', tienda_c: 'A tent for the command.' }[k] || ''; }
   function buildingMenu(b) {
@@ -545,7 +552,7 @@
     h += `<div class="sub">Pesos ${Math.round(g.res.money)} · Scrap ${g.res.scrap} · Cloth ${g.res.cloth} · Food ${Math.round(g.res.food)} · Medicine ${g.res.med} · Cartridges ${Math.round(g.res.ammo)} · Dynamite ${g.res.dyn || 0} · Molotovs ${g.res.molo || 0} · Pamphlets ${g.res.pamph}</div>`;
     if (atCamp) {
       h += `<h3 style="color:var(--gold);margin:10px 0 4px">Build</h3>`;
-      for (const id of s.camp.slots) { const b = s.blds[id]; const k = b.slot; const cost = C.BUILD_COST[k]; h += `<div class="plank"><div class="row"><b>${esc(C.BLD[k].n)}</b><span class="sub">${b.built ? '✔ built' : cost[0] + ' pesos + ' + Math.ceil(cost[1] * 0.25) + ' scrap'}</span></div><div class="sub">${esc(padEffect(k))}</div>${b.built ? '' : `<button class="btn sm" data-b="${id}">Build</button>`}</div>`; }
+      for (const id of s.camp.slots) { const b = s.blds[id]; const k = b.slot; const cost = C.padCost(b); h += `<div class="plank"><div class="row"><b>${esc(C.BLD[k].n)}</b><span class="sub">${b.built ? '✔ built' : cost[0] + ' pesos + ' + cost[1] + ' scrap' + (b.labor ? ' (labour ×' + b.labor + ')' : '')}</span></div><div class="sub">${esc(padEffect(k))}</div>${b.built ? '' : `<button class="btn sm" data-b="${id}">Build</button>`}</div>`; }
       h += `<h3 style="color:var(--gold);margin:10px 0 4px">Workshop & kitchen</h3>`;
       for (const r of C.RECIPES) { const okNeed = !r.need || g.base.built[r.need]; h += `<div class="row"><span>${esc(r.n)} <span class="sub">${Object.keys(r.cost).map((k) => r.cost[k] + ' ' + k).join(', ') || 'free'}${r.need ? ' · needs ' + C.BLD[r.need].n : ''}</span></span><button class="btn sm" data-r="${r.id}" ${okNeed ? '' : 'disabled'}>Make</button></div>`; }
     }

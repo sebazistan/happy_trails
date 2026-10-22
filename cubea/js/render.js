@@ -396,6 +396,8 @@
       ctx.globalAlpha = d.a * (d.fade ? Math.max(0.15, 1 - (G.time - d.t0) / d.fade) : 1);
       if (d.k === 'blood') { ctx.fillStyle = 'rgb(110,28,24)'; ctx.beginPath(); ctx.ellipse(d.x, d.y, d.r, d.r * 0.7, d.rot, 0, 6.3); ctx.fill(); }
       else if (d.k === 'crater') { ctx.fillStyle = 'rgb(56,44,34)'; ctx.beginPath(); ctx.ellipse(d.x, d.y, d.r, d.r * 0.8, 0, 0, 6.3); ctx.fill(); ctx.fillStyle = 'rgb(88,70,52)'; ctx.beginPath(); ctx.ellipse(d.x, d.y - 1, d.r * 0.7, d.r * 0.55, 0, 0, 6.3); ctx.fill(); }
+      else if (d.k === 'foxhole') { ctx.fillStyle = 'rgb(86,66,46)'; ctx.beginPath(); ctx.ellipse(d.x, d.y + 1, d.r + 1.5, (d.r + 1.5) * 0.7, 0, 0, 6.3); ctx.fill(); ctx.fillStyle = 'rgb(34,26,20)'; ctx.beginPath(); ctx.ellipse(d.x, d.y + 1, d.r - 1, (d.r - 1) * 0.65, 0, 0, 6.3); ctx.fill(); }
+      else if (d.k === 'latrine') { ctx.fillStyle = 'rgb(60,48,36)'; ctx.fillRect(d.x - 3, d.y - 2, 6, 5); ctx.fillStyle = 'rgb(120,100,70)'; ctx.fillRect(d.x - 4, d.y - 3, 8, 1.5); }
       else if (d.k === 'scorch') { ctx.fillStyle = 'rgb(30,26,24)'; ctx.beginPath(); ctx.ellipse(d.x, d.y, d.r, d.r * 0.8, 0, 0, 6.3); ctx.fill(); }
       ctx.globalAlpha = 1;
     }
@@ -406,10 +408,10 @@
     for (const it of s.items) if (vis(it.x, it.y, 10)) drawItem(ctx, it, t);
     // vehicles, animals, actors sorted by y
     const list = [];
-    for (const v of s.vehicles) if (vis(v.x, v.y, 40)) list.push({ y: v.y, k: 'v', o: v });
+    for (const v of s.vehicles) if (vis(v.x, v.y, 40) && C.vehVisible(v)) list.push({ y: v.y, k: 'v', o: v });
     for (const an of s.animals) if (vis(an.x, an.y, 20)) list.push({ y: an.y, k: 'n', o: an });
     for (const a of s.corpses) if (vis(a.x, a.y, 20)) list.push({ y: a.y - 40, k: 'a', o: a });
-    for (const a of s.actors) if (!a.inside && !a.gone && vis(a.x, a.y, 30)) list.push({ y: a.y, k: 'a', o: a });
+    for (const a of s.actors) if (!a.inside && !a.gone && vis(a.x, a.y, 30) && C.visible(a)) list.push({ y: a.y, k: 'a', o: a });
     list.sort((p, q) => p.y - q.y);
     for (const it of list) {
       if (it.k === 'v') drawVehicle(ctx, it.o, t);
@@ -421,6 +423,8 @@
         drawActor(ctx, a, t, z);
         if (a.isPlayer && !a.dead) { ctx.fillStyle = 'rgb(255,214,96)'; ctx.strokeStyle = 'rgba(60,40,10,.8)'; ctx.lineWidth = 0.6; ctx.beginPath(); for (let q = 0; q < 10; q++) { const ang = -Math.PI / 2 + q * Math.PI / 5, rr = q % 2 ? 1.8 : 4.2; ctx[q ? 'lineTo' : 'moveTo'](a.x + Math.cos(ang) * rr, a.y - 32 + Math.sin(ang) * rr); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
         ctx.globalAlpha = 1;
+        if (a.msel && !a.sel) { ctx.strokeStyle = 'rgba(255,214,96,.8)'; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 7.5, 3.1, 0, 0, 6.3); ctx.stroke(); }
+        if (a.working && !a.dead) { ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.arc(a.x, a.y - 22, 3 + Math.sin(t * 8) * 0.6, 0, 6.3); ctx.stroke(); }
         if (a.sel) { ctx.strokeStyle = 'rgba(255,230,120,.95)'; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 8.5, 3.6, 0, 0, 6.3); ctx.stroke(); }
         if (a.hover && !a.sel) { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 8, 3.4, 0, 0, 6.3); ctx.stroke(); }
       }
@@ -428,6 +432,7 @@
     // bullets: streaks
     ctx.lineCap = 'round';
     for (const b of s.bullets) {
+      if (!C.pointSeen(b.x, b.y)) continue;
       const sp = Math.hypot(b.vx, b.vy) || 1, len = Math.min(26, sp * 0.028);
       const gx = ctx.createLinearGradient(b.x, b.y, b.x - b.vx / sp * len, b.y - b.vy / sp * len); gx.addColorStop(0, 'rgba(255,240,170,.98)'); gx.addColorStop(1, 'rgba(255,200,90,0)');
       ctx.strokeStyle = gx; ctx.lineWidth = b.big ? 1.8 : 1.1; ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx / sp * len, b.y - b.vy / sp * len); ctx.stroke();
@@ -439,14 +444,16 @@
     if (sw > 0 && sh > 0) ctx.drawImage(s.pre.cn, sx0 * PS, sy0 * PS, sw * PS, sh * PS, sx0, sy0, sw, sh);
     ctx.globalAlpha = 1;
     // particles
-    for (const p of s.parts) if (vis(p.x, p.y, 20)) drawPart(ctx, p);
+    for (const p of s.parts) if (vis(p.x, p.y, 20) && (p.k === 'text' || C.pointSeen(p.x, p.y))) drawPart(ctx, p);
     // order markers & exits
     for (const e of s.exits) {
       ctx.fillStyle = 'rgba(255,225,110,.10)'; ctx.fillRect(e.x * T, e.y * T, e.w * T, e.h * T);
       ctx.strokeStyle = 'rgba(255,225,110,.5)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.strokeRect(e.x * T + .5, e.y * T + .5, e.w * T - 1, e.h * T - 1); ctx.setLineDash([]);
     }
+    for (const a of s.actors) { if (!a.msel || !a.order || a.dead) continue; const o = a.order; const tx = o.tgt ? o.tgt.x : o.x, ty = o.tgt ? o.tgt.y : o.y; if (tx === undefined) continue; ctx.strokeStyle = 'rgba(255,224,122,.28)'; ctx.lineWidth = 0.8; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(tx, ty); ctx.stroke(); ctx.setLineDash([]); }
     for (const m of G.orderMarks) { const k = 1 - m.t / 2.2; ctx.strokeStyle = m.col; ctx.globalAlpha = k; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(m.x, m.y, 4 + (1 - k) * 8, 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
     ctx.restore();
+    C.drawFog(ctx, s, G, W, H, dpr);
 
     // ----- screen-space layer: labels, tags, bubbles -----
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -468,7 +475,7 @@
     const prio = (a) => (a.isPlayer ? 0 : a.sel || a.hover ? 1 : a.p.roster ? 2 : a.squad >= 0 ? 3 : a.side === 'army' ? 4 : 5);
     const order = s.actors.concat(s.corpses).slice().sort((p, q) => prio(p) - prio(q));
     for (const a of order) {
-      if (a.inside || a.gone) continue; const p = a.p;
+      if (a.inside || a.gone || !C.visible(a)) continue; const p = a.p;
       const sp = C.toScreen(cam, a.x, a.y - (a.dead ? 6 : 27 * (a.isPlayer ? 1.05 : 1))); if (sp.x < -60 || sp.x > W + 60 || sp.y < -20 || sp.y > H + 20) continue;
       if (a.alpha < 0.35 && !a.sel) continue;
       let name = C.tagName(p);
@@ -492,6 +499,7 @@
     }
     // exit labels
     for (const e of s.exits) { const sp = C.toScreen(cam, (e.x + e.w / 2) * T, (e.y + e.h / 2) * T); if (sp.x > -100 && sp.x < W + 100 && sp.y > -30 && sp.y < H + 30) outlinedText(ctx, '↗ ' + C.lab(e.label), sp.x, sp.y, bsz, '#ffe28a', true); }
+    if (G.box) { ctx.strokeStyle = 'rgba(255,224,122,.9)'; ctx.fillStyle = 'rgba(255,224,122,.12)'; ctx.lineWidth = 1; const b = G.box; ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); }
     // day/night + weather overlays
     drawAtmosphere(ctx, G, W, H, t);
   };
@@ -575,7 +583,7 @@
     const px = (x) => ox + x / T * sc, py = (y) => oy + y / T * sc;
     for (const b of s.blds) { if (b.key === 'pad') continue; ctx.fillStyle = b.tag === 'army' ? '#6a86ff' : b.tag === 'church' ? '#fff0b0' : 'rgba(255,255,255,.55)'; ctx.fillRect(ox + b.x * sc, oy + b.y * sc, Math.max(1.5, b.w * sc), Math.max(1.5, b.h * sc)); }
     for (const v of s.vehicles) { if (v.gone) continue; ctx.fillStyle = '#e8d070'; ctx.fillRect(px(v.x) - 1.5, py(v.y) - 1, 3, 2); }
-    for (const a of s.actors) { if (a.inside || a.gone || a.dead) continue; const c = a.p.mil && a.p.mil.side === 'army' ? '#5e86ff' : (a.squad >= 0 || a.isPlayer) ? '#ff4a3a' : 'rgba(240,240,240,.7)'; ctx.fillStyle = c; ctx.fillRect(px(a.x) - 1, py(a.y) - 1, a.isPlayer ? 3.4 : 2, a.isPlayer ? 3.4 : 2); }
+    for (const a of s.actors) { if (a.inside || a.gone || a.dead || !C.visible(a)) continue; const c = a.p.mil && a.p.mil.side === 'army' ? '#5e86ff' : (a.squad >= 0 || a.isPlayer) ? '#ff4a3a' : 'rgba(240,240,240,.7)'; ctx.fillStyle = c; ctx.fillRect(px(a.x) - 1, py(a.y) - 1, a.isPlayer ? 3.4 : 2, a.isPlayer ? 3.4 : 2); }
     const cam = G.cam; ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1; ctx.strokeRect(px(cam.x - C.R.W / 2 / cam.z), py(cam.y - C.R.H / 2 / cam.z), C.R.W / cam.z / T * sc, C.R.H / cam.z / T * sc);
   };
 })();

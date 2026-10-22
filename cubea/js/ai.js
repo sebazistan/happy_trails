@@ -484,9 +484,11 @@
     const loyal = clamp((p.trueStance + 20) / 120, 0, 1), disc = clamp((G().rep ? G().rep.discipline : 50) / 100, 0, 1);
     let o = 0.45 + 0.30 * loyal + 0.18 * (p.morale - 50) / 50 + 0.10 * p.exp / 100 + 0.10 * (disc - 0.5) - 0.28 * (100 - n.food) / 100 * (n.food < 40 ? 1.2 : 0.4) - 0.2 * (100 - n.energy) / 100 * (n.energy < 30 ? 1 : 0.3) - 0.22 * p.fear / 100 - 0.12 * p.stress / 100 - 0.15 * (n.water < 25 ? 1 : 0);
     if (p.traits.includes('hothead')) o -= 0.06; if (p.traits.includes('idealist')) o += 0.04;
+    o += 0.14 * (C.trustOf(p) - 55) / 55;
     return clamp(o, 0.05, 0.99);
   }
-  C.obedience = obedience;
+  C.obedience = obedience; C.detectRange = detectRange;
+  C.ai = { get setPath() { return setPath; }, get followPath() { return followPath; }, get terrainSpeed() { return terrainSpeed; }, get whyNot() { return whyNot; }, get obedience() { return obedience; } };
   function whyNot(a) { const n = a.p.needs; if (n.food < 25) return 'Tengo hambre...'; if (n.water < 20) return 'Sed...'; if (n.energy < 22) return 'Estoy agotado'; if (a.p.fear > 55) return 'Tengo miedo'; if (a.p.morale < 30) return '¿Para qué?'; if (a.p.stress > 70) return 'No puedo más'; return 'Un momento...'; }
 
   C.giveOrder = function (squadId, order) { // order: {type, x,y, target}
@@ -519,8 +521,9 @@
   function rebelUpdate(s, a, dt) {
     const g = G(), sq = a.squad >= 0 ? g.squads[a.squad] : null, p = a.p;
     if (a.pendingOrder) { a.retryT -= dt; if (a.retryT <= 0) { a.retryT = 6; if (Math.random() < obedience(a) + 0.2) { a.order = a.pendingOrder; a.pendingOrder = null; a.orderT = 0.1; } else C.say(a, whyNot(a), '#7a1d1d', 2); } }
-    const stance = sq ? sq.stance : 'follow';
+    const stance = a.stanceOv || (sq ? sq.stance : 'follow');
     const lead = g.player;
+    if (a.deserting) { a.running = true; const o = a.order; if (o) { if (!a.path) setPath(s, a, o.x, o.y); followPath(s, a, dt, a.speed * 1.3); } a.deserT = (a.deserT || 0) + dt; if (a.deserT > 7 || !o) a.gone = true; return; }
     if (!lead || lead.dead) { civilianLike(s, a, dt); return; }
     a.weaponOut = !!a.weapon && (stance !== 'forage' || s.alert > 0.2);
     // a hothead with a grudge may shoot a man who has surrendered
@@ -541,7 +544,8 @@
     let canFire = !!tgt && !!w;
     if (stance === 'ambush' && tgt) { const d = Math.hypot(tgt.x - a.x, tgt.y - a.y); canFire = d < 105 || sq.fireNow || a.suppressed > 0 || a.lastHit > g.time - 2; }
     if (stance === 'scout' || stance === 'forage' && !a.defending) canFire = canFire && a.lastHit > g.time - 3 && stance === 'scout';
-    if (stance === 'withdraw') canFire = false;
+    if (stance === 'withdraw' || (a.order && a.order.type === 'retreat')) canFire = false;
+    if (tgt && lead && Math.hypot(lead.x - a.x, lead.y - a.y) < 95 && a.lastHit > g.time - 6) p.leadAcc = (p.leadAcc || 0) + dt;
     if (canFire) {
       a.aim = Math.atan2(tgt.y - 8 - (a.y - 8), tgt.x - a.x); a.face = tgt.x >= a.x ? 1 : -1;
       const bonus = (stance === 'ambush' && sq.fireNow) ? 1.25 : 1;
@@ -552,11 +556,12 @@
     if (a.order) {
       a.orderT -= dt; if (a.orderT > 0) { a.moving = false; return; }
       const o = a.order;
+      if (o.type !== 'move' && C.runOrder(s, a, o, dt, lead, tgt)) return;
       if (o.type === 'move') {
         const dd = Math.hypot(o.x - a.x, o.y - a.y);
         if (!a.path || a.pathFor !== o) { setPath(s, a, o.x + (a.id % 5 - 2) * 9, o.y + ((a.id >> 3) % 4 - 1.5) * 9); a.pathFor = o; }
         const run = o.flee ? 1.35 : 1; const done = followPath(s, a, dt, a.speed * run * (stance === 'scout' ? 0.7 : 1) * terrainSpeed(s, a)); a.running = !!o.flee;
-        if (done || dd < 14) { a.order = null; a.path = null; a.pathFor = null; }
+        if (done || dd < 14) { a.path = null; a.pathFor = null; if (a.orderQ && a.orderQ.length) { a.order = a.orderQ.shift(); a.orderT = 0.1; } else a.order = null; }
         return;
       }
     }
