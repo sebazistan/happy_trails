@@ -76,7 +76,9 @@
   C.workplaceOf = function (s, a) {
     const o = a.p.occ, tags = WORKTAGS[o];
     if (tags) for (const t of tags) { const L = s.blds.filter((b) => b.tag === t && !b.open); if (L.length) return L[(a.p.id * 7 + 3) % L.length]; }
-    return OUTDOOR[o] || null;
+    const ex = C.WORKTAGS_EXTRA && C.WORKTAGS_EXTRA[o];
+    if (ex) for (const t of ex) { const [tag, key] = t.split(':'); const L = s.blds.filter((b) => b.tag === tag && (!key || b.key === key) && !b.open); if (L.length) return L[(a.p.id * 7 + 3) % L.length]; }
+    return OUTDOOR[o] || (C.OUTDOOR_EXTRA && C.OUTDOOR_EXTRA[o]) || null;
   };
 
   // ------------------------------------------------------------------------------------------------------------------
@@ -101,7 +103,8 @@
     if (subj.side === 'army') return { kind: 'soldier', sev: subj.weaponOut ? 0.5 : 0.3, why: 'a soldier' };
     if (!(subj.side === 'rebel' || subj.isPlayer)) return { kind: 'none', sev: 0 };
     const w = subj.weapon && C.WEAPONS[subj.weapon.k];
-    const showing = (subj.weaponOut || subj.shooting > 0 || subj.exposed > 0) || (w && !w.conceal && !(subj.covertNow && urban));
+    const brandish = subj.shooting > 0 || subj.exposed > 0 || (subj.weaponOut && !(subj.covertNow && urban && w && w.conceal));   // a covert man keeps his pistol under his shirt
+    const showing = brandish || (w && !w.conceal && !(subj.covertNow && urban));
     const odd = subj.running || subj.hide || subj.prone || subj.exposed > 0;
     if (showing && w) return { kind: 'armed', sev: clamp(0.55 + (w.conceal ? 0 : 0.25) + (subj.shooting > 0 ? 0.2 : 0), 0, 1), why: `a man with a ${w.n.toLowerCase()}` };
     const fame = p.roster ? 0.7 : subj.isPlayer ? clamp(g.regime.heat / 100, 0.05, 0.8) : 0.04;
@@ -128,6 +131,7 @@
       if (a.inside) { aw.state = 'wary'; aw.wt = G().min + 6; continue; }
       heading(a, x, y);
       if (kind === 'shot' || kind === 'boom') { a.panic = Math.min(1, (a.panic || 0) + (kind === 'boom' ? 0.6 : 0.3) * (1.2 - d / r)); startReaction(s, a, soundReaction(s, a, x, y, kind, d / r), { x, y }); }
+      else if (kind === 'shout') { if (!a.react && rnd() < 0.5) startReaction(s, a, pick({ glance: 2, stare: 1.5, gather: 0.6 + (has(a.p, 'brave') ? 1 : 0), home_lock: 0.4 + (has(a.p, 'timid') ? 1.2 : 0), flee: has(a.p, 'timid') ? 0.8 : 0.1 }), { x, y }); }
       else if (kind === 'scream') { if (!a.react) startReaction(s, a, has(a.p, 'brave') || has(a.p, 'idealist') ? 'approach' : 'stare', { x, y }); }
       else if (kind === 'engine' && !a.react && rnd() < 0.3) startReaction(s, a, 'glance', { x, y });
     }
@@ -209,7 +213,9 @@
   /** Report a sighting to the authorities: nearby soldiers go and look; the scene's alert rises. */
   function report(s, a, x, y, how) {
     s.alert = Math.min(1.5, (s.alert || 0) + 0.35); C.log && G().regime && (G().regime.heat = Math.min(100, G().regime.heat + 1.5));
-    let n = 0; for (const o of s.actors) { if (o.dead || o.side !== 'army' || o.surrendered || o.inside) continue; if (Math.hypot(o.x - x, o.y - y) < 640 && o.brain.mode !== 'engage') { o.brain.mode = 'investigate'; o.brain.lastX = x; o.brain.lastY = y; o.brain.moveT = 0; n++; } }
+    // the nearest few go and look (a report is one patrol's business, not the whole garrison's)
+    const cand = s.actors.filter((o) => !o.dead && o.side === 'army' && !o.surrendered && !o.inside && o.brain.mode !== 'engage' && Math.hypot(o.x - x, o.y - y) < 640).sort((p, q) => Math.hypot(p.x - x, p.y - y) - Math.hypot(q.x - x, q.y - y)).slice(0, 6);
+    let n = 0; for (const o of cand) { o.brain.mode = 'investigate'; o.brain.lastX = x; o.brain.lastY = y; o.brain.moveT = 0; n++; }
     say(a, how === 'phone' ? 'Sí, aquí, calle ' + (1 + ((x / T) | 0) % 9) + '… un hombre armado.' : '¡Un rebelde armado en la calle!', '#7a1d1d', 4);
     if (C.log && (a.p.informant || rnd() < 0.5)) C.log(`Someone reported you${how === 'phone' ? ' by telephone' : ' to the police'}. ${n ? n + ' soldiers are coming to look.' : 'Nobody was nearby to answer — yet.'}`, 'warn');
   }

@@ -95,3 +95,6 @@ Choices to note: (1) **orders still cannot be given while paused**; recording ha
 
 ## Round 5: hunting and accurate fauna
 Wild game now matches what an Oriente guerrilla could eat (see `HUNTING.md`); turkey removed (not Cuban). Kills leave carcasses that must be dressed; meat rots unless smoked; snares/fishing give a silent alternative to shooting. Cartridges and noise are the cost of the rifle.
+
+## Round 6: awareness, vehicles, towns
+NPCs get eyes (cones, light, walls), ears and judgement, and a repertoire of ~30 reactions; a guerrilla's armed presence means different things in town and country; hidden pistols blend. Vehicles became machines (faults, repairs, cargo, trunk, orders) with period silhouettes. Towns got more building types, trades, shifts and traffic. See `AWARENESS_VEHICLES_TOWNS.md`.

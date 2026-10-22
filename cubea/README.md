@@ -61,6 +61,9 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 * **Land reform in the field:** serve notice → survey plots with stakes → grant to families → sow, water, harvest; a deed without seed loses faith (`js/farm.js`).
 * **Ideology:** six values per person, the creed you preach vs the deeds you do, speeches, pamphlets, posters, letters, a state-dependent voice, a promise ledger (`js/ideology.js`, `docs/IDEOLOGY.md`).
 * **Hunting & Cuban wild game:** jutía conga, jíbaro (charges when wounded), guinea fowl, pigeon, quail, whistling duck, iguana, land crabs; activity hours, flushing birds, blood trails, carcasses → dress → fresh meat that rots unless smoked; snares, fishing (`js/hunting.js`, `docs/HUNTING.md`).
+* **Aware civilians:** vision cones, hearing, ~30 reactions (flee, bar the door, phone the police, greet, flirt, enlist, tip you off…), town-vs-country judgement of an armed guerrilla, hidden pistols that blend, meals and sleep, barred doors, hover info on every person and vehicle (`js/aware.js`).
+* **Vehicles as machines:** period models, overheating and a dozen faults with real and improvised repairs, cargo, trunk and passengers, driver orders, riding along (`js/garage.js`).
+* **Town life:** restaurants, bakeries, butchers, market, garages, post office, bars; 14 more trades with shifts; night watchmen; horse carts and mounted men; ≈200 civilians per town (`js/townlife.js`, `docs/AWARENESS_VEHICLES_TOWNS.md`).
 * **A finished-game shell:** pause menu, settings (volume, UI size, shake, contrast, Spanish level, autosave), **key rebinding**, 3 save slots + autosave (`js/settings.js`).
 * **8 locations + the coast**, each a large map; terrain is painted in cached chunks.
 
@@ -69,7 +72,7 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 ```
 cubea/
   index.html              page + CSS
-  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack things actions camp farm ideology hunting settings main
+  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack things actions camp farm ideology hunting aware garage townlife settings main
                           (classic scripts → works from file://)
   docs/                   DESIGN_BIBLE · DECISIONS · COMMANDS · SCHEMA · UNREAL_CODE_BIBLE · ROSTER · RISKS · IDEAS_AND_QUESTIONS · RESEARCH · PLAYER_AGENCY · IDEOLOGY
   tools/
@@ -95,6 +98,9 @@ node tools/harness/camp.js             # latrines, foul ground, spoilage, fuel, 
 node tools/harness/farm.js             # notice → survey → grant → sow → harvest, drought
 node tools/harness/ideology.js         # creed, letters vs speeches, hypocrisy, promises, voice
 node tools/harness/hunting.js         # fauna, flush, dress, rot, smoke, snares, charging boar
+node tools/harness/aware.js          # cones, hearing, town vs country, covert blending, reactions, meals, tooltip
+node tools/harness/garage.js         # overheating, repairs, cargo, trunk, driver orders
+node tools/harness/town.js           # buildings, trades, population, traffic, schedules
 node tools/harness/settings.js         # save/load round trip, key rebinding
 node tools/harness/sea.js               # the crossing, six landings, hand-off to Alegría de Pío
 node tools/harness/ripple.js            # the family-graph ripple of a single killing

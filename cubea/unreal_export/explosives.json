@@ -33,6 +33,15 @@
   "frags": 16
  },
  {
+  "key": "rocket",
+  "n": "Cohete de bazuca",
+  "fuse": 0.01,
+  "rad": 62,
+  "dmg": 210,
+  "frags": 10,
+  "vehMult": 3
+ },
+ {
   "key": "bomb",
   "n": "Bomba aérea",
   "fuse": 0.01,

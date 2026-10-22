@@ -9,6 +9,7 @@
   "spr": 4.5,
   "mag": 7,
   "rel": 1.8,
+  "wt": 1.2,
   "conceal": true,
   "snd": 1
  },
@@ -22,6 +23,7 @@
   "spr": 4,
   "mag": 6,
   "rel": 2.2,
+  "wt": 1,
   "conceal": true,
   "snd": 1
  },
@@ -35,6 +37,20 @@
   "spr": 1.6,
   "mag": 5,
   "rel": 2.6,
+  "wt": 4,
+  "snd": 2
+ },
+ {
+  "key": "mauser",
+  "n": "Mauser 7 mm",
+  "dmg": 56,
+  "rof": 0.7,
+  "spd": 1230,
+  "rng": 550,
+  "spr": 1.8,
+  "mag": 5,
+  "rel": 2.7,
+  "wt": 4,
   "snd": 2
  },
  {
@@ -47,6 +63,20 @@
   "spr": 2.2,
   "mag": 8,
   "rel": 2.4,
+  "wt": 4.5,
+  "snd": 2
+ },
+ {
+  "key": "carbine",
+  "n": "Carabina M1",
+  "dmg": 36,
+  "rof": 2,
+  "spd": 1050,
+  "rng": 400,
+  "spr": 2.8,
+  "mag": 15,
+  "rel": 2.2,
+  "wt": 2.6,
   "snd": 2
  },
  {
@@ -59,6 +89,7 @@
   "spr": 0.7,
   "mag": 5,
   "rel": 3,
+  "wt": 4.5,
   "snd": 2
  },
  {
@@ -71,7 +102,21 @@
   "spr": 7.5,
   "mag": 30,
   "rel": 2.6,
+  "wt": 4.5,
   "snd": 2
+ },
+ {
+  "key": "bar",
+  "n": "Fusil automático Browning (BAR)",
+  "dmg": 55,
+  "rof": 4.5,
+  "spd": 1250,
+  "rng": 520,
+  "spr": 4,
+  "mag": 20,
+  "rel": 3.6,
+  "wt": 8,
+  "snd": 3
  },
  {
   "key": "mg",
@@ -83,6 +128,7 @@
   "spr": 4.5,
   "mag": 100,
   "rel": 5,
+  "wt": 11,
   "snd": 3
  },
  {
@@ -95,6 +141,7 @@
   "spr": 11,
   "mag": 2,
   "rel": 2.5,
+  "wt": 3.5,
   "pellets": 7,
   "snd": 2
  },
@@ -108,7 +155,36 @@
   "spr": 0,
   "mag": 1,
   "rel": 0,
+  "wt": 1,
   "melee": true,
   "snd": 0
+ },
+ {
+  "key": "bazooka",
+  "n": "Bazuca",
+  "dmg": 0,
+  "rof": 0.22,
+  "spd": 380,
+  "rng": 380,
+  "spr": 2.2,
+  "mag": 1,
+  "rel": 4.5,
+  "wt": 7,
+  "launcher": true,
+  "snd": 3
+ },
+ {
+  "key": "mortar",
+  "n": "Mortero 60 mm",
+  "dmg": 0,
+  "rof": 0.33,
+  "spd": 0,
+  "rng": 640,
+  "spr": 0,
+  "mag": 1,
+  "rel": 0,
+  "wt": 12,
+  "crew": true,
+  "snd": 3
  }
 ]

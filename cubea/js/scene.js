@@ -285,6 +285,8 @@
     addExit(s, 'n', 32, 40, 'Camino a la Sierra / Manzanillo', 'sierra');
     s.spawn = { x: 36 * T, y: 28 * T };
     s.title = 'Cayo Piedra (aldea de pescadores)';
+    // more households than dwellings: families double up, as they did in the tenements and the crowded barrios
+    { let k = 0; while (hi < hhs.length && homes.length && k < homes.length * 3) { const b = homes[k++ % homes.length]; hhs[hi].bld = b.id; s.homes.push({ hh: hhs[hi].id, bld: b.id }); hi++; } }
     s.dwellings = homes;
   };
 
@@ -348,6 +350,10 @@
     // households -> homes (cuarterías host 4 households)
     let hi = 0;
     for (const b of homes) { const cap = b.key === 'cuarteria' ? 4 : b.key === 'edificio' ? 3 : 1; for (let c = 0; c < cap && hi < hhs.length; c++, hi++) { hhs[hi].bld = b.id; b.hh = b.hh < 0 ? hhs[hi].id : b.hh; s.homes.push({ hh: hhs[hi].id, bld: b.id }); if (cap === 1) famLabel(b, hhs[hi]); } }
+    // more households than dwellings: families double up, as they did in the tenements and the crowded barrios
+    { let k = 0; while (hi < hhs.length && homes.length && k < homes.length * 3) { const b = homes[k++ % homes.length]; hhs[hi].bld = b.id; s.homes.push({ hh: hhs[hi].id, bld: b.id }); hi++; } }
+    // more households than dwellings: families double up, as they did in the tenements and the crowded barrios
+    { let k = 0; while (hi < hhs.length && homes.length && k < homes.length * 3) { const b = homes[k++ % homes.length]; hhs[hi].bld = b.id; s.homes.push({ hh: hhs[hi].id, bld: b.id }); hi++; } }
     s.dwellings = homes;
     // trees along streets
     for (let i = 0; i < s.tw * s.th * 0.004; i++) { const p = s.randomFree([G, SAND]); if (!s.blds.some((b) => p.x >= b.x - 1 && p.x < b.x + b.w + 1 && p.y >= b.y - 1 && p.y < b.y + b.h + 1)) s.prop(R() < 0.5 ? 'palm' : 'tree', p.x, p.y); }
@@ -366,7 +372,7 @@
       civic: [{ gx: 2, gy: 1, key: 'iglesia', label: 'Iglesia de la Purísima' }, { gx: 3, gy: 1, plaza: 'Parque Céspedes', key: 'fabrica' }, { gx: 4, gy: 1, key: 'ayuntamiento' },
         { gx: 3, gy: 0, key: 'cuartel', label: 'Cuartel de Manzanillo', army: true }, { gx: 3, gy: 2, key: 'cine', label: 'Cine' }, { gx: 1, gy: 3, key: 'hospital' }, { gx: 5, gy: 3, key: 'sindicato', label: 'Sindicato de Obreros' },
         { gx: 1, gy: 0, key: 'almacen', label: 'Almacén del puerto' }, { gx: 1, gy: 1, key: 'almacen', label: 'Almacén del puerto' }, { gx: 0, gy: 2, key: 'gasolinera', label: 'Gasolinera Texaco' }, { gx: 5, gy: 0, key: 'central', label: 'Central azucarero' }],
-      kinds: (b) => [['casa', 5], ['bohio', 2], ['bodega', 1.1], ['tienda', 0.6], ['cafe', 0.5], ['barberia', 0.4], ['farmacia', 0.3], ['cuarteria', 1.4]],
+      kinds: (b) => [['casa', 5], ['bohio', 2], ['bodega', 1.1], ['tienda', 0.6], ['cafe', 0.5], ['barberia', 0.4], ['farmacia', 0.3], ['cuarteria', 1.4], ['restaurante', 0.35], ['panaderia', 0.35], ['carniceria', 0.3], ['bar', 0.4], ['taller', 0.25], ['correos', 0.12], ['ferreteria', 0.2], ['zapateria', 0.15], ['mercado', 0.12], ['escuela', 0.15]],
       exits: [['e', 22, 32, 'Camino a Palmarito / Sierra', 'palmarito'], ['e', 36, 44, 'Carretera a Bayamo', 'bayamo'], ['s', 40, 54, 'Camino a Cayo Piedra', 'cayo']],
       after: (s) => { s.pierPx = { x: 7 * T, y: 30 * T }; s.rect(5, 29, 8, 2, PIER); s.boatSpots = [{ x: 5 * T, y: 34 * T }, { x: 4 * T, y: 24 * T }]; s.objs.push({ k: 'deposito', label: 'Depósito de gasolina (puerto)', x: 14 * T, y: 36 * T, hp: 70, w: 28, h: 20 }); },
     });
@@ -379,7 +385,7 @@
       civic: [{ gx: 2, gy: 1, plaza: 'Plaza del Himno', key: 'fabrica' }, { gx: 3, gy: 1, key: 'iglesia', label: 'Parroquia Mayor' }, { gx: 1, gy: 1, key: 'ayuntamiento' },
         { gx: 2, gy: 0, key: 'cuartel', label: 'Cuartel Carlos M. de Céspedes', army: true }, { gx: 2, gy: 2, key: 'cine', label: 'Cine' }, { gx: 4, gy: 2, key: 'hospital' }, { gx: 0, gy: 2, key: 'sindicato', label: 'Sindicato' },
         { gx: 4, gy: 0, key: 'central', label: 'Central azucarero' }, { gx: 0, gy: 0, key: 'gasolinera', label: 'Gasolinera Esso' }, { gx: 3, gy: 3, key: 'escuela', label: 'Instituto' }, { gx: 5, gy: 1, key: 'almacen', label: 'Almacén' }],
-      kinds: (b) => [['casa', 5], ['bohio', 1.5], ['bodega', 1.1], ['tienda', 0.6], ['cafe', 0.5], ['barberia', 0.4], ['farmacia', 0.3], ['cuarteria', 1.2]],
+      kinds: (b) => [['casa', 5], ['bohio', 1.5], ['bodega', 1.1], ['tienda', 0.6], ['cafe', 0.5], ['barberia', 0.4], ['farmacia', 0.3], ['cuarteria', 1.2], ['restaurante', 0.3], ['panaderia', 0.3], ['carniceria', 0.3], ['bar', 0.35], ['taller', 0.2], ['correos', 0.1], ['ferreteria', 0.2], ['zapateria', 0.12], ['mercado', 0.12], ['escuela', 0.15]],
       exits: [['w', 20, 30, 'Camino a Manzanillo', 'manzanillo'], ['w', 40, 48, 'Hacia Palmarito', 'palmarito'], ['e', 20, 30, 'Carretera a Santiago', 'santiago'], ['s', 36, 48, 'Carretera a La Habana', 'habana']],
       after: (s) => { s.objs.push({ k: 'torre', label: 'Torre de radio', x: 30 * T, y: 22 * T, hp: 50, w: 8, h: 8 }); },
     });
@@ -393,7 +399,7 @@
         { gx: 7, gy: 3, key: 'cuartel', label: 'Cuartel Moncada', army: true, extra: [{ key: 'polvorin', dx: 1, dy: 6, label: 'Polvorín' }] }, { gx: 1, gy: 1, key: 'univ', label: 'Universidad de Oriente' }, { gx: 0, gy: 3, key: 'hospital', label: 'Hospital Saturnino Lora' },
         { gx: 5, gy: 3, key: 'policia', label: 'Jefatura de Policía' }, { gx: 4, gy: 3, key: 'sim', label: 'Cuartel del SIM' }, { gx: 2, gy: 3, key: 'ron', label: 'Ron Bacardí (fábrica)' }, { gx: 6, gy: 1, key: 'sindicato', label: 'Sindicato (CTC)' },
         { gx: 5, gy: 1, key: 'teatro', label: 'Teatro Oriente' }, { gx: 0, gy: 1, key: 'iglesia', label: 'Iglesia bautista' }, { gx: 6, gy: 2, key: 'banco', label: 'Banco' }, { gx: 1, gy: 3, key: 'gasolinera', label: 'Gasolinera' }],
-      kinds: (b) => [['casa', 4], ['cuarteria', 2.6], ['edificio', 1.2], ['bodega', 1.2], ['tienda', 0.8], ['cafe', 0.6], ['barberia', 0.4], ['farmacia', 0.4]],
+      kinds: (b) => [['casa', 4], ['cuarteria', 2.6], ['edificio', 1.2], ['bodega', 1.2], ['tienda', 0.8], ['cafe', 0.6], ['barberia', 0.4], ['farmacia', 0.4], ['restaurante', 0.4], ['panaderia', 0.35], ['carniceria', 0.3], ['bar', 0.45], ['taller', 0.3], ['correos', 0.12], ['ferreteria', 0.25], ['zapateria', 0.2], ['tabaqueria', 0.2], ['mercado', 0.14], ['escuela', 0.18]],
       exits: [['n', 50, 62, 'Hacia la Sierra Maestra', 'sierra'], ['w', 30, 40, 'Carretera a Bayamo', 'bayamo'], ['w', 50, 58, 'Carretera a La Habana', 'habana']],
       after: (s) => { s.pierPx = { x: 40 * T, y: (s.th - 12) * T }; s.rect(38, s.th - 14, 3, 7, PIER); s.boatSpots = [{ x: 30 * T, y: (s.th - 5) * T }]; s.objs.push({ k: 'torre', label: 'Torre de radio de la policía', x: 66 * T, y: 38 * T, hp: 50, w: 8, h: 8 }); },
     });
@@ -408,7 +414,7 @@
         { gx: 5, gy: 2, key: 'sim', label: 'Buró de Investigaciones (SIM)' }, { gx: 4, gy: 2, key: 'policia', label: 'Estación de policía' }, { gx: 2, gy: 2, key: 'hospital', label: 'Hospital Calixto García' }, { gx: 0, gy: 1, key: 'iglesia', label: 'Iglesia del Ángel' },
         { gx: 6, gy: 2, key: 'sindicato', label: 'Sindicato (CTC)' }, { gx: 1, gy: 1, key: 'teatro', label: 'Gran Teatro' }, { gx: 7, gy: 2, key: 'casino', label: 'Casino Capri' }, { gx: 0, gy: 2, key: 'almacen', label: 'Almacén Larrea (ron y azúcar)' }, { gx: 7, gy: 1, key: 'gasolinera', label: 'Gasolinera' }, { gx: 6, gy: 0, key: 'cafe', label: 'Café Paris' },
         { gx: 7, gy: 3, key: 'cuartel', label: 'Cuartel de la Policía Nacional', army: false }],
-      kinds: (b) => [['edificio', 3], ['cuarteria', 2.6], ['casa', 3.5], ['tienda', 1.4], ['bodega', 1.4], ['cafe', 1], ['barberia', 0.5], ['farmacia', 0.6], ['casona', 0.5]],
+      kinds: (b) => [['edificio', 3], ['cuarteria', 2.6], ['casa', 3.5], ['tienda', 1.4], ['bodega', 1.4], ['cafe', 1], ['barberia', 0.5], ['farmacia', 0.6], ['casona', 0.5], ['restaurante', 0.7], ['panaderia', 0.45], ['carniceria', 0.4], ['bar', 0.7], ['taller', 0.35], ['correos', 0.15], ['ferreteria', 0.3], ['zapateria', 0.3], ['tabaqueria', 0.4], ['mercado', 0.16], ['escuela', 0.2], ['estacion', 0.1]],
       exits: [['w', 24, 34, 'Carretera Central (a Oriente)', 'bayamo'], ['e', 30, 40, 'Autopista a Santiago', 'santiago']],
       after: (s) => { s.objs.push({ k: 'torre', label: 'Torre de CMQ', x: 56 * T, y: 38 * T, hp: 50, w: 8, h: 8 }); const lb = s.blds.find((b) => b.label.indexOf('Larrea') >= 0); if (lb) s.larrea = lb.id; s.pierPx = { x: 20 * T, y: 6 * T }; s.rect(18, 5, 3, 5, PIER); s.boatSpots = [{ x: 14 * T, y: 3 * T }]; },
     });
@@ -508,7 +514,7 @@
     const S = C.SETTLEMENTS[sid]; const sz = SIZES[sid === 'palmarito' ? 'village' : sid === 'cayo' ? 'fishing' : sid === 'alegria' ? 'cane' : sid];
     let s = new Scene(sid, S.type, sz[0], sz[1]);
     // households to house (cap by scene capacity)
-    const cap = { sierra: 6, palmarito: 62, cayo: 38, manzanillo: 90, bayamo: 84, santiago: 100, habana: 112, cane: 0 }[sid];
+    const cap = { sierra: 6, palmarito: 62, cayo: 38, manzanillo: 100, bayamo: 100, santiago: 120, habana: 140, cane: 0 }[sid];
     const hhsAll = C.W.houses.filter((h) => h.sid === sid && h.members.some((m) => C.W.people[m].status === 'alive'));
     const R = C.RNG(C.hashStr(sid) ^ C.W.seed);
     const hhs = R.shuffle(hhsAll.slice()).slice(0, cap);
@@ -517,7 +523,7 @@
     ensureAccess(s);
     const K = SCALE[sid === 'palmarito' ? 'village' : sid === 'cayo' ? 'fishing' : sid] || 1;
     if (K > 1) s = embedScene(s, K);
-    s.hhs = hhs;
+    s.hhs = (sid === 'sierra' || sid === 'alegria') ? hhs : hhs.filter((h) => h.bld >= 0);   // only households that actually have a roof here (the rest do not wander the streets at night)
     C.scenes[sid] = s;
     return s;
   };

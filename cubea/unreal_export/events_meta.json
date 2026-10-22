@@ -223,6 +223,13 @@
    "tension": 1,
    "cooldownDays": 7,
    "layer": 1
+  },
+  {
+   "id": "arms_dealer",
+   "category": "lifeline",
+   "tension": 2,
+   "cooldownDays": 45,
+   "layer": 3
   }
  ],
  "anchors": [

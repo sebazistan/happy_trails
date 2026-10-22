@@ -473,6 +473,7 @@
         const a = it.o;
         if (a.alpha < 1) ctx.globalAlpha = a.alpha;
         if (a.isPlayer) { ctx.strokeStyle = 'rgba(255,214,96,.9)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 9.5, 4, 0, 0, 6.3); ctx.stroke(); }
+        if (a.mount && C.drawMount) C.drawMount(ctx, a, t);
         drawActor(ctx, a, t, z);
         if (a.isPlayer && !a.dead) { ctx.fillStyle = 'rgb(255,214,96)'; ctx.strokeStyle = 'rgba(60,40,10,.8)'; ctx.lineWidth = 0.6; ctx.beginPath(); for (let q = 0; q < 10; q++) { const ang = -Math.PI / 2 + q * Math.PI / 5, rr = q % 2 ? 1.8 : 4.2; ctx[q ? 'lineTo' : 'moveTo'](a.x + Math.cos(ang) * rr, a.y - 32 + Math.sin(ang) * rr); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
         ctx.globalAlpha = 1;

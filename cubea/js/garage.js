@@ -294,7 +294,7 @@
   const shade = (c, k) => [clamp(c[0] * k, 0, 255), clamp(c[1] * k, 0, 255), clamp(c[2] * k, 0, 255)];
   function wheels(c, v, w, h, xs, r) { const tires = v.tires || [1, 1, 1, 1]; xs.forEach((x, i) => { for (const sgn of [-1, 1]) { const idx = (i * 2 + (sgn > 0 ? 1 : 0)) % 4; const flat = tires[idx] <= 0.2; c.fillStyle = flat ? 'rgb(100,44,44)' : 'rgb(22,20,20)'; c.fillRect(x - r, sgn * (h / 2) - (flat ? 0.9 : 1.5) + (sgn > 0 ? 0.3 : -0.3), r * 2, flat ? 1.8 : 3); if (!flat && v.type === 'car') { c.fillStyle = 'rgb(240,238,228)'; c.fillRect(x - r + 1, sgn * (h / 2) - 0.5 + (sgn > 0 ? 0.6 : -0.6), r * 2 - 2, 0.9); } } }); }
   C.drawVehiclePeriod = function (c, v, t) {
-    const d = v.def; if (d.water || v.type === 'oxcart') return v.type === 'oxcart' ? drawCart(c, v, t) : false; C.vState(v);
+    const d = v.def; if (d.water) return false; if (v.type === 'oxcart' || v.type === 'carreton') return drawCart(c, v, t); C.vState(v);
     const w = d.w, h = d.h; const wreck = v.wreck; const P = v.paint || PAINTS[0];
     const body = wreck ? [48, 44, 42] : v.type === 'car' ? P[0] : d.col, top = wreck ? [40, 38, 36] : v.type === 'car' ? P[1] : shade(d.col, 0.85);
     const glass = 'rgba(176,214,232,.9)', chrome = 'rgb(214,214,208)';
@@ -346,7 +346,7 @@
     c.fillStyle = 'rgb(150,112,72)'; c.fillRect(-w / 2, -h / 2, w * 0.66, h); c.strokeStyle = 'rgb(70,48,30)'; c.lineWidth = 1; c.strokeRect(-w / 2, -h / 2, w * 0.66, h); c.strokeStyle = 'rgba(70,48,30,.6)'; c.lineWidth = 0.6; for (let x = -w / 2 + 4; x < w * 0.15; x += 4) { c.beginPath(); c.moveTo(x, -h / 2); c.lineTo(x, h / 2); c.stroke(); }
     const n = Math.min(5, Math.round(Object.values(v.cargo || {}).reduce((q, k) => q + k, 0) / 10)); for (let i = 0; i < n; i++) { c.fillStyle = 'rgb(196,168,116)'; c.fillRect(-w / 2 + 3 + (i % 3) * 6, -h / 2 + 2 + Math.floor(i / 3) * 6, 5, 4); }
     c.strokeStyle = 'rgb(110,80,50)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(w * 0.16, 0); c.lineTo(w * 0.62, 0); c.stroke();                        // the tongue
-    for (const sg of [-1, 1]) { const ox = w * 0.58 + (moving ? Math.sin(G().time * 6 + sg) * 0.6 : 0), oy = sg * 3 + sway; c.fillStyle = 'rgb(222,214,196)'; c.fillRect(ox - 6, oy - 2.3, 11, 4.6); c.fillStyle = 'rgb(176,150,120)'; c.fillRect(ox + 4, oy - 1.8, 4, 3.6); c.fillStyle = 'rgb(240,236,224)'; c.fillRect(ox + 7, oy - 3, 1, 1.2); c.fillRect(ox + 7, oy + 1.8, 1, 1.2); }
+    for (const sg of (v.type === 'carreton' ? [0] : [-1, 1])) { const ox = w * 0.58 + (moving ? Math.sin(G().time * 6 + sg) * 0.6 : 0), oy = sg * 3 + sway; c.fillStyle = 'rgb(222,214,196)'; c.fillRect(ox - 6, oy - 2.3, 11, 4.6); c.fillStyle = 'rgb(176,150,120)'; c.fillRect(ox + 4, oy - 1.8, 4, 3.6); c.fillStyle = 'rgb(240,236,224)'; c.fillRect(ox + 7, oy - 3, 1, 1.2); c.fillRect(ox + 7, oy + 1.8, 1, 1.2); }
     c.strokeStyle = 'rgb(130,100,70)'; c.lineWidth = 1; c.beginPath(); c.moveTo(w * 0.52, -4); c.lineTo(w * 0.52, 4); c.stroke();
     return true;
   }

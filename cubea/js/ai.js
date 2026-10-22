@@ -74,7 +74,7 @@
       placeInitially(s, a, hr, wd);
       s.actors.push(a);
     }
-    spawnAnimals(s); spawnVehicles(s);
+    spawnAnimals(s); spawnVehicles(s); if (C.assignMounts) C.assignMounts(s);
   };
 
   // Decide a person's side and equipment: soldiers get weapons by role (officers Thompsons, police pistols/rifles, SIM pistols, soldiers mostly Springfields/Garands) and helmets or kepis; rebels keep their equipment; civilians sometimes carry a machete or pistol.
@@ -124,6 +124,7 @@
   function pickB(s, a, tag) { const L = BYTAG(s, tag); return L.length ? L[(a.p.id * 7 + 3) % L.length] : null; }
   // The plan for now: night → home; Sunday mass for the devout; children → school or play; lunch at home; evening at the plaza/café/home; otherwise by occupation (farmers to their fields, charcoal-burners to the kilns, fishermen to the pier, shopkeepers to shops, teachers to schools, doctors to clinics, workers to factories…). Returns {kind:'in'|'work'|'spot', …}.
   function planFor(s, a, hr, wd) {
+    if (C.townPlan) { const tp = C.townPlan(s, a, hr, wd); if (tp) return tp; }     // trades, shifts, market day, the evening out (townlife.js)
     const p = a.p, age = C.ageOf(p), R = Math.random;
     const home = homeB(s, p);
     const sunday = wd === 6;
@@ -207,6 +208,7 @@
       case 'santiago': case 'habana': { park('car', 10); park('truck', 2); park('bus', 2); if (s.army) { C.addVehicle(s, 'armytruck', s.army.x + 30, s.army.y + 24, 0, { fuel: 80 }); C.addVehicle(s, 'armyjeep', s.army.x - 30, s.army.y + 24, 0, { fuel: 40 }); C.addVehicle(s, 'armyjeep', s.army.x, s.army.y + 40, 0, { fuel: 40 }); } if (s.boatSpots) s.boatSpots.forEach((q) => C.addVehicle(s, 'boat', q.x, q.y, 0.4, { fuel: 24 })); break; }
       case 'alegria': break;
     }
+    if (C.townTraffic) C.townTraffic(s, R);        // taxis, buses, horse carts (townlife.js)
     // some cars drive around town
     for (const v of s.vehicles) if ((v.type === 'car' || v.type === 'bus') && R() < 0.5 && (s.type === 'town' || s.type === 'city' || s.type === 'capital')) { v.driving = true; v.fuel = Math.max(v.fuel, 25); v.lights = false; }
   }
@@ -521,7 +523,7 @@
   // raise the alarm: nearby soldiers investigate, civilians panic
   C.alertScene = function (s, x, y, kind) {
     s.alert = Math.min(1.5, s.alert + (kind === 'shot' ? 0.12 : 0.5));
-    if (C.hearSound) C.hearSound(s, x, y, kind === 'shot' ? 1 : 2, kind === 'shot' ? 'shot' : 'boom');
+    if (C.hearSound) C.hearSound(s, x, y, kind === 'explosion' ? 2 : 1, kind === 'shot' ? 'shot' : kind === 'explosion' ? 'boom' : 'shout');
     for (const o of s.actors) {
       if (o.dead || o.inside) continue; const d = Math.hypot(o.x - x, o.y - y);
       if (o.side === 'army' && d < 520 && o.brain.mode !== 'engage' && !o.surrendered) { o.brain.mode = 'investigate'; o.brain.lastX = x; o.brain.lastY = y; o.brain.moveT = 0; }
@@ -735,7 +737,7 @@
       if (v.driver && v.driver.isPlayer) continue;      // main.js drives it
       if (v.driving && !v.driver) { // ambient traffic
         v.ambient = true; if (C.vehBlocked && C.vehBlocked(v)) { v.spd *= 0.9; continue; }
-        if (v.fuel <= 0.5 || v.tires.some((q) => q < 0.2)) { v.spd *= 0.9; continue; }
+        if ((v.def.tank && v.fuel <= 0.5) || v.tires.some((q) => q < 0.2)) { v.spd *= 0.9; continue; }
         v.wait -= dt; if (v.wait > 0) continue;
         if (!v.route || v.ri >= v.route.length) { const q = s.randomFree([TL.ROAD, TL.PAVED]); const r = C.findPath(s, v.x, v.y, q.x * T + 8, q.y * T + 8, 'car'); if (!r) { v.wait = 5; continue; } v.route = r; v.ri = 0; }
         const w = v.route[v.ri]; const dx = w.x - v.x, dy = w.y - v.y, d = Math.hypot(dx, dy);
