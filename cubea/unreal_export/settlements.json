@@ -13,6 +13,19 @@
   "blurb": "Cane fields near the landing. The army is waiting."
  },
  {
+  "id": "bay",
+  "name": "The coast of Oriente",
+  "type": "coast",
+  "pop": 0,
+  "pos": [
+   -77.75,
+   19.85
+  ],
+  "region": "Oriente",
+  "bias": 0,
+  "blurb": "The sea approach to the landing."
+ },
+ {
   "id": "sierra",
   "name": "Sierra Maestra",
   "type": "sierra",

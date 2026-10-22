@@ -60,7 +60,14 @@
    "id": "misconduct",
    "category": "pressure",
    "tension": 4,
-   "cooldownDays": 16,
+   "cooldownDays": 10,
+   "layer": 3
+  },
+  {
+   "id": "army_abuse",
+   "category": "pressure",
+   "tension": 4,
+   "cooldownDays": 12,
    "layer": 3
   },
   {

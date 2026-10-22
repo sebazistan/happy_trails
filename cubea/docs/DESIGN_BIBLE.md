@@ -10,7 +10,7 @@
 
 ## 0. One-paragraph pitch
 
-You are a **time traveller** (the circle with arms and legs) who has stepped into the boots of the rebel leader, trying to do the Revolution *right*. You start as the survivor of an ambush in a cane field and end — a game-year later — as either the architect of a broad coalition or the ruler of a feared remnant. Between them: a Sierra camp, villages and fishing coves, sugar towns, Santiago, and Havana. Every one of ~3,000 sampled Cubeans is a cube with a name, a job, a mood face, a loyalty colour, and a **family and friends graph**. Whatever you do to one of them echoes through the others. The game is a **loyalty simulation wearing a squad-tactics skin**.
+You are **Fidel** — under whatever name you type — on a leaking yacht, then in a cane field, then in the mountains, and finally in a capital that is yours to run. You open with the **Granma crossing** (you walk the deck; the helm is not yours until land is sighted, and you choose where to put ashore), survive the massacre at the landing and at Alegría de Pío if you can, and fight a two-year war that ends when Havana falls — followed by eight governing decisions and the American-backed invasion at **Playa Girón**. Between them: a Sierra camp, villages and fishing coves, sugar towns, Santiago, and Havana. Every one of ~3,000 sampled Cubeans is a cube with a name, a job, a mood face, a loyalty colour, and a **family and friends graph**. Whatever you do to one of them echoes through the others. The game is a **loyalty simulation wearing a squad-tactics skin**; the enemy you cannot shoot is the money behind the regime.
 
 ## 1. Pillars
 
@@ -43,7 +43,7 @@ The prototype implements the reveal as **six layers** (`g.unlocked.layer`, key *
 | Layer | Unlocks | Trigger |
 |---|---|---|
 | 1 | Tactics, squads, hunger/ammo | start |
-| 2 | Supplies chips, map, camp (B), foresight | after the ambush |
+| 2 | Supplies chips, map, camp (B), spare-rifle chip, command bar tabs | after the ambush |
 | 3 | Support meter, loyalty details in inspector, forage policy | day 8 |
 | 4 | Factions panel | day 25 |
 | 5 | Manifesto (platform & promises) | day 60 |
@@ -154,7 +154,7 @@ rate   = 0.05 × (1 − conviction/135) × (cautious 0.75, idealist 1.1)
 
 ### 5.4 Informers
 
-`informant` persons display a pale friendly colour (`stance`), but their `trueStance` is blue. **Foresight** (Q, 3 per run) reveals one; El Viejo hints; a trial can expose them. Eutimio Guerra (the historical informer) is a scripted case.
+`informant` persons display a pale friendly colour (`stance`), but their `trueStance` is blue. **Tells** (clean-shaven after a long stay, kin in the army, spending…) and a 12-peso **investigation** by your network (usually right, sometimes wrong) can expose one; El Viejo hints; a trial can confirm. Eutimio Guerra (the historical informer) is a scripted case.
 
 ### 5.5 What a kill costs (measured)
 
@@ -225,12 +225,25 @@ Measured: a peasant with exp 80 in jungle = **0.95** hidden; a green student = *
 
 ## 7. Commanding soldiers ✅
 
-* **4 squads** (Vanguardia, Centro, Retaguardia, Sanidad). **Stances:** Follow · Hold · Ambush (hide; hold fire until close or **F**) · Scout (move ahead quietly, mark enemies) · Forage (buy/owe/take) · Harass (fire at range, fall back) · Withdraw.
-* **Orders:** RMB move; RMB on an enemy = focus fire; Shift+RMB = scout direction.
-* **Obedience** (shown per squad, per soldier on the inspector): `0.45 + 0.30·loyalty + 0.18·morale + 0.10·exp + 0.10·discipline − hunger − exhaustion − fear − stress − thirst`.
-* **Telegraphed refusal:** a soldier who doesn't comply says *why* in a speech bubble ("Tengo hambre…", "Estoy agotado", "Tengo miedo") and retries — **never a silent failure**.
-* **Desertion / AWOL / defection / recruitment** are all in; time in any army gives experience.
-* **Surrender:** army men break when demoralised *and* outnumbered or badly hurt; prisoners can be released (army morale ↓, justice ↑), recruited, interrogated or executed (grievance).
+Full reference: **`COMMANDS.md`**. In brief:
+
+* **Selection** by group (1–9), Ctrl-drag box, Shift-click, or a filter menu (armed, wounded, veterans, green, women, brave, hotheads, medics & kind). Groups carry a stance (Follow, Hold, Ambush, Scout, Forage, Harass, Withdraw) for when no order is active.
+* **23 orders** in five tabs (Move, Fight, Recon, Camp, People): move, follow, hold, guard, attack, focus fire, ambush, patrol, retreat, scout, lookout, stalk, hide, dig in, dig latrine, fetch water, carry supplies, build (labour), rest, treat wounded, help a peasant, feed livestock, forage. Shift queues. **Volunteers** asks who steps forward.
+* **No orders while paused.**
+* **Obedience** (per soldier on the inspector): `0.45 + 0.30·loyalty + 0.18·morale + 0.10·exp + 0.10·discipline + 0.14·(trust−55)/55 − hunger − exhaustion − fear − stress − thirst`. A refusal is spoken ("Tengo hambre…") and retried — never silent.
+* **Danger and disobedience.** The game estimates how deadly an order is from *known* enemies (seen in the last two minutes, plus a known post). Deadly orders make people argue; if you insist, some refuse and leave (support → near zero), others balk (trust falls). **Lead them yourself** instead: trust is earned by sharing risk, much more in the early war than late.
+* **Per-soldier `trust`** (0–100): falls with known-deadly orders, favouritism in arming, abuse you ignored; rises with volunteers, shared risk and fairness.
+* **Desertion / AWOL / defection / recruitment** are in; time in any army gives experience.
+* **Surrender:** army men break when demoralised *and* outnumbered or badly hurt; prisoners can be released, recruited, interrogated or executed. A rebel **hothead** may shoot a prisoner before anyone stops him (discipline and justice fall).
+* **Arming is scarce.** Rifles live in an armory (`res.guns`); handing one to a novice while veterans carry machetes costs trust and morale among the veterans (more if the novice is a woman and the veteran is a traditionalist). The Mariana Grajales platoon can be armed — with consequences.
+
+### 7.1 Fog of war ✅
+
+Enemy movement is hidden unless a rebel can see it: distance (`detectRange`: day/night, rain, fog, moving, hiding, weapon out, camouflage, viewer experience), line of sight, and lookouts (×1.5). Seen ground is remembered (dim); unseen is dark. A soldier who drops out of sight leaves a **last-known marker** for twelve seconds; gunfire you cannot see leaves a **ping** (bigger for machine guns). **V** toggles it. There is no enemy detection-range display.
+
+### 7.2 Atrocities and discipline ✅
+
+Soldiers of *every* side can steal, loot, beat, abuse (rare; always called "abuse"), murder and torture; the army's rate rises with regime heat and traits (drinker, hothead, greedy). The reports reach you (`army_abuse`), and your own men are not immune (`misconduct`). For a rebel offender you choose: **firing squad** (grave offences; the troop divides — some approve, some do not, close friends may desert), **court-martial**, **private reckoning**, or **let it pass**. Each choice has an outcome that depends on the offender's kin, the victim's sex, the offence and the troop's own views.
 
 ## 8. Economy & logistics ✅
 
@@ -321,7 +334,7 @@ In towns and cities **rifles/SMGs go to a cache**; only concealable pistols trav
 1. **Rubber bands from history:** heat scales with force size, so early success draws offensives; weakness makes you hard to find. ✅
 2. **Caps & decay:** memories half-life 70/260 days, ±75 cap, dedupe merge; shocks limited to 2 hops. ✅
 3. **Valves always exist (at a cost):** vales, credit lifelines, defectors, storm, hidden wounded, amnesty/mercy, retreat to the Sierra. ✅
-4. **Failure-forward:** losing a base isn't game over; the *leader's* death offers a **rewind** (a time traveller can). ✅
+4. **Failure-forward:** losing a base isn't game over; the *leader's* death is — and "Try again" restarts with the same world seed and a re-rolled landing. ✅
 5. **Slow, visible decline + the spiral sensor** feeding lifelines and El Viejo's warnings. ✅
 6. **Winning has costs** (heat, couriers, the Havana money's strings). ✅
 7. **Headless balance harness** 🟡 (browser-driven scripts used in development: soak, calibration, ripple, bot ambush). ⬜ port to a commandlet in UE (see Unreal bible).
@@ -338,6 +351,57 @@ In towns and cities **rifles/SMGs go to a cache**; only concealable pistols trav
 Tune in `C.TUNE` (sim.js) and the event severities (`sev`) in sim.js/events.js.
 
 ---
+
+## 12b. The opening: the Granma ✅
+
+* **Crossing (≈1 minute).** A deck of cubes at sea; you walk it (WASD) and speak to men (E). Seven "days" of eight seconds each, with six decisions: seasickness (lemons, discipline, or nothing), the leak (throw cargo, bail all night, or gamble), a man overboard (turn back and search — time, food, risk — or leave him), a storm (heave to or hold course), a plane on the horizon, and the ration fight. Each shifts needs, trust and supplies. The calendar is frozen at day 0 until you land.
+* **Approach.** At dawn on 2 December the helm unlocks. There are four landing sites — Cabo Cruz (rocky, a lighthouse, close to the mountains), Las Coloradas (mangrove swamp: the historic one), a long beach by Niquero (easy landing, an army post), the Toro river mouth (quiet, far from the mountains) — and a patrol boat and a plane that may spot you.
+* **Hidden threat, re-rolled every run.** Each site gets `threat = base × (0.55 … 1.5)` at the start of the crossing, so replaying never gives a stronger start. Landing outcome = `threat + 0.55·alert + noise`: *ashore unseen*, *under fire*, *ambushed on the beach*, or a **massacre** (60–100% of the party dies; sometimes you do; sometimes everyone does). Supplies are lost in proportion.
+* **After the landing** the story funnels into **Alegría de Pío**, whose enemy waves are scaled by a landing-dependent multiplier (0.7–1.7×). `?auto=cane` jumps straight to it for testing.
+
+## 12c. The Americans behind the regime ✅/🟡
+
+Batista is the face. The aircraft, bombs, rockets and spare parts are American; so are the sugar mills, the phone company, the refineries, the bank that holds the mortgage, the casinos' money and — in the end — the invasion. The prototype tracks `g.us = {arms, strings, outrage, interests}`:
+
+* **us_arms** — a new shipment of planes and bombs, a casing marked "Made in U.S.A."; pamphlets, a journalist, or silence.
+* **us_mill** — the manager offers money in exchange for safe passage for the company's cane and trucks; take it (strings, workers resent), refuse (workers cheer), sabotage.
+* **us_sailors** — American marines on shore leave and a woman in a bar; intervene or stay hidden (the police look away).
+* **us_diplomat** — "Washington has no love for Batista anymore": soften the nationalisation plank and get pressure on Batista, or tell him to take it up with the people.
+* **us_agent** — a "journalist" offers arms and money (a leash) — accept, expel, or follow him.
+* **mob_casino** — Havana's gambling money offers protection and a cut.
+* **Kidnapping for ransom** — a racket with American consequences.
+* **Governing:** nationalise the phone company and refineries or negotiate; sell sugar to Moscow or stay inside the American economy; the final **April 1961** card makes the invasion's CIA training, planes and promises explicit.
+
+El Viejo comments in character ("A country can have a flag and no keys").
+
+## 12d. Rackets and the mercenary drift ✅
+
+`g.merc` (0–100) is how far the band has drifted from a cause toward a business. Starting a racket — protection payments from shopkeepers and landowners, contraband runs on the Cayo boats, kidnapping for ransom (talk menu or the `racket_offer` event) — pays well (about 5 and 9 pesos a day per arrangement; a ransom is 120–340) and moves the meter. What it costs:
+
+* daily, once `merc > 20`: civilians' support erodes (peasants, middle class and the Church most), justice and honesty reputations fall, idealists in the troop lose trust;
+* **30** — idealists leave; greedy local recruits arrive;
+* **55** — "los cobradores": every faction's trust drops, justice −12; you may wind the rackets down;
+* **80** — a lieutenant says the cause is a pretext; faction trust falls again;
+* `misconduct` events become far more likely;
+* the end screen reports the drift, and the Bay of Pigs score is reduced by it.
+
+It is never the winning path, and it is deliberately tempting when pesos are short.
+
+## 12e. After Havana: governing and Playa Girón ✅
+
+When Batista falls (the conditional anchor, or the collapse check), `C.beginGoverning()` runs eight decision cards — land, the old regime's trials, press and the vote, American-owned utilities, schools and the Church, the army and militias, women and race, trade and oil — each adjusting six meters: **support, readiness, unity, repression, tension with Washington, economy**. Starting values come from the world you built (faction means, your troop size, rackets, American strings, executions, atrocities). Then **April 1961**: a CIA-trained exile brigade lands at Playa Girón. `score = 0.30·support + 0.28·readiness + 0.20·unity + 0.10·economy + 0.12·(100 − 0.8·repression) − 0.14·merc − 2.5·strings ± noise`; above 48 you win, with a text that depends on how broad the support was. Win or lose, the game ends; the ledger shows what shaped the run.
+
+## 12f. The non-violent path ✅
+
+If neither you nor your troop have killed anyone, the `peaceful_protest` event offers to endorse a silent march (mothers and students in white). Most of the time (60%) the police beat and shoot — some marchers die, some are jailed — otherwise people are arrested (28%) or, rarely (12%), the police stand aside and thousands see it. It builds a mass movement and legitimacy at a price in lives; it does not win a war by itself.
+
+## 12g. Scale: very large scenes ✅
+
+Every playable scene is generated at a compact size by the existing generators and then **embedded** in a map 1.6–1.9× larger: terrain continues outward (noise for the Sierra, mirrored-and-varied for towns, so roads leave and shorelines continue), exits move to the edge of the big map and are joined by a track, and countryside trees and palms are sprinkled in. Terrain is painted lazily in 16×16-tile chunks with an LRU cache (canopy only where there is forest), and A* uses pooled, stamp-versioned arrays (no per-search allocation). The Alegría de Pío and bay scenes keep their tuned sizes. Cost is measured: 120 simulation steps in the biggest scene (≈195×128 tiles, ~300 actors) take about 140 ms.
+
+## 12h. Language ✅
+
+English with a lot of Spanish, rising over the game (`lang.js`): `level = day/650` gives 0 → 1; tier-1 words appear with their translation at once ("los barbudos (the bearded ones)"), tier 2–3 later; by about day 500 most nouns are Spanish and translations are dropped. Speech bubbles, building labels, occupations, moods, stances and groups all pass through the lexicon. Texts use `{{key}}` tokens.
 
 ## 13. Serious risk assessment
 

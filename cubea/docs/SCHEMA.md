@@ -12,7 +12,7 @@ A deterministic cross-check dataset can be exported with `node tools/export_unre
 | `houses[]` | households `{id, sid, members[], head, cls, tenure, bld}` |
 | `roster{id:Person}` | named historical/authored people by key (`che`, `raul`, `celia`…) |
 | `party[]` | the Granma party (named + generated) |
-| `player` | id of "Fidel" — the role the time-traveller steps into |
+| `player` | id of "Fidel" — you, under the name typed on the title screen |
 | `seed`, `day`, `nextEv` | world seed, game day (0 = 5 Dec 1956), event counter |
 
 Memory budget for ≈3,100 people at ~130 B each ≈ 0.4 MB; ≈9,000 non-kin edges ≈ 0.2 MB. **Data size is not the constraint** — legibility and content are.
@@ -45,6 +45,8 @@ hp, maxHp, cracks[{x,y,a,l,n,s,t}], chunks[{pos 0–7, s}], limp, armHurt, bleed
 
 — military —
 mil {side:'army'|'rebel', rank, squad|unit}   wpn   stash   role   note
+trust 0–100 (default 60: how far this person believes you will not waste them)   leadAcc (seconds near you under fire today)   merc (a mercenary recruit)
+look.beardLen 0–1 (grows with service; infiltrators stay short)
 — look —
 look {eyeX,eyeY,eyeR,brow,browT,mouthW,mouthY,nose,freckle,mole,sw,sh,hair,hairCol,style,glasses,beard,mustache,hat,bun,scarf}
 ```
@@ -57,13 +59,19 @@ look {eyeX,eyeY,eyeR,brow,browT,mouthW,mouthY,nose,freckle,mole,sw,sh,hair,hairC
 
 Only people in the current scene have actors (≤ ~300). Everyone else is data + the daily tick.
 
+### Runtime actor additions (v0.2)
+
+`order{type,x,y,tgt,pts,pad,phase,w}` · `orderQ[]` (queued orders) · `pendingOrder` (refused, retrying) · `stanceOv` (order-set stance: hold/ambush/follow/forage) · `working` · `watching` (sight ×1.5) · `msel` (in the multi-selection) · `deck{u,w}` (position on the yacht during the crossing) · `visT`, `lastSeen{x,y,t}`, `seenEver` (fog of war, army actors) · `deserting`.
+
+Scene additions: `foxholes[]`, `pings[]`, `exploreCv/explored` (fog memory), `viewers[]`, `landings[]` (bay), `pre{chunks}` (chunked terrain), `inner{x,y,w,h}` (the compact map embedded in the large one).
+
 ## 4. Event
 
 `{ id, type, day, victim(person), perpSide:'rebel'|'army'|null, sev 0–100, just, pub 0–1, positive|val, x, y, scene, settlement, text, memText, headline }`
 
 ## 5. Player state (`C.G`)
 
-`res{food,money,ammo,med,fuel,gren,dyn,molo,pamph,vales,cloth,scrap}` · `policy{forage,justice}` · `platform{pub[8],real[8],declared[8],dayDeclared[8]}` · `deeds[8]` · `promises[]` (vales) · `trust{faction→0–1}` · `rep{fear,justice,honesty,discipline,competence}` · `regime{legit,armyMorale,usSupport,heat}` · `squads[4]{members[],stance}` · `pipe{balance,couriers[]}` · `strikePrep` · `foresight` · `base.built{}` · `unlocked.layer` · `flags{}`
+`res{food,money,ammo,guns,med,fuel,gren,dyn,molo,pamph,vales,cloth,scrap}` (`guns` = spare rifles in the armory) · `policy{forage,justice}` · `platform{pub[8],real[8],declared[8],dayDeclared[8]}` · `deeds[8]` · `promises[]` (vales) · `trust{faction→0–1}` · `rep{fear,justice,honesty,discipline,competence}` · `regime{legit,armyMorale,usSupport,heat}` · `squads[1..9]{id,name,col,members[],stance}` · `sel[]` (selected person ids) · `cmd{pending,tab,vol}` · `hygiene` · `merc` (0–100 mercenary drift) · `rackets{protect,contraband,kidnaps}` · `us{arms,strings,outrage,interests}` · `gov{step,m{sup,rdy,unity,rep,usT,econ},result}` · `sea{phase,t,veh,alert,threat{site→0.1–1.3}}` (opening only) · `opts{fog}` · `stats{killedArmy,killedCiv,lostRebels,executed,released,hired,atrocities{army,rebel},refused}` · `pipe{balance,couriers[]}` · `strikePrep` · `base.built{}` · `unlocked.layer` · `flags{}`
 
 ## 6. Static tables (`js/data.js`)
 

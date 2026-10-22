@@ -121,6 +121,25 @@
   "wheels": 2
  },
  {
+  "key": "yacht",
+  "n": "Granma",
+  "w": 64,
+  "h": 22,
+  "spd": 48,
+  "cap": 99,
+  "tank": 0,
+  "burn": 0,
+  "col": [
+   200,
+   205,
+   210
+  ],
+  "hp": 400,
+  "wheels": 0,
+  "water": true,
+  "deck": true
+ },
+ {
   "key": "boat",
   "n": "Lancha de pesca",
   "w": 36,

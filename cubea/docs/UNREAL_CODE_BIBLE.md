@@ -205,7 +205,7 @@ Walking: bake a 16-frame **vertex animation texture** (VAT) of the cube walk (le
 ### 6.1 Mesh
 * **Body**: a 3×3×3 lattice of small cubes (27 cells) in one merged mesh *or* a single cube + dissolve mask. For *missing chunks* the lattice is clearest: hide cells (corner = 1 cell, edge = 2, big = 3) via a per-instance bitmask (`PerInstanceCustomData` or a 32-bit float-packed mask decoded in the vertex shader).
 * **Limbs**: 2 arms, 2 legs as separate small cubes (parented sockets) for Tier A; baked into the VAT for Tier B.
-* **Time traveller**: a sphere body (+ ring/torus orbiting) with the same limbs and a glowing clock-hand material.
+* **The leader (you)**: an ordinary cube like everyone else, marked by a gold ring on the ground and a gold star above (`bIsPlayer` drives a decal and a small floating mesh); the typed name is on the nametag.
 * **Gear**: hats/hair/beards/beret/straw/kepi as small static meshes on a head socket; weapon on a hand socket.
 
 ### 6.2 Material parameters (per-instance or MID)
@@ -297,6 +297,13 @@ Save = **world seed + deltas** (anything that diverged from the deterministic ba
 | `events.js` | `Director`, event/anchor data assets, `UCubeaAdviceProvider` |
 | `ui.js` | CommonUI widgets (inspector, cards, map, manifesto, factions, journal, camp, end) |
 | `main.js` | `ACubeaGameMode`, input (Enhanced Input), travel, clock |
+| `lang.js` | `ULexiconSubsystem` (StringTables + tiered lookup), `FText` formatting with `{key}` tokens |
+| `fog.js` | `UFogOfWarSubsystem`: shared knowledge, visibility texture, last-known and ping actors |
+| `orders.js` | `UCommandSubsystem`, `UOrderDefinition` DataAssets, StateTree tasks per verb, `UTrustComponent` |
+| `cmdui.js` | Common UI command bar built from the order DataAsset registry |
+| `sea.js` | `ACrossingGameMode` sub-flow: yacht actor with a deck volume, landing-site data assets |
+| `events2.js` | more Director content: rackets, American-interest events, non-violent path (data assets) |
+| `govern.js` | `UGoverningFlow` (decision cards → six meters → invasion resolution) |
 
 ## 15. Pitfalls specific to this design
 * **Don't make every person an Actor.** The database is the world; actors are views.
@@ -315,3 +322,64 @@ Save = **world seed + deltas** (anything that diverged from the deterministic ba
 5. **M4 — politics:** manifesto, trust, factions, anchors.
 6. **M5 — the island:** Mass crowds, 2 villages, 2 towns, Santiago, Havana, vehicles, pipeline.
 7. **M6 — polish/audio/localisation.**
+
+---
+
+## 17. Art direction: a cel-shaded toy diorama (target look)
+
+**Reference:** *Untitled Goose Game* — flat, saturated colour fields; soft contact shadows; a hand-cut-paper feel; a camera that is slightly too far away to read faces except by *shape and colour*.
+
+* **Shading:** a custom Toon material model (or a post-process LUT on a stylised Lumen-off pipeline): 2–3 diffuse bands, a hard shadow terminator with a small softening width, an **inverted-hull** or depth/normal-edge outline (1.5 px, darker version of the albedo). Disable specular on bodies; keep a faint rim on cracks and chunks so damage reads.
+* **The cube:** loyalty colour is the albedo (`LoyaltyColor` MPC/instance parameter); camouflage tints it toward the ground; the face is a procedural SDF in the material (eyes, brows, mouth from `FaceParams`), drawn *over* the toon ramp so expressions never band.
+* **World:** modular tile kits with painted albedo; foliage as stacked low-poly blobs with a vertex-colour wind sway; water as a flat colour plane with scrolling white foam lines (the prototype's wave streaks); no photographic textures.
+* **Camera:** perspective, FOV 20–25°, pitch −50°, snap-rotate in 90° steps; roof fade by distance/angle mask.
+* **Light:** one directional light plus a hemisphere fill; night is a colour grade and a point-light halo around fires and windows, not a physically darker scene — readability wins.
+* **Budgets:** the toon pass must be vertex-cheap (instanced meshes, no per-actor dynamic shadows beyond a blob), because the target is thousands of cubes.
+
+## 18. Fog of war in Unreal
+
+* **Shared knowledge, not world truth.** `UFogOfWarSubsystem` owns a set of *viewers* (rebel pawns, lookouts, binoculars) and, every 0.2 s, evaluates each army pawn against nearby viewers using the same `DetectRange(viewer, target)` as the JS prototype (daylight, rain, motion, hiding, weapon out, camouflage, experience) plus a **line-of-sight** query (`LineTraceSingleByChannel` against a `Vision` channel; foliage and buildings have per-material opacity, like `losOpacity`). A pawn seen sets `LastSeenTime` and `LastSeenPos` on its **perception facade** — AI for the player's side and the order-danger estimate read *only* this.
+* **Rendering:** a low-resolution **visibility render target** (1 texel per 2 tiles) written by instanced radial quads for current viewers, plus an accumulated **explored** target; a post-process material reads both: unexplored → dark, explored-not-visible → dim, visible → clear. Hide enemy meshes by a dither-fade driven by `Visibility` rather than toggling mesh visibility (no popping, easy to replicate to Niagara pings).
+* **Unseen gunfire** spawns a *ping* actor (a ring decal) with ~35 uu jitter, larger for machine guns. A pawn that drops out of sight spawns a **last-known marker** for 12 s.
+* **Performance:** viewers × army pawns ≤ ~40 × 120 per 0.2 s is trivial; LOS traces are the cost — budget 300/frame and spread them.
+
+## 19. Very large scenes in Unreal
+
+The prototype's scenes are generated compact then **embedded** in a map 1.6–1.9× larger. In UE:
+
+* Use **World Partition** with a `Landscape` for each location and **PCG** for the surrounding countryside (terrain continues; roads and shorelines extend). Keep the compact "civic core" as a hand-authored **Level Instance** placed at the centre; PCG fills the rest.
+* **Streaming:** 256 m cells for the Sierra, 128 m for towns. Terrain, foliage and buildings stream; the **people store is not scene-based** (see §3.2) — only *actors* for people within the active radius exist.
+* **Navigation:** runtime-generated navmesh with `NavMeshBoundsVolume` per streaming cell; Mass uses ZoneGraph lanes for ambient crowds.
+* **Pathfinding cost:** the JS pooled A* (stamp-versioned arrays, 16,000-node cap) maps to Recast + async path queries; keep the *cost table* (road 0.7, trail 0.8, forest 1.6, shallows 1.7, cane 1.4).
+
+## 20. RevolutionKit: the reusable engine
+
+Goal: the same engine for other anti-imperialist rebel conflicts — Algeria 1954–62, Vietnam 1945–75, the Philippines, Angola, Mozambique, Nicaragua… including those that ended badly. It does **not** include a regime-side campaign.
+
+**What is data, not code** (`Content/Scenarios/<Name>/`):
+
+| Asset | Contents |
+|---|---|
+| `DA_Scenario` | name, calendar, start scene (e.g. the Granma crossing), end flow (e.g. the invasion), languages and lexicon tiers |
+| `DT_Places` | settlements (type, size, scale, generator id, coordinates, region) |
+| `DT_Occupations`, `DT_Traits`, `DT_Factions`, `DT_Planks` | the social model (8 planks and 8 factions in the Cuban case; each scenario defines its own list) |
+| `DT_Roster` | named historical people with birthplace, role, traits, verification status |
+| `DT_Events`, `DT_Anchors` | director content: conditional historical beats and the storyteller's pool |
+| `DT_Orders` | order definitions (verbs, targeting, danger, work seconds, UI tab) |
+| `DT_Foreign` | the outside powers: who funds the regime, what they ship, what they demand, how they intervene |
+| `DT_Governing` | post-victory decisions and the final test |
+| `DT_Lexicon` | per-language tiers for a "foreign-word creep" progression |
+
+**What stays code:** the loyalty graph and event bus, the daily tick, fog of war, the command system, combat, vehicles, the economy, the Director. Each scenario adds *rules modules* only where the conflict differs materially (e.g. a village-regrouping policy; urban terror; border sanctuaries; air power asymmetry).
+
+**Authoring discipline:** every scenario needs (1) a *winning formula* that is historically contested, with viable alternatives that hit visible ceilings; (2) a way to lose that is not just "die"; (3) an outside power with a face and a ledger; (4) local consultants and sensitivity review before release.
+
+## 21. Localisation: English with growing Spanish
+
+`ULexiconSubsystem` returns a string for `(key, level)` where `level = Day / 650` (0 → 1). Tier-1 words show as `Spanish (English)` immediately; tier-2 after ~0.2; tier-3 after ~0.42; translations are dropped once `level > 0.3` (per `SPAN`). Use **StringTables** for authored text with `{{key}}` tokens resolved at display time; never hard-code a translated noun in a sentence. Speech bubbles use a phrase book keyed by situation so a soldier says "Fire!" early and "¡Fuego!" later.
+
+## 22. The opening in Unreal (Granma)
+
+* A `AYachtActor` with a **deck volume** (a box that characters are attached to via `SetBase`); the yacht moves on a spline with buoyancy noise; characters walk on the deck with `CharacterMovementComponent` relative to the base. Weather and sea state are Gerstner waves in the water material; the coast fades in on the far horizon with an exponential-height-fog mask.
+* At the **helm point** the player takes possession of the yacht (`PossessedBy`) and the four `LandingSite` data assets provide the coast sections; threat values are re-rolled per run from a *non-seeded* RNG (`FRandomStream(FDateTime::Now().GetTicks())`) so replays differ.
+* Landing resolution is a **director call** — a single function of `threat`, `alert` and noise — that chooses a pre-authored sequence (unseen, contact, beach ambush, massacre) and spawns the right scene; the Alegría de Pío scene takes the enemy multiplier as a parameter.

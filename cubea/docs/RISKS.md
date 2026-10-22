@@ -40,10 +40,11 @@ Repeated village visits to pay, forage and patrol become chores.
 ## 7. Perceived AI unfairness 🟠
 "My squad ignored me" is poison in tactics games.
 * **Done:** obedience percentage is *shown*; a refusal produces a reason bubble; refusals retry; orders show a marker; the prologue ambush is hard but telegraphed (air-raid rings, MG positions in the objective).
-* **Open:** an explicit **command-confidence** UI; an "obey anyway" option with a morale/discipline cost.
+* **Done (v0.2):** a danger preview on the command bar; a spoken argument before a deadly order; "Lead them yourself" and "That is an order" with visible consequences (trust, refusal, desertion).
+* **Open:** a per-soldier trust display in the inspector; courier latency for far groups.
 
 ## 8. Replay value 🟠
-* **Done:** world seed; deterministic generation; Director randomness; conditional anchors; foresight tokens as a difficulty dial; different platforms.
+* **Done:** world seed; deterministic generation; Director randomness; conditional anchors; a re-rolled landing (a different massacre every run), hidden site threats, different platforms, rackets as a tempting alternative path.
 * **Open:** per-run modifiers (who the traitors are, which landowners are brutal, the army commander), scenario variants (1895, 1933), a mirrored Batista campaign.
 
 ## 9. Balance testing is a project in itself 🔴
@@ -53,13 +54,23 @@ Emergent systems cannot be hand-balanced.
 
 ## 10. Cultural, ethical and platform risk 🔴
 The subject is real, recent and bitterly contested among Cubans in Cuba and in exile.
-* **Women:** the "tradeoff" must not trivialise sexism. Prototype frames it as *shifting coalitions* and gives women named, operational roles; sexual violence by one's own soldiers appears only as an abstract "misconduct" decision with consequences — **never depicted**. Keep it that way.
+* **Women:** the "tradeoff" must not trivialise sexism. Prototype frames it as *shifting coalitions* and gives women named, operational roles; sexual violence by any side's soldiers appears only as rare, abstract "abuse" (a report, never a scene) and, for your own men, as a punishment decision with a divided troop — **never depicted**. Keep it that way.
 * **Race:** ethnicity is a social-position variable (access, profiling, salient issues), **never** the loyalty tint; Afro-Cuban leaders are named characters; the Batista exception (mixed-race, excluded from elite clubs) is acknowledged.
-* **History:** the "winning formula" thesis is contested. The prototype includes a *concealment* mechanic (public vs private platform), shows that the real regime later became authoritarian (end text), and gives alternatives viable-for-a-while paths.
+* **History:** the "winning formula" thesis is contested. The prototype includes a *concealment* mechanic (public vs private platform), has no ending lecture (the end screen is a ledger), and gives alternatives viable-for-a-while paths. The governing cards state trade-offs; they do not grade you.
 * **Process:** historians and Cuban consultants *before* release; content notes; store ratings and regional restrictions (violence, a real head of state) reviewed early; no glorification of atrocities.
 
+## 10b. New risks since 0.1 🟠
+1. **Reading the "abuse" lines.** Tone matters more than mechanics: a report, an aftermath, a family's words. Needs Cuban and sensitivity review before release.
+2. **The American-imperialism thread can read as a thesis.** *(Fix: let it be material — labels on bombs, owners at meetings, a casino's offer — and let the player decide what to do about it.)*
+3. **Rackets as a "fun" path.** If the income is too good the player will ignore the drift meter. *(Fix: tune `per` and the support decay; keep the milestones visible.)*
+4. **Disobedience as friction.** If the estimate of "deadly" is wrong (stale sightings, hidden posts) the argument feels unfair. *(Fix: only seen enemies count; the cursor preview shows the same number.)*
+5. **Fog of war and readability.** A dim map hides cause and effect. *(Fix: explored ground stays visible; pings; last-known markers; the V toggle.)*
+6. **Large embedded scenes can feel empty.** The countryside is terrain and trees only. *(Fix: homesteads, fields, traffic, extra households; in UE this is World Partition and Mass crowds.)*
+7. **The Bay of Pigs ending depends on a score the player cannot see.** *(Fix: show the six meters on each governing card.)*
+
 ## 11. Performance 🟡
-* **Done:** 266 live actors in Santiago = ~1.4 ms update per frame; draw ≈ 20 ms in *software* rendering (headless), expected well under 5 ms on GPU. Generation 0.2 s.
+* **Done (v0.2):** chunked terrain (16×16-tile chunks, LRU), pooled A*, scenes 1.6–1.9× larger; 120 simulation steps in Havana (~300 actors) ≈ 140 ms in headless Chromium.
+* **Done (v0.1):** 266 live actors in Santiago = ~1.4 ms update per frame; draw ≈ 20 ms in *software* rendering (headless), expected well under 5 ms on GPU. Generation 0.2 s.
 * **Open (Unreal):** Mass Entity LOD; ISM with VAT; HUD-pass name tags; the cost of clip-based chunk cut-outs becomes a material mask.
 
 ## 12. What would make the whole thing fail
