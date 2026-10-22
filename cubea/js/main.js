@@ -488,6 +488,7 @@
     const prevDay = g.day; syncClock(); if (g.sea && g.sea.active) C.seaUpdate(dt);
     // meals
     for (const h of [7, 13, 19]) if (prevMin % 1440 < h * 60 && g.min % 1440 >= h * 60 || prevDay !== g.day && h === 7 && false) C.mealTime();
+    if (C.campTick) C.campTick(s, g.min - prevMin);   // camp life: hourly consequences of what is on the ground (camp.js)
     if (g.day !== prevDay) { dailyHooks(); }
     // weather
     const w = g.weather; w.t -= dt / 60; if (w.t <= 0) w.target = Math.max(0, w.target - dt * 0.01); w.rain += (w.target - w.rain) * Math.min(1, dt * 0.2);
