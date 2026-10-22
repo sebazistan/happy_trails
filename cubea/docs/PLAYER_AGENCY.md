@@ -36,6 +36,9 @@ A camp is whatever stands on the ground. Hourly and daily consequences: waste (l
 ## 5. Words (`ideology.js`) — see `IDEOLOGY.md`
 Speeches, readings aloud, pamphlets, posters, letters, and a **voice** whose options change with the listener's state (hungry, wounded, hopeless, unarmed… or a peasant, to whom you can promise land, seed, medicine). Promises go in a ledger and are checked against deeds.
 
+## 5b. Workshop, kitchen and trade (`workshop.js`)
+The camp menu's recipe list is gone. Benches are built on the ground (Q → Set up a workstation), used with *Make…*, and skilled hands are quicker and safer; the forge burns firewood, is loud, and can go wrong. A cook pot beside a lit fire makes eight hot servings; at mealtime those near it are served (*Ladle* chooses who). Foraging opens with a spoken offer, and the wheel on a civilian offers pay / vale / gift / barter / gunpoint.
+
 ## 6. What we did *not* do
 * No "advance to the next stage": systems read the state of the world; the Director (storyteller) reacts to it.
 * No hidden numbers: every change is logged or spoken.

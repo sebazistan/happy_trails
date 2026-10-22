@@ -98,3 +98,6 @@ Wild game now matches what an Oriente guerrilla could eat (see `HUNTING.md`); tu
 
 ## Round 6: awareness, vehicles, towns
 NPCs get eyes (cones, light, walls), ears and judgement, and a repertoire of ~30 reactions; a guerrilla's armed presence means different things in town and country; hidden pistols blend. Vehicles became machines (faults, repairs, cargo, trunk, orders) with period silhouettes. Towns got more building types, trades, shifts and traffic. See `AWARENESS_VEHICLES_TOWNS.md`.
+
+## Round 7: menus → world (first three)
+Crafting became benches, rationing became a cook pot with servings at mealtime, foraging became a face-to-face trade (`workshop.js`). Still to move: prisoners/trials, recruitment at the camp edge, the travel map, couriers, broadcasts/posters, the sick bay, governing.

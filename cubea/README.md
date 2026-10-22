@@ -64,6 +64,7 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 * **Aware civilians:** vision cones, hearing, ~30 reactions (flee, bar the door, phone the police, greet, flirt, enlist, tip you off…), town-vs-country judgement of an armed guerrilla, hidden pistols that blend, meals and sleep, barred doors, hover info on every person and vehicle (`js/aware.js`).
 * **Vehicles as machines:** period models, overheating and a dozen faults with real and improvised repairs, cargo, trunk and passengers, driver orders, riding along (`js/garage.js`).
 * **Town life:** restaurants, bakeries, butchers, market, garages, post office, bars; 14 more trades with shifts; night watchmen; horse carts and mounted men; ≈200 civilians per town (`js/townlife.js`, `docs/AWARENESS_VEHICLES_TOWNS.md`).
+* **Workshop, kitchen and trade in the world:** benches built on the ground (reloading bench, forge, press, sewing table, cook pot) and used by hand with skill and risk; hot meals served from the pot at mealtime; face-to-face trade (pay, vale, gift, barter, gunpoint) (`js/workshop.js`).
 * **A finished-game shell:** pause menu, settings (volume, UI size, shake, contrast, Spanish level, autosave), **key rebinding**, 3 save slots + autosave (`js/settings.js`).
 * **8 locations + the coast**, each a large map; terrain is painted in cached chunks.
 
@@ -72,7 +73,7 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 ```
 cubea/
   index.html              page + CSS
-  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack things actions camp farm ideology hunting aware garage townlife settings main
+  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack things actions camp farm ideology hunting aware garage townlife workshop settings main
                           (classic scripts → works from file://)
   docs/                   DESIGN_BIBLE · DECISIONS · COMMANDS · SCHEMA · UNREAL_CODE_BIBLE · ROSTER · RISKS · IDEAS_AND_QUESTIONS · RESEARCH · PLAYER_AGENCY · IDEOLOGY
   tools/
@@ -101,6 +102,7 @@ node tools/harness/hunting.js         # fauna, flush, dress, rot, smoke, snares,
 node tools/harness/aware.js          # cones, hearing, town vs country, covert blending, reactions, meals, tooltip
 node tools/harness/garage.js         # overheating, repairs, cargo, trunk, driver orders
 node tools/harness/town.js           # buildings, trades, population, traffic, schedules
+node tools/harness/workshop.js       # benches, making, accidents, cooking, serving, trading
 node tools/harness/settings.js         # save/load round trip, key rebinding
 node tools/harness/sea.js               # the crossing, six landings, hand-off to Alegría de Pío
 node tools/harness/ripple.js            # the family-graph ripple of a single killing
