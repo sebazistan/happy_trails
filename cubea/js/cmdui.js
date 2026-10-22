@@ -39,6 +39,7 @@
   }
   function refresh() {
     const g = G(); if (!g || !g.scene || g.over) { bar.style.display = 'none'; return; }
+    if (g.sea && g.sea.active) { bar.style.display = 'none'; return; }
     if (!document.getElementById('left') || document.getElementById('left').style.display === 'none') { bar.style.display = 'none'; return; }
     bar.style.display = 'block';
     if (!built) build();

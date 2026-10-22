@@ -330,6 +330,7 @@
     if (d.water) {
       c.fillStyle = 'rgb(240,240,236)'; c.beginPath(); c.moveTo(w / 2, 0); c.lineTo(w / 2 - 8, -h / 2); c.lineTo(-w / 2, -h / 2); c.lineTo(-w / 2, h / 2); c.lineTo(w / 2 - 8, h / 2); c.closePath(); c.fill();
       c.strokeStyle = rgb(d.col); c.lineWidth = 2; c.stroke(); c.fillStyle = 'rgb(150,120,80)'; c.fillRect(-w / 4, -h / 4, w / 3, h / 2);
+      if (d.deck) { c.strokeStyle = 'rgba(80,60,40,.5)'; c.lineWidth = 0.7; for (let q = -w / 2 + 4; q < w / 2 - 6; q += 5) { c.beginPath(); c.moveTo(q, -h / 2 + 1); c.lineTo(q, h / 2 - 1); c.stroke(); } if (v.pass.length) { c.fillStyle = 'rgba(200,60,50,.9)'; for (let q = 0; q < Math.min(40, v.pass.length + 1); q++) c.fillRect(-w / 2 + 4 + (q % 12) * 4.4, -h / 2 + 3 + Math.floor(q / 12) * 4.5, 3, 3); } }
     } else if (v.type === 'oxcart') {
       c.fillStyle = 'rgb(150,112,72)'; c.fillRect(-w / 2, -h / 2, w * 0.7, h); c.strokeStyle = 'rgb(70,48,30)'; c.lineWidth = 1; c.strokeRect(-w / 2, -h / 2, w * 0.7, h);
       c.fillStyle = 'rgb(60,40,28)'; c.fillRect(-w / 2 + 3, -h / 2 - 2, 4, 3); c.fillRect(-w / 2 + 3, h / 2 - 1, 4, 3);
@@ -391,6 +392,7 @@
     const sx0 = Math.max(0, vx0), sy0 = Math.max(0, vy0), sw = Math.min(s.tw * T - sx0, vw), sh = Math.min(s.th * T - sy0, vh);
     if (sw > 0 && sh > 0) ctx.drawImage(s.pre.cv, sx0 * PS, sy0 * PS, sw * PS, sh * PS, sx0, sy0, sw, sh);
     const vis = (x, y, r) => x > vx0 - r && x < vx0 + vw + r && y > vy0 - r && y < vy0 + vh + r;
+    if (s.type === 'coast') drawWaves(ctx, s, t, vx0, vy0, vw, vh);
     // decals: craters, scorch, blood
     for (const d of s.decals) if (vis(d.x, d.y, d.r)) {
       ctx.globalAlpha = d.a * (d.fade ? Math.max(0.15, 1 - (G.time - d.t0) / d.fade) : 1);
@@ -408,7 +410,7 @@
     for (const it of s.items) if (vis(it.x, it.y, 10)) drawItem(ctx, it, t);
     // vehicles, animals, actors sorted by y
     const list = [];
-    for (const v of s.vehicles) if (vis(v.x, v.y, 40) && C.vehVisible(v)) list.push({ y: v.y, k: 'v', o: v });
+    for (const v of s.vehicles) if (vis(v.x, v.y, 70) && C.vehVisible(v)) list.push({ y: v.def.deck ? v.y - 400 : v.y, k: 'v', o: v });
     for (const an of s.animals) if (vis(an.x, an.y, 20)) list.push({ y: an.y, k: 'n', o: an });
     for (const a of s.corpses) if (vis(a.x, a.y, 20)) list.push({ y: a.y - 40, k: 'a', o: a });
     for (const a of s.actors) if (!a.inside && !a.gone && vis(a.x, a.y, 30) && C.visible(a)) list.push({ y: a.y, k: 'a', o: a });
@@ -466,6 +468,7 @@
       const lab = C.lab(b.label);
       outlinedText(ctx, lab, sp.x, sp.y, bsz, b.key === 'pad' ? 'rgba(255,255,255,.75)' : '#fff', true);
     }
+    if (s.landings && G.sea && G.sea.phase === 'approach') for (const st of s.landings) { const sp = C.toScreen(cam, st.wx, st.wy - 50); if (sp.x < -100 || sp.x > W + 100 || sp.y < -30 || sp.y > H + 30) continue; outlinedText(ctx, st.name, sp.x, sp.y, 11, '#ffe9a8', true); }
     for (const o of s.objs) { if (o.dead) continue; const sp = C.toScreen(cam, o.x, o.y - 14); if (sp.x > -60 && sp.x < W + 60 && sp.y > -20 && sp.y < H + 20) outlinedText(ctx, C.lab(o.label), sp.x, sp.y, bsz - 1, '#ffd9a0', true); }
     for (const v of s.vehicles) { if (v.gone) continue; const sp = C.toScreen(cam, v.x, v.y - 14); if (sp.x < -60 || sp.x > W + 60 || sp.y < -20 || sp.y > H + 20) continue; const fuel = v.def.tank ? Math.round(v.fuel / v.def.tank * 100) : -1; outlinedText(ctx, C.vName(v.type) + (v.wreck ? ' (wrecked)' : '') + (v.wreck || fuel < 0 ? '' : fuel <= 2 ? ' · out of gas' : v.tires.some((q) => q < 0.2) ? ' · flat tire' : ''), sp.x, sp.y, bsz - 1.5, v.wreck ? '#bbb' : '#d8ecff', false); }
     for (const an of s.animals) { if (an.dead) continue; const sp = C.toScreen(cam, an.x, an.y - 8); if (sp.x < 0 || sp.x > W || sp.y < 0 || sp.y > H || z < 1.6) continue; outlinedText(ctx, C.aName(an.k), sp.x, sp.y, 7.5, '#f4efe0', false); }
@@ -504,6 +507,17 @@
     drawAtmosphere(ctx, G, W, H, t);
   };
 
+  function drawWaves(ctx, s, t, vx0, vy0, vw, vh) {
+    ctx.save(); ctx.lineCap = 'round';
+    const cell = 46; const i0 = Math.floor(vx0 / cell) - 1, i1 = Math.ceil((vx0 + vw) / cell) + 1, j0 = Math.floor(vy0 / cell) - 1, j1 = Math.ceil((vy0 + vh) / cell) + 1;
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const h = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; const f = h - Math.floor(h); const h2 = Math.sin(i * 39.3468 + j * 11.135) * 24634.6345; const f2 = h2 - Math.floor(h2);
+      const x = (i + f) * cell, y = (j + f2) * cell; const tt = C.tileAt(s, x, y); if (tt !== TL.DEEP && tt !== TL.SHAL) continue;
+      const ph = (t * 0.35 + f * 6.28); const a = 0.18 + 0.2 * Math.sin(ph); if (a <= 0.04) continue;
+      ctx.strokeStyle = `rgba(235,245,250,${a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x - 5, y); ctx.quadraticCurveTo(x, y - 2.2 - Math.sin(ph) * 1.2, x + 5, y); ctx.stroke();
+    }
+    ctx.restore();
+  }
   function drawObj(ctx, o, t) {
     if (o.dead) { ctx.fillStyle = 'rgba(30,26,24,.85)'; ctx.fillRect(o.x - o.w / 2, o.y - o.h / 2, o.w, o.h); return; }
     if (o.k === 'deposito') { ctx.fillStyle = 'rgb(200,64,52)'; ctx.fillRect(o.x - 12, o.y - 8, 24, 16); ctx.fillStyle = 'rgb(240,230,220)'; ctx.fillRect(o.x - 12, o.y - 3, 24, 4); ctx.strokeStyle = '#2a1a16'; ctx.strokeRect(o.x - 12.5, o.y - 8.5, 25, 17); }

@@ -274,6 +274,7 @@
       if (a.inVeh) { updateInVehicle(s, a, dt); continue; }
       commonUpdate(s, a, dt);
       if (a.isPlayer) continue;      // main.js drives the player
+      if (a.deck) { C.deckActorUpdate(s, a, dt); continue; }
       if (a.inside) { insideUpdate(s, a, dt); continue; }
       if (a.side === 'army') armyUpdate(s, a, dt);
       else if (a.side === 'rebel') rebelUpdate(s, a, dt);

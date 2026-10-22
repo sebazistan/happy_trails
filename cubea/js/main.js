@@ -127,22 +127,32 @@
       const surv = g.squads.flatMap((s) => s.members).slice(); surv.forEach((id, i) => { if (i % 3 === 2) { const p = C.P(id); if (!p.roster) { p.status = 'dead'; for (const s2 of g.squads) s2.members = s2.members.filter((x) => x !== id); } } });
       for (const id of g.squads.flatMap((s) => s.members)) { C.moveTo(C.P(id), 'sierra'); }
       C.enterScene('sierra', { campSpawn: true, far: true });
-    } else {
+    } else if (mode === 'cane') {
       for (const id of ids) C.moveTo(C.P(id), 'alegria');
       C.enterScene('alegria', { far: true });
-      initPrologue();
+      initPrologue({ mult: 1 });
+    } else {
+      C.beginCrossing();
     }
-    const pl = g.player; pl.p.exp = 5; g.cam.z = 2.4;
+    const pl = g.player; pl.p.exp = 5; g.cam.z = mode === 'prologue' ? 3.2 : 2.4;
     // the player holds weapon drawn at start of the ambush
-    if (mode !== 'sandbox') pl.weaponOut = true;
+    if (mode === 'cane') pl.weaponOut = true;
     C.ui.start();
-    if (mode !== 'sandbox') { g.paused = false; setTimeout(() => C.ui.card({ title: 'The Granma', icon: '⛵', body: 'Seven days at sea in a leaking yacht built for twenty-five, packed with 82 men, seasick, hungry, and late. On 2 December 1956 the boat runs aground in the mangroves, and you wade ashore with soaked boots and ruined supplies. Three days later, resting in a cane field at Alegría de Pío, someone has told the army exactly where you are. (The demo uses a smaller party than history\'s.)', choices: [{ label: 'Begin: the cane field, 5 December 1956', fn: () => { } }] }), 400); }
+    if (mode === 'cane') { g.paused = false; setTimeout(() => C.ui.card({ title: 'Alegría de Pío', icon: '🌴', body: 'Three days after the landing you rest in a cane field. Someone has told the army exactly where you are.', choices: [{ label: 'Begin: the cane field, 5 December 1956', fn: () => { } }] }), 300); }
+    else if (mode === 'prologue') { g.paused = false; setTimeout(() => C.ui.card({ title: 'The Granma', icon: '⛵', body: `Tuxpan, Mexico, 25 November 1956. Eighty-two men (in this prototype, the ${C.W.party.length} you can name) on a yacht built for a dozen, the lights off, the sea coming over the bow. You are not the captain; the helm is not yours until the coast is in sight. What you can do is walk the deck, listen, and decide what kind of leader to be before anyone fires a shot.\n\nWASD to move on deck, E to speak to a man.`, choices: [{ label: 'Cast off', fn: () => { } }] }), 300); }
     last = performance.now(); requestAnimationFrame(frame);
   };
 
   // ---------------- prologue: Alegría de Pío ----------------
-  function initPrologue() {
-    const g = G(), s = g.scene; s.pro = { t: 0, waves: 0, plane: false, done: false, started: false };
+  C.startAlegria = function (o) {
+    o = o || {}; const g = G(); const ids = C.W.party.filter((id) => id !== C.W.player && C.P(id).status === 'alive');
+    g.minPerSec = 1.5; g.unlocked.layer = Math.max(g.unlocked.layer, 1); g.hour = 12; g.min = 12 * 60;
+    for (const id of ids) { C.moveTo(C.P(id), 'alegria'); }
+    C.enterScene('alegria', { far: true }); initPrologue(o); g.player.weaponOut = true; g.cam.z = 2.4; C.ui.refresh();
+    setTimeout(() => C.ui.card({ title: 'Alegría de Pío', icon: '🌴', body: (o.intro || '') + '\n\n(5 December 1956)', choices: [{ label: 'Rest in the cane', fn: () => { } }] }), 200);
+  };
+  function initPrologue(o) {
+    o = o || {}; const g = G(), s = g.scene; s.pro = { t: 0, waves: 0, plane: false, done: false, started: false, mult: o.mult || 1 };
     g.min = 16.4 * 60; g.hour = 16.4;
     for (const a of s.actors) if (a.side === 'rebel') { a.weaponOut = true; }
     // party starts in a loose cluster
@@ -155,7 +165,7 @@
   function prologueUpdate(dt) {
     const g = G(), s = g.scene, P = s.pro; if (!P || P.done) return;
     P.t += dt;
-    const spawnWave = (n, x0, y0, spread, wk) => { for (let i = 0; i < n; i++) { const a = C.armyActor(s, (x0 + (Math.random() - 0.5) * spread) * T, (y0 + (Math.random() - 0.5) * spread * 0.6) * T, i % 6 === 0 ? 'thompson' : wk || 'garand', 'engage'); const t = pick(s.actors.filter((q) => q.side === 'rebel' && !q.dead)); a.brain.target = t; a.brain.seen = 8; a.brain.lastX = t.x; a.brain.lastY = t.y; } };
+    const spawnWave = (n0, x0, y0, spread, wk) => { const n = Math.max(1, Math.round(n0 * (P.mult || 1) + (Math.random() - 0.5))); for (let i = 0; i < n; i++) { const a = C.armyActor(s, (x0 + (Math.random() - 0.5) * spread) * T, (y0 + (Math.random() - 0.5) * spread * 0.6) * T, i % 6 === 0 ? 'thompson' : wk || 'garand', 'engage'); const t = pick(s.actors.filter((q) => q.side === 'rebel' && !q.dead)); a.brain.target = t; a.brain.seen = 8; a.brain.lastX = t.x; a.brain.lastY = t.y; } };
     if (P.t > 5 && P.waves === 0) { P.waves = 1; spawnWave(6, 76, 36, 8); spawnWave(3, 62, 12, 8, 'rifle'); const mg = C.armyActor(s, 66 * T, 11 * T, 'mg', 'engage'); mg.brain.target = g.player; mg.brain.seen = 30; mg.brain.role = 'guard'; const mg2 = C.armyActor(s, 79 * T, 34 * T, 'mg', 'engage'); mg2.brain.target = g.player; mg2.brain.seen = 30; mg2.brain.role = 'guard'; C.alertScene(s, 70 * T, 32 * T, 'contact'); g.shake = 0.7; C.log('FIRE from the east! ¡Emboscada!', 'bad'); C.say(g.player, '¡Al monte!', '#7a1d1d', 3); for (const a of s.actors) if (a.side === 'rebel') a.panic = 0.7; }
     if (P.t > 14 && P.waves === 1) { P.waves = 2; spawnWave(5, 40, 55, 14); C.log('Soldiers close in from the south!', 'bad'); }
     if (P.t > 26 && !P.flank) { P.flank = true; spawnWave(3, 14, 12, 8, 'rifle'); spawnWave(2, 44, 9, 6, 'garand'); C.log('Riflemen in the trees to the north-west — the way out is not clear!', 'bad'); }
@@ -191,6 +201,7 @@
   const solidAt = (s, x, y) => C.footBlocked(s, x, y, 3.4);
   function playerUpdate(dt) {
     const g = G(), s = g.scene, a = g.player; if (!a || a.dead) return;
+    if (g.sea && g.sea.active && g.sea.phase === 'cross') { C.deckMove(dt, (keys.d || keys.ArrowRight ? 1 : 0) - (keys.a || keys.ArrowLeft ? 1 : 0), (keys.s || keys.ArrowDown ? 1 : 0) - (keys.w || keys.ArrowUp ? 1 : 0)); a.aim = Math.atan2(mouse.wy - (a.y - 9), mouse.wx - a.x); return; }
     if (g.vehicle) { drive(dt); return; }
     let mx = (keys.d || keys.ArrowRight ? 1 : 0) - (keys.a || keys.ArrowLeft ? 1 : 0), my = (keys.s || keys.ArrowDown ? 1 : 0) - (keys.w || keys.ArrowUp ? 1 : 0);
     const run = keys.Shift && a.p.needs.energy > 4 && !a.hide;
@@ -250,7 +261,7 @@
       for (const [ox, oy] of pts) { const wx = px + ox * ca - oy * sa, wy = py + ox * sa + oy * ca; const tt = C.tileAt(s, wx, wy); if (def.water) { if (tt !== TL.DEEP && tt !== TL.SHAL) return true; } else if (C.TCOST[tt] === 0 || tt === TL.FOR || tt === TL.PIER && false) return true; }
       return false;
     };
-    if (!blocked(nx, ny)) { v.x = nx; v.y = ny; } else { if (Math.abs(v.spd) > 70) { v.hp -= Math.abs(v.spd) * 0.25; C.fx.dust(s, v.x, v.y, 4); g.shake = Math.max(g.shake, 0.3); C.say(a, '¡Cuidado!', '#7a1d1d', 1); } v.spd *= -0.2; }
+    if (!blocked(nx, ny)) { v.x = nx; v.y = ny; } else { if (g.sea && g.sea.active && g.sea.phase === 'approach' && Math.abs(v.spd) > 10) { C.seaLand(); } if (Math.abs(v.spd) > 70 && !(g.sea && g.sea.active)) { v.hp -= Math.abs(v.spd) * 0.25; C.fx.dust(s, v.x, v.y, 4); g.shake = Math.max(g.shake, 0.3); C.say(a, '¡Cuidado!', '#7a1d1d', 1); } v.spd *= -0.2; }
     if (def.tank && hasFuel) v.fuel = Math.max(0, v.fuel - def.burn * dt * (0.08 + 0.45 * Math.abs(v.spd) / def.spd) * 0.5);
     // off-road tyre risk
     if ((t === TL.G || t === TL.CANE) && Math.abs(v.spd) > 50 && Math.random() < dt * 0.05 && !def.water) { const wi = Math.floor(Math.random() * 4); if (v.tires[wi] > 0.2) { v.tires[wi] = 0.05; C.log('¡Goma ponchada! A tire blew on the rough ground.', 'bad'); } }
@@ -425,7 +436,7 @@
     if (g.over) return;
     g.time += dt;
     const prevMin = g.min; g.min += dt * g.minPerSec * (g.resting ? 12 : 1);
-    const prevDay = g.day; syncClock();
+    const prevDay = g.day; syncClock(); if (g.sea && g.sea.active) C.seaUpdate(dt);
     // meals
     for (const h of [7, 13, 19]) if (prevMin % 1440 < h * 60 && g.min % 1440 >= h * 60 || prevDay !== g.day && h === 7 && false) C.mealTime();
     if (g.day !== prevDay) { dailyHooks(); }
@@ -508,6 +519,7 @@
   C.select = select;
   function doInteract() {
     const g = G(); const pl = g.player; if (!pl || pl.dead) return;
+    if (g.sea && g.sea.active) { if (g.sea.phase === 'approach') C.seaLand(); else { const t = C.findInteract(); if (t) C.ui.interact(t); } return; }
     if (g.vehicle) { C.leaveVehicle(); g.vehicle = null; return; }
     const t = C.findInteract(); if (!t) { C.ui.toast('Nothing to use here'); return; }
     C.ui.interact(t);
@@ -549,7 +561,7 @@
   if (qs.get('name')) document.getElementById('pname').value = qs.get('name');
   document.getElementById('startBtn').onclick = () => startGame('prologue');
   document.getElementById('sandBtn').onclick = () => startGame('sandbox');
-  if (qs.get('auto')) setTimeout(() => startGame(qs.get('auto') === 'sandbox' ? 'sandbox' : 'prologue'), 120);
+  if (qs.get('auto')) setTimeout(() => startGame(qs.get('auto') === 'sandbox' ? 'sandbox' : qs.get('auto') === 'cane' ? 'cane' : 'prologue'), 120);
   // test hook
   C.debug = { update, get g() { return G(); }, select, keys, mouse, startGame, syncClock, dailyHooks };
 })();

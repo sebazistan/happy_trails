@@ -67,7 +67,7 @@
     const g = G(); if (!g || !g.scene) return;
     const L = g.unlocked.layer;
     const d = C.dateOf(g.day); const hh = Math.floor(g.hour), mm = Math.floor((g.hour - hh) * 60);
-    $('clock').textContent = `${C.dateStr(g.day)} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}${g.paused ? '  ❚❚' : ''}${g.resting ? '  😴' : ''}`;
+    $('clock').textContent = g.sea && g.sea.active ? `${g.sea.label}${g.paused ? '  ❚❚' : ''}` : `${C.dateStr(g.day)} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}${g.paused ? '  ❚❚' : ''}${g.resting ? '  😴' : ''}`;
     $('where').textContent = (g.scene.title || g.scene.name) + (g.weather.rain > 0.25 ? ' · rain' : '') + (g.weather.fog > 0.2 ? ' · mist' : '');
     // chips
     let h = '';
@@ -90,7 +90,7 @@
     const it = C.findInteract && C.findInteract(); if (it) hint += `<kbd>E</kbd> ${hintFor(it)}`; else hint += g.player && g.player.weaponOut ? 'Weapon drawn — click to fire' : '<kbd>X</kbd> draw weapon';
     $('hint').innerHTML = hint;
     updateLeftLive(); if (g.selected && !g.selected.gone) updateInspectorLive(); renderLog();
-    if (g.vehicle) { const v = g.vehicle; $('hint').innerHTML += `<br>🚗 ${v.def.n}: fuel ${Math.round(v.fuel)}/${v.def.tank} · speed ${Math.round(Math.abs(v.spd))} · <kbd>E</kbd> exit`; }
+    if (g.sea && g.sea.active) { $('hint').innerHTML = g.sea.phase === 'approach' ? `⛵ WASD steers · <kbd>E</kbd> land (when close to the shore) · running her aground also lands you` : `⛵ WASD walks the deck · <kbd>E</kbd> speaks to a man`; } else if (g.vehicle) { const v = g.vehicle; $('hint').innerHTML += `<br>🚗 ${v.def.n}: fuel ${Math.round(v.fuel)}/${v.def.tank} · speed ${Math.round(Math.abs(v.spd))} · <kbd>E</kbd> exit`; }
   };
   function hintFor(t) {
     switch (t.kind) {

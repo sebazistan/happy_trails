@@ -403,7 +403,8 @@
     }
   }
   // ---------------- build / fetch scene ----------------
-  const SIZES = { cane: [84, 60], sierra: [100, 70], village: [72, 52], fishing: [72, 52], manzanillo: [96, 66], bayamo: [96, 66], santiago: [112, 74], habana: [122, 80] };
+  const SIZES = { cane: [84, 60], sierra: [100, 70], village: [72, 52], fishing: [72, 52], manzanillo: [96, 66], bayamo: [96, 66], santiago: [112, 74], habana: [122, 80], bay: [112, 86] };
+  C.gen = gen;
   C.getScene = function (sid) {
     if (C.scenes[sid]) return C.scenes[sid];
     const S = C.SETTLEMENTS[sid]; const sz = SIZES[sid === 'palmarito' ? 'village' : sid === 'cayo' ? 'fishing' : sid === 'alegria' ? 'cane' : sid];

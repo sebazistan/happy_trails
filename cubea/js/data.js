@@ -194,6 +194,7 @@
     armyjeep:{ n: 'Jeep militar', w: 22, h: 12, spd: 175, cap: 4, tank: 40, burn: 0.55, col: [70, 80, 130], hp: 160, wheels: 4, army: true },
     armytruck:{ n: 'Camión militar', w: 36, h: 15, spd: 125, cap: 10, tank: 95, burn: 0.9, col: [60, 90, 130], hp: 260, wheels: 4, army: true },
     oxcart:  { n: 'Carreta de bueyes', w: 24, h: 14, spd: 42, cap: 3, tank: 0, burn: 0, col: [150, 110, 70], hp: 90, wheels: 2 },
+    yacht:   { n: 'Granma', w: 64, h: 22, spd: 48, cap: 99, tank: 0, burn: 0, col: [200, 205, 210], hp: 400, wheels: 0, water: true, deck: true },
     boat:    { n: 'Lancha de pesca', w: 36, h: 14, spd: 78, cap: 6, tank: 40, burn: 0.35, col: [90, 150, 180], hp: 120, wheels: 0, water: true },
   };
 
@@ -258,6 +259,7 @@
   // pos = [lon,lat] used on the island map. pop = size of simulated sample (1 Cubean ~ 100 real people)
   C.SETTLEMENTS = {
     alegria:    { id: 'alegria', name: 'Alegría de Pío', type: 'cane', pop: 0, pos: [-77.62, 19.97], region: 'Oriente', bias: 0, blurb: 'Cane fields near the landing. The army is waiting.' },
+    bay:        { id: 'bay', name: 'The coast of Oriente', type: 'coast', pop: 0, pos: [-77.75, 19.85], region: 'Oriente', bias: 0, blurb: 'The sea approach to the landing.' },
     sierra:     { id: 'sierra', name: 'Sierra Maestra', type: 'sierra', pop: 110, pos: [-76.95, 19.98], region: 'Oriente', bias: 18, blurb: 'Jungle ridges, charcoal-burners, rivers. The only place the army cannot easily reach.' },
     palmarito:  { id: 'palmarito', name: 'Palmarito', type: 'village', pop: 270, pos: [-77.2, 20.15], region: 'Oriente', bias: 6, blurb: 'A foothill batey of cane cutters and tenant farmers (fictional).' },
     cayo:       { id: 'cayo', name: 'Cayo Piedra', type: 'fishing', pop: 150, pos: [-77.35, 19.92], region: 'Oriente', bias: 2, blurb: 'A fishing village on the southern coast (fictional).' },
