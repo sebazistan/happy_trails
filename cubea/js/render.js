@@ -550,6 +550,7 @@
         if (p.covert && a.squad >= -1 && (G.showCovert || a.squad >= 0)) glyph('☺', '#b8ffb0');
         if (a.bleeding) glyph('●', '#ff5a4a');
       }
+      if (a.sbub && !a.bubble) { const by = sp.y - tagSize - 5; ctx.font = '600 ' + Math.max(8, tagSize - 1) + 'px ' + FONT; const tw = ctx.measureText(a.sbub.text).width + 10; ctx.globalAlpha = Math.min(1, a.sbub.t / 0.6); ctx.fillStyle = 'rgba(30,26,22,.88)'; roundRect(ctx, sp.x - tw / 2, by - 8, tw, 14, 6); ctx.fill(); ctx.strokeStyle = C.statusColor(a.sbub.key); ctx.lineWidth = 1.2; ctx.stroke(); ctx.fillStyle = a.sbub.good ? '#9be8a8' : '#f3e6cc'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(a.sbub.text, sp.x, by - 0.5); ctx.globalAlpha = 1; }
       if (a.bubble) { const by = sp.y - tagSize - 5; ctx.font = '600 ' + (tagSize + 1) + 'px ' + FONT; const tw = ctx.measureText(a.bubble.text).width + 12; ctx.fillStyle = 'rgba(255,252,240,.96)'; roundRect(ctx, sp.x - tw / 2, by - 9, tw, 16, 6); ctx.fill(); ctx.strokeStyle = 'rgba(40,30,20,.6)'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = a.bubble.col || '#2a1d14'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(a.bubble.text, sp.x, by - 0.5); }
     }
     // exit labels

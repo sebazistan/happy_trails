@@ -371,6 +371,7 @@
     const kin = (p.kids ? p.kids.length : 0); if (kin && a.side === 'civ') h += `<br><i>${kin} child${kin > 1 ? 'ren' : ''}</i>`;
     if (a.side === 'civ' && a.aw && a.aw.seen && g.time - a.aw.seen.t < 6) h += `<br><i>Has noticed</i> ${esc(a.aw.seen.why)}`;
     if (a.p.wantsJoin !== undefined && g.day - a.p.wantsJoin < 3) h += `<br><span class="st">wants to join you</span>`;
+    if (C.tipExtra) h += C.tipExtra(s, a);
     return h;
   }
   function vehicleTip(v) {

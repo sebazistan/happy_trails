@@ -131,7 +131,7 @@
     const hot = g.hour > 11 && g.hour < 17 ? 1.15 : g.hour < 6 ? 0.8 : 1;
     const belt = haveFault(v, 'belt') ? 0.15 : 1, cool = (1 - (haveFault(v, 'hose') ? 0.85 : 0)) * (c.coolant > 0.2 ? 1 : 0.3) * belt;
     // heat and cooling
-    if (run) c.temp += (TUNE.heatPerSec * (0.3 + sp / d.spd) * (1 + load * 0.6) * (soft ? 1.5 : 1) * hot - TUNE.coolPerSec * (sp / d.spd) * cool) * dt;
+    if (run) c.temp += (TUNE.heatPerSec * (C.engineAmbient ? C.engineAmbient() : 1) * (0.3 + sp / d.spd) * (1 + load * 0.6) * (soft ? 1.5 : 1) * hot - TUNE.coolPerSec * (sp / d.spd) * cool) * dt;
     else if (v.driver || c.temp > 0.3) c.temp -= TUNE.idleCool * (v.hood ? 3 : 1) * (cool > 0.5 ? 1 : 0.6) * dt;
     c.temp = clamp(c.temp, 0.1, 1.2);
     if (haveFault(v, 'hose') && run) c.coolant = Math.max(0, c.coolant - 0.01 * dt);
@@ -147,7 +147,7 @@
     if (c.stall === 'The engine has stalled.') { c.stallT -= dt; v.spd *= 0.95; if (c.stallT <= 0) c.stall = null; }
     // onset of faults
     if (run && !v.ambientSafe) {
-      const rain = g.weather.rain, rough = soft ? 1.8 : 1; const base = TUNE.onset * c.wear * (0.4 + sp / d.spd) * rough * (1 + load) * (1 + rain * 0.5) * dt;
+      const rain = g.weather.rain, rough = soft ? 1.8 : 1; const coldBat = (g.clim && g.clim.temp < 16) ? 1 + (16 - g.clim.temp) * 0.12 : 1; const base = TUNE.onset * c.wear * (0.4 + sp / d.spd) * rough * (1 + load) * (1 + rain * 0.5) * coldBat * dt;
       if (rnd() < base) { const ids = Object.keys(FAULT).filter((k) => FAULT[k].w > 0 && !haveFault(v, k)); let tot = 0; for (const k of ids) tot += FAULT[k].w; let r = rnd() * tot, pickk = null; for (const k of ids) { r -= FAULT[k].w; if (r <= 0) { pickk = k; break; } } if (pickk) { addFault(v, pickk, v.driver); if (pickk === 'belt') c.temp += 0.05; if (pickk === 'spring' || pickk === 'brakes') { /* felt, not seen */ } } }
       if (soft && rain > 0.4 && sp < 60 && rnd() < TUNE.mudChance * dt * 10 * (d.cap > 6 ? 0.6 : 1)) addFault(v, 'stuck', v.driver);
     }
@@ -282,7 +282,7 @@
     const t = C.tileAt(s, v.x, v.y); let mx = d.spd * 0.6 * power(v); if (d.wheels) { if (t === TL.G || t === TL.SAND) mx *= 0.55; else if (t === TL.CANE) mx *= 0.35; else if (t === TL.TRAIL) mx *= 0.8; } if (v.tires.some((q) => q < 0.2)) mx *= 0.5; if (Math.abs(da) > 0.8) mx *= 0.5;
     v.spd = blocked ? Math.max(0, v.spd - 200 * dt) : Math.min(mx, v.spd + 100 * dt);
     const nx = v.x + Math.cos(v.ang) * v.spd * dt, ny = v.y + Math.sin(v.ang) * v.spd * dt; const tt = C.tileAt(s, nx, ny); if (C.TCOST[tt] === 0 || tt === TL.FOR) { v.route = null; v.spd *= 0.3; o.fail = (o.fail || 0) + 1; if (o.fail > 40) { v.order = null; v.spd = 0; C.say(a, 'No hay paso por aquí.', '#7a1d1d', 4); C.log('The driver cannot get through there — too much forest.', 'warn'); } } else { v.x = nx; v.y = ny; }
-    if (d.tank) v.fuel = Math.max(0, v.fuel - d.burn * dt * (0.08 + 0.45 * Math.abs(v.spd) / d.spd) * 0.5);
+    if (d.tank) v.fuel = Math.max(0, v.fuel - d.burn * dt * (0.08 + 0.45 * Math.abs(v.spd) / d.spd) * 0.5 * (C.fuelMod ? C.fuelMod() : 1));
     for (const q of [v.driver].concat(v.pass, v.trunk || [])) if (q) { q.x = v.x; q.y = v.y; }
     return true;
   };

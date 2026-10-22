@@ -235,7 +235,7 @@
     if (mx || my) {
       const l = Math.hypot(mx, my); mx /= l; my /= l;
       let sp = a.speed * (run ? 1.6 : 1) * (a.hide ? 0.5 : 1);
-      const t = C.tileAt(s, a.x, a.y); sp /= (C.TCOST[t] || 1); if (a.p.limp) sp *= 0.72; if (g.weather.rain > 0.3 && (t === TL.G || t === TL.TRAIL)) sp *= 0.9; if (a.p.needs.energy < 20) sp *= 0.8;
+      const t = C.tileAt(s, a.x, a.y); sp /= (C.TCOST[t] || 1); if (C.speedMod) sp *= C.speedMod(a); if (a.p.limp) sp *= 0.72; if (g.weather.rain > 0.3 && (t === TL.G || t === TL.TRAIL)) sp *= 0.9; if (a.p.needs.energy < 20) sp *= 0.8;
       C.stepMove(s, a, mx * sp * dt, my * sp * dt); a.moving = true; a.running = !!run;
       if (Math.abs(mx) > 0.15) a.face = mx > 0 ? 1 : -1;
       if (run) a.p.needs.energy = Math.max(0, a.p.needs.energy - dt * 0.25);
@@ -294,7 +294,7 @@
       return false;
     };
     if (!blocked(nx, ny)) { v.x = nx; v.y = ny; } else { if (g.sea && g.sea.active && g.sea.phase === 'approach' && Math.abs(v.spd) > 10) { C.seaLand(); } if (Math.abs(v.spd) > 70 && !(g.sea && g.sea.active)) { v.hp -= Math.abs(v.spd) * 0.25; C.fx.dust(s, v.x, v.y, 4); g.shake = Math.max(g.shake, 0.3); C.say(a, '¡Cuidado!', '#7a1d1d', 1); } v.spd *= -0.2; }
-    if (def.tank && hasFuel) v.fuel = Math.max(0, v.fuel - def.burn * dt * (0.08 + 0.45 * Math.abs(v.spd) / def.spd) * 0.5);
+    if (def.tank && hasFuel) v.fuel = Math.max(0, v.fuel - def.burn * dt * (0.08 + 0.45 * Math.abs(v.spd) / def.spd) * 0.5 * (C.fuelMod ? C.fuelMod() : 1));
     // off-road tyre risk
     if ((t === TL.G || t === TL.CANE) && Math.abs(v.spd) > 50 && Math.random() < dt * 0.05 && !def.water) { const wi = Math.floor(Math.random() * 4); if (v.tires[wi] > 0.2) { v.tires[wi] = 0.05; C.log('¡Goma ponchada! A tire blew on the rough ground.', 'bad'); } }
     // run over pedestrians
@@ -456,7 +456,7 @@
   // Once per game day: loyalty tick and bonds decay, the layered reveal of interface systems (support meter day 8, factions day 25…), weather, the Director's daily pick, outpost mission check, end conditions.
   function dailyHooks() {
     const g = G();
-    C.dayTick(); C.bondDaily(); if (C.farmDaily) C.farmDaily(); if (C.creedDaily) C.creedDaily();
+    C.dayTick(); C.bondDaily(); if (C.farmDaily) C.farmDaily(); if (C.creedDaily) C.creedDaily(); if (C.climateDaily) C.climateDaily();
     // the layered reveal: systems unlock as the story advances
     { const TH = [[3, 8, 'Locals: peasants remember how you treat them (support meter, loyalty details).'], [4, 25, 'Factions: peasants, workers, students, elites, landowners, the Church and the army are now tracked (⚖ Factions).'], [5, 60, 'Politics: you can now announce a platform (📜 Manifesto). Announced planks become promises.'], [6, 100, 'The island: the cities, the pipeline from Havana, the unions and the students are in play.']];
       for (const [L, d, msg] of TH) if (g.unlocked.layer < L && g.day >= d) { g.unlocked.layer = L; C.log('NEW SYSTEM — ' + msg, 'good'); C.ui.toast('New system unlocked'); C.ui.refresh(); } }
@@ -495,6 +495,7 @@
     if (C.huntTick) C.huntTick(s, g.min - prevMin);   // meat rots, snares fire (hunting.js)
     if (C.campTick) C.campTick(s, g.min - prevMin);   // camp life: hourly consequences of what is on the ground (camp.js)
     if (g.day !== prevDay) { dailyHooks(); }
+    if (C.climateTick) C.climateTick(s, dt);          // temperature and feels-like (climate.js)
     // weather
     const w = g.weather; w.t -= dt / 60; if (w.t <= 0) w.target = Math.max(0, w.target - dt * 0.01); w.rain += (w.target - w.rain) * Math.min(1, dt * 0.2);
     // resting

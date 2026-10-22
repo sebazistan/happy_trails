@@ -114,7 +114,7 @@
     // 2. fires: burn fuel; out when the wood is gone; daylight smoke is a security problem
     for (const f of C.thingsOf(s, 'fire')) if (f.d.lit) {
       if ((g.res.lena || 0) < TUNE.fuelPerHour) { f.d.lit = false; say('The fire dies — no firewood left.', 'warn'); continue; }
-      g.res.lena -= TUNE.fuelPerHour; f.d.hours = (f.d.hours || 0) + 1;
+      g.res.lena -= TUNE.fuelPerHour * (g.clim && g.clim.temp < 18 ? 1.5 : 1);   // a cold night eats the woodpile f.d.hours = (f.d.hours || 0) + 1;
       if (h >= 7 && h < 18) { g.regime.heat = Math.min(100, g.regime.heat + TUNE.smokeHeat); if (!f.d.smokeTold) { f.d.smokeTold = 1; say('Smoke over the canopy in daylight — the army will see it. Cook before dawn, or after dark.', 'warn'); } }
       else f.d.smokeTold = 0;
       if (f.d.hours >= 2) { f.d.lit = false; f.d.hours = 0; for (const a of ppl) a.p.needs.hope = clamp(a.p.needs.hope + 1.2, 0, 100); say('A hot meal finishes — the camp is easier for it.', 'good'); }

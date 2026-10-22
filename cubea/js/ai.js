@@ -240,7 +240,7 @@
   }
   C.stepMove = stepMove;
   // Speed multiplier from terrain cost, limp, rain on soft ground, low energy and the actor's load (a.loadK from inventory.js).
-  function terrainSpeed(s, a) { const t = C.tileAt(s, a.x, a.y); let k = 1 / (C.TCOST[t] || 1); if (a.p.limp) k *= 0.72; if (a.prone || a.hide) k *= 0.55; if (G().weather.rain > 0.3 && (t === TL.G || t === TL.TRAIL)) k *= 0.88; if (a.p.needs.energy < 20) k *= 0.8; if (a.loadK) k *= a.loadK; return clamp(k, 0.35, 1.5); }
+  function terrainSpeed(s, a) { const t = C.tileAt(s, a.x, a.y); let k = 1 / (C.TCOST[t] || 1); if (a.p.limp) k *= 0.72; if (a.prone || a.hide) k *= 0.55; if (G().weather.rain > 0.3 && (t === TL.G || t === TL.TRAIL)) k *= 0.88; if (a.p.needs.energy < 20) k *= 0.8; if (a.loadK) k *= a.loadK; if (C.speedMod) k *= C.speedMod(a); return clamp(k, 0.1, 1.5); }
 
   // Show a speech bubble (translated by the lexicon for the current Spanish level).
   C.say = function (a, text, col, dur) { a.bubble = { text: C.phrase(text), col, t: dur || 2.6 }; };
@@ -269,6 +269,7 @@
     if (tgt.shooting > 0) r *= 1.4;
     r *= 1 - 0.85 * tgt.camo;
     r *= 0.8 + 0.4 * clamp(viewer.p.exp / 60, 0, 1);
+    if (C.alertMod) r *= C.alertMod(viewer);                    // sleepy, cold or overheated watchers see less (climate.js)
     return r;
   }
   C.detectRange = detectRange;
@@ -376,6 +377,7 @@
     const tt = C.tileAt(s, a.x, a.y); if ((tt === TL.SHAL) && n.water < 95) n.water = Math.min(100, n.water + 0.9 * gm);
     // personal inventory: eat, drink, share, ration discipline (inventory.js)
     if (C.invTick) C.invTick(s, a, dt);
+    if (C.bodyTick) C.bodyTick(s, a, dt, gm);                      // heat, cold, wet, feet, mood; status words (climate.js)
     p.stress = Math.max(0, p.stress - 0.02 * gm); p.anger = Math.max(0, p.anger - 0.02 * gm); p.fear = Math.max(p.fearBase || 0, p.fear - 0.03 * gm);
     // bleeding
     if (p.bleed > 0 && !a.dead) { p.hp -= p.bleed * dt * 0.9; p.bleed = Math.max(0, p.bleed - dt * 0.0015); a.bleeding = true; a.hurtT = 1; if (Math.random() < dt * 3) s.decals.push({ k: 'blood', x: a.x, y: a.y, r: 1.4 + Math.random() * 1.5, a: 0.5, rot: Math.random() * 6, t0: g().time, fade: 600 }); if (p.hp <= 0) C.die(a, a.lastAttacker, 'bleeding'); } else a.bleeding = false;
@@ -488,7 +490,7 @@
         if (a.path && b.moveT > 0.4) followPath(s, a, dt, a.speed * 0.7);
       }
       if (d < w.rng && a.suppressed < 2.5 || d < 60) C.tryFire(s, a, tgt.x, tgt.y - 8);
-      if (a.weapon && a.weapon.mag <= 0 && a.reload <= 0) { if (a.weapon.spare === undefined || a.weapon.spare > 0) a.reload = w.rel; else if (Math.random() < 0.5) { b.mode = 'retreat'; } }
+      if (a.weapon && a.weapon.mag <= 0 && a.reload <= 0) { if (a.weapon.spare === undefined || a.weapon.spare > 0) a.reload = w.rel * (C.reloadMod ? C.reloadMod(a) : 1); else if (Math.random() < 0.5) { b.mode = 'retreat'; } }
     } else if (b.mode === 'search') {
       b.searchT -= dt; if (b.searchT <= 0) { b.mode = 'patrol'; a.weaponOut = a.weaponOut; }
       b.moveT = (b.moveT || 0) - dt; if (b.moveT <= 0) { b.moveT = 3; setPath(s, a, b.lastX + (Math.random() - 0.5) * 120, b.lastY + (Math.random() - 0.5) * 120); }

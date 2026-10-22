@@ -64,7 +64,7 @@
   // Accuracy 0.05–0.95 from experience (0.12 + 0.78·exp), the veteran trait, less stress, a hurt arm and exhaustion.
   C.accuracyOf = function (a) {
     const p = a.p;
-    return clamp(0.12 + p.exp / 100 * 0.78 + (p.traits.includes('veteran') ? 0.08 : 0) - p.stress / 400 - (p.armHurt ? 0.12 : 0) - (p.needs.energy < 25 ? 0.08 : 0), 0.05, 0.98);
+    return clamp((0.12 + p.exp / 100 * 0.78 + (p.traits.includes('veteran') ? 0.08 : 0) - p.stress / 400 - (p.armHurt ? 0.12 : 0) - (p.needs.energy < 25 ? 0.08 : 0)) * (C.accMod ? C.accMod(a) : 1), 0.04, 0.98);
   };
   let lastNoise = 0;
   // Fire the actor's weapon at a point if ready. Handles melee, crew-served weapons (cannot be fired directly) and launchers. Spends a round, sets cooldown/muzzle flash/exposure, computes spread = weapon spread × (1 + movement + stress − prone) × (1.65 − 1.15·accuracy), spawns one bullet (or pellets), adds noise (alerts soldiers and scares animals) and sets combat time for the player's side.
@@ -74,11 +74,11 @@
     if (w.melee) return meleeAttack(s, a, tx, ty);
     if (w.crew) return false;                       // mortars are fired by the 'mortar' order, never directly
     if (w.launcher) return fireRocket(s, a, tx, ty, w);
-    if (a.weapon.mag <= 0) { if (a.weapon.spare === undefined || a.weapon.spare > 0) a.reload = w.rel; else { a.cd = 0.6; C.say(a, '¡Sin balas!', '#7a1d1d', 1.6); } return false; }
+    if (a.weapon.mag <= 0) { if (a.weapon.spare === undefined || a.weapon.spare > 0) a.reload = w.rel * (C.reloadMod ? C.reloadMod(a) : 1); else { a.cd = 0.6; C.say(a, '¡Sin balas!', '#7a1d1d', 1.6); } return false; }
     a.weapon.mag--; a.cd = (1 / w.rof) * (0.92 + Math.random() * 0.16); a.muzzle = 0.07; a.shooting = 0.8; a.exposed = 6;
     const acc = C.accuracyOf(a) * (bonus || 1);
     const dist = Math.hypot(tx - a.x, ty - a.y);
-    let spread = w.spr * (1 + (a.moving ? 0.6 : 0) + a.p.stress / 160 + (a.suppressed > 0 ? 0.6 : 0) - (a.prone ? 0.25 : 0)) * (1.65 - 1.15 * clamp(acc, 0, 1));
+    let spread = w.spr * (1 + (a.moving ? 0.6 : 0) + a.p.stress / 160 + (a.suppressed > 0 ? 0.6 : 0) - (a.prone ? 0.25 : 0)) * (1.65 - 1.15 * clamp(acc, 0, 1)) * (C.spreadMod ? C.spreadMod(a) : 1);
     const aim = Math.atan2(ty - (a.y - 9), tx - a.x);
     a.aim = aim;
     const n = w.pellets || 1;
