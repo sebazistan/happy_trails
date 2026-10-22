@@ -228,6 +228,7 @@
   function playerUpdate(dt) {
     const g = G(), s = g.scene, a = g.player; if (!a || a.dead) return;
     if (g.sea && g.sea.active && g.sea.phase === 'cross') { C.deckMove(dt, (keys.d || keys.ArrowRight ? 1 : 0) - (keys.a || keys.ArrowLeft ? 1 : 0), (keys.s || keys.ArrowDown ? 1 : 0) - (keys.w || keys.ArrowUp ? 1 : 0)); a.aim = Math.atan2(mouse.wy - (a.y - 9), mouse.wx - a.x); return; }
+    if (g.riding) { const rv = g.riding; if (rv.wreck || rv.gone || a.inVeh !== rv) g.riding = null; else { a.x = rv.x; a.y = rv.y; a.moving = false; g.cam.x = rv.x; g.cam.y = rv.y; return; } }   // a passenger in a vehicle someone else drives
     if (g.vehicle) { drive(dt); return; }
     let mx = (keys.d || keys.ArrowRight ? 1 : 0) - (keys.a || keys.ArrowLeft ? 1 : 0), my = (keys.s || keys.ArrowDown ? 1 : 0) - (keys.w || keys.ArrowUp ? 1 : 0);
     const run = keys.Shift && a.p.needs.energy > 4 && !a.hide;
@@ -278,7 +279,9 @@
     const hasFuel = def.tank === 0 || v.fuel > 0.05;
     if (!hasFuel && !v.warnedFuel) { C.log('The tank is empty.', 'bad'); v.warnedFuel = true; }
     if (hasFuel) v.warnedFuel = false;
-    if (up && hasFuel && v.engine > 0.05) v.spd = Math.min(maxSp, v.spd + def.spd * 0.9 * dt);
+    const why = C.vehBlocked ? C.vehBlocked(v) : null; if (why && up && g.time - (v.toldAt || -9) > 3) { v.toldAt = g.time; C.ui.toast(why); }
+    if (C.vehPower) maxSp *= Math.max(0.05, C.vehPower(v));
+    if (up && hasFuel && !why && v.engine > 0.05) v.spd = Math.min(maxSp, v.spd + def.spd * 0.9 * dt);
     else if (dn) v.spd = Math.max(-maxSp * 0.35, v.spd - def.spd * 1.3 * dt);
     else v.spd *= (1 - 1.6 * dt);
     if (Math.abs(v.spd) > maxSp) v.spd *= (1 - 3 * dt);
@@ -345,6 +348,7 @@
   C.commandAt = function (wx, wy, shift) {
     const g = G(), s = g.scene; if (g.paused) { C.ui.toast('No orders while paused — time is part of the pressure'); return; }
     if (g.rec && g.rec.on && C.recGoto) { C.recGoto(wx, wy); return; }   // recording an action: the click is a step
+    if (C.vehOrder && C.vehOrder(wx, wy)) return;                         // a selected driver: the vehicle goes there (garage.js)
     if (g.cmd.pending) { if (g.cmd.pending.pts && g.cmd.pending.pts.length) C.cmdFinish(); else C.cmdCancel(); return; }
     let tgt = null, bd = 16; for (const a of s.actors) { if (a.side !== 'army' || a.dead || a.inside || !C.visible(a)) continue; const d = Math.hypot(a.x - wx, a.y - 8 - wy); if (d < bd) { bd = d; tgt = a; } }
     if (tgt) { C.selActors().forEach((a) => { a.p.focusT = g.time; }); const sq = g.squads[g.curSquad]; if (sq) sq.focus = tgt; C.issue({ type: 'focus', tgt, x: tgt.x, y: tgt.y }); return; }
@@ -578,6 +582,7 @@
   function doInteract() {
     const g = G(); const pl = g.player; if (!pl || pl.dead) return;
     if (g.sea && g.sea.active) { if (g.sea.phase === 'approach') C.seaLand(); else { const t = C.findInteract(); if (t) C.ui.interact(t); } return; }
+    if (g.riding) { C.exitVehicle(pl, false); g.riding = null; return; }
     if (g.vehicle) { C.leaveVehicle(); g.vehicle = null; return; }
     const t = C.findInteract(); if (!t) { C.ui.toast('Nothing to use here'); return; }
     C.ui.interact(t);

@@ -367,6 +367,7 @@
   function drawVehicle(c, v, t) {
     const d = v.def; const w = d.w, h = d.h;
     c.save(); c.translate(v.x, v.y); c.rotate(v.ang);
+    if (C.drawVehiclePeriod && !d.water && C.drawVehiclePeriod(c, v, t)) { c.restore(); return; }   // period models (garage.js)
     c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(-w / 2 + 2, -h / 2 + 3, w, h);
     if (d.water) {
       c.fillStyle = 'rgb(240,240,236)'; c.beginPath(); c.moveTo(w / 2, 0); c.lineTo(w / 2 - 8, -h / 2); c.lineTo(-w / 2, -h / 2); c.lineTo(-w / 2, h / 2); c.lineTo(w / 2 - 8, h / 2); c.closePath(); c.fill();

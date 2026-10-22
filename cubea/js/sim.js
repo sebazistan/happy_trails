@@ -30,7 +30,7 @@
         { id: 3, name: 'Sanidad', col: '#7fd07a', members: [], stance: 'follow', fireNow: false },
       ],
       curSquad: 0, sel: [], cmd: { pending: null, tab: 'move', vol: 0 }, hygiene: 70,
-      res: { food: 24, money: 140, ammo: 60, guns: 1, shell: 0, rocket: 0, hoe: 2, axe: 1, seed: 8, bucket: 2, feed: 6, lena: 10, stake: 8, hammock: 8, primer: 4, snare: 4, line: 3, med: 5, fuel: 12, gren: 3, dyn: 0, pamph: 0, vales: 0, cloth: 6, scrap: 8 },
+      res: { food: 24, money: 140, ammo: 60, guns: 1, shell: 0, rocket: 0, hoe: 2, axe: 1, seed: 8, bucket: 2, feed: 6, lena: 10, stake: 8, hammock: 8, primer: 4, snare: 4, line: 3, tools: 1, patch: 2, hose: 1, belt: 1, plug: 4, battery: 0, tire: 1, med: 5, fuel: 12, gren: 3, dyn: 0, pamph: 0, vales: 0, cloth: 6, scrap: 8 },
       policy: { forage: 'pay' },
       platform: { pub: [0, 0, 0, 0, 0, 0, 0, 0], real: [0, 0, 0, 0, 0, 0, 0, 0], declared: [false, false, false, false, false, false, false, false], dayDeclared: [-1, -1, -1, -1, -1, -1, -1, -1] },
       deeds: [0, 0, 0, 0, 0, 0, 0, 0], promises: [],

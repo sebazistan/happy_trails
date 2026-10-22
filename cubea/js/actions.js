@@ -246,7 +246,7 @@
   const need = (k, why) => (a) => (has(a, k) ? null : why);
   C.TAKEABLE = {
     barbacoa: [['food', 2, 'rations'], ['food', 6, 'rations'], ['seed', 4, 'seed'], ['feed', 2, 'pig feed'], ['med', 1, 'medicine']],
-    toolrack: [['hoe', 1, 'a hoe'], ['axe', 1, 'an axe'], ['bucket', 1, 'a bucket'], ['stake', 4, 'stakes'], ['hammock', 1, 'a hammock'], ['primer', 1, 'a primer'], ['snare', 2, 'snares'], ['line', 1, 'a fishing line']],
+    toolrack: [['hoe', 1, 'a hoe'], ['axe', 1, 'an axe'], ['bucket', 1, 'a bucket'], ['stake', 4, 'stakes'], ['hammock', 1, 'a hammock'], ['primer', 1, 'a primer'], ['snare', 2, 'snares'], ['line', 1, 'a fishing line'], ['tools', 1, 'the tool kit'], ['patch', 1, 'a patch kit'], ['hose', 1, 'a radiator hose'], ['belt', 1, 'a fan belt'], ['plug', 2, 'spark plugs'], ['tire', 1, 'the spare tire']],
     woodpile: [['lena', 2, 'firewood']],
   };
   const THING_CAN_TAKE = Object.keys(C.TAKEABLE).map((k) => 'thing:' + k);
@@ -259,7 +259,7 @@
   });
   C.registerVerb({
     id: 'put', n: 'Put away', icon: '📥', kinds: ['thing:barbacoa', 'thing:woodpile', 'thing:toolrack'], reach: 16, dur: 2,
-    variants: (tg) => { const acc = { barbacoa: ['food', 'seed', 'feed', 'med'], woodpile: ['lena'], toolrack: ['hoe', 'axe', 'bucket', 'stake', 'hammock', 'primer', 'snare', 'line'] }[tg.tk] || []; return acc.map((item) => ({ param: { item }, label: `Put away ${C.ITEMS[item].n.toLowerCase()}` })); },
+    variants: (tg) => { const acc = { barbacoa: ['food', 'seed', 'feed', 'med'], woodpile: ['lena'], toolrack: ['hoe', 'axe', 'bucket', 'stake', 'hammock', 'primer', 'snare', 'line', 'tools', 'patch', 'hose', 'belt', 'plug', 'tire'] }[tg.tk] || []; return acc.map((item) => ({ param: { item }, label: `Put away ${C.ITEMS[item].n.toLowerCase()}` })); },
     check: (a, tg, p) => (p && !has(a, p.item) ? `Nothing to put away (${C.ITEMS[p.item].n})` : null),
     done: (a, tg, p) => { C.transfer({ kind: 'person', p: a.p }, { kind: 'stores' }, p.item, 999); return null; },
   });

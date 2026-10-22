@@ -730,8 +730,11 @@
       if (v.burning > 0) { v.burning -= dt; if (Math.random() < dt * 10) C.fx.smoke(s, v.x + (Math.random() - 0.5) * 10, v.y - 4, 'fire'); if (Math.random() < dt * 6) C.fx.smoke(s, v.x, v.y - 8, 'smoke'); v.hp -= dt * 8; if (v.hp <= 0 && !v.wreck) C.wreckVehicle(s, v); }
       else if (v.wreck && Math.random() < dt * 1.5) C.fx.smoke(s, v.x, v.y - 6, 'smoke');
       if (v.wreck) continue;
+      if (C.vehTick) C.vehTick(s, v, dt);                // temperature, faults, steam (garage.js)
+      if (v.order && v.driver && !v.driver.isPlayer && C.vehDrive && C.vehDrive(s, v, dt)) continue;   // an ordered drive
       if (v.driver && v.driver.isPlayer) continue;      // main.js drives it
       if (v.driving && !v.driver) { // ambient traffic
+        v.ambient = true; if (C.vehBlocked && C.vehBlocked(v)) { v.spd *= 0.9; continue; }
         if (v.fuel <= 0.5 || v.tires.some((q) => q < 0.2)) { v.spd *= 0.9; continue; }
         v.wait -= dt; if (v.wait > 0) continue;
         if (!v.route || v.ri >= v.route.length) { const q = s.randomFree([TL.ROAD, TL.PAVED]); const r = C.findPath(s, v.x, v.y, q.x * T + 8, q.y * T + 8, 'car'); if (!r) { v.wait = 5; continue; } v.route = r; v.ri = 0; }
@@ -746,7 +749,7 @@
     }
   }
   // Passengers ride with their vehicle (hidden).
-  function updateInVehicle(s, a, dt) { const v = a.inVeh; a.x = v.x; a.y = v.y; a.inside = false; a.hiddenInVeh = true; a.alpha = 0; a.moving = false; }
+  function updateInVehicle(s, a, dt) { const v = a.inVeh; a.x = v.x; a.y = v.y; a.inside = false; a.hiddenInVeh = true; a.alpha = a.isPlayer ? 1 : 0; a.moving = false; }
   C.updateInVehicleFlag = function (a) { return a.inVeh ? true : false; };
 
   // Wreck a vehicle: it burns, explodes, and throws out its occupants hurt.
