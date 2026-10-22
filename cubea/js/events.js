@@ -466,8 +466,31 @@
       { label: 'Execute all prisoners', sub: 'Brutal. Every family hears of it.', fn: () => { applyLoot(r); C.adjustRep('fear', 20); C.adjustRep('justice', -24); g.stats.executed += r.pris; g.stats.killedArmy += r.pris; for (let i = 0; i < Math.min(r.pris, 4); i++) memoryAll('manzanillo', { type: 'massacre', perpSide: 'rebel', text: `Rebels shot prisoners after ${name}`, memText: 'The rebels shot prisoners', headline: `Rebels accused of killing prisoners after ${name}` }, -1, 75, 1); } },
     ] : [{ label: 'Withdraw to the mountain', fn: () => { } }] });
   }
-  function applyLoot(r) { const g = G(); g.res.ammo += r.loot.ammo; g.res.med += r.loot.med; g.res.food += r.loot.food; g.res.guns += r.loot.guns; }
+  // Spoils of a won action. Besides rifles, a good haul can include heavy weapons — each is a tactical change AND a
+  // political one (arming a novice with a bazooka divides the veterans, see C.resentment).
+  function applyLoot(r) {
+    const g = G(); g.heavy = g.heavy || {};
+    g.res.ammo += r.loot.ammo; g.res.med += r.loot.med; g.res.food += r.loot.food; g.res.guns += r.loot.guns;
+    const big = r.loot.guns >= 3 ? 1 : 0.5;                       // bigger garrisons hold more heavy kit
+    const got = [];
+    if (Math.random() < 0.30 * big) { g.heavy.bar = (g.heavy.bar || 0) + 1; got.push('a BAR'); }
+    if (Math.random() < 0.18 * big) { g.heavy.mortar = (g.heavy.mortar || 0) + 1; g.res.shell += 4 + Math.floor(Math.random() * 5); got.push('a 60 mm mortar with shells'); }
+    if (Math.random() < 0.15 * big) { g.heavy.bazooka = (g.heavy.bazooka || 0) + 1; g.res.rocket += 2 + Math.floor(Math.random() * 3); got.push('a bazooka with rockets'); }
+    if (Math.random() < 0.12 * big) { g.heavy.mg = (g.heavy.mg || 0) + 1; got.push('a machine gun'); }
+    if (got.length) C.log('Among the spoils: ' + got.join(', ') + '.', 'good');
+  }
   C.showBattle = showBattle;
+
+  // ---------- an arms dealer: the weapons you cannot capture, you can buy (Havana money, Miami contacts, Mexican smugglers) ----------
+  def({ id: 'arms_dealer', cat: 'lifeline', t: 2, cd: 45, layer: 3, w: (g) => (g.day > 70 && g.res.money > 120 ? 1.6 : 0), run: (g) => {
+    g.heavy = g.heavy || {}; const price = { carbines: 150, bar: 170, mortar: 230, bazooka: 280 };
+    return card({ title: 'A man with a boat and a catalogue', icon: '🔫', body: 'A smuggler who has run guns for three governments offers what he has this week — Cuban pesos only, no questions, delivered to the coast by night. The army will be curious where it came from.', choices: [
+      { label: `Four M1 carbines and 120 rounds (${price.carbines} pesos)`, sub: 'Light, handy, good for women and boys who cannot carry a Springfield', disabled: g.res.money < price.carbines, fn: () => { g.res.money -= price.carbines; g.res.guns += 4; g.res.ammo += 120; g.regime.heat += 1; } },
+      { label: `A Browning automatic rifle (BAR) and 100 rounds (${price.bar} pesos)`, sub: 'Heavy but devastating at 400 m', disabled: g.res.money < price.bar, fn: () => { g.res.money -= price.bar; g.heavy.bar = (g.heavy.bar || 0) + 1; g.res.ammo += 100; g.regime.heat += 1; } },
+      { label: `A 60 mm mortar and 8 shells (${price.mortar} pesos)`, sub: 'Needs a crew; shells are heavy', disabled: g.res.money < price.mortar, fn: () => { g.res.money -= price.mortar; g.heavy.mortar = (g.heavy.mortar || 0) + 1; g.res.shell += 8; g.regime.heat += 2; } },
+      { label: `A bazooka and 3 rockets (${price.bazooka} pesos)`, sub: 'Stops a truck. Do not stand behind it.', disabled: g.res.money < price.bazooka, fn: () => { g.res.money -= price.bazooka; g.heavy.bazooka = (g.heavy.bazooka || 0) + 1; g.res.rocket += 3; g.regime.heat += 2; } },
+      { label: 'Not this week', fn: () => { } },
+    ] }); } });
 
   C.story.defs = E; C.story.anchors = A;
 

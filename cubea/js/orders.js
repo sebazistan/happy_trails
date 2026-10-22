@@ -28,12 +28,27 @@
     carry:   { tab: 'camp',  n: 'Carry supplies',  need: 'point', danger: 0.3, d: 'Collect what lies on the ground near a place and bring it to the camp.' },
     build:   { tab: 'camp',  n: 'Build (labour)',  need: 'pad',   danger: 0.1, work: 15, d: 'Help raise a structure: each worker cuts its cost.' },
     rest:    { tab: 'camp',  n: 'Rest',            need: 'point', danger: 0.1, work: 22, d: 'Sleep where you are told: energy and health back.' },
+    // Crew-served mortar: the person carrying the tube deploys (6 s), then lobs shells at the clicked point every ~3 s while shells last.
+    // Everyone else in the selection becomes the crew: they stay close and hand shells to the gunner.
+    mortar:  { tab: 'fight', n: 'Mortar fire',     need: 'point', danger: 0.15, d: 'The mortar team lobs shells at a point (needs the tube and shells; spotter sight helps; friendly fire is real).' },
     treat:   { tab: 'camp',  n: 'Treat wounded',   need: 'none',  danger: 0.2, d: 'Bandage the wounded (uses medicine).' },
     help:    { tab: 'people', n: 'Help a peasant', need: 'none',  danger: 0.1, work: 18, d: 'Work a peasant\'s plot. They remember.' },
     feed:    { tab: 'people', n: 'Feed livestock', need: 'none',  danger: 0.1, work: 8,  d: 'Tend the animals. Small goodwill.' },
     forage:  { tab: 'people', n: 'Forage',         need: 'none',  danger: 0.2, d: 'Gather food nearby under your pay/vale/take policy.' },
   };
-  C.ORDER_TABS = [['move', 'Move'], ['fight', 'Fight'], ['recon', 'Recon'], ['camp', 'Camp'], ['people', 'People']];
+  // Supply orders are *instant*: they set a standing ration allowance on each selected person (p.rat). They are
+  // not obeyed blindly — see breakRestriction() in inventory.js: hunger, thirst, low loyalty and low trust make people cheat.
+  const setRat = (f, w) => (ids) => { C.setRation(ids, f, w); C.ui.toast(`${ids.length} on ${f !== null ? 'food ' + ['none', 'half', 'full'][f === 0 ? 0 : f === 0.5 ? 1 : 2] : ''}${f !== null && w !== null ? ', ' : ''}${w !== null ? 'water ' + ['none', 'sparing', 'free'][w === 0 ? 0 : w === 0.5 ? 1 : 2] : ''}`); };
+  Object.assign(C.ORDERS, {
+    food_full: { tab: 'supply', n: 'Food: full',     need: 'none', danger: 0, instant: setRat(1, null),   d: 'Eat whenever hungry.' },
+    food_half: { tab: 'supply', n: 'Food: half',     need: 'none', danger: 0, instant: setRat(0.5, null), d: 'Eat only when quite hungry, half portions.' },
+    food_none: { tab: 'supply', n: 'Food: none',     need: 'none', danger: 0, instant: setRat(0, null),   d: 'Do not eat. Hungry people will disobey.' },
+    water_full:{ tab: 'supply', n: 'Water: free',    need: 'none', danger: 0, instant: setRat(null, 1),   d: 'Drink whenever thirsty.' },
+    water_half:{ tab: 'supply', n: 'Water: sparing', need: 'none', danger: 0, instant: setRat(null, 0.5), d: 'Drink only when quite thirsty.' },
+    water_none:{ tab: 'supply', n: 'Water: none',    need: 'none', danger: 0, instant: setRat(null, 0),   d: 'No drinking (e.g. while hiding). Thirsty people will disobey.' },
+    share_out: { tab: 'supply', n: 'Share out',      need: 'none', danger: 0, instant: (ids) => C.pool(ids), d: 'Pool food and water among the selected and deal it out evenly.' },
+  });
+  C.ORDER_TABS = [['move', 'Move'], ['fight', 'Fight'], ['recon', 'Recon'], ['camp', 'Camp'], ['people', 'People'], ['supply', 'Supply']];
 
   // ---------------------------------------------------------------- selection & groups
   C.selIds = function () {
@@ -124,6 +139,7 @@
     opt = opt || {}; const g = G(), s = g.scene; if (!s) return;
     if (g.paused) { toast('No orders while paused — time is part of the pressure'); return; }
     const def = C.ORDERS[order.type]; if (!def) return;
+    if (def.instant) { def.instant(C.selIds()); return; }   // supply orders: no walking, no danger
     let acts = C.selActors(); if (!acts.length) { toast('Nobody is selected (click a squad or Ctrl-drag a box)'); return; }
     // volunteers
     if (g.cmd && g.cmd.vol > 0 && !opt.volDone && def.danger > 0.15 && order.type !== 'follow') {
@@ -249,6 +265,7 @@
         a.target = t; if (Math.hypot(t.x - a.x, t.y - a.y) > (a.weapon ? C.WEAPONS[a.weapon.k].rng * 0.8 : 60)) { goto(s, a, o, t.x, t.y, dt, 1); return false; }
         a.moving = false; return false;
       }
+      case 'mortar': return runMortar(s, a, o, dt, lead, tgt);
       case 'ambush': case 'watch': case 'hold': case 'guard': {
         const sneaky = o.type === 'ambush' || o.type === 'watch';
         a.hide = sneaky; if (goto(s, a, o, o.x, o.y, dt, sneaky ? 0.7 : 1)) { a.stanceOv = o.type === 'hold' || o.type === 'guard' ? 'hold' : 'ambush'; a.watching = o.type === 'watch' || o.type === 'guard'; a.face = lead && lead.x < a.x ? -1 : 1; endOrder(a, true); }
@@ -296,7 +313,7 @@
         if (!o.pt || o.pt.p.status !== 'alive' || (o.pt.p.hp >= o.pt.p.maxHp * 0.8 && !o.pt.p.bleed)) { o.pt = nearest(s.actors.filter((q) => q.side === 'rebel' || q.isPlayer), a, (q) => q !== a && !q.dead && (q.p.hp < q.p.maxHp * 0.75 || q.p.bleed > 0)); o.w = 0; if (!o.pt) { endOrder(a); return false; } }
         if (g.res.med < 1) { C.log('No medicine left to treat anyone.', 'warn'); endOrder(a); return false; }
         if (Math.hypot(o.pt.x - a.x, o.pt.y - a.y) > 14) { goto(s, a, o, o.pt.x, o.pt.y, dt, 1.1); return true; }
-        a.moving = false; a.working = true; o.w += dt; if (o.w > 5) { g.res.med--; const q = o.pt.p; q.hp = Math.min(q.maxHp, q.hp + 28); q.bleed = 0; if (q.cracks) q.cracks.forEach((c) => (c.l -= 0.4)); C.say(a, 'Ya está', '#1d4a1d', 2); o.w = 0; o.pt = null; a.working = false; }
+        a.moving = false; a.working = true; o.w += dt; if (o.w > 5) { g.res.med--; const q = o.pt.p; q.hp = Math.min(q.maxHp, q.hp + 28); q.bleed = 0; C.bondEvent(p, q, 'treated'); if (q.cracks) q.cracks.forEach((c) => (c.l -= 0.4)); C.say(a, 'Ya está', '#1d4a1d', 2); o.w = 0; o.pt = null; a.working = false; }
         return true;
       }
       case 'help': case 'feed': {
@@ -313,6 +330,49 @@
       default: endOrder(a); return false;
     }
   };
+
+  // ---- mortar crew behaviour ------------------------------------------------------------------------------------------------
+  // Gunner (weapon.k === 'mortar'): walk into range -> deploy 6 s -> fire a shell every 3 s -> pack up 4 s.
+  // Crew (anyone else): stay near the gunner and top up his shells from their own packs.
+  // Accuracy: error radius = 14 + 0.06·distance + (no spotter on target ? 36 : 0) − 0.12·experience.
+  function runMortar(s, a, o, dt, lead, tgt) {
+    const g = G(), p = a.p;
+    const gunner = a.weapon && a.weapon.k === 'mortar';
+    if (!gunner) {
+      // a crewman: shadow the nearest gunner and hand over shells
+      const gun = s.actors.find((q) => !q.dead && q.weapon && q.weapon.k === 'mortar' && q.order && q.order.type === 'mortar');
+      if (!gun) { endOrder(a); return false; }
+      if (Math.hypot(gun.x - a.x, gun.y - a.y) > 26) { goto(s, a, o, gun.x + 10, gun.y + 8, dt, 1); return true; }
+      a.moving = false; a.working = true;
+      C.initInv(p); C.initInv(gun.p);
+      if ((p.inv.shell || 0) > 0 && (gun.p.inv.shell || 0) < 2) { C.give(p, gun.p, 'shell', 1); }
+      return true;
+    }
+    C.initInv(p); const W = C.WEAPONS.mortar;
+    const dist = Math.hypot(o.x - a.x, o.y - a.y);
+    if (o.phase === 'go') {
+      if (dist < 90) { // too close: back away along the line from the target
+        const k = 110 / Math.max(1, dist); goto(s, a, o, a.x + (a.x - o.x) * k * 0.3, a.y + (a.y - o.y) * k * 0.3, dt, 0.9); return true; }
+      if (dist > W.rng) { goto(s, a, o, a.x + (o.x - a.x) * 0.2, a.y + (o.y - a.y) * 0.2, dt, 1); return true; }
+      o.phase = 'setup'; o.w = 0; o.shots = 0; return true;
+    }
+    a.moving = false; a.working = true; o.w += dt;
+    if (o.phase === 'setup') { if (o.w >= 6) { o.phase = 'fire'; o.w = 3; C.say(a, 'Listo el mortero', '#1d4a1d', 2); } return true; }
+    if (o.phase === 'fire') {
+      if (o.w >= 3) {
+        if ((p.inv.shell || 0) <= 0) { C.say(a, '¡Sin granadas!', '#7a1d1d', 2); o.phase = 'pack'; o.w = 0; return true; }
+        o.w = 0; p.inv.shell--; o.shots++;
+        const spotted = C.pointSeen(o.x, o.y); const err = clamp(14 + 0.06 * dist + (spotted ? 0 : 36) - 0.12 * p.exp, 8, 90);
+        const ang = Math.random() * 6.283, r = Math.random() * err; const ix = o.x + Math.cos(ang) * r, iy = o.y + Math.sin(ang) * r;
+        C.mortar(s, ix, iy, 1.9 + dist / 500);
+        C.snd && C.snd.shot(3, a.x, a.y, a.side); a.shooting = 0.6; a.muzzle = 0.1; a.exposed = 8; g.combatT = 8; C.fx.smoke(s, a.x, a.y - 6, 'smoke');
+        if (o.shots >= (o.n || 6)) { o.phase = 'pack'; o.w = 0; }
+      }
+      return true;
+    }
+    if (o.phase === 'pack') { if (o.w >= 4) { a.working = false; endOrder(a); } return true; }
+    return true;
+  }
 
   // foxhole cover (used by combat.hurt)
   C.inFoxhole = function (a) { const s = a.scene; if (!s || !s.foxholes) return false; for (const f of s.foxholes) if (Math.abs(f.x - a.x) < 9 && Math.abs(f.y - a.y) < 9) return true; return false; };

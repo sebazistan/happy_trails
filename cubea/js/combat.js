@@ -63,6 +63,8 @@
     if (a.dead || !a.weapon || a.cd > 0 || a.reload > 0) return false;
     const w = C.WEAPONS[a.weapon.k];
     if (w.melee) return meleeAttack(s, a, tx, ty);
+    if (w.crew) return false;                       // mortars are fired by the 'mortar' order, never directly
+    if (w.launcher) return fireRocket(s, a, tx, ty, w);
     if (a.weapon.mag <= 0) { if (a.weapon.spare === undefined || a.weapon.spare > 0) a.reload = w.rel; else { a.cd = 0.6; C.say(a, '¡Sin balas!', '#7a1d1d', 1.6); } return false; }
     a.weapon.mag--; a.cd = (1 / w.rof) * (0.92 + Math.random() * 0.16); a.muzzle = 0.07; a.shooting = 0.8; a.exposed = 6;
     const acc = C.accuracyOf(a) * (bonus || 1);
@@ -83,6 +85,48 @@
     if (a.isPlayer || a.side === 'rebel') G().combatT = 8;
     return true;
   };
+  // ---------------- rocket launcher (bazooka) ----------------
+  // A slow, visible rocket. It detonates on the first thing it touches (wall, soldier, vehicle, object) or at the end
+  // of its range. The BACKBLAST throws hot gas behind the shooter: anyone standing in the rear cone is hurt, friend or foe.
+  function fireRocket(s, a, tx, ty, w) {
+    if (a.weapon.mag <= 0) { if ((a.weapon.spare || 0) > 0) a.reload = w.rel; else { a.cd = 0.8; C.say(a, '¡Sin cohetes!', '#7a1d1d', 1.6); } return false; }
+    a.weapon.mag--; a.cd = 1 / w.rof; a.muzzle = 0.12; a.shooting = 1.2; a.exposed = 8;
+    const aim = Math.atan2(ty - (a.y - 9), tx - a.x); a.aim = aim;
+    const ang = aim + gauss() * w.spr * (1.65 - 1.15 * clamp(C.accuracyOf(a), 0, 1)) * Math.PI / 180;
+    const mx = a.x + Math.cos(aim) * 10, my = a.y - 9 + Math.sin(aim) * 10;
+    s.bullets.push({ x: mx, y: my, vx: Math.cos(ang) * w.spd, vy: Math.sin(ang) * w.spd, dmg: 0, owner: a, side: a.side, life: w.rng / w.spd, dist: 0, rocket: true, wk: 'bazooka' });
+    // backblast cone: 28 px behind the tube, ±35 degrees
+    for (const o of s.actors) {
+      if (o === a || o.dead || o.inside || o.inVeh) continue; const dx = o.x - a.x, dy = o.y - (a.y - 9); const d = Math.hypot(dx, dy); if (d > 28 || d < 1) continue;
+      const back = Math.atan2(-Math.sin(aim), -Math.cos(aim)); let da = Math.abs(Math.atan2(dy, dx) - back); if (da > Math.PI) da = 2 * Math.PI - da;
+      if (da < 0.62) { C.hurt(o, 45 * (1 - d / 40), a, back, 'blast'); if (o.side === a.side && o.side === 'rebel') C.addTrust && C.addTrust(o.p, -3); }
+    }
+    for (let i = 0; i < 6; i++) C.fx.smoke(s, a.x - Math.cos(aim) * (6 + i * 3), a.y - 9 - Math.sin(aim) * (6 + i * 3), 'smoke');
+    C.fx.flash(s, a.x - Math.cos(aim) * 8, a.y - 9 - Math.sin(aim) * 8, 14);
+    if (C.snd) C.snd.shot(3, a.x, a.y, a.side); C.alertScene(s, a.x, a.y, 'shot'); C.scareAnimals(s, a.x, a.y, 200);
+    if (a.isPlayer || a.side === 'rebel') G().combatT = 8;
+    C.say(a, '¡Bazucazo!', '#7a1d1d', 1.4);
+    return true;
+  }
+  // The rocket's warhead: a blast like a grenade, plus extra damage to any vehicle close to the point of impact.
+  function detonateRocket(s, b) {
+    const ex = C.EXPLOSIVES.rocket;
+    C.explode(s, b.x, b.y, ex.rad, ex.dmg, b.owner, { frags: ex.frags, kind: 'rocket' });
+    for (const v of s.vehicles) { if (v.gone || v.wreck) continue; if (Math.hypot(v.x - b.x, v.y - b.y) < v.def.w * 0.6 + 12) { v.hp -= 90 * (ex.vehMult || 1); v.burning = Math.max(v.burning, 6); if (v.hp <= 0 && !v.wreck) C.wreckVehicle(s, v); } }
+  }
+  // Collision test for a rocket at its current position. Returns true if it detonated.
+  function rocketHit(s, b, tx, ty) {
+    const tile = s.tiles[ty * s.tw + tx];
+    if (C.bulletBlockChance(tile) >= 1) { detonateRocket(s, b); return true; }
+    if (b.dist > 26) {   // armed after ~26 px so it cannot hit its own shooter
+      for (const o of s.actors) { if (o.dead || o.inside || o.inVeh || o === b.owner) continue; if (b.side && o.side === b.side && b.side !== 'civ') continue; if (Math.hypot(o.x - b.x, o.y - 8 - b.y) < 8) { detonateRocket(s, b); return true; } }
+      for (const v of s.vehicles) { if (v.gone) continue; const ca = Math.cos(-v.ang), sa = Math.sin(-v.ang); const lx = (b.x - v.x) * ca - (b.y - v.y) * sa, ly = (b.x - v.x) * sa + (b.y - v.y) * ca; if (Math.abs(lx) < v.def.w / 2 && Math.abs(ly) < v.def.h / 2 + 2) { detonateRocket(s, b); return true; } }
+      for (const o of s.objs) { if (o.dead) continue; if (Math.abs(b.x - o.x) < o.w / 2 && Math.abs(b.y - o.y) < o.h / 2) { detonateRocket(s, b); return true; } }
+    }
+    if (b.life <= 0.02) { detonateRocket(s, b); return true; }
+    if (Math.random() < 0.5) C.fx.smoke(s, b.x, b.y, 'smoke');   // smoke trail
+    return false;
+  }
   function meleeAttack(s, a, tx, ty) {
     a.cd = 0.8; a.shooting = 0.4; a.aim = Math.atan2(ty - a.y, tx - a.x);
     for (const o of s.actors) { if (o === a || o.dead || o.inside || o.side === a.side) continue; if (Math.hypot(o.x - (a.x + Math.cos(a.aim) * 10), o.y - a.y) < 12) { C.hurt(o, 36 + Math.random() * 16, a, a.aim, 'blade'); return true; } }
@@ -95,9 +139,10 @@
       const b = B[i]; const sp = Math.hypot(b.vx, b.vy); const steps = Math.max(1, Math.ceil(sp * dt / 5)); const sdt = dt / steps; let dead = false;
       for (let st = 0; st < steps && !dead; st++) {
         b.x += b.vx * sdt; b.y += b.vy * sdt; b.life -= sdt; b.dist += sp * sdt;
-        if (b.life <= 0) { dead = true; break; }
+        if (b.life <= 0) { if (b.rocket) detonateRocket(s, b); dead = true; break; }
         const tx = Math.floor(b.x / T), ty = Math.floor(b.y / T);
         if (tx < 0 || ty < 0 || tx >= s.tw || ty >= s.th) { dead = true; break; }
+        if (b.rocket) { if (rocketHit(s, b, tx, ty)) { dead = true; break; } continue; }
         const tile = s.tiles[ty * s.tw + tx];
         const bc = C.bulletBlockChance(tile);
         if (bc >= 1) { C.fx.dust(s, b.x, b.y, 3); C.fx.spark(s, b.x, b.y, Math.atan2(-b.vy, -b.vx), 3); if (tile === TL.BLD) { const bl = s.blds.find((q) => tx >= q.x && tx < q.x + q.w && ty >= q.y && ty < q.y + q.h); if (bl && b.owner && b.owner.side === 'rebel') bl.shotAt = (bl.shotAt || 0) + 1; } dead = true; break; }

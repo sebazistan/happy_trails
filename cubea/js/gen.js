@@ -577,12 +577,15 @@
     return out;
   };
   const RELW = { friend: 0.4, compadre: 0.5, lover: 0.8, comrade: 0.5, coworker: 0.15, neighbor: 0.12, employer: 0.1, employee: 0.1, rival: -0.2 };
+  // Weight of a non-kin edge in the audience of an event. A 'bond' edge (friendship earned in play, see bonds.js) scales
+  // from 0.25 (just a friend) to 1.0 (a brother-in-arms): at full strength it counts exactly like a spouse or child.
+  const relWeight = (r) => (r.t === 'bond' ? 0.25 + 0.75 * r.w : RELW[r.t]);
   C.audienceOf = function (p) {
     const m = C.kinOf(p);
-    for (const r of p.rel) { const w = RELW[r.t]; const cur = m.get(r.id); if (!cur || Math.abs(w) > Math.abs(cur.w)) m.set(r.id, { w, t: r.t }); }
+    for (const r of p.rel) { const w = relWeight(r); const cur = m.get(r.id); if (!cur || Math.abs(w) > Math.abs(cur.w)) m.set(r.id, { w, t: r.t }); }
     // friends-of-friends at half weight (second hop through close ties only)
     const first = [...m.entries()].filter(([, v]) => v.w >= 0.5 && v.t !== 'child');
-    for (const [id, v] of first) { const q = W.people[id]; for (const r of q.rel) { const w = RELW[r.t] * 0.4 * v.w; if (w > 0.05 && r.id !== p.id && !m.has(r.id)) m.set(r.id, { w, t: '2nd' }); } }
+    for (const [id, v] of first) { const q = W.people[id]; for (const r of q.rel) { const w = relWeight(r) * 0.4 * v.w; if (w > 0.05 && r.id !== p.id && !m.has(r.id)) m.set(r.id, { w, t: '2nd' }); } }
     return m;
   };
   C.relativeLabel = function (p, q) { // what is q to p
@@ -590,5 +593,5 @@
     for (const r of p.rel) if (r.id === q.id) return r.t;
     return null;
   };
-  C.relLabelEs = { spouse: 'cónyuge', child: 'hijo/a', parent: 'padre/madre', sibling: 'hermano/a', grandparent: 'abuelo/a', grandchild: 'nieto/a', aunt: 'tío/a', niece: 'sobrino/a', cousin: 'primo/a', inlaw: 'pariente político', friend: 'amigo/a', compadre: 'compadre', lover: 'pareja', comrade: 'camarada', coworker: 'compañero/a de trabajo', neighbor: 'vecino/a', employer: 'patrón', employee: 'empleado/a', rival: 'rival', '2nd': 'conocido/a' };
+  C.relLabelEs = { spouse: 'cónyuge', child: 'hijo/a', parent: 'padre/madre', sibling: 'hermano/a', grandparent: 'abuelo/a', grandchild: 'nieto/a', aunt: 'tío/a', niece: 'sobrino/a', cousin: 'primo/a', inlaw: 'pariente político', friend: 'amigo/a', bond: 'compañero/a de armas', compadre: 'compadre', lover: 'pareja', comrade: 'camarada', coworker: 'compañero/a de trabajo', neighbor: 'vecino/a', employer: 'patrón', employee: 'empleado/a', rival: 'rival', '2nd': 'conocido/a' };
 })();

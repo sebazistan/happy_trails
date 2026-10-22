@@ -62,7 +62,7 @@
   ui.syncSpeed = function () { const g = G(); document.querySelectorAll('#speed button').forEach((b) => { const v = +b.dataset.sp; b.classList.toggle('on', v === 0 ? g.paused : !g.paused && g.speed === v); }); };
   ui.setWhere = function () { $('where').textContent = G().scene.title || G().scene.name; };
   ui.refresh = function () { buildLeft(); ui.update(true); };
-  const CHIPS = [['food', '🍚', 'Food'], ['money', '₱', 'Pesos'], ['ammo', '•', 'Cartridges'], ['med', '✚', 'Medicine'], ['fuel', '⛽', 'Fuel (stock)'], ['gren', '💣', 'Grenades'], ['guns', '🔫', 'Spare rifles']];
+  const CHIPS = [['food', '🍚', 'Food'], ['money', '₱', 'Pesos'], ['ammo', '•', 'Cartridges'], ['med', '✚', 'Medicine'], ['fuel', '⛽', 'Fuel (stock)'], ['gren', '💣', 'Grenades'], ['guns', '🔫', 'Spare rifles'], ['shell', '🚀', 'Mortar shells'], ['rocket', '🎯', 'Rockets']];
   ui.update = function (force) {
     const g = G(); if (!g || !g.scene) return;
     const L = g.unlocked.layer;
@@ -203,7 +203,9 @@
     return rows.join('') || '<div class="sub">—</div>';
   }
   function tiesHTML(p) {
-    const rows = p.rel.filter((r) => r.t !== 'neighbor' || Math.random() < 0).slice(0, 9).map((r) => `<div class="row"><span>${C.relLabelEs[r.t] || r.t}</span><span>${personLink(C.P(r.id))}</span></div>`);
+    // bonds first (friendships earned in play, strongest first), then the older ties
+    const bl = C.bondsOf(p, 4).map((x) => `<div class="row"><span>${C.bondLabel(x.b)} <span class="sub">${Math.round(x.b)}</span></span><span>${personLink(x.q)}</span></div>`);
+    const rows = bl.concat(p.rel.filter((r) => r.t !== 'neighbor' && r.t !== 'bond').slice(0, 9 - bl.length).map((r) => `<div class="row"><span>${C.relLabelEs[r.t] || r.t}</span><span>${personLink(C.P(r.id))}</span></div>`));
     return rows.join('') || '<div class="sub">—</div>';
   }
   function memHTML(p) {
@@ -253,7 +255,7 @@
   ui.take = function (it) {
     const g = G();
     if (it.k === 'food') g.res.food += it.amount || 5; else if (it.k === 'ammo') g.res.ammo += it.amount || 10; else if (it.k === 'med') g.res.med += it.amount || 1; else if (it.k === 'fuel') g.res.fuel += it.amount || 5; else if (it.k === 'money') g.res.money += it.amount || 20;
-    else if (it.k === 'gun') { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (it.wk !== 'machete') g.res.guns++; }
+    else if (it.k === 'gun') { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (C.HEAVY.includes(it.wk)) { g.heavy = g.heavy || {}; g.heavy[it.wk] = (g.heavy[it.wk] || 0) + 1; } else if (it.wk !== 'machete') g.res.guns++; }
   };
   function pickUp(it) {
     const g = G(), s = g.scene; const i = s.items.indexOf(it); if (i < 0) return;
@@ -262,7 +264,7 @@
     else if (it.k === 'med') { g.res.med += it.amount || 1; ui.toast('+ medicine'); }
     else if (it.k === 'fuel') { g.res.fuel += it.amount || 5; }
     else if (it.k === 'money') { g.res.money += it.amount || 20; }
-    else if (it.k === 'gun') { const pl = g.player; if (!pl.weapon || C.WEAPONS[it.wk].dmg > C.WEAPONS[pl.weapon.k].dmg * 0.9 && false) { C.giveWeapon(pl, it.wk, it.spare); pl.weapon.mag = it.mag; } else { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (it.wk !== 'machete') g.res.guns++; ui.toast('Spare ' + C.WEAPONS[it.wk].n + ' to the armory — hand it out from the talk menu'); } }
+    else if (it.k === 'gun') { const pl = g.player; if (!pl.weapon || C.WEAPONS[it.wk].dmg > C.WEAPONS[pl.weapon.k].dmg * 0.9 && false) { C.giveWeapon(pl, it.wk, it.spare); pl.weapon.mag = it.mag; } else { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (C.HEAVY.includes(it.wk)) { g.heavy = g.heavy || {}; g.heavy[it.wk] = (g.heavy[it.wk] || 0) + 1; } else if (it.wk !== 'machete') g.res.guns++; ui.toast('Spare ' + C.WEAPONS[it.wk].n + ' to the armory — hand it out from the talk menu'); } }
     s.items.splice(i, 1);
   }
   function takeMeat(an) { const g = G(), s = g.scene; const i = s.animals.indexOf(an); if (i < 0) return; g.res.food += an.def.food; s.animals.splice(i, 1); ui.toast(`+${an.def.food} food (${an.def.n})`); if (an.def.wild === false) { C.log('You took the meat of a dead ' + an.def.n + '.', 'info'); } }
@@ -344,6 +346,8 @@
     }
     // ---- own soldiers
     else if (rebel) {
+      // heavy weapons from the armory: one menu entry per kind in stock
+      for (const hk of C.HEAVY) { const have = (g.heavy && g.heavy[hk]) || 0; if (have > 0 && p.wpn !== hk) opts.push({ label: `Give the ${C.WEAPONS[hk].n} (${have} in the armory)`, sub: `Weight ${C.WEAPONS[hk].wt}. Others who carry less may resent it.`, fn: () => { C.armSoldier(p, hk); ui.toast(C.tagName(p) + ' takes the ' + C.WEAPONS[hk].n); return true; } }); }
       if (!p.wpn || p.wpn === 'machete') opts.push({ label: 'Give a rifle from the armory', sub: g.res.guns > 0 ? `${g.res.guns} spare — others who are unarmed may resent it` : 'No spare rifles', disabled: g.res.guns <= 0, fn: () => { C.armSoldier(p); ui.toast(C.tagName(p) + ' is armed.'); return true; } });
       for (const sq of g.squads) if (sq.id !== a.squad) opts.push({ label: `Move to ${C.gName(sq)}`, fn: () => { g.squads[a.squad].members = g.squads[a.squad].members.filter((i) => i !== p.id); sq.members.push(p.id); p.mil.squad = sq.id; a.squad = sq.id; C.attachSquads(s); buildLeft(); } });
       opts.push({ label: 'Share your food (2)', sub: 'A small kindness', disabled: g.res.food < 2, fn: () => { g.res.food -= 2; p.needs.food = clamp(p.needs.food + 30, 0, 100); p.morale = clamp(p.morale + 4, 0, 100); return true; } });

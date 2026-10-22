@@ -22,7 +22,7 @@
         { id: 3, name: 'Sanidad', col: '#7fd07a', members: [], stance: 'follow', fireNow: false },
       ],
       curSquad: 0, sel: [], cmd: { pending: null, tab: 'move', vol: 0 }, hygiene: 70,
-      res: { food: 24, money: 140, ammo: 60, guns: 1, med: 5, fuel: 12, gren: 3, dyn: 0, pamph: 0, vales: 0, cloth: 6, scrap: 8 },
+      res: { food: 24, money: 140, ammo: 60, guns: 1, shell: 0, rocket: 0, med: 5, fuel: 12, gren: 3, dyn: 0, pamph: 0, vales: 0, cloth: 6, scrap: 8 },
       policy: { forage: 'pay' },
       platform: { pub: [0, 0, 0, 0, 0, 0, 0, 0], real: [0, 0, 0, 0, 0, 0, 0, 0], declared: [false, false, false, false, false, false, false, false], dayDeclared: [-1, -1, -1, -1, -1, -1, -1, -1] },
       deeds: [0, 0, 0, 0, 0, 0, 0, 0], promises: [],
@@ -500,9 +500,12 @@
 
   // ---------------- scarce rifles ----------------
   // Arming a novice while experienced men carry machetes divides the troop. Returns the number who resent it.
+  // Heavy weapons (BAR, MG, bazooka, mortar) come from g.heavy; ordinary rifles from g.res.guns.
+  // A heavy weapon given to a novice divides the troop exactly like a rifle does (C.resentment).
   C.armSoldier = function (p, wk) {
-    const g = G(); if (g.res.guns <= 0) return false;
-    g.res.guns--; p.wpn = wk || 'rifle';
+    const g = G(); g.heavy = g.heavy || {};
+    if (wk && C.HEAVY.includes(wk)) { if (!(g.heavy[wk] > 0)) return false; g.heavy[wk]--; p.wpn = wk; }
+    else { if (g.res.guns <= 0) return false; g.res.guns--; p.wpn = wk || 'rifle'; }
     if (p.actor && p.actor.scene === g.scene) { C.giveWeapon(p.actor, p.wpn, C.WEAPONS[p.wpn].mag * 2); p.actor.weaponOut = true; }
     return C.resentment(p);
   };

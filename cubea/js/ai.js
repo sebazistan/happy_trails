@@ -204,7 +204,7 @@
     a.anim += Math.hypot(mx, my) * 0.5;
   }
   C.stepMove = stepMove;
-  function terrainSpeed(s, a) { const t = C.tileAt(s, a.x, a.y); let k = 1 / (C.TCOST[t] || 1); if (a.p.limp) k *= 0.72; if (a.prone || a.hide) k *= 0.55; if (G().weather.rain > 0.3 && (t === TL.G || t === TL.TRAIL)) k *= 0.88; if (a.p.needs.energy < 20) k *= 0.8; return clamp(k, 0.4, 1.5); }
+  function terrainSpeed(s, a) { const t = C.tileAt(s, a.x, a.y); let k = 1 / (C.TCOST[t] || 1); if (a.p.limp) k *= 0.72; if (a.prone || a.hide) k *= 0.55; if (G().weather.rain > 0.3 && (t === TL.G || t === TL.TRAIL)) k *= 0.88; if (a.p.needs.energy < 20) k *= 0.8; if (a.loadK) k *= a.loadK; return clamp(k, 0.35, 1.5); }
 
   C.say = function (a, text, col, dur) { a.bubble = { text: C.phrase(text), col, t: dur || 2.6 }; };
 
@@ -329,6 +329,8 @@
     if (a.inside || a.sleeping) n.energy = Math.min(100, n.energy + 0.14 * gm); else n.energy = Math.max(0, n.energy - 0.06 * gm * act * expSave * (a.running ? 2 : 1));
     // drink from water
     const tt = C.tileAt(s, a.x, a.y); if ((tt === TL.SHAL) && n.water < 95) n.water = Math.min(100, n.water + 0.9 * gm);
+    // personal inventory: eat, drink, share, ration discipline (inventory.js)
+    if (C.invTick) C.invTick(s, a, dt);
     p.stress = Math.max(0, p.stress - 0.02 * gm); p.anger = Math.max(0, p.anger - 0.02 * gm); p.fear = Math.max(p.fearBase || 0, p.fear - 0.03 * gm);
     // bleeding
     if (p.bleed > 0 && !a.dead) { p.hp -= p.bleed * dt * 0.9; p.bleed = Math.max(0, p.bleed - dt * 0.0015); a.bleeding = true; a.hurtT = 1; if (Math.random() < dt * 3) s.decals.push({ k: 'blood', x: a.x, y: a.y, r: 1.4 + Math.random() * 1.5, a: 0.5, rot: Math.random() * 6, t0: g().time, fade: 600 }); if (p.hp <= 0) C.die(a, a.lastAttacker, 'bleeding'); } else a.bleeding = false;
@@ -546,6 +548,8 @@
     if (stance === 'ambush' && tgt) { const d = Math.hypot(tgt.x - a.x, tgt.y - a.y); canFire = d < 105 || sq.fireNow || a.suppressed > 0 || a.lastHit > g.time - 2; }
     if (stance === 'scout' || stance === 'forage' && !a.defending) canFire = canFire && a.lastHit > g.time - 3 && stance === 'scout';
     if (stance === 'withdraw' || (a.order && a.order.type === 'retreat')) canFire = false;
+    // a rocket is too precious for one rifleman: the launcher fires on vehicles, buildings' garrisons or clusters of 3+
+    if (canFire && w && w.launcher) { const near = s.actors.filter((x) => x.side === 'army' && !x.dead && Math.hypot(x.x - tgt.x, x.y - tgt.y) < 40).length; const veh = s.vehicles.some((v) => !v.wreck && v.def.army && Math.hypot(v.x - tgt.x, v.y - tgt.y) < 40); canFire = near >= 3 || veh; }
     if (tgt && lead && Math.hypot(lead.x - a.x, lead.y - a.y) < 95 && a.lastHit > g.time - 6) p.leadAcc = (p.leadAcc || 0) + dt;
     if (canFire) {
       a.aim = Math.atan2(tgt.y - 8 - (a.y - 8), tgt.x - a.x); a.face = tgt.x >= a.x ? 1 : -1;

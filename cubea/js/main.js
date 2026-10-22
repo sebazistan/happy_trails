@@ -19,7 +19,10 @@
     }
     p.status = 'alive'; p.exp = Math.min(Math.max(p.exp, 2 + Math.random() * 6), 14); p.morale = 62 + Math.random() * 20; p.hp = p.maxHp; p.look.hat = 'helmet'; p.trueStance = Math.min(p.trueStance, -35); p.stance = p.trueStance;
     const a = C.makeActor(s, p, x, y); a.side = 'army'; a.speed = 45; a.brain.mode = mode || 'patrol'; a.brain.role = 'patrol'; a.brain.post = { x, y }; a.brain.home = { x, y };
-    C.giveWeapon(a, wk || 'rifle'); a.weaponOut = true; s.actors.push(a); return a;
+    // Batista's army was armed with a mix of surplus American weapons: Springfields and Garands first, then carbines,
+    // Thompsons, a few BARs. (Callers that care — machine-gun posts, scripted waves — pass `wk` explicitly.)
+    if (!wk) { const r = Math.random(); wk = r < 0.42 ? 'rifle' : r < 0.64 ? 'garand' : r < 0.78 ? 'carbine' : r < 0.9 ? 'thompson' : r < 0.96 ? 'bar' : 'shotgun'; }
+    C.giveWeapon(a, wk); a.weaponOut = true; s.actors.push(a); return a;
   };
   C.finishPersonExt = function (p) { // minimal finishing for generic soldiers
     const R = C.rnd; const F = C.FACTIONS.army;
@@ -403,7 +406,7 @@
   function syncClock() { const g = G(); g.day = Math.floor(g.min / 1440); g.hour = (g.min % 1440) / 60; g.weekday = (3 + g.day) % 7; }
   function dailyHooks() {
     const g = G();
-    C.dayTick();
+    C.dayTick(); C.bondDaily();
     // the layered reveal: systems unlock as the story advances
     { const TH = [[3, 8, 'Locals: peasants remember how you treat them (support meter, loyalty details).'], [4, 25, 'Factions: peasants, workers, students, elites, landowners, the Church and the army are now tracked (⚖ Factions).'], [5, 60, 'Politics: you can now announce a platform (📜 Manifesto). Announced planks become promises.'], [6, 100, 'The island: the cities, the pipeline from Havana, the unions and the students are in play.']];
       for (const [L, d, msg] of TH) if (g.unlocked.layer < L && g.day >= d) { g.unlocked.layer = L; C.log('NEW SYSTEM — ' + msg, 'good'); C.ui.toast('New system unlocked'); C.ui.refresh(); } }
@@ -424,11 +427,7 @@
     if (g.day > 900) C.endGame('timeout');
     if (alive < 2 && g.day > 20 && g.res.food < 1 && g.res.money < 5 && !g.scene.pro) { /* starving remnant */ g.flags.remnant = (g.flags.remnant || 0) + 1; if (g.flags.remnant > 12) C.endGame('collapse'); } else g.flags.remnant = 0;
   }
-  C.mealTime = function () {
-    const g = G(); let fed = 0, short = 0; const save = g.base.built.cocina ? 0.75 : 1;
-    for (const id of C.partyIds().concat([C.W.player])) { const p = C.P(id); if (!p || p.status !== 'alive') continue; if (p.needs.food > 70) continue; if (g.res.food >= save) { g.res.food -= save; p.needs.food = clamp(p.needs.food + 34, 0, 100); fed++; } else { short++; p.stress = clamp(p.stress + 4, 0, 100); p.morale = clamp(p.morale - 3, 0, 100); } p.needs.water = clamp(p.needs.water + 25, 0, 100); }
-    if (short) C.log(`${short} of your people went without a meal.`, 'bad'); else if (fed && g.res.food < fed * 3) C.log('Food is running low.', 'warn');
-  };
+  // C.mealTime now lives in inventory.js (meals feed packs and honour ration restrictions)
 
   // ---------------- main update ----------------
   function update(dt) {
@@ -446,7 +445,7 @@
     if (g.resting) { for (const id of C.partyIds()) { const a = C.P(id).actor; if (a) { a.sleeping = true; a.moving = false; } } g.player.sleeping = true; g.player.p.needs.energy = Math.min(100, g.player.p.needs.energy + dt * 6); if (g.hour >= 6 && g.hour < 7 || s.alert > 0.35 || g.combatT > 0) { g.resting = false; C.log('You wake.', 'info'); } }
     if (s.pro) prologueUpdate(dt);
     playerUpdate(dt);
-    C.updateScene(s, dt); C.fogUpdate(s, dt); C.updateBullets(s, dt); C.updateFx(s, dt);
+    C.updateScene(s, dt); C.fogUpdate(s, dt); C.bondTick(s, dt); C.updateBullets(s, dt); C.updateFx(s, dt);
     g.combatT = Math.max(0, g.combatT - dt); g.shake = Math.max(0, g.shake - dt * 1.6); g.flash = Math.max(0, g.flash - dt * 1.6); g.hurt = Math.max(0, g.hurt - dt * 0.18);
     for (const m of g.orderMarks) m.t += dt; g.orderMarks = g.orderMarks.filter((m) => m.t < 2.2);
     for (const sp of s.spotted || []) sp.t -= dt; if (s.spotted) s.spotted = s.spotted.filter((q) => q.t > 0);

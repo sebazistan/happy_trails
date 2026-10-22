@@ -166,22 +166,37 @@
 
   // ---------- weapons ----------
   // dmg per bullet, rof shots/s, spd px/s, rng px, spread deg, mag, pellets, rel = reload s
+  // ---------- weapons ----------
+  // Period arms of the Cuban war (1956–59): what rebels carried, captured, or bought, and what Batista's army fielded.
+  //   dmg  damage per projectile      rof  rounds/second       spd  projectile speed (px/s)     rng  effective range (px)
+  //   spr  spread in degrees          mag  rounds per magazine rel  reload seconds               wt   carried weight (see inventory.js)
+  //   snd  loudness class 0–3         melee/launcher/crew mark special handling in combat.js and orders.js
   C.WEAPONS = {
-    pistol:  { n: 'Pistola .45', dmg: 30, rof: 2.2, spd: 780, rng: 190, spr: 4.5, mag: 7, rel: 1.8, conceal: true, snd: 1 },
-    revolver:{ n: 'Revólver', dmg: 30, rof: 1.6, spd: 740, rng: 180, spr: 4.0, mag: 6, rel: 2.2, conceal: true, snd: 1 },
-    rifle:   { n: 'Fusil Springfield', dmg: 58, rof: 0.75, spd: 1250, rng: 560, spr: 1.6, mag: 5, rel: 2.6, snd: 2 },
-    garand:  { n: 'Garand M1', dmg: 52, rof: 1.5, spd: 1200, rng: 520, spr: 2.2, mag: 8, rel: 2.4, snd: 2 },
-    scoped:  { n: 'Fusil con mira', dmg: 70, rof: 0.45, spd: 1350, rng: 760, spr: 0.7, mag: 5, rel: 3.0, snd: 2 },
-    thompson:{ n: 'Thompson', dmg: 24, rof: 8, spd: 800, rng: 280, spr: 7.5, mag: 30, rel: 2.6, snd: 2 },
-    mg:      { n: 'Ametralladora', dmg: 40, rof: 9, spd: 1250, rng: 640, spr: 4.5, mag: 100, rel: 5.0, snd: 3 },
-    shotgun: { n: 'Escopeta', dmg: 20, rof: 0.9, spd: 600, rng: 150, spr: 11, mag: 2, rel: 2.5, pellets: 7, snd: 2 },
-    machete: { n: 'Machete', dmg: 40, rof: 1.4, spd: 0, rng: 18, spr: 0, mag: 1, rel: 0, melee: true, snd: 0 },
+    pistol:  { n: 'Pistola .45', dmg: 30, rof: 2.2, spd: 780, rng: 190, spr: 4.5, mag: 7, rel: 1.8, wt: 1.2, conceal: true, snd: 1 },
+    revolver:{ n: 'Revólver', dmg: 30, rof: 1.6, spd: 740, rng: 180, spr: 4.0, mag: 6, rel: 2.2, wt: 1.0, conceal: true, snd: 1 },
+    rifle:   { n: 'Fusil Springfield', dmg: 58, rof: 0.75, spd: 1250, rng: 560, spr: 1.6, mag: 5, rel: 2.6, wt: 4.0, snd: 2 },
+    mauser:  { n: 'Mauser 7 mm', dmg: 56, rof: 0.7, spd: 1230, rng: 550, spr: 1.8, mag: 5, rel: 2.7, wt: 4.0, snd: 2 },
+    garand:  { n: 'Garand M1', dmg: 52, rof: 1.5, spd: 1200, rng: 520, spr: 2.2, mag: 8, rel: 2.4, wt: 4.5, snd: 2 },
+    carbine: { n: 'Carabina M1', dmg: 36, rof: 2.0, spd: 1050, rng: 400, spr: 2.8, mag: 15, rel: 2.2, wt: 2.6, snd: 2 },
+    scoped:  { n: 'Fusil con mira', dmg: 70, rof: 0.45, spd: 1350, rng: 760, spr: 0.7, mag: 5, rel: 3.0, wt: 4.5, snd: 2 },
+    thompson:{ n: 'Thompson', dmg: 24, rof: 8, spd: 800, rng: 280, spr: 7.5, mag: 30, rel: 2.6, wt: 4.5, snd: 2 },
+    bar:     { n: 'Fusil automático Browning (BAR)', dmg: 55, rof: 4.5, spd: 1250, rng: 520, spr: 4.0, mag: 20, rel: 3.6, wt: 8.0, snd: 3 },
+    mg:      { n: 'Ametralladora', dmg: 40, rof: 9, spd: 1250, rng: 640, spr: 4.5, mag: 100, rel: 5.0, wt: 11.0, snd: 3 },
+    shotgun: { n: 'Escopeta', dmg: 20, rof: 0.9, spd: 600, rng: 150, spr: 11, mag: 2, rel: 2.5, wt: 3.5, pellets: 7, snd: 2 },
+    machete: { n: 'Machete', dmg: 40, rof: 1.4, spd: 0, rng: 18, spr: 0, mag: 1, rel: 0, wt: 1.0, melee: true, snd: 0 },
+    // Rocket launcher (2.36-inch "bazooka"): a slow visible rocket, big blast, deadly to vehicles, dangerous backblast.
+    bazooka: { n: 'Bazuca', dmg: 0, rof: 0.22, spd: 380, rng: 380, spr: 2.2, mag: 1, rel: 4.5, wt: 7.0, launcher: true, snd: 3 },
+    // 60 mm mortar: crew-served. Cannot be fired directly; it is fired by the 'mortar' order (orders.js) and needs shells.
+    mortar:  { n: 'Mortero 60 mm', dmg: 0, rof: 0.33, spd: 0, rng: 640, spr: 0, mag: 1, rel: 0, wt: 12.0, crew: true, snd: 3 },
   };
+  C.HEAVY = ['bar', 'mg', 'bazooka', 'mortar'];     // weapons that live in the heavy-weapons armory (g.heavy) rather than "spare rifles"
+
   C.EXPLOSIVES = {
     grenade:  { n: 'Granada', fuse: 2.1, rad: 58, dmg: 150, frags: 14 },
     molotov:  { n: 'Molotov', fuse: 0.01, rad: 34, dmg: 40, fire: true, frags: 0 },
     dynamite: { n: 'Dinamita', fuse: 6, rad: 96, dmg: 220, frags: 10 },
     mortar:   { n: 'Mortero', fuse: 0.01, rad: 70, dmg: 170, frags: 16 },
+    rocket:   { n: 'Cohete de bazuca', fuse: 0.01, rad: 62, dmg: 210, frags: 10, vehMult: 3 },
     bomb:     { n: 'Bomba aérea', fuse: 0.01, rad: 100, dmg: 260, frags: 18 },
   };
 

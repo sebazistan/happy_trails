@@ -453,7 +453,7 @@
       if (!C.pointSeen(b.x, b.y)) continue;
       const sp = Math.hypot(b.vx, b.vy) || 1, len = Math.min(26, sp * 0.028);
       const gx = ctx.createLinearGradient(b.x, b.y, b.x - b.vx / sp * len, b.y - b.vy / sp * len); gx.addColorStop(0, 'rgba(255,240,170,.98)'); gx.addColorStop(1, 'rgba(255,200,90,0)');
-      ctx.strokeStyle = gx; ctx.lineWidth = b.big ? 1.8 : 1.1; ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx / sp * len, b.y - b.vy / sp * len); ctx.stroke();
+      ctx.strokeStyle = gx; ctx.lineWidth = b.rocket ? 3.2 : b.big ? 1.8 : 1.1; ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx / sp * len, b.y - b.vy / sp * len); ctx.stroke();
     }
     // thrown grenades
     for (const g of s.thrown) { ctx.fillStyle = g.k === 'molotov' ? 'rgb(200,120,40)' : 'rgb(50,60,40)'; ctx.beginPath(); ctx.arc(g.x, g.y - g.h, 2.2, 0, 6.3); ctx.fill(); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(g.x, g.y, 2, 1, 0, 0, 6.3); ctx.fill(); }
