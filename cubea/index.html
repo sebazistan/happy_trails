@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CUBEA — a revolution of cubes</title>
+<meta name="description" content="Prototype: a low-poly simulation of the Cuban Revolution where every cube has a family.">
+<style>
+:root{
+  --bg:#1a1511; --panel:rgba(34,27,21,.9); --panel2:rgba(52,42,32,.92); --ink:#f3ead7; --mute:#bfae92; --gold:#e6b84e; --red:#dc4a3a; --blue:#5b86e0; --green:#7fc46a; --line:rgba(255,235,200,.16);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#111;color:var(--ink);font:13px/1.35 "Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;user-select:none}
+#game{position:fixed;inset:0;display:block;cursor:crosshair}
+.panel{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:10px;backdrop-filter:blur(3px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+#top{top:8px;left:50%;transform:translateX(-50%);display:flex;gap:14px;align-items:center;padding:6px 12px;z-index:5;max-width:98vw;flex-wrap:wrap;justify-content:center}
+#top .clock{font-weight:600;min-width:150px}
+#top .clock small{display:block;color:var(--mute);font-weight:400;font-size:11px}
+.chip{display:inline-flex;gap:5px;align-items:center;padding:2px 8px;background:rgba(255,255,255,.07);border-radius:999px;white-space:nowrap}
+.chip b{font-weight:700}
+.chip.warn{background:rgba(220,74,58,.28)}
+.btn{background:rgba(255,255,255,.09);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:4px 9px;cursor:pointer;font:inherit}
+.btn:hover{background:rgba(255,255,255,.18)}
+.btn.on{background:var(--gold);color:#241a10;border-color:var(--gold);font-weight:700}
+.btn.sm{padding:2px 6px;font-size:11px}
+.btn.big{padding:9px 18px;font-size:15px}
+.btn.primary{background:var(--gold);color:#241a10;font-weight:700;border-color:var(--gold)}
+.btn.danger{background:rgba(220,74,58,.25)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+#speed{display:flex;gap:4px}
+.meter{width:96px;height:8px;background:rgba(255,255,255,.12);border-radius:5px;overflow:hidden;position:relative}
+.meter i{position:absolute;left:0;top:0;bottom:0}
+.meter.dual{background:linear-gradient(90deg,rgba(91,134,224,.35),rgba(255,255,255,.15) 50%,rgba(220,74,58,.35))}
+.meter.dual i{width:3px;background:#fff;transform:translateX(-50%);box-shadow:0 0 5px #fff}
+#left{top:78px;left:8px;width:268px;max-height:calc(100vh - 150px);overflow:auto;padding:8px;z-index:4}
+#left h3,#right h3{margin:2px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.squad{border:1px solid var(--line);border-radius:8px;padding:6px;margin-bottom:6px;background:rgba(255,255,255,.04)}
+.squad.cur{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(230,184,78,.5)}
+.squad .hd{display:flex;justify-content:space-between;align-items:center;gap:6px;cursor:pointer}
+.squad .hd .dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:5px}
+.stances{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+.stances .btn{padding:1px 5px;font-size:11px}
+.sub{color:var(--mute);font-size:11px}
+.bar{height:6px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;margin-top:2px}
+.bar i{display:block;height:100%}
+#right{top:78px;right:8px;width:310px;max-height:calc(100vh - 250px);overflow:auto;padding:10px;z-index:4;display:none}
+#right .name{font-size:16px;font-weight:700}
+#right .role{color:var(--mute);margin-bottom:6px}
+#portrait{float:right;margin:0 0 6px 8px;border-radius:8px;background:rgba(0,0,0,.25);border:1px solid var(--line)}
+.row{display:flex;justify-content:space-between;gap:8px;margin:1px 0}
+.row span:first-child{color:var(--mute)}
+.need{display:grid;grid-template-columns:62px 1fr 28px;gap:6px;align-items:center;margin:2px 0;font-size:11px}
+.need .bar{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.link{color:var(--gold);cursor:pointer;text-decoration:underline dotted}
+.why div{display:flex;justify-content:space-between;gap:8px;font-size:11px;margin:1px 0}
+.pos{color:#ff8f80}.neg{color:#8fb0ff}
+#log{left:max(34vw,430px);bottom:8px;width:min(620px,calc(100vw - 34vw - 240px));padding:6px 10px;z-index:4;pointer-events:none}
+#log div{font-size:12px;margin:1px 0;opacity:.95}
+#log .bad{color:#ff9d8c}#log .good{color:#a8e69a}#log .warn{color:#ffd37a}
+#hint{position:fixed;left:8px;bottom:8px;font-size:12px;color:#e8dcc4;z-index:3;max-width:calc(max(34vw,430px) - 24px);text-shadow:0 1px 3px #000,0 0 6px #000}
+#minimap{right:8px;bottom:8px;width:208px;height:142px;z-index:4;padding:3px}
+#minimap canvas{width:100%;height:100%;display:block;border-radius:7px;cursor:pointer}
+#tip{position:fixed;pointer-events:none;z-index:30;background:rgba(20,15,10,.94);border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:12px;display:none;max-width:260px}
+#toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);z-index:25;background:rgba(20,15,10,.95);border:1px solid var(--gold);padding:6px 14px;border-radius:999px;display:none;font-weight:600}
+#modal{position:fixed;inset:0;background:rgba(10,7,4,.55);display:none;align-items:center;justify-content:center;z-index:20}
+#modal .box{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 20px;max-width:min(860px,94vw);max-height:90vh;overflow:auto;min-width:min(420px,92vw);box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#modal h2{margin:0 0 4px;font-size:20px}
+#modal .lede{color:var(--mute);margin-bottom:10px}
+.choices{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.choice{padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.06);cursor:pointer;text-align:left;color:var(--ink);font:inherit}
+.choice:hover{background:rgba(255,255,255,.16);border-color:var(--gold)}
+.choice small{display:block;color:var(--mute)}
+.choice[disabled]{opacity:.45;cursor:not-allowed}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fbar{display:grid;grid-template-columns:150px 1fr 56px;gap:8px;align-items:center;margin:4px 0}
+.fbar .track{height:12px;border-radius:6px;background:linear-gradient(90deg,rgba(91,134,224,.5),rgba(255,255,255,.18) 50%,rgba(220,74,58,.5));position:relative}
+.fbar .track i{position:absolute;top:-3px;width:5px;height:18px;border-radius:3px;background:#fff;transform:translateX(-50%);box-shadow:0 0 6px rgba(0,0,0,.6)}
+.plank{border:1px solid var(--line);border-radius:9px;padding:8px;margin:6px 0;background:rgba(255,255,255,.04)}
+.plank .opts{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.plank .opts .btn{flex:1;min-width:130px;text-align:left;font-size:12px}
+#title{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 20%,#3a2a1c,#14100c 70%)}
+#title .card{max-width:760px;padding:26px 30px}
+#title h1{font-size:54px;margin:0;letter-spacing:.14em;background:linear-gradient(90deg,#4a78d8,#f4efe6 50%,#dc4a3a);-webkit-background-clip:text;color:transparent}
+#title .tag{color:var(--mute);margin:2px 0 14px;font-size:15px}
+#title .keys{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:3px 12px;margin:12px 0;font-size:12px;color:var(--mute)}
+kbd{background:rgba(255,255,255,.12);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font:11px monospace;color:var(--ink)}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.help{line-height:1.5}
+table.t{border-collapse:collapse;width:100%}
+table.t td,table.t th{padding:3px 6px;border-bottom:1px solid var(--line);text-align:left;font-size:12px}
+.close{float:right}
+#mapcv{width:100%;border-radius:10px;background:#16212a;border:1px solid var(--line)}
+@media (max-width:900px){#left{width:210px}#right{width:250px}#minimap{display:none}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="top" class="panel" style="display:none">
+  <div class="clock"><span id="clock">—</span><small id="where">—</small></div>
+  <div id="speed"><button class="btn sm" data-sp="0" title="Pause (Space)">❚❚</button><button class="btn sm on" data-sp="1">1×</button><button class="btn sm" data-sp="2">2×</button><button class="btn sm" data-sp="4">4×</button></div>
+  <div id="chips"></div>
+  <div style="display:flex;flex-direction:column;gap:3px">
+    <div class="sub">Popular support <span id="supNum"></span></div><div class="meter dual" id="supMeter"><i></i></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:3px"><div class="sub">Army alert <span id="heatNum"></span></div><div class="meter"><i id="heatBar" style="background:#5b86e0;width:0"></i></div></div>
+  <div style="display:flex;gap:4px;flex-wrap:wrap">
+    <button class="btn sm" id="bMap" title="Island map / travel (M)">🗺 Map</button><button class="btn sm" id="bMan" title="Manifesto (P)">📜 Manifesto</button><button class="btn sm" id="bFac" title="Factions (I)">⚖ Factions</button><button class="btn sm" id="bJour" title="Journal & El Viejo (J)">📓 Journal</button><button class="btn sm" id="bBase" title="Camp & crafting (B)">⛺ Camp</button><button class="btn sm" id="bHelp" title="Help (H)">?</button>
+  </div>
+</div>
+
+<div id="left" class="panel" style="display:none"></div>
+<div id="right" class="panel"></div>
+<div id="log" class="panel" style="display:none"></div>
+<div id="hint"></div>
+<div id="minimap" class="panel" style="display:none"><canvas id="mm" width="400" height="280"></canvas></div>
+<div id="tip"></div>
+<div id="toast"></div>
+<div id="modal"><div class="box" id="mbox"></div></div>
+
+<div id="title">
+  <div class="panel card">
+    <h1>CUBEA</h1>
+    <div class="tag">Cuba, 1956–1959. A revolution made of cubes: every cube has a family, a hunger, a memory and a loyalty.</div>
+    <div style="margin:6px 0 10px;line-height:1.5">
+      You are a <b>time traveller</b> (the circle) who has stepped into the place of the rebel leader, trying to do it <i>right</i>. You will win — or lose — the island by force <b>and</b> by trust: feeding the hungry, keeping promises, treating prisoners and families fairly, and keeping a coalition of peasants, workers, students, women, the Church, and the Havana money together.
+      Red cubes are for the rebels, blue for Batista, white for undecided. Pale means a shallow loyalty. Cracks heal; missing chunks don't.
+    </div>
+    <div class="keys">
+      <span><kbd>WASD</kbd> move · <kbd>Shift</kbd> run</span><span>Aim with the mouse</span>
+      <span><kbd>X</kbd> draw / holster weapon</span><span>Left-click: fire (weapon drawn) / inspect</span>
+      <span><kbd>G</kbd> grenade · <kbd>R</kbd> reload</span><span>Right-click: order your squad</span>
+      <span><kbd>1–4</kbd> choose squad · <kbd>F</kbd> spring ambush</span><span><kbd>E</kbd> talk / use / vehicle</span>
+      <span><kbd>C</kbd> hide (camouflage)</span><span><kbd>Q</kbd> foresight (time-traveller sight)</span>
+      <span><kbd>Space</kbd> pause · <kbd>Z</kbd> rest</span><span><kbd>M P I J B H</kbd> map · manifesto · factions · journal · camp · help</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn primary big" id="startBtn">Begin: Alegría de Pío, 5 Dec 1956</button>
+      <button class="btn big" id="sandBtn">Skip to the Sierra camp</button>
+      <label class="sub">World seed <input id="seed" value="1956" style="width:70px;background:#0003;color:inherit;border:1px solid var(--line);border-radius:5px;padding:2px 5px"></label>
+      <label class="sub">Foresight <select id="fore" style="background:#0003;color:inherit;border:1px solid var(--line);border-radius:5px"><option value="5">Generous (5)</option><option value="3" selected>Normal (3)</option><option value="1">Stingy (1)</option></select></label>
+    </div>
+    <div class="sub" style="margin-top:10px" id="genmsg"></div>
+  </div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/gen.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/events.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
