@@ -371,6 +371,11 @@
         if (p.donor || (s.type === 'capital' || s.type === 'city') && p.cls >= 3 && (p.fac === 'elite' || p.fac === 'middle') && C.ageOf(p) > 25) opts.push({ label: 'Pitch for a contribution to the cause', sub: p.donor ? `A known donor (up to ~${p.donor} pesos)` : 'They may be generous — or informers', fn: () => { pitchMenu(p); } });
         if (p.fac === 'students' || p.occ === 'sindicalista') opts.push({ label: p.fac === 'students' ? 'Organize students: plan a march' : 'Organize the union: strike committee', sub: 'Builds the general strike (needs 10 pesos)', disabled: g.res.money < 10, fn: () => { g.res.money -= 10; g.strikePrep += 3; p.needs.hope = clamp(p.needs.hope + 4, 0, 100); p.trueStance = clamp(p.trueStance + 2, -100, 100); if (Math.random() < 0.12) g.player.susp += 30; C.deed(4, 2); ui.toast('They will organize.'); } });
         if (['celia', 'haydee', 'hart', 'melba', 'frank', 'vilma'].includes(p.roster)) opts.push({ label: `Hand pipeline funds (${Math.round(g.pipe.balance)} pesos) to a courier`, disabled: g.pipe.balance < 20, fn: () => { C.sendCourier(a, Math.round(g.pipe.balance)); } });
+        if (g.unlocked.layer >= 3 && g.day > 20) {
+          if (['bodeguero', 'comerciante', 'hacendado', 'mayordomo'].includes(p.occ) || p.fac === 'landowners') opts.push({ label: 'Demand a weekly "contribution" for protection', sub: 'Pays well. They will remember how you collected. The band drifts toward a business.', fn: () => { C.racketStart('protect', p); return true; } });
+          if (['pescador', 'estibador'].includes(p.occ)) opts.push({ label: 'Arrange contraband runs on his boat', sub: 'Rum, cigars, and worse. Profitable; corrosive.', fn: () => { C.racketStart('contraband', p); return true; } });
+          if ((p.fac === 'elite' || p.fac === 'landowners') && p.cls >= 3 && (s.type === 'city' || s.type === 'capital' || s.type === 'town')) opts.push({ label: 'Kidnap for ransom', sub: 'A fortune, if it works. Rebels do not usually do this. It will be remembered.', fn: () => { C.racketStart('kidnap', p); return true; } });
+        }
         if (p.occ === 'mayordomo' || p.fac === 'landowners') opts.push({ label: 'Seize the estate and distribute the land', sub: 'The peasants cheer; landowners will never forgive', fn: () => { C.seizeEstate(p); } });
         if (p.informant && !p.revealed || C.tells(p).length) opts.push({ label: 'Have your network check on this person (12 pesos)', sub: 'Discreet inquiries; usually right', disabled: g.res.money < 12 || p.revealed, fn: () => { C.investigate(p); buildLeft(); ui.update(true); } });
         if (p.informant && p.revealed) { opts.push({ label: 'Hold a trial', sub: 'Calls the village; verdict visible to all', fn: () => { trial(a); } }); }
@@ -583,7 +588,12 @@
     const coal = t.rows.filter((r) => r.mean > 15).length;
     const histScore = (() => { const hist = C.presets.historia.v; let m = 0; hist.forEach((v, k) => { if (g.platform.declared[k] && g.platform.pub[k] === v) m++; }); return m; })();
     let title, body;
-    if (kind === 'victory') {
+    if (kind === 'bop_win' || kind === 'bop_loss') {
+      const win = kind === 'bop_win'; const gm = g.gov && g.gov.result ? g.gov.result.m : null;
+      title = win ? (tyr ? 'The state holds — by fear' : 'The state holds') : 'The state falls';
+      body = win ? 'The exile brigade is beaten at Playa Girón. The revolution survives its first and most important test, and a long standoff with its powerful neighbour begins.' : 'The American-backed invasion succeeds where the old regime failed. What comes after is decided by other people, in other rooms.';
+      if (g.merc > 40) body += ' The men who had drifted into protection and smuggling were not the ones who defended the beach.';
+    } else if (kind === 'victory') {
       title = tyr ? 'Victory by fear' : coal >= 5 ? 'Victory: a broad coalition' : 'Victory: a narrow one';
       body = tyr ? 'The regime falls. Your men obey because they fear you, and so do the towns.' : coal >= 5 ? 'Peasants, workers, students and much of the middle class stand with you, and the Church is wary but quiet.' : 'You won the war, but large parts of the island remain unconvinced.';
     } else if (kind === 'dead') { title = 'The leader falls'; body = 'The circle with the golden ring is still. History moves on without you.'; }
@@ -594,6 +604,7 @@
     const h = `<h2>${esc(title)}</h2><div class="lede">${esc(body)}</div>
 <div class="grid2"><div class="plank"><b>The people's ledger</b><div class="sub">${C.dateStr(g.day)} · day ${g.day}<br>Soldiers killed ${S.killedArmy} · Civilians killed ${S.killedCiv} · Rebels lost ${S.lostRebels}<br>Released ${S.released} · Executed ${S.executed} · Recruited ${S.hired}</div></div>
 <div class="plank"><b>The coalition</b><div class="sub">Strongest: ${esc(strong)}<br>Weakest: ${esc(weak)}<br>Women ${t.women.toFixed(0)} · Afro-Cubans ${t.afro.toFixed(0)}<br>Reputation — fear ${Math.round(R.fear)}, justice ${Math.round(R.justice)}, honesty ${Math.round(R.honesty)}, discipline ${Math.round(R.discipline)}</div></div></div>
+${g.us ? `<div class="plank"><b>Washington's ledger</b><div class="sub">American arms shipments to the regime: ${g.us.arms}<br>Strings you accepted: ${g.us.strings} · American interests you crossed: ${g.us.interests}<br>${g.merc ? `Drift toward a business: ${Math.round(g.merc)}/100` : 'You never ran a racket.'}</div></div>` : ''}
 <div class="plank"><b>What shaped this run</b><ul class="sub" style="margin:4px 0 0 18px;padding:0">${causes || '<li>A quiet war.</li>'}</ul></div>
 <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn primary big" onclick="location.search='?seed=${g.seed}&name='+encodeURIComponent(localStorage.getItem('cubea_name')||'Fidel Castro')+'&auto=prologue'">Try again</button><button class="btn big" onclick="location.search=''">Title screen</button></div>`;
     g.over = g.over || { kind }; openModal(h, true); $('mbox').querySelector('.close') && ($('mbox').querySelector('.close').style.display = 'none');

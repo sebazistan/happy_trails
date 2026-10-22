@@ -441,7 +441,7 @@
     return card({ title: 'Santa Clara', icon: '🚂', body: r.win ? 'The decisive battle in the city of Santa Clara: a derailed armoured train, street fighting, and a garrison that no longer wants to die. The road to Havana is open.' : 'The army holds Santa Clara for now. The war goes on, but the end is within sight if the regime keeps weakening.', choices: [{ label: 'Continue', fn: () => { if (r.win) { g.regime.armyMorale -= 12; g.regime.legit -= 10; } } }] }); } });
   anchor({ id: 'newyear', day: D(1959, 1, 1) - 1, run: (g) => {
     const collapse = g.regime.legit < 38 && g.regime.armyMorale < 48 || g.regime.legit < 28;
-    if (collapse) return card({ title: 'Batista flees', icon: '✈', body: 'In the early hours of 1 January 1959, Batista boards a plane for the Dominican Republic with his family and his friends. The generals negotiate; the garrisons lay down their weapons; a general strike you did or did not prepare finishes the job. The revolution has won. What kind of revolution is up to what you built.', choices: [{ label: 'See what you built', fn: () => { C.endGame('victory'); } }] });
+    if (collapse) return card({ title: 'Batista flees', icon: '✈', body: 'In the early hours of 1 January 1959, Batista boards a plane for the Dominican Republic with his family and his friends. The generals negotiate; the garrisons lay down their weapons; a general strike you did or did not prepare finishes the job. The revolution has won. What kind of revolution is up to what you built.', choices: [{ label: 'See what you built', fn: () => { C.beginGoverning(); } }] });
     return card({ title: 'The regime holds — for now', icon: '⌛', body: 'The new year arrives and Batista is still in the Palace. You have not broken the army\'s will or the regime\'s legitimacy. The war goes on.', choices: [{ label: 'Keep fighting', fn: () => { } }] }); } });
 
   function checkAnchors() {
@@ -455,7 +455,7 @@
       const res = a.run(g); if (res) { if (res.after) { const orig = res.choices; res.choices = orig.map((ch) => Object.assign({}, ch, { fn: () => { ch.fn && ch.fn(); res.after(); } })); } C.ui.card(res); return; }
     }
     // collapse check any time
-    if (g.regime.legit < 18 && g.regime.armyMorale < 25 && !g.over) { g.regime.legit = 18; C.story.fired.newyear = true; C.ui.card({ title: 'The regime collapses', icon: '🏳', body: 'Garrisons surrender across the island. The army will not fight any more. Batista leaves.', choices: [{ label: 'See what you built', fn: () => C.endGame('victory') }] }); }
+    if (g.regime.legit < 18 && g.regime.armyMorale < 25 && !g.over) { g.regime.legit = 18; C.story.fired.newyear = true; C.ui.card({ title: 'The regime collapses', icon: '🏳', body: 'Garrisons surrender across the island. The army will not fight any more. Batista leaves.', choices: [{ label: 'See what you built', fn: () => C.beginGoverning() }] }); }
   }
   function showBattle(name, r) {
     const g = G();

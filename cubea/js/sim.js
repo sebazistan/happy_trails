@@ -350,7 +350,7 @@
     for (const it of g.queue) { if (it.due <= now) { const q = C.P(it.id); if (q && q.status !== 'dead') applyMemory(q, it.mem, it.w); } else rest.push(it); }
     g.queue = rest;
     processVales();
-    C.atrocityTick(); C.ordersDaily();
+    C.atrocityTick(); C.ordersDaily(); C.racketDaily && C.racketDaily();
     // trust in each faction: promises vs deeds
     updateTrust();
     // regime meters
