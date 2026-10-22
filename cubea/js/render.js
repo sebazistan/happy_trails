@@ -321,42 +321,7 @@
   }
 
   C.drawActor = (c, a, t, z) => drawActor(c, a, t, z);
-  // time-traveller: circle with arms and legs and a small clock mark
-  function drawTraveller(c, a, t) {
-    const p = a.p;
-    c.save(); c.translate(a.x, a.y);
-    c.fillStyle = 'rgba(0,0,0,.28)'; c.beginPath(); c.ellipse(0, 3, 7, 2.6, 0, 0, 6.3); c.fill();
-    const bob = a.moving ? Math.abs(Math.sin(a.anim * 2)) * 1.3 : Math.sin(t * 2) * 0.3;
-    c.translate(0, -10.5 - bob);
-    const sw = a.moving ? Math.sin(a.anim * 2) : 0;
-    const col = a.drawColor, limb = 'rgb(' + ((col[0] * 0.7) | 0) + ',' + ((col[1] * 0.7) | 0) + ',' + ((col[2] * 0.7) | 0) + ')';
-    c.fillStyle = limb; c.fillRect(-3.5, 5.5, 2.6, 5 - sw * 1.4); c.fillRect(0.9, 5.5, 2.6, 5 + sw * 1.4);
-    c.fillStyle = 'rgb(48,38,34)'; c.fillRect(-3.9, 10 - sw * 1.4, 3.4, 1.5); c.fillRect(0.5, 10 + sw * 1.4, 3.4, 1.5);
-    const hasW = a.weapon && a.weaponOut;
-    c.fillStyle = limb; c.fillRect(-9.2, -1 + sw * 1.4, 2.6, 6); if (!hasW) c.fillRect(6.6, -1 - sw * 1.4, 2.6, 6);
-    // body disc + golden time ring
-    c.fillStyle = rgb(col); c.beginPath(); c.arc(0, 0, 7.2, 0, 6.3); c.fill();
-    c.fillStyle = 'rgba(255,255,255,.28)'; c.beginPath(); c.arc(-1.8, -2.4, 4.2, 0, 6.3); c.fill();
-    c.strokeStyle = 'rgba(255,214,96,.95)'; c.lineWidth = 1.5; c.beginPath(); c.arc(0, 0, 7.2, 0, 6.3); c.stroke();
-    c.strokeStyle = 'rgba(255,214,96,.7)'; c.lineWidth = 0.6; c.setLineDash([1, 1.6]); c.beginPath(); c.arc(0, 0, 9.2, t * 0.8, t * 0.8 + 5.2); c.stroke(); c.setLineDash([]);
-    // face
-    const fake = { p, face: a.face, dead: false, expr: a.expr, blink: a.blink, smirk: true, talking: a.talking, shooting: a.shooting, pain: a.pain };
-    c.save(); c.scale(1.0, 1.0); drawFace(c, fake, 11, 11); c.restore();
-    // cap & beard (Fidel's mantle) and clock glyph on chest
-    c.fillStyle = 'rgb(70,84,60)'; c.beginPath(); c.arc(0, -3.6, 6.2, Math.PI, 0); c.fill(); c.fillRect(a.face > 0 ? 0 : -7, -3.8, 7, 1.2);
-    c.fillStyle = rgb(p.look.hairCol); c.beginPath(); c.arc(0, 1.8, 6.2, 0.15, Math.PI - 0.15); c.fill();
-    c.strokeStyle = 'rgb(255,214,96)'; c.lineWidth = 0.7; c.beginPath(); c.arc(0, 5.2, 1.9, 0, 6.3); c.moveTo(0, 5.2); c.lineTo(0, 4); c.moveTo(0, 5.2); c.lineTo(1, 5.6); c.stroke();
-    if (hasW) {
-      const ang = a.aim || 0, wl = WLEN[a.weapon.k] || 10;
-      c.save(); c.translate(6, 0); c.rotate(ang); c.fillStyle = limb; c.fillRect(0, -1.2, 5, 2.4);
-      c.strokeStyle = 'rgb(36,30,28)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-1.5, 0); c.lineTo(wl, 0); c.stroke();
-      if (a.muzzle > 0) { c.fillStyle = 'rgba(255,230,140,.95)'; c.beginPath(); c.moveTo(wl, 0); c.lineTo(wl + 6, -2); c.lineTo(wl + 10, 0); c.lineTo(wl + 6, 2); c.closePath(); c.fill(); }
-      c.restore();
-    }
-    c.restore();
-  }
-
-  C.drawTravellerFn = (c, a, t) => drawTraveller(c, a, t);
+  // the leader: an ordinary cube with a gold star and a ring on the ground (see drawScene)
   // ---------- vehicles ----------
   function drawVehicle(c, v, t) {
     const d = v.def; const w = d.w, h = d.h;
@@ -452,7 +417,9 @@
       else {
         const a = it.o;
         if (a.alpha < 1) ctx.globalAlpha = a.alpha;
-        if (a.isPlayer) drawTraveller(ctx, a, t); else drawActor(ctx, a, t, z);
+        if (a.isPlayer) { ctx.strokeStyle = 'rgba(255,214,96,.9)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 9.5, 4, 0, 0, 6.3); ctx.stroke(); }
+        drawActor(ctx, a, t, z);
+        if (a.isPlayer && !a.dead) { ctx.fillStyle = 'rgb(255,214,96)'; ctx.strokeStyle = 'rgba(60,40,10,.8)'; ctx.lineWidth = 0.6; ctx.beginPath(); for (let q = 0; q < 10; q++) { const ang = -Math.PI / 2 + q * Math.PI / 5, rr = q % 2 ? 1.8 : 4.2; ctx[q ? 'lineTo' : 'moveTo'](a.x + Math.cos(ang) * rr, a.y - 32 + Math.sin(ang) * rr); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
         ctx.globalAlpha = 1;
         if (a.sel) { ctx.strokeStyle = 'rgba(255,230,120,.95)'; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 8.5, 3.6, 0, 0, 6.3); ctx.stroke(); }
         if (a.hover && !a.sel) { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 8, 3.4, 0, 0, 6.3); ctx.stroke(); }
@@ -489,12 +456,12 @@
       const sp = C.toScreen(cam, (b.x + b.w / 2) * T + shx / z, (b.y + b.h / 2) * T - (b.h * T * 0.1));
       if (sp.x < -80 || sp.x > W + 80 || sp.y < -20 || sp.y > H + 20) continue;
       if (b.w * T * z < 26 && z < 1.7) continue;
-      const lab = b.label;
+      const lab = C.lab(b.label);
       outlinedText(ctx, lab, sp.x, sp.y, bsz, b.key === 'pad' ? 'rgba(255,255,255,.75)' : '#fff', true);
     }
-    for (const o of s.objs) { if (o.dead) continue; const sp = C.toScreen(cam, o.x, o.y - 14); if (sp.x > -60 && sp.x < W + 60 && sp.y > -20 && sp.y < H + 20) outlinedText(ctx, o.label, sp.x, sp.y, bsz - 1, '#ffd9a0', true); }
-    for (const v of s.vehicles) { if (v.gone) continue; const sp = C.toScreen(cam, v.x, v.y - 14); if (sp.x < -60 || sp.x > W + 60 || sp.y < -20 || sp.y > H + 20) continue; const fuel = v.def.tank ? Math.round(v.fuel / v.def.tank * 100) : -1; outlinedText(ctx, v.def.n + (v.wreck ? ' (destruido)' : '') + (v.wreck || fuel < 0 ? '' : fuel <= 2 ? ' · sin gasolina' : v.tires.some((q) => q < 0.2) ? ' · goma ponchada' : ''), sp.x, sp.y, bsz - 1.5, v.wreck ? '#bbb' : '#d8ecff', false); }
-    for (const an of s.animals) { if (an.dead) continue; const sp = C.toScreen(cam, an.x, an.y - 8); if (sp.x < 0 || sp.x > W || sp.y < 0 || sp.y > H || z < 1.6) continue; outlinedText(ctx, an.def.n, sp.x, sp.y, 7.5, '#f4efe0', false); }
+    for (const o of s.objs) { if (o.dead) continue; const sp = C.toScreen(cam, o.x, o.y - 14); if (sp.x > -60 && sp.x < W + 60 && sp.y > -20 && sp.y < H + 20) outlinedText(ctx, C.lab(o.label), sp.x, sp.y, bsz - 1, '#ffd9a0', true); }
+    for (const v of s.vehicles) { if (v.gone) continue; const sp = C.toScreen(cam, v.x, v.y - 14); if (sp.x < -60 || sp.x > W + 60 || sp.y < -20 || sp.y > H + 20) continue; const fuel = v.def.tank ? Math.round(v.fuel / v.def.tank * 100) : -1; outlinedText(ctx, C.vName(v.type) + (v.wreck ? ' (wrecked)' : '') + (v.wreck || fuel < 0 ? '' : fuel <= 2 ? ' · out of gas' : v.tires.some((q) => q < 0.2) ? ' · flat tire' : ''), sp.x, sp.y, bsz - 1.5, v.wreck ? '#bbb' : '#d8ecff', false); }
+    for (const an of s.animals) { if (an.dead) continue; const sp = C.toScreen(cam, an.x, an.y - 8); if (sp.x < 0 || sp.x > W || sp.y < 0 || sp.y > H || z < 1.6) continue; outlinedText(ctx, C.aName(an.k), sp.x, sp.y, 7.5, '#f4efe0', false); }
     for (const it of s.items) { if (z < 1.4) continue; const sp = C.toScreen(cam, it.x, it.y - 8); if (sp.x < 0 || sp.x > W || sp.y < 0 || sp.y > H) continue; outlinedText(ctx, it.label, sp.x, sp.y, 7.5, '#ffe9a8', false); }
     const tagSize = clamp(3.4 * z + 0.6, 7, 10.5);
     const placed = [];     // declutter: skip a tag if it would sit on top of one already drawn
@@ -504,7 +471,7 @@
       if (a.inside || a.gone) continue; const p = a.p;
       const sp = C.toScreen(cam, a.x, a.y - (a.dead ? 6 : 27 * (a.isPlayer ? 1.05 : 1))); if (sp.x < -60 || sp.x > W + 60 || sp.y < -20 || sp.y > H + 20) continue;
       if (a.alpha < 0.35 && !a.sel) continue;
-      let name = C.tagName(p); if (a.isPlayer) name = 'Fidel Castro  ·  El Viajero';
+      let name = C.tagName(p);
       { const wdt = name.length * tagSize * 0.52 + 6; const bx = { x0: sp.x - wdt / 2, x1: sp.x + wdt / 2, y0: sp.y - tagSize * 0.6, y1: sp.y + tagSize * 0.6 };
         if (prio(a) > 1 && placed.some((q) => bx.x0 < q.x1 && bx.x1 > q.x0 && bx.y0 < q.y1 && bx.y1 > q.y0)) continue; placed.push(bx); }
       const showStance = p.stance;
@@ -524,7 +491,7 @@
       if (a.bubble) { const by = sp.y - tagSize - 5; ctx.font = '600 ' + (tagSize + 1) + 'px ' + FONT; const tw = ctx.measureText(a.bubble.text).width + 12; ctx.fillStyle = 'rgba(255,252,240,.96)'; roundRect(ctx, sp.x - tw / 2, by - 9, tw, 16, 6); ctx.fill(); ctx.strokeStyle = 'rgba(40,30,20,.6)'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = a.bubble.col || '#2a1d14'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(a.bubble.text, sp.x, by - 0.5); }
     }
     // exit labels
-    for (const e of s.exits) { const sp = C.toScreen(cam, (e.x + e.w / 2) * T, (e.y + e.h / 2) * T); if (sp.x > -100 && sp.x < W + 100 && sp.y > -30 && sp.y < H + 30) outlinedText(ctx, '↗ ' + e.label, sp.x, sp.y, bsz, '#ffe28a', true); }
+    for (const e of s.exits) { const sp = C.toScreen(cam, (e.x + e.w / 2) * T, (e.y + e.h / 2) * T); if (sp.x > -100 && sp.x < W + 100 && sp.y > -30 && sp.y < H + 30) outlinedText(ctx, '↗ ' + C.lab(e.label), sp.x, sp.y, bsz, '#ffe28a', true); }
     // day/night + weather overlays
     drawAtmosphere(ctx, G, W, H, t);
   };

@@ -23,12 +23,12 @@
     const l = localPeople(sid).filter((p) => C.ageOf(p) >= 14); if (!l.length) return;
     const v = l[(rnd() * l.length) | 0]; C.addEvent(Object.assign({ victim: v, x: 0, y: 0, settlement: sid, pub: pub === undefined ? 1 : pub }, ev, { val: sign, sev }));
   }
-  C.killOffscreen = function (p, perpSide, text, sev) {
+  C.killOffscreen = function (p, perpSide, text, sev, just) {
     const g = G(); if (p.status === 'dead') return;
     if (p.actor && !p.actor.dead && g.scene && p.actor.scene === g.scene) { C.die(p.actor, null, 'killed'); return; }
     p.status = 'dead'; p.died = g.day; p.diedBy = 'killed'; for (const sq of g.squads) sq.members = sq.members.filter((id) => id !== p.id);
     if (p.mil && p.mil.side === 'rebel') g.stats.lostRebels++; else if (p.mil && p.mil.side === 'army') g.stats.killedArmy++;
-    C.addEvent({ type: 'death', victim: p, perpSide: perpSide, val: perpSide === 'rebel' ? -1 : 1, sev: sev || 55, just: false, pub: 0.3, x: 0, y: 0, settlement: p.settlement, text: text || `${C.tagName(p)} was killed`, memText: text || `${C.tagName(p)} was killed`, headline: text });
+    C.addEvent({ type: 'death', victim: p, perpSide: perpSide, val: perpSide === 'rebel' ? -1 : 1, sev: sev || 55, just: !!just, pub: 0.3, x: 0, y: 0, settlement: p.settlement, text: text || `${C.tagName(p)} was killed`, memText: text || `${C.tagName(p)} was killed`, headline: text });
   };
   C.rebelStrength = function () {
     const ps = squadPeople(); let pw = 0; const g = G();
@@ -91,7 +91,7 @@
   def({ id: 'informant_hint', cat: 'pressure', t: 3, cd: 20, layer: 3, w: (g) => hasInformant() ? 2.5 : 0, run: (g) => {
     const inf = hasInformant(); if (!inf) return null; const w = C.viejoVoice('informant'); return card({ title: 'Someone is talking', icon: '👂', body: `${w}\n\nEl Viejo says a man among the people near the camp knows too much and spends money he does not have.`, choices: [
       { label: 'Keep quiet and watch him', sub: 'Risk: he keeps leaking. Chance to catch him in the act.', fn: () => { g.flags.watching = true; g.regime.heat += 2; } },
-      { label: 'Use foresight to see his true face', sub: g.foresight > 0 ? `Costs 1 foresight (${g.foresight} left)` : 'No foresight left', disabled: g.foresight <= 0, fn: () => { g.foresight--; inf.revealed = true; inf.stance = inf.trueStance; C.log(`Foresight: ${C.fullName(inf)} is an informer!`, 'warn'); } },
+      { label: 'Have your network check him (12 pesos)', sub: 'Slow, quiet, usually right', disabled: g.res.money < 12, fn: () => { C.investigate(inf); } },
       { label: 'Question people near the camp', sub: 'Heavy-handed: frightens villagers', fn: () => { C.adjustRep('fear', 5); C.adjustRep('justice', -2); if (rnd() < 0.5) { inf.revealed = true; inf.stance = inf.trueStance; C.log('The questioning pays off: someone points at ' + C.fullName(inf) + '.', 'warn'); } } },
     ] }); } });
   def({ id: 'army_requisition', cat: 'pressure', t: 3, cd: 22, layer: 3, w: (g) => g.regime.heat > 12 && C.isZafra(g.day) === false ? 2.5 : 0.6, run: (g) => {
@@ -131,13 +131,35 @@
     if (s.sid === 'sierra') { C.spawnPatrol(s, 12 + Math.floor(g.day > 540 ? 6 : 0), 'Columna del Ejército'); C.viejoSays('A whole column is coming up from the lowlands, and the airplanes behind it. This is the big one.'); C.log('OFFENSIVE: an army column enters the Sierra!', 'bad'); }
     else C.log('An army offensive is rolling into the Sierra. Your camp is exposed — return?', 'bad');
     g.regime.heat -= 18; return null; } });
-  def({ id: 'misconduct', cat: 'pressure', t: 4, cd: 16, layer: 3, w: (g) => { const bad = squadPeople().filter((p) => !p.roster && (p.traits.includes('drinker') || p.traits.includes('hothead') || p.needs.food < 25 || p.morale < 28)); return bad.length && g.rep.discipline < 62 ? 2 + (50 - g.rep.discipline) * 0.04 : 0.1; }, run: (g) => {
-    const cand = squadPeople().filter((p) => !p.roster).sort((a, b) => (b.traits.includes('drinker') ? 2 : 0) + (b.traits.includes('hothead') ? 2 : 0) - (a.traits.includes('drinker') ? 2 : 0) - (a.traits.includes('hothead') ? 2 : 0) + rnd() - 0.5)[0]; if (!cand) return null;
-    const sid = pick(['palmarito', 'cayo']); const vic = randomLocal(sid, (p) => p.sex === 'F' && C.ageOf(p) > 16 && C.ageOf(p) < 45); if (!vic) return null;
-    return card({ title: 'Misconduct in the ranks', icon: '⚖', body: `${C.tagName(cand)}, drunk and angry, assaulted ${C.tagName(vic)} at ${S(sid).name} and shamed her family. The village is waiting to see what the "liberators" do about it. Your own soldiers are watching too.`, choices: [
-      { label: 'Court-martial him in front of the village', sub: 'Harsh. Shows that no one is above the law.', fn: () => { C.adjustRep('discipline', 12); C.adjustRep('justice', 10); cand.morale -= 20; cand.trueStance -= 10; C.addEvent({ type: 'justice', victim: vic, perpSide: 'rebel', positive: true, sev: 60, pub: 0.9, x: 0, y: 0, settlement: sid, text: `Rebels punished a soldier who wronged ${C.tagName(vic)}`, memText: 'The rebels punished their own soldier', headline: `Rebel soldier tried for assault at ${S(sid).name}` }); C.deed(5, 6); C.deed(6, 6); if (rnd() < 0.5) C.desert(cand); } },
-      { label: 'Punish him quietly and apologize to her', sub: 'Smaller effect, less shame for the family', fn: () => { C.adjustRep('discipline', 5); C.adjustRep('justice', 4); C.addEvent({ type: 'justice', victim: vic, perpSide: 'rebel', positive: true, sev: 38, pub: 0.2, x: 0, y: 0, settlement: sid, text: 'Rebels apologised', memText: 'The rebels apologised and punished him' }); } },
-      { label: 'Let it pass — we need every rifle', sub: 'Soldiers see impunity. The village sees you.', fn: () => { C.adjustRep('discipline', -9); C.adjustRep('justice', -12); C.addEvent({ type: 'abuse', victim: vic, perpSide: 'rebel', val: -1, sev: 80, pub: 0.9, x: 0, y: 0, settlement: sid, text: `A rebel soldier went unpunished for assaulting ${C.tagName(vic)}`, memText: 'A rebel soldier wronged us and was not punished', headline: `Rebels accused of abuse at ${S(sid).name}` }); g.trust.peasants = clamp(g.trust.peasants - 0.07, 0.02, 1); g.trust.church = clamp(g.trust.church - 0.06, 0.02, 1); } },
+  // ---- misconduct in your own ranks: theft, drunken violence, abuse, killing. Punishment divides the troop. ----
+  def({ id: 'misconduct', cat: 'pressure', t: 4, cd: 10, layer: 3, w: (g) => { const bad = squadPeople().filter((p) => !p.roster && (p.traits.includes('drinker') || p.traits.includes('hothead') || p.needs.food < 25 || p.morale < 28)); return bad.length && g.rep.discipline < 70 ? 1.6 + (55 - g.rep.discipline) * 0.04 : 0.08; }, run: (g) => {
+    const score = (p) => (p.traits.includes('drinker') ? 2 : 0) + (p.traits.includes('hothead') ? 2 : 0) + (p.traits.includes('greedy') ? 1 : 0) + (p.needs.food < 25 ? 1 : 0) + (p.morale < 28 ? 1 : 0) - (p.traits.includes('kind') ? 2 : 0) - (p.traits.includes('stoic') ? 1 : 0) + rnd() * 1.6;
+    const cand = squadPeople().filter((p) => !p.roster).sort((a, b) => score(b) - score(a))[0]; if (!cand) return null;
+    const sid = pick(['palmarito', 'cayo']); const nm = S(sid).name;
+    const kind = C.rnd.weighted([['theft', 0.36], ['drunk', 0.26], ['abuse', 0.13], ['killing', 0.09]]);
+    const vic = randomLocal(sid, (p) => (kind === 'abuse' ? p.sex === 'F' && C.ageOf(p) > 14 && C.ageOf(p) < 45 : C.ageOf(p) > 14)); if (!vic) return null;
+    const cn = C.tagName(cand), vn = C.tagName(vic);
+    const friends = C.squadPeople().filter((q) => q.id !== cand.id && C.relativeLabel(cand, q)).length;
+    const exp = cand.exp > 25 ? 'one of your experienced men' : 'a recent recruit';
+    const text = { theft: `${cn} took a family's savings and their pig at ${nm}.`, drunk: `${cn}, drunk, beat ${vn} at ${nm} in front of the neighbours.`, abuse: `${cn}, drunk and angry, abused ${vn} at ${nm}. Her family is waiting to see what the rebels do about it.`, killing: `${cn} shot ${vn} at ${nm} after an argument over food. The village saw it.` }[kind];
+    const sev = { theft: 28, drunk: 40, abuse: 85, killing: 90 }[kind];
+    const graveKind = kind === 'abuse' || kind === 'killing';
+    const base = { type: kind === 'abuse' ? 'abuse' : kind === 'killing' ? 'murder' : kind === 'drunk' ? 'beating' : 'theft', victim: vic, perpSide: 'rebel', val: -1, sev, pub: kind === 'theft' ? 0.15 : 0.8, x: 0, y: 0, settlement: sid, text: `A rebel soldier ${kind === 'abuse' ? 'abused' : kind === 'killing' ? 'killed' : kind === 'drunk' ? 'beat' : 'robbed'} ${vn} at ${nm}`, memText: kind === 'abuse' ? `A rebel soldier abused ${vn}` : kind === 'killing' ? `A rebel soldier killed ${vn}` : kind === 'drunk' ? `A drunk rebel beat ${vn}` : `A rebel soldier robbed us`, headline: graveKind ? `Rebel soldier accused of ${kind === 'abuse' ? 'abuse' : 'murder'} at ${nm}` : null };
+    const info = `\n\n${cn} is ${exp}, and has ${friends} friend${friends === 1 ? '' : 's'} or kin among your men. You have ${C.squadPeople().length} soldiers in all.${graveKind ? '\n\nIn a small troop every rifle counts, and killing one of your own divides the rest. The village — and the women of the Sierra — are watching.' : ''}`;
+    const choices = [];
+    if (graveKind) choices.push({ label: 'Firing squad', sub: 'The historic answer. Strongest signal to the people; some of your men will not forgive it', fn: () => C.punishOffender(cand, vic, sid, kind, 'squad') });
+    choices.push({ label: graveKind ? 'Court-martial: disarm, hard labour, ration cut' : 'Court-martial: confiscate his weapon and put him on latrine duty', sub: 'Harsh but he lives; fewer feel it', fn: () => C.punishOffender(cand, vic, sid, kind, 'martial') });
+    choices.push({ label: 'Make him apologize and repay the family', sub: graveKind ? 'The village will think it too little' : 'A quiet, cheap answer', fn: () => C.punishOffender(cand, vic, sid, kind, 'private') });
+    choices.push({ label: 'Let it pass — we need every rifle', sub: 'Your soldiers see impunity. The village sees you', fn: () => C.punishOffender(cand, vic, sid, kind, 'ignore') });
+    return card({ title: 'Misconduct in the ranks', icon: '⚖', body: text + info, choices, onShow: () => { C.addEvent(base); g.rep.discipline = clamp(g.rep.discipline - 3, 0, 100); } }); } });
+
+  // ---- the army's own atrocities reach you as reports ----
+  def({ id: 'army_abuse', cat: 'pressure', t: 4, cd: 12, layer: 3, w: (g) => g.recentAtrocity && g.day - g.recentAtrocity.day < 8 && !g.recentAtrocity.handled ? 4 : 0, run: (g) => {
+    const r = g.recentAtrocity; if (!r) return null; r.handled = true; const sid = r.settlement; const nm = S(sid).name;
+    return card({ title: `${nm}: the soldiers again`, icon: '🪖', body: `${r.text} The family has come to the camp. They do not ask for revenge. They ask whether anyone is left who will answer for such things.`, choices: [
+      { label: 'Strike the post at night', sub: 'A mission for your best men. Risky. The village will know who answered', fn: () => { g.flags.avenge = sid; g.mission = { text: `Answer the abuse at ${nm}: hit the Guardia post.`, kind: 'avenge' }; C.log(`Mission: hit the army post at ${nm}.`, 'warn'); } },
+      { label: 'Take the family into the hills and feed them', sub: 'Costs 10 food', disabled: g.res.food < 10, fn: () => { g.res.food -= 10; C.addEvent({ type: 'aid', victim: C.P(r.victim), perpSide: 'rebel', positive: true, sev: 50, pub: 0.3, x: 0, y: 0, settlement: sid, text: `Rebels sheltered a family from ${nm}`, memText: 'Rebels sheltered us' }); C.deed(1, 3); } },
+      { label: 'Tell them to keep their heads down', sub: 'You are not strong enough yet', fn: () => { g.trust.peasants = clamp(g.trust.peasants - 0.02, 0.02, 1); } },
     ] }); } });
 
   // social
@@ -163,14 +185,14 @@
     const r = rnd(); const sid = pick(['palmarito', 'cayo']);
     if (r < 0.5) { const rec = randomLocal(sid, (p) => p.sex === 'M' && C.ageOf(p) > 17 && C.ageOf(p) < 38 && !p.mil && p.trueStance > 5); if (!rec) return null; return card({ title: `${C.tagName(rec)} wants to join`, icon: '🙋', body: `${C.tagName(rec)}, ${C.OCC[rec.occ].n.toLowerCase()} from ${S(sid).name}, shows up at the camp: "I can shoot. My brother is in prison. I am hungry for something to believe in."`, choices: [{ label: 'Welcome him (feed him, give him a rifle if you have one)', fn: () => C.recruit(rec) }, { label: 'Send him home', sub: 'We cannot feed another mouth', fn: () => { } }] }); }
     const spy = randomLocal(sid, (p) => p.sex === 'M' && C.ageOf(p) > 20 && C.ageOf(p) < 45 && !p.mil && !p.roster); if (!spy) return null;
-    if (r < 0.75) return card({ title: `A stranger, ${C.tagName(spy)}`, icon: '🕴', body: `${C.tagName(spy)} claims to bring a message from Santiago. His hands are too clean for a guajiro, and his boots are new.`, choices: [{ label: 'Take his message', sub: 'A chance at a contact — or a trap', fn: () => { if (rnd() < 0.45) { spy.informant = true; spy.trueStance = -50; spy.stance = 25; spy.conv = 55; C.recruit(spy); C.log('He seems sincere...', 'info'); } else { g.res.money += 30; C.log('Honest: a Llano contact sends 30 pesos.', 'good'); } } }, { label: 'Turn him away', fn: () => { } }, { label: 'Use foresight', sub: g.foresight > 0 ? `${g.foresight} left` : 'none left', disabled: g.foresight <= 0, fn: () => { g.foresight--; C.log(`Foresight: ${C.fullName(spy)} is ${rnd() < 0.5 ? 'honest.' : 'not what he says.'}`, 'info'); } }] });
+    if (r < 0.75) return card({ title: `A stranger, ${C.tagName(spy)}`, icon: '🕴', body: `${C.tagName(spy)} claims to bring a message from Santiago. His hands are too clean for a guajiro, and his boots are new.`, choices: [{ label: 'Take his message', sub: 'A chance at a contact — or a trap', fn: () => { if (rnd() < 0.45) { spy.informant = true; spy.trueStance = -50; spy.stance = 25; spy.conv = 55; C.recruit(spy); C.log('He seems sincere...', 'info'); } else { g.res.money += 30; C.log('Honest: a Llano contact sends 30 pesos.', 'good'); } } }, { label: 'Turn him away', fn: () => { } }, { label: 'Have someone check him out (12 pesos)', sub: 'Usually right', disabled: g.res.money < 12, fn: () => { C.investigate(spy); } }] });
     return null; } });
   def({ id: 'teacher', cat: 'social', t: 1, cd: 40, layer: 3, w: (g) => 1.2, run: (g) => card({ title: 'The teacher of Palmarito', icon: '📚', body: 'The village teacher asks for paper, pencils and a map. "Half my pupils cannot read. Give them a reason to."', choices: [{ label: 'Give paper and pencils (6 pesos)', disabled: g.res.money < 6, fn: () => { g.res.money -= 6; memoryAll('palmarito', { type: 'aid', perpSide: 'rebel', positive: true, text: 'Rebels supplied the school', memText: 'Rebels supplied our school' }, 1, 46, 0.9); C.deed(1, 7); } }, { label: 'Not now', fn: () => { } }] }) });
   def({ id: 'women_volunteers', cat: 'social', t: 3, cd: 60, layer: 4, w: (g) => g.day > 60 ? 1.8 : 0, run: (g) => {
     const wmn = localPeople('sierra', (p) => p.sex === 'F' && C.ageOf(p) > 16 && C.ageOf(p) < 36).slice(0, 5).concat(localPeople('palmarito', (p) => p.sex === 'F' && C.ageOf(p) > 16 && C.ageOf(p) < 36).slice(0, 3));
     if (wmn.length < 3) return null; const names = wmn.slice(0, 3).map(C.tagName).join(', ');
     return card({ title: 'Women ask to fight', icon: '👩', body: `${names} and others come to the camp: "We cook, we carry messages, we hide your men. Let us carry rifles." Some of your men grumble. In the villages, the older women are watching; so are the priests.\n\n(Historically the Mariana Grajales Women's Platoon was formed in September 1958, commanded by Isabel Rielo and Teté Puebla.)`, choices: [
-      { label: 'Form a women\'s platoon with real weapons and real commanders', sub: 'Women strongly approve. Some men and traditionalists will resist.', fn: () => { C.deed(6, 30); for (const p of wmn) C.recruit(p, 3); for (const p of C.W.people) { if (p.status !== 'alive') continue; if (p.sex === 'F') p.trueStance += 3; else if (p.fac === 'church' || (p.iss[6] < -0.2 && p.sal.includes(6))) p.trueStance -= 3.5; } g.flags.womenPlatoon = true; C.log('The women\'s platoon is formed.', 'good'); } },
+      { label: 'Form a women\'s platoon and arm them from the armory', sub: `Spare rifles: ${g.res.guns}. Women strongly approve; some men and traditionalists resist. Guns are limited — arming novices over veterans will divide the rebels.`, fn: () => { C.deed(6, 30); for (const p of wmn) C.recruit(p, 3); for (const p of C.W.people) { if (p.status !== 'alive') continue; if (p.sex === 'F') p.trueStance += 3; else if (p.fac === 'church' || (p.iss[6] < -0.2 && p.sal.includes(6))) p.trueStance -= 3.5; } g.flags.womenPlatoon = true; C.log('The women\'s platoon is formed' + (g.res.guns <= 0 ? ' — most of them with machetes, for lack of rifles.' : '.'), 'good'); } },
       { label: 'Use them as couriers, nurses and scouts', sub: 'Safer politically; still valuable (and women attract less suspicion in towns)', fn: () => { C.deed(6, 12); for (const p of wmn) { C.recruit(p, 3); p.covert = true; } } },
       { label: 'Decline', sub: 'The old order holds', fn: () => { C.deed(6, -6); for (const p of C.W.people) if (p.sex === 'F' && p.status === 'alive' && p.sal.includes(6)) p.trueStance -= 2; } },
     ] }); } });
@@ -261,7 +283,7 @@
     p.look.sw = Math.min(1.08, p.look.sw);
     let best = g.squads[0]; for (const sq of g.squads) if (sq.members.length < best.members.length) best = sq;
     best.members.push(p.id); p.mil.squad = best.id; g.stats.hired++;
-    p.wpn = wpn ? 'rifle' : (g.res.ammo > 10 ? pick(['rifle', 'pistol', 'garand']) : 'machete');
+    if (wpn) p.wpn = 'rifle'; else if (g.res.guns > 0) { g.res.guns--; p.wpn = 'rifle'; C.resentment(p); } else p.wpn = 'machete';
     C.log(`${C.tagName(p)} joins the rebels (${best.name}).`, 'good');
     if (p.actor && p.actor.scene) { p.actor.gone = true; p.actor = null; }
     if (g.scene && g.scene.sid === 'sierra') C.joinPlayerScene(p, best.id);
@@ -296,7 +318,7 @@
     if (V.morale < 40) tips.push(['Morale', 'The boys are low. Fiestas, letters, a fire, a good meal. Win a small fight. Keep promises you make to them.']);
     if (g.rep.fear > 55) tips.push(['Fear', 'People are afraid of you. Fear gets quick obedience, and quick betrayal. The towns and the Church will not forgive it.']);
     if (g.rep.discipline < 35) tips.push(['Discipline', 'Your men have been getting away with things. Punish an offender where the village can see it, or the village will punish you.']);
-    if (hasInformant()) tips.push(['A leak', 'Someone near the camp is talking to the Guardia. A foresight token would show his real colour.']);
+    if (hasInformant()) tips.push(['A leak', 'Someone near the camp is talking to the Guardia. Look for the tells in his file (click him), or pay the network to check.']);
     if (g.res.money < 20) tips.push(['Money', 'Pesos come from Havana, from the merchants and the students. Find a donor and a courier. A woman travelling in a good dress is stopped less often than a man.']);
     if (!g.platform.declared.some((d) => d)) tips.push(['Your program', 'People do not know what you want. Tell them: open the Manifesto (P). Then keep the promises — they will count the days.']);
     if (g.unlocked.layer < 6 && g.day > 90) tips.push(['Beyond the Sierra', 'The island is bigger than this mountain. The cities have money and students; the unions have strikes. Take the road when you are ready.']);
@@ -444,7 +466,7 @@
       { label: 'Execute all prisoners', sub: 'Brutal. Every family hears of it.', fn: () => { applyLoot(r); C.adjustRep('fear', 20); C.adjustRep('justice', -24); g.stats.executed += r.pris; g.stats.killedArmy += r.pris; for (let i = 0; i < Math.min(r.pris, 4); i++) memoryAll('manzanillo', { type: 'massacre', perpSide: 'rebel', text: `Rebels shot prisoners after ${name}`, memText: 'The rebels shot prisoners', headline: `Rebels accused of killing prisoners after ${name}` }, -1, 75, 1); } },
     ] : [{ label: 'Withdraw to the mountain', fn: () => { } }] });
   }
-  function applyLoot(r) { const g = G(); g.res.ammo += r.loot.ammo; g.res.med += r.loot.med; g.res.food += r.loot.food; for (const p of squadPeople()) if (!p.wpn || p.wpn === 'machete') { if (r.loot.guns-- > 0) p.wpn = 'rifle'; } }
+  function applyLoot(r) { const g = G(); g.res.ammo += r.loot.ammo; g.res.med += r.loot.med; g.res.food += r.loot.food; g.res.guns += r.loot.guns; }
   C.showBattle = showBattle;
 
   C.story.defs = E; C.story.anchors = A;

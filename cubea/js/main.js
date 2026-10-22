@@ -112,8 +112,9 @@
   }
 
   // ---------------- begin ----------------
-  C.beginGame = function (mode, seed, fore, reveal) {
-    C.newGame(seed, { foresight: fore });
+  C.beginGame = function (mode, seed, fore, reveal, pname) {
+    C.newGame(seed, {});
+    C.setPlayerName(pname || 'Fidel Castro');
     const g = G();
     // initial squads from the Granma party
     const ids = C.W.party.filter((id) => id !== C.W.player);
@@ -135,7 +136,7 @@
     // the player holds weapon drawn at start of the ambush
     if (mode !== 'sandbox') pl.weaponOut = true;
     C.ui.start();
-    if (mode !== 'sandbox') { g.paused = false; setTimeout(() => C.ui.card({ title: 'The Granma', icon: '⛵', body: 'Seven days at sea in a leaking yacht built for twenty-five, packed with 82 men, seasick, hungry, and late. On 2 December 1956 the boat runs aground in the mangroves at Las Coloradas, and you wade ashore with soaked boots and ruined supplies. Three days later, resting in a cane field at Alegría de Pío, someone has told the army exactly where you are.\n\nYou are not Fidel — you are a traveller from another time standing in his boots, trying to do this right. (Your force here is smaller than history\'s: the demo scales the number down.)', choices: [{ label: 'Begin: the cane field, 5 December 1956', fn: () => { } }] }), 400); }
+    if (mode !== 'sandbox') { g.paused = false; setTimeout(() => C.ui.card({ title: 'The Granma', icon: '⛵', body: 'Seven days at sea in a leaking yacht built for twenty-five, packed with 82 men, seasick, hungry, and late. On 2 December 1956 the boat runs aground in the mangroves, and you wade ashore with soaked boots and ruined supplies. Three days later, resting in a cane field at Alegría de Pío, someone has told the army exactly where you are. (The demo uses a smaller party than history\'s.)', choices: [{ label: 'Begin: the cane field, 5 December 1956', fn: () => { } }] }), 400); }
     last = performance.now(); requestAnimationFrame(frame);
   };
 
@@ -295,7 +296,7 @@
 
   // ---------------- orders from the mouse ----------------
   C.commandAt = function (wx, wy, shift) {
-    const g = G(), s = g.scene; const sq = g.squads[g.curSquad]; if (!sq || !sq.members.length) return;
+    const g = G(), s = g.scene; if (g.paused) { C.ui.toast('No orders while paused — time is part of the pressure'); return; } const sq = g.squads[g.curSquad]; if (!sq || !sq.members.length) return;
     let tgt = null, bd = 16; for (const a of s.actors) { if (a.side !== 'army' || a.dead || a.inside) continue; const d = Math.hypot(a.x - wx, a.y - 8 - wy); if (d < bd) { bd = d; tgt = a; } }
     if (tgt) { sq.focus = tgt; C.giveOrder(sq.id, { type: 'move', x: tgt.x, y: tgt.y }); g.orderMarks.push({ x: tgt.x, y: tgt.y, t: 0, col: '#ff5a4a' }); C.ui.toast('Focus fire!'); }
     else {
@@ -466,8 +467,8 @@
       case 'x': if (pl && !g.vehicle) { pl.weaponOut = !pl.weaponOut && !!pl.weapon; C.ui.toast(pl.weaponOut ? 'Weapon drawn' : 'Weapon holstered'); } break;
       case 'r': if (pl && pl.weapon && pl.reload <= 0 && pl.weapon.spare > 0) pl.reload = C.WEAPONS[pl.weapon.k].rel; break;
       case 'g': if (pl && !g.vehicle) { if (g.res.gren > 0 && C.throwExplosive(pl, mouse.wx, mouse.wy, 'grenade')) g.res.gren--; else if (g.res.molo > 0 && C.throwExplosive(pl, mouse.wx, mouse.wy, 'molotov')) g.res.molo--; else C.ui.toast('No grenades'); } break;
-      case 'f': { const sq = g.squads[g.curSquad]; if (sq) { sq.fireNow = true; setTimeout(() => (sq.fireNow = false), 6000); C.ui.toast('¡Fuego! Ambush sprung'); } break; }
-      case 'q': useForesight(); break;
+      case 'f': { if (g.paused) { C.ui.toast('No orders while paused'); break; } const sq = g.squads[g.curSquad]; if (sq) { sq.fireNow = true; setTimeout(() => (sq.fireNow = false), 6000); C.ui.toast('¡Fuego! Ambush sprung'); } break; }
+      case 'v': g.opts.fog = !g.opts.fog; C.ui.toast(g.opts.fog ? 'Fog of war on' : 'Fog of war off'); break;
       case 'z': if (!g.resting) { if (s_alert()) { C.ui.toast('Cannot rest: enemies near'); } else { g.resting = true; C.ui.toast('Resting until dawn…'); } } else g.resting = false; break;
       case 'e': doInteract(); break;
       case 'm': C.ui.openMap(); break;
@@ -477,7 +478,7 @@
       case 'b': C.ui.openBase(); break;
       case 'h': C.ui.openHelp(); break;
       case 'tab': { e.preventDefault(); cyclePartner(); break; }
-      case '1': case '2': case '3': case '4': g.curSquad = (+k) - 1; C.ui.toast('Squad: ' + g.squads[g.curSquad].name); C.ui.refresh(); break;
+      case '1': case '2': case '3': case '4': g.curSquad = (+k) - 1; C.ui.toast('Squad: ' + C.gName(g.squads[g.curSquad])); C.ui.refresh(); break;
       case 'u': g.unlocked.layer = 6; C.ui.refresh(); C.ui.toast('All systems revealed'); break;
       case 'k': if (pl && !pl.dead && e.shiftKey) { pl.p.hp = 9999; C.ui.toast('God mode'); } break;
       default: break;
@@ -495,22 +496,13 @@
     const t = C.findInteract(); if (!t) { C.ui.toast('Nothing to use here'); return; }
     C.ui.interact(t);
   }
-  function useForesight() {
-    const g = G(); if (g.foresight <= 0) { C.ui.toast('No foresight left'); return; }
-    g.foresight--; let n = 0;
-    for (const a of g.scene.actors) { const d = Math.hypot(a.x - g.player.x, a.y - g.player.y); if (d < 280 && a.p.informant && !a.p.revealed) { a.p.revealed = true; a.p.stance = a.p.trueStance; n++; C.log(`FORESIGHT: ${C.fullName(a.p)} is a traitor.`, 'warn'); } }
-    // also reveal army positions and ambush warnings for a moment
-    g.scene.spotted = g.scene.spotted || []; for (const a of g.scene.actors) if (a.side === 'army' && !a.dead) g.scene.spotted.push({ x: a.x, y: a.y, t: 10 });
-    g.player.foresightT = 10; C.ui.toast(n ? 'Foresight: traitor unmasked' : 'Foresight: you glimpse what is coming'); C.ui.refresh();
-  }
-
   const cv = document.getElementById('game');
   cv.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; const tip = document.getElementById('tip'); const g = G(); if (!g || !g.scene) return; const a = g.hover; if (a && !g.modalOpen) { tip.style.display = 'block'; tip.style.left = Math.min(window.innerWidth - 270, e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.innerHTML = C.ui.tipFor(a); } else tip.style.display = 'none'; });
   cv.addEventListener('mousedown', (e) => {
     const g = G(); if (!g || g.modalOpen || g.over) return; C.snd && C.snd.init();
     if (e.button === 0) {
       const pl = g.player;
-      if (pl && pl.weaponOut && !g.vehicle && !e.shiftKey) { mouse.down = true; if (pl.weapon && C.WEAPONS[pl.weapon.k].rof >= 1) { mouse.down = true; } C.tryFire(g.scene, pl, mouse.wx, mouse.wy); if (C.WEAPONS[pl.weapon ? pl.weapon.k : 'pistol'].rof < 1) mouse.down = false; }
+      if (pl && pl.weaponOut && !g.vehicle && !e.shiftKey && !g.paused) { mouse.down = true; if (pl.weapon && C.WEAPONS[pl.weapon.k].rof >= 1) { mouse.down = true; } C.tryFire(g.scene, pl, mouse.wx, mouse.wy); if (C.WEAPONS[pl.weapon ? pl.weapon.k : 'pistol'].rof < 1) mouse.down = false; }
       else { if (g.hover) select(g.hover); else select(null); }
       if (e.shiftKey && g.hover) select(g.hover);
     } else if (e.button === 2) { C.commandAt(mouse.wx, mouse.wy, e.shiftKey); }
@@ -525,9 +517,11 @@
   const seedEl = document.getElementById('seed');
   const startGame = (mode) => {
     const msg = document.getElementById('genmsg'); msg.textContent = 'Generating 3,000 Cubeans, their families and friends…';
-    setTimeout(() => { const seed = parseInt(seedEl.value, 10) || 1956; const fore = parseInt(document.getElementById('fore').value, 10); try { C.snd && C.snd.init(); C.beginGame(mode, seed, fore, false); document.getElementById('title').style.display = 'none'; } catch (err) { msg.textContent = 'Error: ' + err.message; console.error(err); } }, 30);
+    setTimeout(() => { const seed = parseInt(seedEl.value, 10) || 1956; const pname = (document.getElementById('pname').value || '').trim() || 'Fidel Castro'; try { try { localStorage.setItem('cubea_name', pname); } catch (e) { } C.snd && C.snd.init(); C.beginGame(mode, seed, 0, false, pname); document.getElementById('title').style.display = 'none'; } catch (err) { msg.textContent = 'Error: ' + err.message; console.error(err); } }, 30);
   };
   const qs = new URLSearchParams(location.search); if (qs.get('seed')) seedEl.value = qs.get('seed');
+  try { const sn = localStorage.getItem('cubea_name'); if (sn) document.getElementById('pname').value = sn; } catch (e) { }
+  if (qs.get('name')) document.getElementById('pname').value = qs.get('name');
   document.getElementById('startBtn').onclick = () => startGame('prologue');
   document.getElementById('sandBtn').onclick = () => startGame('sandbox');
   if (qs.get('auto')) setTimeout(() => startGame(qs.get('auto') === 'sandbox' ? 'sandbox' : 'prologue'), 120);

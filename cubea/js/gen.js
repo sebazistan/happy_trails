@@ -423,8 +423,8 @@
       const p = mk(r);
       byId[r.id] = p;
     }
-    // Fidel (the time traveller wears his place)
-    const fidel = newPerson(R, { first: 'Fidel', last: 'Castro', last2: 'Ruz', tag: 'Fidel Castro', sex: 'M', yob: 1926, settlement: 'alegria', home: 'biran', birth: 'biran', occ: 'abogado', exp: 4, role: 'Comandante (El Viajero)', hair: 'blk', beard: false, roster: 'fidel', note: 'The role you step into. A lawyer from a Galician-Cuban landowning family of Birán.' });
+    // the player character: Fidel's place (the player chooses the name)
+    const fidel = newPerson(R, { first: 'Fidel', last: 'Castro', last2: 'Ruz', tag: 'Fidel Castro', sex: 'M', yob: 1926, settlement: 'alegria', home: 'biran', birth: 'biran', occ: 'abogado', exp: 4, role: 'Comandante (El Viajero)', hair: 'blk', beard: false, roster: 'fidel', note: 'You lead the expedition.' });
     fidel.traits = ['idealist', 'brave', 'stoic']; fidel.occDone = true; fidel.side = 'rebel'; byId.fidel = fidel; W.player = fidel.id;
     // Castro family: shared parents
     const ang = ghost(R, { first: 'Ángel', last: 'Castro', last2: 'Argiz', sex: 'M', yob: 1875, settlement: 'biran', home: 'biran', birth: 'galicia', status: 'dead', occ: 'hacendado', eth: 'blanca' });

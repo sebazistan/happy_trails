@@ -46,8 +46,8 @@
   function portrait(cv, p, a, scale) {
     const c = cv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cv.width, cv.height);
     c.setTransform(scale, 0, 0, scale, cv.width / 2, cv.height * 0.8);
-    const f = fakeActor(p); if (a && a.isPlayer) { f.isPlayer = true; f.drawColor = [196, 52, 46]; C.drawTravellerFn(c, Object.assign(f, { x: 0, y: 4, weapon: null, weaponOut: false }), performance.now() / 1000); }
-    else { f.y = 5; C.drawActor(c, f, performance.now() / 1000, 1); }
+    const f = fakeActor(p); if (a && a.isPlayer) { f.isPlayer = true; f.drawColor = [196, 52, 46]; }
+    f.y = 5; C.drawActor(c, f, performance.now() / 1000, 1);
     c.setTransform(1, 0, 0, 1, 0, 0);
   }
 
@@ -62,7 +62,7 @@
   ui.syncSpeed = function () { const g = G(); document.querySelectorAll('#speed button').forEach((b) => { const v = +b.dataset.sp; b.classList.toggle('on', v === 0 ? g.paused : !g.paused && g.speed === v); }); };
   ui.setWhere = function () { $('where').textContent = G().scene.title || G().scene.name; };
   ui.refresh = function () { buildLeft(); ui.update(true); };
-  const CHIPS = [['food', '🍚', 'Food'], ['money', '₱', 'Pesos'], ['ammo', '•', 'Cartridges'], ['med', '✚', 'Medicine'], ['fuel', '⛽', 'Fuel (stock)'], ['gren', '💣', 'Grenades']];
+  const CHIPS = [['food', '🍚', 'Food'], ['money', '₱', 'Pesos'], ['ammo', '•', 'Cartridges'], ['med', '✚', 'Medicine'], ['fuel', '⛽', 'Fuel (stock)'], ['gren', '💣', 'Grenades'], ['guns', '🔫', 'Spare rifles']];
   ui.update = function (force) {
     const g = G(); if (!g || !g.scene) return;
     const L = g.unlocked.layer;
@@ -78,12 +78,12 @@
     }
     if (L >= 3) h += `<span class="chip" title="Rebel rank & file">★ <b>${C.partyIds().length + 1}</b></span>`;
     if (g.res.vales > 0) h += `<span class="chip" title="Unpaid vales (IOUs)">📝 <b>${Math.round(g.res.vales)}</b></span>`;
-    if (L >= 2) h += `<span class="chip" title="Foresight tokens (Q)">👁 <b>${g.foresight}</b></span>`;
     $('chips').innerHTML = h;
     const sm = $('supMeter').parentElement; sm.style.display = L >= 3 ? '' : 'none';
     const sup = g.supportMean || 0; $('supMeter').firstElementChild.style.left = (50 + sup / 2) + '%'; $('supNum').textContent = (sup > 0 ? '+' : '') + sup.toFixed(0);
     const heat = g.regime.heat; $('heatBar').style.width = heat + '%'; $('heatBar').style.background = heat > 66 ? '#dc4a3a' : heat > 33 ? '#e6b84e' : '#5b86e0'; $('heatNum').textContent = Math.round(heat); $('heatBar').parentElement.parentElement.style.display = L >= 2 ? '' : 'none';
     $('bMap').style.display = L >= 2 ? '' : 'none'; $('bBase').style.display = L >= 2 ? '' : 'none'; $('bFac').style.display = L >= 4 ? '' : 'none'; $('bMan').style.display = L >= 5 ? '' : 'none';
+    $('bMap').textContent = '🗺 ' + C.es('map', true); $('bMan').textContent = '📜 ' + C.es('manifesto', true); $('bFac').textContent = '⚖ ' + C.es('factions', true); $('bJour').textContent = '📓 ' + C.es('journal', true); $('bBase').textContent = '⛺ ' + C.es('camp', true);
     // hint & mission
     let hint = '';
     if (g.mission) hint += `<b style="color:var(--gold)">Objective:</b> ${esc(g.mission.text)}<br>`;
@@ -101,19 +101,19 @@
 
   // ---------- squads panel ----------
   function buildLeft() {
-    const g = G(); const el = $('left'); let h = `<h3>Your squads</h3>`;
+    const g = G(); const el = $('left'); let h = `<h3>${C.es('squads')}</h3>`;
     for (const sq of g.squads) {
       const ps = sq.members.map((id) => C.P(id)).filter((p) => p && p.status === 'alive');
-      h += `<div class="squad ${g.curSquad === sq.id ? 'cur' : ''}" data-sq="${sq.id}"><div class="hd"><span><span class="dot" style="background:${sq.col}"></span><b>${sq.id + 1}. ${sq.name}</b> <span class="sub">(${ps.length})</span></span><span class="sub" id="sqo${sq.id}"></span></div>`;
+      h += `<div class="squad ${g.curSquad === sq.id ? 'cur' : ''}" data-sq="${sq.id}"><div class="hd"><span><span class="dot" style="background:${sq.col}"></span><b>${sq.id + 1}. ${C.gName(sq)}</b> <span class="sub">(${ps.length})</span></span><span class="sub" id="sqo${sq.id}"></span></div>`;
       h += `<div class="stances">`;
-      for (const k in C.STANCES) h += `<button class="btn sm ${sq.stance === k ? 'on' : ''}" data-st="${k}" data-sq="${sq.id}" title="${esc(C.STANCES[k].d)}">${C.STANCES[k].n}</button>`;
+      for (const k in C.STANCES) h += `<button class="btn sm ${sq.stance === k ? 'on' : ''}" data-st="${k}" data-sq="${sq.id}" title="${esc(C.STANCES[k].d)}">${C.stName(k)}</button>`;
       h += `</div><div class="sub" id="sqs${sq.id}"></div></div>`;
     }
     if (g.unlocked.layer >= 3) h += `<h3 style="margin-top:8px">Policy</h3><div class="sub">When foraging:</div><div class="stances" id="polf">${['pay', 'vale', 'take'].map((k) => `<button class="btn sm ${g.policy.forage === k ? 'on' : ''}" data-pol="${k}" title="${k === 'pay' ? 'Pay pesos: trust and goodwill' : k === 'vale' ? 'Promise to repay in 30 days' : 'Take it: fast, feared, resented'}">${k === 'pay' ? 'Pay' : k === 'vale' ? 'Owe (vale)' : 'Take'}</button>`).join('')}</div>`;
     h += `<div class="sub" style="margin-top:8px">RMB: order the selected squad (shift = scout direction; on an enemy = focus fire). <kbd>F</kbd> springs an ambush. Squads may hesitate if hungry, scared or exhausted — look for the speech bubble.</div>`;
     el.innerHTML = h;
     el.querySelectorAll('.squad').forEach((d) => d.onclick = (e) => { if (e.target.closest('button')) return; g.curSquad = +d.dataset.sq; buildLeft(); });
-    el.querySelectorAll('.stances button[data-st]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); const sq = g.squads[+b.dataset.sq]; sq.stance = b.dataset.st; g.curSquad = sq.id; ui.toast(`${sq.name}: ${C.STANCES[sq.stance].n}`); buildLeft(); });
+    el.querySelectorAll('.stances button[data-st]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); if (g.paused) { ui.toast('No orders while paused'); return; } const sq = g.squads[+b.dataset.sq]; sq.stance = b.dataset.st; g.curSquad = sq.id; ui.toast(`${C.gName(sq)}: ${C.stName(sq.stance)}`); buildLeft(); });
     el.querySelectorAll('[data-pol]').forEach((b) => b.onclick = () => { g.policy.forage = b.dataset.pol; buildLeft(); });
   }
   function updateLeftLive() {
@@ -131,7 +131,7 @@
   // ---------- inspector ----------
   ui.tipFor = function (a) {
     const p = a.p; const e = a.expr ? a.expr.label : '';
-    const role = p.role || (C.OCC[p.occ] ? C.OCC[p.occ].n : '');
+    const role = p.role || (C.OCC[p.occ] ? C.occName(p.occ) : '');
     return `<b>${esc(C.fullName(p))}</b><br><span class="sub">${esc(role)} · ${C.ageOf(p)} · ${esc(ui.emo(e))}</span>${a.dead ? '<br><span class="sub">† dead</span>' : ''}`;
   };
   ui.inspect = function (p, a) {
@@ -140,15 +140,15 @@
     ui.curP = p; ui.curA = a || p.actor || null; el.style.display = 'block'; ui.buildInspector();
   };
   const EMO_EN = { sereno: 'calm', hambriento: 'hungry', sediento: 'thirsty', agotado: 'exhausted', temeroso: 'afraid', furioso: 'furious', adolorido: 'in pain', confiado: 'confident', esperanzado: 'hopeful', desanimado: 'despondent' };
-  ui.emo = (l) => (EMO_EN[l] ? `${l} (${EMO_EN[l]})` : l);
+  ui.emo = (l) => C.moodName(l);
   ui.buildInspector = function () {
     const g = G(), p = ui.curP, el = $('right'); if (!p) return; const a = ui.curA; const L = g.unlocked.layer;
     const age = C.ageOf(p); const F = C.FACTIONS[p.fac];
-    const role = p.role || (C.OCC[p.occ] ? C.OCC[p.occ].n : '');
+    const role = p.role || (C.OCC[p.occ] ? C.occName(p.occ) : '');
     const hidden = p.informant && !p.revealed;
     let h = `<canvas id="portrait" width="104" height="104"></canvas>`;
     h += `<div class="name">${esc(C.fullName(p))}${p.nick ? ` <span class="sub">“${esc(p.nick)}”</span>` : ''}</div><div class="role">${esc(role)} · ${age} yrs · ${p.sex === 'F' ? 'woman' : 'man'}</div>`;
-    h += `<div class="sub">Born in ${esc(PLACE(p.birth))} · lives in ${esc(PLACE(p.settlement))}<br>${esc(F.name)}${p.eth !== 'blanca' && L >= 4 ? ' · ' + esc(p.eth) : ''}${p.status !== 'alive' ? ` · <b>${STATUS[p.status] || p.status}</b>` : ''}</div>`;
+    h += `<div class="sub">Born in ${esc(PLACE(p.birth))} · lives in ${esc(PLACE(p.settlement))}<br>${esc(C.fName(p.fac))}${p.eth !== 'blanca' && L >= 4 ? ' · ' + esc(p.eth) : ''}${p.status !== 'alive' ? ` · <b>${STATUS[p.status] || p.status}</b>` : ''}</div>`;
     h += `<div style="clear:both"></div>`;
     h += `<div class="row"><span>Mood</span><b id="iMood"></b></div>`;
     h += `<div class="row"><span>Body</span><span id="iBody"></span></div>${bar(p.hp / p.maxHp * 100, needCol(p.hp / p.maxHp * 100))}`;
@@ -161,6 +161,7 @@
     h += `<div class="chips">${p.traits.map((t) => `<span class="chip" title="${esc(C.TRAITS[t].d)}">${esc(C.TRAITS[t].n)}</span>`).join('')}</div>`;
     h += `<div class="sub" id="iBlend"></div>`;
     if (p.note) h += `<div class="sub" style="margin-top:4px"><i>${esc(p.note)}</i></div>`;
+    if (L >= 3 && p.status === 'alive' && !(a && a.isPlayer)) { const tl = C.tells(p); if (tl.length) h += `<div class="sub" style="margin-top:4px;color:#ffd37a">What you have noticed: ${tl.map(esc).join(' · ')}</div>`; }
     h += `<h3 style="margin-top:8px">Family</h3>` + familyHTML(p);
     h += `<h3 style="margin-top:8px">Friends & ties</h3>` + tiesHTML(p);
     h += `<h3 style="margin-top:8px">What they remember</h3>` + memHTML(p);
@@ -254,7 +255,7 @@
     else if (it.k === 'med') { g.res.med += it.amount || 1; ui.toast('+ medicine'); }
     else if (it.k === 'fuel') { g.res.fuel += it.amount || 5; }
     else if (it.k === 'money') { g.res.money += it.amount || 20; }
-    else if (it.k === 'gun') { const pl = g.player; if (!pl.weapon || C.WEAPONS[it.wk].dmg > C.WEAPONS[pl.weapon.k].dmg * 0.9 && false) { C.giveWeapon(pl, it.wk, it.spare); pl.weapon.mag = it.mag; } else { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); const w = C.WEAPONS[it.wk]; for (const id of C.partyIds()) { const p = C.P(id); if (!p.wpn || p.wpn === 'machete') { p.wpn = it.wk; if (p.actor) { C.giveWeapon(p.actor, it.wk, it.spare || w.mag); p.actor.weaponOut = true; } ui.toast('A rebel takes the ' + w.n); break; } } } }
+    else if (it.k === 'gun') { const pl = g.player; if (!pl.weapon || C.WEAPONS[it.wk].dmg > C.WEAPONS[pl.weapon.k].dmg * 0.9 && false) { C.giveWeapon(pl, it.wk, it.spare); pl.weapon.mag = it.mag; } else { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (it.wk !== 'machete') g.res.guns++; ui.toast('Spare ' + C.WEAPONS[it.wk].n + ' to the armory — hand it out from the talk menu'); } }
     s.items.splice(i, 1);
   }
   function takeMeat(an) { const g = G(), s = g.scene; const i = s.animals.indexOf(an); if (i < 0) return; g.res.food += an.def.food; s.animals.splice(i, 1); ui.toast(`+${an.def.food} food (${an.def.n})`); if (an.def.wild === false) { C.log('You took the meat of a dead ' + an.def.n + '.', 'info'); } }
@@ -263,7 +264,7 @@
     const hasLoot = !a.looted;
     opts.push({ label: 'Search the body', sub: a.looted ? 'Already searched' : 'Cartridges, papers, small change', disabled: !hasLoot, fn: () => { a.looted = true; const am = Math.floor(Math.random() * 8) + (p.mil ? 6 : 0); g.res.ammo += am; const m = Math.floor(Math.random() * 12); g.res.money += m; ui.toast(`+${am} cartridges, +${m} pesos`); if (p.mil && p.mil.side === 'army') { g.rep.competence = clamp(g.rep.competence + 0.2, 0, 100); } return true; } });
     opts.push({ label: 'Bury them with respect', sub: p.mil && p.mil.side === 'rebel' ? 'Your people feel it' : 'Their family will hear that someone cared', fn: () => { const i = g.scene.corpses.indexOf(a); if (i >= 0) g.scene.corpses.splice(i, 1); if (p.mil && p.mil.side === 'rebel') for (const q of C.squadPeople()) q.morale = clamp(q.morale + 2, 0, 100); else { C.addEvent({ type: 'burial', victim: p, perpSide: 'rebel', positive: true, sev: 26, pub: 0.1, x: a.x, y: a.y, scene: g.scene, settlement: g.scene.sid, text: `The rebels buried ${C.tagName(p)} with respect`, memText: `The rebels buried ${C.tagName(p)} with respect` }); g.rep.justice = clamp(g.rep.justice + 0.8, 0, 100); } ui.toast('Buried.'); } });
-    ui.menu(C.fullName(p), `${C.ageOf(p)} years, ${esc(p.role || (C.OCC[p.occ] || {}).n || '')}. ${p.diedBy ? 'Died: ' + esc(p.diedBy) + '.' : ''}`, opts, '');
+    ui.menu(C.fullName(p), `${C.ageOf(p)} years, ${esc(p.role || (C.OCC[p.occ] ? C.occName(p.occ) : ''))}. ${p.diedBy ? 'Died: ' + esc(p.diedBy) + '.' : ''}`, opts, '');
   }
   function vehicleMenu(v) {
     const g = G(), s = g.scene; const def = v.def;
@@ -299,8 +300,8 @@
     if (b.tag === 'univ') opts.push({ label: 'Distribute pamphlets to students', sub: `Uses 5 pamphlets (have ${g.res.pamph})`, disabled: g.res.pamph < 5, fn: () => { g.res.pamph -= 5; g.strikePrep += 2; for (const p of C.W.people) if (p.fac === 'students' && p.settlement === s.sid && p.status === 'alive') { p.trueStance += 0.8; p.needs.hope = clamp(p.needs.hope + 1.5, 0, 100); } g.regime.heat += 1; if (g.player.covertNow && Math.random() < 0.15) { g.player.susp += 35; ui.toast('A plainclothes officer is watching you.'); } else ui.toast('Pamphlets are passed hand to hand.'); C.deed(4, 2); } });
     if (b.tag === 'church') opts.push({ label: 'Light a candle and talk to the sacristan', sub: 'Quiet counsel; the Church notes your respect', fn: () => { g.trust.church = clamp(g.trust.church + 0.01, 0, 1); C.deed(2, 1); ui.toast('You light a candle.'); } });
     if (b.tag === 'clinic') opts.push({ label: 'Ask the doctor for medicine (charity)', sub: 'Possible if the doctor sympathizes', fn: () => { const doc = inside.find((a) => a.p.occ === 'medico' || a.p.occ === 'partera'); const ok = doc ? doc.p.trueStance > -10 && Math.random() < 0.7 : false; if (ok) { g.res.med += 2; ui.toast('+2 medicine'); } else ui.toast('The doctor refuses, afraid.'); } });
-    if (b.tag === 'bank' || /Larrea/.test(b.label)) opts.push({ label: 'Visit the merchant houses of the district', sub: 'Meet donors who can fund the Havana pipeline', fn: () => { const donors = C.W.people.filter((p) => p.settlement === s.sid && p.status === 'alive' && (p.donor || (p.cls >= 3 && (p.fac === 'elite' || p.fac === 'middle')))).sort((a, c) => (c.donor || 0) - (a.donor || 0)).slice(0, 7); ui.menu('Donors of ' + s.name, 'Who do you approach?', donors.map((p) => ({ label: `${C.fullName(p)} — ${(C.OCC[p.occ] || {}).n}`, sub: p.note ? p.note.slice(0, 90) : '', fn: () => { pitchMenu(p); } }))); } });
-    if (inside.length) opts.push({ label: `Speak to someone inside (${inside.length})`, sub: 'The people in the building are out of sight', fn: () => { ui.menu('Inside ' + b.label, '', inside.slice(0, 9).map((a) => ({ label: `${C.fullName(a.p)} — ${(C.OCC[a.p.occ] || {}).n || ''}`, sub: a.p.role || '', fn: () => { talkMenu(a); } }))); } });
+    if (b.tag === 'bank' || /Larrea/.test(b.label)) opts.push({ label: 'Visit the merchant houses of the district', sub: 'Meet donors who can fund the Havana pipeline', fn: () => { const donors = C.W.people.filter((p) => p.settlement === s.sid && p.status === 'alive' && (p.donor || (p.cls >= 3 && (p.fac === 'elite' || p.fac === 'middle')))).sort((a, c) => (c.donor || 0) - (a.donor || 0)).slice(0, 7); ui.menu('Donors of ' + s.name, 'Who do you approach?', donors.map((p) => ({ label: `${C.fullName(p)} — ${(C.OCC[p.occ] ? C.occName(p.occ) : '')}`, sub: p.note ? p.note.slice(0, 90) : '', fn: () => { pitchMenu(p); } }))); } });
+    if (inside.length) opts.push({ label: `Speak to someone inside (${inside.length})`, sub: 'The people in the building are out of sight', fn: () => { ui.menu('Inside ' + b.label, '', inside.slice(0, 9).map((a) => ({ label: `${C.fullName(a.p)} — ${(C.OCC[a.p.occ] ? C.occName(a.p.occ) : '')}`, sub: a.p.role || '', fn: () => { talkMenu(a); } }))); } });
     if (!opts.length) opts.push({ label: 'Nothing to do here', disabled: true });
     ui.menu(b.label, b.tag === 'army' ? 'An army building. Keep away unless you mean business.' : '', opts);
   }
@@ -326,7 +327,7 @@
     const price = C.price(p.settlement, p);
     const tag = C.tagName(p);
     const head = `<canvas id="mport" width="84" height="84" style="float:right;border-radius:8px;background:rgba(0,0,0,.25);margin-left:10px"></canvas>`;
-    const lede = `${esc(p.role || (C.OCC[p.occ] || {}).n || '')}, ${C.ageOf(p)}. Feeling <b>${a.expr ? ui.emo(a.expr.label) : '…'}</b>.${hidden ? '' : ` ${p.trueStance > 20 ? 'Leans rebel.' : p.trueStance < -20 ? 'Leans Batista.' : 'Undecided.'}`}<br><span class="sub">${esc(gossipFor(p)[0])}</span>`;
+    const lede = `${esc(p.role || (C.OCC[p.occ] ? C.occName(p.occ) : ''))}, ${C.ageOf(p)}. Feeling <b>${a.expr ? ui.emo(a.expr.label) : '…'}</b>.${hidden ? '' : ` ${p.trueStance > 20 ? 'Leans rebel.' : p.trueStance < -20 ? 'Leans Batista.' : 'Undecided.'}`}<br><span class="sub">${esc(gossipFor(p)[0])}</span>`;
     // ---- surrendered / wounded soldiers
     if (army && a.surrendered) {
       opts.push({ label: 'Disarm and release', sub: 'Mercy: no grievance, and the army hears of it', fn: () => { releasePrisoner(a); } });
@@ -336,7 +337,8 @@
     }
     // ---- own soldiers
     else if (rebel) {
-      for (const sq of g.squads) if (sq.id !== a.squad) opts.push({ label: `Move to ${sq.name}`, fn: () => { g.squads[a.squad].members = g.squads[a.squad].members.filter((i) => i !== p.id); sq.members.push(p.id); p.mil.squad = sq.id; a.squad = sq.id; C.attachSquads(s); buildLeft(); } });
+      if (!p.wpn || p.wpn === 'machete') opts.push({ label: 'Give a rifle from the armory', sub: g.res.guns > 0 ? `${g.res.guns} spare — others who are unarmed may resent it` : 'No spare rifles', disabled: g.res.guns <= 0, fn: () => { C.armSoldier(p); ui.toast(C.tagName(p) + ' is armed.'); return true; } });
+      for (const sq of g.squads) if (sq.id !== a.squad) opts.push({ label: `Move to ${C.gName(sq)}`, fn: () => { g.squads[a.squad].members = g.squads[a.squad].members.filter((i) => i !== p.id); sq.members.push(p.id); p.mil.squad = sq.id; a.squad = sq.id; C.attachSquads(s); buildLeft(); } });
       opts.push({ label: 'Share your food (2)', sub: 'A small kindness', disabled: g.res.food < 2, fn: () => { g.res.food -= 2; p.needs.food = clamp(p.needs.food + 30, 0, 100); p.morale = clamp(p.morale + 4, 0, 100); return true; } });
       opts.push({ label: 'Treat wounds (1 medicine)', disabled: g.res.med < 1 || p.hp >= p.maxHp - 3 && !p.bleed, fn: () => { g.res.med--; p.bleed = 0; p.hp = Math.min(p.maxHp, p.hp + 25); p.cracks.forEach((c) => (c.l -= 0.5)); p.cracks = p.cracks.filter((c) => c.l > 0.05); p.morale = clamp(p.morale + 3, 0, 100); return true; } });
       opts.push({ label: 'Praise', sub: 'Morale up, small', fn: () => { p.morale = clamp(p.morale + 6, 0, 100); p.trueStance = clamp(p.trueStance + 1, -100, 100); C.say(a, 'Gracias, comandante', '#1d4a1d', 2); } });
@@ -363,7 +365,7 @@
         if (p.fac === 'students' || p.occ === 'sindicalista') opts.push({ label: p.fac === 'students' ? 'Organize students: plan a march' : 'Organize the union: strike committee', sub: 'Builds the general strike (needs 10 pesos)', disabled: g.res.money < 10, fn: () => { g.res.money -= 10; g.strikePrep += 3; p.needs.hope = clamp(p.needs.hope + 4, 0, 100); p.trueStance = clamp(p.trueStance + 2, -100, 100); if (Math.random() < 0.12) g.player.susp += 30; C.deed(4, 2); ui.toast('They will organize.'); } });
         if (['celia', 'haydee', 'hart', 'melba', 'frank', 'vilma'].includes(p.roster)) opts.push({ label: `Hand pipeline funds (${Math.round(g.pipe.balance)} pesos) to a courier`, disabled: g.pipe.balance < 20, fn: () => { C.sendCourier(a, Math.round(g.pipe.balance)); } });
         if (p.occ === 'mayordomo' || p.fac === 'landowners') opts.push({ label: 'Seize the estate and distribute the land', sub: 'The peasants cheer; landowners will never forgive', fn: () => { C.seizeEstate(p); } });
-        if (p.informant) opts.push({ label: 'Use foresight on this person', sub: g.foresight > 0 ? 'Costs 1' : 'none left', disabled: g.foresight <= 0 || p.revealed, fn: () => { g.foresight--; p.revealed = true; p.stance = p.trueStance; C.log(`${C.fullName(p)} is an informer.`, 'warn'); buildLeft(); } });
+        if (p.informant && !p.revealed || C.tells(p).length) opts.push({ label: 'Have your network check on this person (12 pesos)', sub: 'Discreet inquiries; usually right', disabled: g.res.money < 12 || p.revealed, fn: () => { C.investigate(p); buildLeft(); ui.update(true); } });
         if (p.informant && p.revealed) { opts.push({ label: 'Hold a trial', sub: 'Calls the village; verdict visible to all', fn: () => { trial(a); } }); }
         if (p.roster === 'anselmo') { opts.splice(1, 0, { label: 'Ask El Viejo for advice', fn: () => { ui.openJournal('viejo'); } }); }
         if (p.roster === 'eutimio') { opts.unshift({ label: 'Take him on as a guide', sub: 'History says he betrays you', fn: () => { p.mil = { side: 'rebel', rank: 'Guía' }; C.recruit(p); p.informant = true; p.revealed = false; ui.toast('Eutimio is now your guide.'); } }); }
@@ -453,7 +455,7 @@
       if (id !== here) {
         t += `<div class="row"><span>On foot</span><b>${cost.days.toFixed(1)} days</b></div><div class="row"><span>By vehicle</span><b>${cost.hours} h</b></div>`;
         t += `<div class="sub" style="margin-top:6px">Bring (within reach):</div>`;
-        t += g.squads.map((sq) => `<label style="display:block"><input type="checkbox" class="sqgo" data-i="${sq.id}" ${urban ? (sq.id === 3 ? 'checked' : '') : 'checked'}> ${sq.name} (${sq.members.length})</label>`).join('');
+        t += g.squads.map((sq) => `<label style="display:block"><input type="checkbox" class="sqgo" data-i="${sq.id}" ${urban ? (sq.id === 3 ? 'checked' : '') : 'checked'}> ${C.gName(sq)} (${sq.members.length})</label>`).join('');
         if (urban) t += `<div class="sub" style="color:#ffd37a;margin-top:4px">⚠ Rifles and SMGs go into a cache; only concealed pistols travel. Women and the urban-born draw less suspicion.</div>`;
         t += `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn primary" id="goFoot">Go on foot</button><button class="btn" id="goVeh" ${g.vehicle ? '' : 'disabled'} title="${g.vehicle ? '' : 'Get in a vehicle first (E)'}">By vehicle</button></div>`;
       } else t += `<div class="sub" style="margin-top:6px">You are here.</div>`;
@@ -474,14 +476,14 @@
       const decl = P.declared[k]; const mism = decl && P.pub[k] !== P.real[k];
       h += `<div class="plank"><div class="row"><b>${pl.name} <span class="sub">${pl.en}</span></b><span class="sub">deeds ${Math.round(g.deeds[k])}% ${decl ? '· announced ' + Math.max(0, g.day - P.dayDeclared[k]) + 'd ago' : '· not announced'}${mism ? ' · <b style="color:#ff9d8c">⚠ secret plan differs</b>' : ''}</span></div><div class="opts">`;
       pl.opts.forEach((o, i) => {
-        const q = i - 1; const dots = C.FACTION_KEYS.map((f) => { const fit = 1 - Math.abs(q - C.FACTIONS[f].iss[k]); const cc = fit > 0.6 ? '#7fc46a' : fit > 0.2 ? '#cdd58a' : fit > -0.2 ? '#e6b84e' : '#dc4a3a'; return `<span title="${C.FACTIONS[f].name}: ${fit > 0.6 ? 'likes' : fit > 0.2 ? 'ok' : fit > -0.2 ? 'cool' : 'dislikes'}" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cc};margin-right:2px"></span>`; }).join('');
+        const q = i - 1; const dots = C.FACTION_KEYS.map((f) => { const fit = 1 - Math.abs(q - C.FACTIONS[f].iss[k]); const cc = fit > 0.6 ? '#7fc46a' : fit > 0.2 ? '#cdd58a' : fit > -0.2 ? '#e6b84e' : '#dc4a3a'; return `<span title="${C.fName(f)}: ${fit > 0.6 ? 'likes' : fit > 0.2 ? 'ok' : fit > -0.2 ? 'cool' : 'dislikes'}" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cc};margin-right:2px"></span>`; }).join('');
         h += `<button class="btn ${decl && P.pub[k] === i ? 'on' : ''}" data-k="${k}" data-i="${i}">${esc(o)}<br>${dots}</button>`;
       });
       h += `</div>`;
       if (decl) h += `<div class="sub" style="margin-top:4px">Secret intent: <select data-real="${k}" style="background:#0003;color:inherit;border:1px solid var(--line);border-radius:5px">${pl.opts.map((o, i) => `<option value="${i}" ${P.real[k] === i ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select> <span class="sub">(a gap leaks eventually, and trust collapses)</span></div>`;
       h += `</div>`;
     });
-    h += `<div class="sub">Trust: ${C.FACTION_KEYS.map((f) => `${C.FACTIONS[f].name} ${Math.round(g.trust[f] * 100)}%`).join(' · ')}</div>`;
+    h += `<div class="sub">Trust: ${C.FACTION_KEYS.map((f) => `${C.fName(f)} ${Math.round(g.trust[f] * 100)}%`).join(' · ')}</div>`;
     openModal(h, true);
     $('mbox').querySelectorAll('[data-pre]').forEach((b) => b.onclick = () => { C.applyPreset(b.dataset.pre); ui.openManifesto(); });
     $('mbox').querySelectorAll('[data-k]').forEach((b) => b.onclick = () => { const k = +b.dataset.k, i = +b.dataset.i; const keepReal = P.declared[k] && P.real[k] !== P.pub[k] ? P.real[k] : undefined; C.declarePlank(k, i, keepReal !== undefined ? keepReal : i); ui.openManifesto(); });
@@ -558,12 +560,12 @@
   // ---------- help ----------
   ui.openHelp = function () {
     openModal(`<button class="btn sm close">✕</button><h2>? How Cubea works</h2><div class="help">
-<p><b>Cubes.</b> Every cube is a person with a name, a family, friends, a job and a memory. <b>Colour = loyalty</b>: blue is Batista's, red is the rebels', white undecided; pale means weakly held. Informers hide their colour until unmasked (<kbd>Q</kbd> foresight). Green-tinted cubes are camouflaged: peasants blend into jungle, townsfolk into the city, and experience improves both.</p>
+<p><b>Cubes.</b> Every cube is a person with a name, a family, friends, a job and a memory. <b>Colour = loyalty</b>: blue is Batista's, red is the rebels', white undecided; pale means weakly held. Informers hide their colour until unmasked: read the <i>tells</i> in a person's file, or pay your network to check. (Infiltrators rarely grow a beard.) Green-tinted cubes are camouflaged: peasants blend into jungle, townsfolk into the city, and experience improves both.</p>
 <p><b>Faces</b> show hunger, fear, anger, tiredness, hope, pain, and confidence (which grows with combat experience). <b>Cracks</b> are light wounds and heal with food and rest. <b>Missing chunks</b> are serious wounds and never heal; they slow, weaken and bleed.</p>
 <p><b>Everything spreads.</b> Kill a soldier and his family, friends and barracks remember; pay a peasant fairly and his kin remember that too. Click anyone to see their family tree, who they lost, and why they feel as they do.</p>
 <p><b>Command.</b> Pick a squad (1–4), set its stance (Follow, Hold, Ambush, Scout, Forage, Harass, Withdraw), and right-click to move or focus fire. Hungry, scared or exhausted soldiers may hesitate — watch for the speech bubble.</p>
 <p><b>Balance.</b> Too soft and your men steal, desert and fail; too severe and you rule by fear, losing the towns, the Church and the Havana money. The winning path is narrow and fair.</p>
-<p><b>Hotkeys.</b> WASD move, Shift run, C hide, X weapon, G grenade, R reload, E use, F ambush, Q foresight, Z rest, Space pause, M map, P manifesto, I factions, J journal, B camp, Tab cycle squadmates, N sound.</p>
+<p><b>Hotkeys.</b> WASD move, Shift run, C hide, X weapon, G grenade, R reload, E use, F ambush, V fog of war, Z rest, Space pause, M map, P manifesto, I factions, J journal, B camp, Tab cycle squadmates, N sound.</p>
 </div>`);
   };
 
@@ -575,8 +577,8 @@
     const histScore = (() => { const hist = C.presets.historia.v; let m = 0; hist.forEach((v, k) => { if (g.platform.declared[k] && g.platform.pub[k] === v) m++; }); return m; })();
     let title, body;
     if (kind === 'victory') {
-      title = tyr ? 'You won — and became what you fought' : coal >= 5 ? 'El Triunfo: a broad victory' : 'El Triunfo: a narrow victory';
-      body = tyr ? 'The regime falls, but the rule of fear came with you. The towns are quiet, the elites have fled, the Church is silent, and the informers are on your own payroll now.' : coal >= 5 ? 'Peasants, workers, students, much of the middle class and a wary Church stand with you. The task now is to keep the coalition together while the promises come due.' : 'You won the war but not the whole island. Large groups remain unconvinced, and they will matter in the years ahead.';
+      title = tyr ? 'Victory by fear' : coal >= 5 ? 'Victory: a broad coalition' : 'Victory: a narrow one';
+      body = tyr ? 'The regime falls. Your men obey because they fear you, and so do the towns.' : coal >= 5 ? 'Peasants, workers, students and much of the middle class stand with you, and the Church is wary but quiet.' : 'You won the war, but large parts of the island remain unconvinced.';
     } else if (kind === 'dead') { title = 'The leader falls'; body = 'The circle with the golden ring is still. History moves on without you.'; }
     else if (kind === 'collapse') { title = 'The movement dissolves'; body = 'Hunger, desertion and isolation have emptied the camp.'; }
     else { title = 'The war drags on'; body = 'By the end of 1960 neither side has won. The island is exhausted.'; }
@@ -586,8 +588,7 @@
 <div class="grid2"><div class="plank"><b>The people's ledger</b><div class="sub">${C.dateStr(g.day)} · day ${g.day}<br>Soldiers killed ${S.killedArmy} · Civilians killed ${S.killedCiv} · Rebels lost ${S.lostRebels}<br>Released ${S.released} · Executed ${S.executed} · Recruited ${S.hired}</div></div>
 <div class="plank"><b>The coalition</b><div class="sub">Strongest: ${esc(strong)}<br>Weakest: ${esc(weak)}<br>Women ${t.women.toFixed(0)} · Afro-Cubans ${t.afro.toFixed(0)}<br>Reputation — fear ${Math.round(R.fear)}, justice ${Math.round(R.justice)}, honesty ${Math.round(R.honesty)}, discipline ${Math.round(R.discipline)}</div></div></div>
 <div class="plank"><b>What shaped this run</b><ul class="sub" style="margin:4px 0 0 18px;padding:0">${causes || '<li>A quiet war.</li>'}</ul></div>
-<div class="plank"><b>Compared with history</b><div class="sub">Your announced platform matched the 1953 "History Will Absolve Me" program on ${histScore} of 8 planks. The real revolution combined peasant land and food, urban money and students, a Church that stayed neutral, mercy for conscripts and a regime that lost the will to fight. Other roads can work for a while. Most reach a ceiling: elites without land reform, peasants without trust, students without the cities.</div></div>
-<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">${kind === 'dead' ? `<button class="btn primary big" onclick="location.search='?seed=${g.seed}&auto=${g.day <= 4 ? 'prologue' : 'sandbox'}'">⏪ Rewind time (a traveller can)</button>` : ''}<button class="btn ${kind === 'dead' ? '' : 'primary'} big" onclick="location.search=''">New run</button></div>`;
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn primary big" onclick="location.search='?seed=${g.seed}&name='+encodeURIComponent(localStorage.getItem('cubea_name')||'Fidel Castro')+'&auto=prologue'">Try again</button><button class="btn big" onclick="location.search=''">Title screen</button></div>`;
     g.over = g.over || { kind }; openModal(h, true); $('mbox').querySelector('.close') && ($('mbox').querySelector('.close').style.display = 'none');
   };
 })();

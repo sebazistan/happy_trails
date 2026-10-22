@@ -9,7 +9,7 @@
 
   // ---------------- new game ----------------
   C.newGame = function (seed, opts) {
-    opts = opts || {};
+    opts = opts || {}; if (opts.fog === undefined) opts.fog = true;
     C.scenes = {};
     C.genWorld(seed);
     const g = C.G = {
@@ -22,20 +22,52 @@
         { id: 3, name: 'Sanidad', col: '#7fd07a', members: [], stance: 'follow', fireNow: false },
       ],
       curSquad: 0,
-      res: { food: 24, money: 140, ammo: 60, med: 5, fuel: 12, gren: 3, dyn: 0, pamph: 0, vales: 0, cloth: 6, scrap: 8 },
+      res: { food: 24, money: 140, ammo: 60, guns: 1, med: 5, fuel: 12, gren: 3, dyn: 0, pamph: 0, vales: 0, cloth: 6, scrap: 8 },
       policy: { forage: 'pay' },
       platform: { pub: [0, 0, 0, 0, 0, 0, 0, 0], real: [0, 0, 0, 0, 0, 0, 0, 0], declared: [false, false, false, false, false, false, false, false], dayDeclared: [-1, -1, -1, -1, -1, -1, -1, -1] },
       deeds: [0, 0, 0, 0, 0, 0, 0, 0], promises: [],
       trust: {}, rep: { fear: 8, justice: 50, honesty: 60, discipline: 50, competence: 35 },
       regime: { legit: 74, armyMorale: 72, usSupport: 82, heat: 6, offensive: 0 },
       flags: {}, log: [], news: [], events: [], queue: [], stats: { killedArmy: 0, killedCiv: 0, lostRebels: 0, released: 0, executed: 0, hired: 0, pesos: 0 },
-      foresight: opts.foresight !== undefined ? opts.foresight : 3, strikePrep: 0, pipe: { balance: 0, couriers: [] },
+      strikePrep: 0, pipe: { balance: 0, couriers: [] },
       base: { built: {}, level: 0 }, cooldown: {}, over: null, pendingCard: null, tutorial: {}, mission: null, unlocked: { layer: 1 }, lastDay: -1,
       knownEnemies: [], modalOpen: false, prisoners: [],
     };
     for (const f of C.FACTION_KEYS) g.trust[f] = 0.5;
     g.weekday = (3 + 0) % 7;
     return g;
+  };
+
+  // ---------------- the player's name ----------------
+  C.setPlayerName = function (full) {
+    const p = C.P(C.W.player); const parts = String(full || 'Fidel Castro').trim().replace(/\s+/g, ' ').split(' ');
+    const last = parts.length > 1 ? parts.pop() : 'Castro'; const first = parts.join(' ');
+    p.first = first; p.last = last; if (last !== 'Castro') p.last2 = ''; p.tag = first + ' ' + last; p.role = 'Comandante'; p.note = 'You lead the expedition.';
+  };
+
+  // ---------------- counter-intelligence: tells and investigation ----------------
+  C.tells = function (p) {
+    const out = []; const h = (k) => (((p.id * 2654435761) ^ (k * 40503)) >>> 0) / 4294967296;
+    if (p.informant) {
+      if (h(1) < 0.8) out.push('Spends more than they earn');
+      if (h(2) < 0.7) out.push('Keeps asking about trails and numbers');
+      if (h(3) < 0.6) out.push('Was seen near the army post at night');
+    } else {
+      if (h(11) < 0.07) out.push('Spends more than they earn');
+      if (h(12) < 0.05) out.push('Keeps asking about trails and numbers');
+    }
+    if (p.mil && p.mil.side === 'rebel' && p.sex === 'M' && (p.service || 0) > 40 && !(p.look && p.look.beard) && (p.beardLen || 0) < 0.3) out.push('Still clean-shaven after weeks in the mountains');
+    const kin = C.kinOf(p); for (const [id] of kin) { const q = C.P(id); if (q.mil && q.mil.side === 'army' && q.status === 'alive') { out.push('Has kin in the army'); break; } }
+    return out;
+  };
+  C.investigate = function (p) {
+    const g = G(); if (g.res.money < 12) { C.ui.toast('Needs 12 pesos for the network'); return false; }
+    g.res.money -= 12; g.stats.pesos += 12;
+    const guilty = p.informant && !p.revealed;
+    const acc = clamp(0.6 + g.trust.peasants * 0.25 + (p.settlement === 'sierra' ? 0.1 : 0), 0.5, 0.92);
+    if (guilty && Math.random() < acc) { p.revealed = true; p.stance = p.trueStance; C.log(`Your network confirms it: ${C.fullName(p)} is selling you out.`, 'warn'); return true; }
+    if (!guilty && Math.random() < 0.88) { C.log(`Your network finds nothing against ${C.fullName(p)}.`, 'info'); return false; }
+    C.log(`Your network is unsure about ${C.fullName(p)}: some smoke, no proof.`, 'info'); return false;
   };
 
   // ---------------- events and memory ----------------
@@ -286,7 +318,7 @@
       p.bleed = Math.max(0, p.bleed - 0.25);
       p.morale = clamp(p.morale + (n.food > 50 ? 1.5 : -3) + (n.hope - 50) * 0.04 - (p.stress > 60 ? 2 : 0), 0, 100);
       // experience from time in any army
-      if (rebel && p.sex === 'M' && age > 16 && p.look && !p.look.beard) p.beardLen = clamp((p.service || 0) / 110, 0, 1);   // the barbudos
+      if (rebel && p.sex === 'M' && age > 16 && p.look && !p.look.beard) { p.beardLen = clamp((p.service || 0) / 110, 0, 1); if (p.informant && (p.id * 7) % 10 < 8) p.beardLen = Math.min(p.beardLen, 0.1); }   // the barbudos (infiltrators tend to stay clean-shaven)
       if (p.mil && (p.mil.side === 'army' || p.mil.side === 'rebel') && p.status === 'alive') { p.service++; p.exp = clamp(p.exp + (rebel ? 0.12 : 0.07) * (1 + (p.traits.includes('idealist') ? 0.1 : 0)), 0, 100); }
       // stance update
       if (age < 12) { p.trueStance += (peerMean(p) - p.trueStance) * 0.1; p.stance = p.trueStance; continue; }
@@ -318,6 +350,7 @@
     for (const it of g.queue) { if (it.due <= now) { const q = C.P(it.id); if (q && q.status !== 'dead') applyMemory(q, it.mem, it.w); } else rest.push(it); }
     g.queue = rest;
     processVales();
+    C.atrocityTick();
     // trust in each faction: promises vs deeds
     updateTrust();
     // regime meters
@@ -382,6 +415,107 @@
     if (p.informant || p.trueStance < -10) { g.regime.heat = clamp(g.regime.heat + 8, 0, 100); C.log(`...and word is, they went to the army.`, 'bad'); }
   };
 
+  // ---------------- trust in the leader (per soldier) ----------------
+  C.trustOf = (p) => (p.trust === undefined ? 60 : p.trust);
+  C.addTrust = function (p, d) { p.trust = clamp(C.trustOf(p) + d, 0, 100); };
+
+  // ---------------- discipline: punishing your own ----------------
+  const TIEW = { friend: 0.4, compadre: 0.5, comrade: 0.5, lover: 0.8, coworker: 0.15, neighbor: 0.1, rival: -0.2 };
+  function tieTo(q, cand) { const rel = C.relativeLabel(q, cand); if (!rel) return 0; if (C.KINW[rel] !== undefined) return C.KINW[rel]; return TIEW[rel] || 0; }
+  // would this soldier back harsh punishment for this offence? 0..1
+  function harshOpinion(q, cand, kind, method) {
+    let o = 0.45;
+    if (q.sex === 'F') o += 0.22; if (q.traits.includes('idealist')) o += 0.14; if (q.traits.includes('stoic')) o += 0.05; if (q.traits.includes('kind') && method === 'squad') o -= 0.12;
+    if (q.traits.includes('hothead')) o -= 0.08; if (q.traits.includes('drinker')) o -= 0.1;
+    o += kind === 'abuse' ? 0.28 : kind === 'killing' ? 0.18 : kind === 'theft' ? -0.1 : 0;
+    const tie = tieTo(q, cand); o -= (method === 'squad' ? 0.7 : 0.35) * tie;
+    return clamp(o + (Math.random() - 0.5) * 0.3, 0, 1);
+  }
+  C.punishOffender = function (cand, vic, sid, kind, method) {
+    const g = G(); const cn = C.tagName(cand), vn = C.tagName(vic); const grave = kind === 'abuse' || kind === 'killing';
+    const crew = C.squadPeople().filter((q) => q.id !== cand.id && q.id !== C.W.player);
+    const rep = { yes: [], no: [], left: [] };
+    const scale = method === 'squad' ? 1 : method === 'martial' ? 0.55 : 0.3;
+    if (method === 'squad' || method === 'martial') {
+      const sev = method === 'squad' ? 70 : 45;
+      C.addEvent({ type: 'justice', victim: vic, perpSide: 'rebel', positive: true, sev, pub: grave ? 0.9 : 0.3, x: 0, y: 0, settlement: sid, text: `Rebels ${method === 'squad' ? 'shot' : 'punished'} a soldier who wronged ${vn}`, memText: `The rebels punished their own soldier`, headline: grave && method === 'squad' ? `Rebel soldier shot by firing squad for crime at ${C.SETTLEMENTS[sid].name}` : null });
+      g.rep.discipline = clamp(g.rep.discipline + (method === 'squad' ? 14 : 8), 0, 100); g.rep.justice = clamp(g.rep.justice + (method === 'squad' ? 10 : 6), 0, 100); if (method === 'squad') g.rep.fear = clamp(g.rep.fear + 5, 0, 100);
+      C.deed(5, method === 'squad' ? 8 : 4); if (kind === 'abuse') C.deed(6, method === 'squad' ? 10 : 5);
+      if (grave && method === 'squad') { g.trust.peasants = clamp(g.trust.peasants + 0.04, 0, 1); g.trust.church = clamp(g.trust.church + 0.02, 0, 1); if (kind === 'abuse') for (const p of C.W.people) if (p.sex === 'F' && p.status === 'alive') p.trueStance = clamp(p.trueStance + 1.5, -100, 100); }
+      for (const q of crew) {
+        const o = harshOpinion(q, cand, kind, method); const tie = tieTo(q, cand);
+        if (o > 0.52) { rep.yes.push(q); q.morale = clamp(q.morale + 3 * scale, 0, 100); C.addTrust(q, 6 * scale); }
+        else if (o < 0.36) { rep.no.push(q); q.morale = clamp(q.morale - 7 * scale, 0, 100); C.addTrust(q, -10 * scale); q.anger = clamp(q.anger + 10, 0, 100); if (tie >= 0.45 && method === 'squad' && Math.random() < 0.4) { rep.left.push(q); } }
+      }
+      if (method === 'squad') C.killOffscreen(cand, 'rebel', `${cn} was shot by firing squad`, 60, true);
+      else { cand.wpn = 'machete'; if (cand.actor) { C.dropWeapon(cand.actor); C.giveWeapon(cand.actor, 'machete', 1); } cand.morale = clamp(cand.morale - 25, 0, 100); C.addTrust(cand, -20); }
+    } else if (method === 'private') {
+      C.addEvent({ type: 'justice', victim: vic, perpSide: 'rebel', positive: true, sev: grave ? 22 : 18, pub: 0.1, x: 0, y: 0, settlement: sid, text: 'A rebel apologised and repaid', memText: grave ? 'The rebel apologised but that is not enough' : 'The rebel apologised and repaid us' });
+      g.rep.discipline = clamp(g.rep.discipline + 2, 0, 100); g.rep.justice = clamp(g.rep.justice + (grave ? -2 : 3), 0, 100);
+      if (!grave) g.res.money = Math.max(0, g.res.money - 6);
+      for (const q of crew) { const o = 1 - harshOpinion(q, cand, kind, 'martial') + 0.1; if (grave && o < 0.4) { rep.no.push(q); C.addTrust(q, -5); q.morale = clamp(q.morale - 3, 0, 100); } else if (o > 0.6) { rep.yes.push(q); } }
+    } else { // ignore
+      g.rep.discipline = clamp(g.rep.discipline - 9, 0, 100); g.rep.justice = clamp(g.rep.justice - 12, 0, 100);
+      C.addEvent({ type: 'impunity', victim: vic, perpSide: 'rebel', val: -1, sev: grave ? 30 : 12, pub: 0.5, x: 0, y: 0, settlement: sid, text: `The rebels did nothing about what ${cn} did`, memText: 'The rebels did nothing' });
+      if (grave) { g.trust.peasants = clamp(g.trust.peasants - 0.07, 0.02, 1); g.trust.church = clamp(g.trust.church - 0.06, 0.02, 1); if (kind === 'abuse') for (const p of C.W.people) if (p.sex === 'F' && p.status === 'alive') p.trueStance = clamp(p.trueStance - 3, -100, 100); }
+      for (const q of crew) { const o = harshOpinion(q, cand, kind, 'martial'); if (grave && o > 0.6) { rep.no.push(q); C.addTrust(q, -7); q.morale = clamp(q.morale - 4, 0, 100); } }
+    }
+    g.stats.atrocities = g.stats.atrocities || { army: 0, rebel: 0 }; g.stats.atrocities.rebel++;
+    for (const q of rep.left) C.desert(q);
+    const names = (arr) => arr.slice(0, 4).map(C.tagName).join(', ') + (arr.length > 4 ? '…' : '');
+    const lines = [];
+    if (method === 'squad') lines.push(`${cn} is shot at dawn.`);
+    else if (method === 'martial') lines.push(`${cn} is disarmed and set to hard labour.`);
+    else if (method === 'private') lines.push(`${cn} apologizes to the family. It is not much.`);
+    else lines.push(`Nothing happens to ${cn}. Everybody notices.`);
+    if (rep.yes.length) lines.push(`${rep.yes.length} of your men approve (${names(rep.yes)}).`);
+    if (rep.no.length) lines.push(`${rep.no.length} disapprove (${names(rep.no)}).`);
+    if (rep.left.length) lines.push(`${names(rep.left)} ${rep.left.length > 1 ? 'were' : 'was'} ${rep.left.length > 1 ? 'his friends' : 'his friend'} and desert${rep.left.length > 1 ? '' : 's'} in the night.`);
+    C.ui.card({ title: 'The troop reacts', icon: '🗣', body: lines.join('\n'), choices: [{ label: 'Carry on', fn: () => { } }] });
+  };
+
+  // ---------------- the regime's atrocities (every garrison, every day) ----------------
+  C.atrocityTick = function () {
+    const g = G(); const heatK = 1 + g.regime.heat / 120; g.stats.atrocities = g.stats.atrocities || { army: 0, rebel: 0 };
+    for (const sid of C.PLAYABLE) {
+      const sol = (C.W.bySet[sid] || []).map((id) => C.P(id)).filter((p) => p.status === 'alive' && p.mil && p.mil.side === 'army');
+      const locals = (C.W.bySet[sid] || []).map((id) => C.P(id)).filter((p) => p.status === 'alive' && C.ageOf(p) >= 14 && !p.mil);
+      if (!locals.length) continue;
+      for (const sd of sol) {
+        let pr = 0.00055 * heatK * (g.flags.verano ? 1.5 : 1) * (g.regime.armyMorale < 40 ? 1.35 : 1);
+        if (sd.traits.includes('hothead')) pr *= 2; if (sd.traits.includes('drinker')) pr *= 1.6; if (sd.traits.includes('greedy')) pr *= 1.3; if (sd.traits.includes('kind')) pr *= 0.25; if (sd.occ === 'oficial') pr *= 0.5; if (sd.occ === 'sim') pr *= 1.6;
+        if (Math.random() > pr) continue;
+        const kind = sd.occ === 'sim' ? C.rnd.weighted([['torture', 0.45], ['beating', 0.25], ['abuse', 0.1], ['murder', 0.2]]) : C.rnd.weighted([['theft', 0.34], ['beating', 0.24], ['abuse', 0.12], ['murder', 0.1], ['looting', 0.2]]);
+        const pool = kind === 'abuse' ? locals.filter((p) => p.sex === 'F' && C.ageOf(p) < 45) : kind === 'torture' ? locals.filter((p) => p.trueStance > 10 || p.fac === 'students') : locals;
+        const vic = pool.length ? pool[(Math.random() * pool.length) | 0] : null; if (!vic) continue;
+        const vn = C.tagName(vic), nm = C.SETTLEMENTS[sid].name, sn = C.tagName(sd);
+        const T = { theft: [`${sn} took food and money from ${vn} at ${nm}`, 22, 0.15], looting: [`Soldiers looted ${vn}'s shop at ${nm}`, 30, 0.3], beating: [`Soldiers beat ${vn} in the street at ${nm}`, 45, 0.55], abuse: [`A soldier abused ${vn} at ${nm}`, 82, 0.65], murder: [`${sn} shot ${vn} dead at ${nm}`, 90, 0.9], torture: [`Police agents tortured ${vn} at ${nm}`, 78, 0.6] }[kind];
+        C.addEvent({ type: kind === 'looting' ? 'theft' : kind === 'torture' ? 'torture' : kind, victim: vic, perpSide: 'army', perp: sd, sev: T[1], pub: T[2], x: 0, y: 0, settlement: sid, text: T[0], memText: T[0].replace(/^.*? (took|looted|beat|abused|shot|tortured)/, (m, v) => (kind === 'abuse' ? 'A soldier abused' : kind === 'murder' ? 'A soldier shot' : kind === 'torture' ? 'Police tortured' : kind === 'beating' ? 'Soldiers beat' : 'A soldier took from')), headline: T[1] >= 78 ? T[0] : null });
+        if (kind === 'murder' || (kind === 'torture' && Math.random() < 0.2)) { vic.status = 'dead'; vic.died = g.day; vic.diedBy = 'killed'; g.stats.killedCiv++; }
+        g.stats.atrocities.army++; g.regime.legit = clamp(g.regime.legit - (T[1] >= 78 ? 1.1 : 0.3), 0, 100);
+        if (T[1] >= 78) g.recentAtrocity = { kind, victim: vic.id, perp: sd.id, settlement: sid, day: g.day, text: T[0] + '.', handled: false };
+      }
+    }
+  };
+
+  // ---------------- scarce rifles ----------------
+  // Arming a novice while experienced men carry machetes divides the troop. Returns the number who resent it.
+  C.armSoldier = function (p, wk) {
+    const g = G(); if (g.res.guns <= 0) return false;
+    g.res.guns--; p.wpn = wk || 'rifle';
+    if (p.actor && p.actor.scene === g.scene) { C.giveWeapon(p.actor, p.wpn, C.WEAPONS[p.wpn].mag * 2); p.actor.weaponOut = true; }
+    return C.resentment(p);
+  };
+  C.resentment = function (p) {
+    let n = 0;
+    for (const q of C.squadPeople()) {
+      if (q.id === p.id || q.id === C.W.player) continue; const unarmed = !q.wpn || q.wpn === 'machete';
+      if (unarmed && q.exp > p.exp + 12) { n++; C.addTrust(q, -5); q.morale = clamp(q.morale - 5, 0, 100); q.anger = clamp(q.anger + 6, 0, 100); if (p.sex === 'F' && q.iss[6] < -0.15) { C.addTrust(q, -4); } }
+    }
+    if (n) C.log(`${n} more experienced ${n > 1 ? 'men resent' : 'man resents'} that ${C.tagName(p)} got a rifle.`, 'warn');
+    return n;
+  };
+
   // ---------------- platform ----------------
   C.declarePlank = function (k, level, realLevel) {
     const g = G(), P = g.platform;
@@ -412,7 +546,7 @@
       r.sum += p.trueStance; r.n++; r.conv += p.conv;
       if (p.sex === 'F') { wS += p.trueStance; wN++; } if (p.eth === 'negra' || p.eth === 'mulata') { aS += p.trueStance; aN++; }
     }
-    const out = C.FACTION_KEYS.map((f) => ({ key: f, name: C.FACTIONS[f].name, n: rows[f].n, mean: rows[f].n ? rows[f].sum / rows[f].n : 0, trust: g.trust[f], col: C.FACTIONS[f].col }));
+    const out = C.FACTION_KEYS.map((f) => ({ key: f, name: C.fName(f), n: rows[f].n, mean: rows[f].n ? rows[f].sum / rows[f].n : 0, trust: g.trust[f], col: C.FACTIONS[f].col }));
     return { rows: out, women: wN ? wS / wN : 0, afro: aN ? aS / aN : 0, all: g.supportMean || 0 };
   };
 

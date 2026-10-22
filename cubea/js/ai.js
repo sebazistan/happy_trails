@@ -206,7 +206,7 @@
   C.stepMove = stepMove;
   function terrainSpeed(s, a) { const t = C.tileAt(s, a.x, a.y); let k = 1 / (C.TCOST[t] || 1); if (a.p.limp) k *= 0.72; if (a.prone || a.hide) k *= 0.55; if (G().weather.rain > 0.3 && (t === TL.G || t === TL.TRAIL)) k *= 0.88; if (a.p.needs.energy < 20) k *= 0.8; return clamp(k, 0.4, 1.5); }
 
-  C.say = function (a, text, col, dur) { a.bubble = { text, col, t: dur || 2.6 }; };
+  C.say = function (a, text, col, dur) { a.bubble = { text: C.phrase(text), col, t: dur || 2.6 }; };
 
   // ---------------- detection & suspicion ----------------
   function isHostile(a, b) { // would a (army/rebel) shoot b?
@@ -523,6 +523,11 @@
     const lead = g.player;
     if (!lead || lead.dead) { civilianLike(s, a, dt); return; }
     a.weaponOut = !!a.weapon && (stance !== 'forage' || s.alert > 0.2);
+    // a hothead with a grudge may shoot a man who has surrendered
+    if (a.weapon && p.traits.includes('hothead') && (p.anger > 55 || p.exp < 25) && Math.random() < dt * 0.04) {
+      const pr = s.actors.find((x) => x.side === 'army' && x.surrendered && !x.dead && Math.hypot(x.x - a.x, x.y - a.y) < 70);
+      if (pr) { a.shooting = 0.3; C.die(pr, a, 'executed'); g.stats.executed++; g.rep.discipline = clamp(g.rep.discipline - 8, 0, 100); g.rep.justice = clamp(g.rep.justice - 5, 0, 100); C.log(`${C.tagName(p)} shot a surrendered soldier before anyone could stop him.`, 'bad'); }
+    }
     // desertion/AWOL handled by daily sim
     // find target
     a.scanT = (a.scanT || 0) - dt;
@@ -541,7 +546,7 @@
       a.aim = Math.atan2(tgt.y - 8 - (a.y - 8), tgt.x - a.x); a.face = tgt.x >= a.x ? 1 : -1;
       const bonus = (stance === 'ambush' && sq.fireNow) ? 1.25 : 1;
       C.tryFire(s, a, tgt.x, tgt.y - 8, bonus);
-      if (a.weapon.mag <= 0 && a.reload <= 0 && (a.weapon.spare === undefined || a.weapon.spare > 0)) { a.reload = w.rel; C.say(a, 'Recargando', '#444', 1.2); }
+      if (a.weapon && a.weapon.mag <= 0 && a.reload <= 0 && (a.weapon.spare === undefined || a.weapon.spare > 0)) { a.reload = w.rel; C.say(a, 'Recargando', '#444', 1.2); }
     }
     // orders
     if (a.order) {
