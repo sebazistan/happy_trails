@@ -452,7 +452,7 @@
   // Once per game day: loyalty tick and bonds decay, the layered reveal of interface systems (support meter day 8, factions day 25…), weather, the Director's daily pick, outpost mission check, end conditions.
   function dailyHooks() {
     const g = G();
-    C.dayTick(); C.bondDaily();
+    C.dayTick(); C.bondDaily(); if (C.farmDaily) C.farmDaily();
     // the layered reveal: systems unlock as the story advances
     { const TH = [[3, 8, 'Locals: peasants remember how you treat them (support meter, loyalty details).'], [4, 25, 'Factions: peasants, workers, students, elites, landowners, the Church and the army are now tracked (⚖ Factions).'], [5, 60, 'Politics: you can now announce a platform (📜 Manifesto). Announced planks become promises.'], [6, 100, 'The island: the cities, the pipeline from Havana, the unions and the students are in play.']];
       for (const [L, d, msg] of TH) if (g.unlocked.layer < L && g.day >= d) { g.unlocked.layer = L; C.log('NEW SYSTEM — ' + msg, 'good'); C.ui.toast('New system unlocked'); C.ui.refresh(); } }

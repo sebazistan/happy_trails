@@ -442,7 +442,7 @@
           if (['pescador', 'estibador'].includes(p.occ)) opts.push({ label: 'Arrange contraband runs on his boat', sub: 'Rum, cigars, and worse. Profitable; corrosive.', fn: () => { C.racketStart('contraband', p); return true; } });
           if ((p.fac === 'elite' || p.fac === 'landowners') && p.cls >= 3 && (s.type === 'city' || s.type === 'capital' || s.type === 'town')) opts.push({ label: 'Kidnap for ransom', sub: 'A fortune, if it works. Rebels do not usually do this. It will be remembered.', fn: () => { C.racketStart('kidnap', p); return true; } });
         }
-        if (p.occ === 'mayordomo' || p.fac === 'landowners') opts.push({ label: 'Seize the estate and distribute the land', sub: 'The peasants cheer; landowners will never forgive', fn: () => { C.land.seizeMenu(p); } });
+        if (p.occ === 'mayordomo' || p.fac === 'landowners') opts.push({ label: 'Serve notice on the estate', sub: 'Opens it to survey. Nothing is handed over until you drive stakes and put families on plots, in the field.', fn: () => { C.land.noticeMenu(p); } });
         if (p.informant && !p.revealed || C.tells(p).length) opts.push({ label: 'Have your network check on this person (12 pesos)', sub: 'Discreet inquiries; usually right', disabled: g.res.money < 12 || p.revealed, fn: () => { C.investigate(p); buildLeft(); ui.update(true); } });
         if (p.informant && p.revealed) { opts.push({ label: 'Hold a trial', sub: 'Calls the village; verdict visible to all', fn: () => { trial(a); } }); }
         if (p.roster === 'anselmo') { opts.splice(1, 0, { label: 'Ask El Viejo for advice', fn: () => { ui.openJournal('viejo'); } }); }
