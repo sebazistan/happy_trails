@@ -1,0 +1,141 @@
+[
+ {
+  "key": "jeep",
+  "n": "Jeep Willys",
+  "w": 22,
+  "h": 12,
+  "spd": 170,
+  "cap": 4,
+  "tank": 38,
+  "burn": 0.55,
+  "col": [
+   96,
+   110,
+   70
+  ],
+  "hp": 140,
+  "wheels": 4
+ },
+ {
+  "key": "truck",
+  "n": "Camión",
+  "w": 34,
+  "h": 15,
+  "spd": 120,
+  "cap": 8,
+  "tank": 90,
+  "burn": 0.9,
+  "col": [
+   170,
+   120,
+   60
+  ],
+  "hp": 220,
+  "wheels": 4
+ },
+ {
+  "key": "car",
+  "n": "Auto (Chevrolet '55)",
+  "w": 28,
+  "h": 13,
+  "spd": 210,
+  "cap": 4,
+  "tank": 55,
+  "burn": 0.7,
+  "col": [
+   190,
+   70,
+   70
+  ],
+  "hp": 130,
+  "wheels": 4
+ },
+ {
+  "key": "bus",
+  "n": "Guagua",
+  "w": 42,
+  "h": 15,
+  "spd": 115,
+  "cap": 14,
+  "tank": 110,
+  "burn": 1.1,
+  "col": [
+   200,
+   160,
+   50
+  ],
+  "hp": 260,
+  "wheels": 4
+ },
+ {
+  "key": "armyjeep",
+  "n": "Jeep militar",
+  "w": 22,
+  "h": 12,
+  "spd": 175,
+  "cap": 4,
+  "tank": 40,
+  "burn": 0.55,
+  "col": [
+   70,
+   80,
+   130
+  ],
+  "hp": 160,
+  "wheels": 4,
+  "army": true
+ },
+ {
+  "key": "armytruck",
+  "n": "Camión militar",
+  "w": 36,
+  "h": 15,
+  "spd": 125,
+  "cap": 10,
+  "tank": 95,
+  "burn": 0.9,
+  "col": [
+   60,
+   90,
+   130
+  ],
+  "hp": 260,
+  "wheels": 4,
+  "army": true
+ },
+ {
+  "key": "oxcart",
+  "n": "Carreta de bueyes",
+  "w": 24,
+  "h": 14,
+  "spd": 42,
+  "cap": 3,
+  "tank": 0,
+  "burn": 0,
+  "col": [
+   150,
+   110,
+   70
+  ],
+  "hp": 90,
+  "wheels": 2
+ },
+ {
+  "key": "boat",
+  "n": "Lancha de pesca",
+  "w": 36,
+  "h": 14,
+  "spd": 78,
+  "cap": 6,
+  "tank": 40,
+  "burn": 0.35,
+  "col": [
+   90,
+   150,
+   180
+  ],
+  "hp": 120,
+  "wheels": 0,
+  "water": true
+ }
+]

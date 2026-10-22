@@ -401,11 +401,12 @@
     const dem = need(4, 2) ? 0.1 : g.platform.declared[4] && g.platform.pub[4] === 0 ? -0.15 : 0;
     const land = g.platform.declared[0] && g.platform.pub[0] === 2 ? (p.fac === 'landowners' ? -0.35 : -0.1) : 0;
     const chance = clamp(base + prop + dem + land, 0.03, 0.9);
-    const amt = () => Math.round((p.donor || (p.cls >= 4 ? 220 : 90)) * (0.45 + Math.random() * 0.85));
+    const amt = () => Math.round((p.donor || (p.cls >= 4 ? 140 : 60)) * (0.25 + Math.random() * 0.35));
     const attempt = (mod, label) => () => {
+      if ((p.donorCd || 0) > g.day) { ui.menu('Too soon', `${esc(C.tagName(p))} frowns. "I gave you something only a few weeks ago. Come back when the season changes."`, [{ label: 'Apologize and leave', fn: () => { } }]); g.player.susp = (g.player.susp || 0) + 8; return; }
       const ok = Math.random() < chance + mod; const risky = p.trueStance < -10 && Math.random() < 0.35 + (mod < 0 ? 0.1 : 0);
       if (risky) { g.regime.heat = clamp(g.regime.heat + 8, 0, 100); g.player.susp = (g.player.susp || 0) + 45; C.log(`${C.tagName(p)} may have gone to the police.`, 'bad'); }
-      if (ok) { const m = amt(); g.pipe.balance += m; g.stats.pesos += m; C.addEvent({ type: 'donation', victim: p, perpSide: 'rebel', positive: true, sev: 14, pub: 0, x: 0, y: 0, settlement: p.settlement, text: `${C.tagName(p)} contributed to the cause`, memText: 'Gave to the cause' }); p.trueStance = clamp(p.trueStance + 3, -100, 100); ui.menu('A contribution', `${esc(C.tagName(p))} hands over an envelope: <b>${m} pesos</b> for the pipeline. Money in Havana must be carried to the Sierra by a courier — find Haydée, Hart or another contact.`, [{ label: 'Pocket it and slip away', fn: () => { } }]); }
+      if (ok) { const m = amt(); p.donorCd = g.day + 60; g.pipe.balance += m; g.stats.pesos += m; C.addEvent({ type: 'donation', victim: p, perpSide: 'rebel', positive: true, sev: 14, pub: 0, x: 0, y: 0, settlement: p.settlement, text: `${C.tagName(p)} contributed to the cause`, memText: 'Gave to the cause' }); p.trueStance = clamp(p.trueStance + 3, -100, 100); ui.menu('A contribution', `${esc(C.tagName(p))} hands over an envelope: <b>${m} pesos</b> for the pipeline. Money in Havana must be carried to the Sierra by a courier — find Haydée, Hart or another contact.`, [{ label: 'Pocket it and slip away', fn: () => { } }]); }
       else ui.menu('Declined', `${esc(C.tagName(p))} looks at the floor. "Not now. Not in these times."`, [{ label: 'Thank them for their time', fn: () => { } }]);
     };
     ui.menu(`Pitch to ${C.tagName(p)}`, `Chance of success is around <b>${Math.round(chance * 100)}%</b>. Your declared platform matters: protect property or promise elections and the merchants relax; expropriation frightens them. ${p.trueStance < -10 ? '<br><b style="color:#ff9d8c">Warning:</b> this person leans toward the regime and may inform on you.' : ''}`, [

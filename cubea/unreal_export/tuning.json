@@ -1,0 +1,12 @@
+{
+ "rate": 0.05,
+ "memHalf": 70,
+ "memHalfKin": 260,
+ "policyW": 46,
+ "bgW": 14,
+ "needW": 0.2,
+ "peerW": 0.12,
+ "memW": 0.55,
+ "memCap": 75,
+ "fearW": 0.25
+}

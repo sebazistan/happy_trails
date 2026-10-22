@@ -172,10 +172,11 @@
   // rebels buy/take from a civilian (forage stance or player dialog)
   C.forageTransaction = function (a, t, kind) {
     const g = G(), s = a.scene; const policy = g.policy.forage;
-    let target, qty = 5 + Math.floor(Math.random() * 6), seller;
+    let target, qty = 3 + Math.floor(Math.random() * 4), seller;
     if (kind === 'animal') { qty = t.def.food; const near = s.actors.filter((o) => o.side === 'civ' && !o.dead).sort((p, q) => Math.hypot(p.x - t.x, p.y - t.y) - Math.hypot(q.x - t.x, q.y - t.y))[0]; seller = near ? near.p : null; t.dead = true; t.hp = 0; }
     else { seller = t.p; qty = Math.min(qty, Math.max(2, Math.floor(seller.needs.food / 10))); }
     if (!seller) { g.res.food += qty; return; }
+    seller.sellCd = g.min + 1440 * (kind === 'animal' ? 3 : 1);
     const price = C.price(seller.settlement, seller) * qty * (kind === 'animal' ? 1.6 : 1);
     const vn = C.tagName(seller);
     const poor = seller.cls <= 1;
@@ -285,6 +286,7 @@
       p.bleed = Math.max(0, p.bleed - 0.25);
       p.morale = clamp(p.morale + (n.food > 50 ? 1.5 : -3) + (n.hope - 50) * 0.04 - (p.stress > 60 ? 2 : 0), 0, 100);
       // experience from time in any army
+      if (rebel && p.sex === 'M' && age > 16 && p.look && !p.look.beard) p.beardLen = clamp((p.service || 0) / 110, 0, 1);   // the barbudos
       if (p.mil && (p.mil.side === 'army' || p.mil.side === 'rebel') && p.status === 'alive') { p.service++; p.exp = clamp(p.exp + (rebel ? 0.12 : 0.07) * (1 + (p.traits.includes('idealist') ? 0.1 : 0)), 0, 100); }
       // stance update
       if (age < 12) { p.trueStance += (peerMean(p) - p.trueStance) * 0.1; p.stance = p.trueStance; continue; }

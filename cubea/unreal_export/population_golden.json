@@ -1,0 +1,4710 @@
+{
+ "seed": 1956,
+ "people": 3102,
+ "alive": 2649,
+ "households": 1448,
+ "nonKinEdges": 9048,
+ "byFaction": {
+  "peasants": 754,
+  "middle": 815,
+  "landowners": 25,
+  "army": 241,
+  "students": 157,
+  "workers": 562,
+  "church": 26,
+  "elite": 69
+ },
+ "byStatus": {
+  "dead": 434,
+  "alive": 2649,
+  "jailed": 13,
+  "exile": 6
+ },
+ "bySettlement": {
+  "sierra": 107,
+  "habana": 802,
+  "santiago": 610,
+  "palmarito": 190,
+  "manzanillo": 395,
+  "bayamo": 373,
+  "alegria": 28,
+  "cayo": 122,
+  "biran": 5,
+  "exterior": 2,
+  "rosario": 2,
+  "artemisa": 3,
+  "medialuna": 3,
+  "yara": 3,
+  "encrucijada": 1,
+  "cruces": 1,
+  "cardenas": 1,
+  "banes": 1
+ },
+ "meanStance": -0.009,
+ "first60": [
+  {
+   "id": 0,
+   "name": "Baldomero Hernández Betancourt",
+   "sex": "M",
+   "yob": 1873,
+   "status": "dead",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 1,
+   "kids": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": -35,
+   "conv": 40.86,
+   "traits": [
+    "loyalist",
+    "kind"
+   ],
+   "iss": [
+    0.931,
+    0.779,
+    -0.743,
+    0.327,
+    -0.314,
+    0.189,
+    -0.541,
+    0.519
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": []
+  },
+  {
+   "id": 1,
+   "name": "Milagros Cordero Gil",
+   "sex": "F",
+   "yob": 1873,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 0,
+   "kids": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": -35,
+   "conv": 60.01,
+   "traits": [
+    "loyalist",
+    "kind",
+    "veteran"
+   ],
+   "iss": [
+    0.279,
+    0.806,
+    -0.503,
+    0.577,
+    -0.186,
+    0.156,
+    -0.179,
+    -0.171
+   ],
+   "sal": [
+    1,
+    0
+   ],
+   "rel": [
+    [
+     36,
+     "friend",
+     0.41
+    ],
+    [
+     2,
+     "neighbor",
+     0.12
+    ],
+    [
+     63,
+     "neighbor",
+     0.12
+    ]
+   ]
+  },
+  {
+   "id": 2,
+   "name": "Lino Hernández Cordero",
+   "sex": "M",
+   "yob": 1896,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 1,
+   "father": 0,
+   "spouse": 23,
+   "kids": [
+    62,
+    63,
+    64,
+    65,
+    66
+   ],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 0.88,
+   "conv": 20.04,
+   "traits": [
+    "opportunist"
+   ],
+   "iss": [
+    0.795,
+    0.821,
+    -0.688,
+    0.773,
+    0.572,
+    0.079,
+    0.273,
+    0.286
+   ],
+   "sal": [
+    0,
+    5
+   ],
+   "rel": [
+    [
+     1,
+     "neighbor",
+     0.12
+    ],
+    [
+     5,
+     "friend",
+     0.6
+    ],
+    [
+     2979,
+     "friend",
+     0.54
+    ],
+    [
+     24,
+     "friend",
+     0.53
+    ],
+    [
+     56,
+     "coworker",
+     0.18
+    ],
+    [
+     16,
+     "coworker",
+     0.18
+    ],
+    [
+     44,
+     "employer",
+     0.15
+    ],
+    [
+     5,
+     "neighbor",
+     0.12
+    ],
+    [
+     12,
+     "compadre",
+     0.55
+    ],
+    [
+     19,
+     "friend",
+     0.55
+    ],
+    [
+     25,
+     "friend",
+     0.47
+    ],
+    [
+     44,
+     "compadre",
+     0.55
+    ],
+    [
+     54,
+     "coworker",
+     0.18
+    ],
+    [
+     55,
+     "coworker",
+     0.18
+    ],
+    [
+     1912,
+     "friend",
+     0.3
+    ]
+   ]
+  },
+  {
+   "id": 3,
+   "name": "Delia Hernández Cordero",
+   "sex": "F",
+   "yob": 1898,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 1,
+   "father": 0,
+   "spouse": -1,
+   "kids": [],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": 73.75,
+   "conv": 41.8,
+   "traits": [
+    "devout",
+    "cautious"
+   ],
+   "iss": [
+    0.756,
+    1,
+    -0.404,
+    0.049,
+    0.848,
+    -0.384,
+    0.38,
+    0.265
+   ],
+   "sal": [
+    2,
+    1
+   ],
+   "rel": [
+    [
+     5,
+     "friend",
+     0.57
+    ],
+    [
+     37,
+     "friend",
+     0.43
+    ],
+    [
+     37,
+     "compadre",
+     0.55
+    ],
+    [
+     73,
+     "compadre",
+     0.55
+    ]
+   ]
+  },
+  {
+   "id": 4,
+   "name": "Reina Hernández Cordero",
+   "sex": "F",
+   "yob": 1900,
+   "status": "dead",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 1,
+   "father": 0,
+   "spouse": 38,
+   "kids": [],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": 38.85,
+   "conv": 36.59,
+   "traits": [
+    "greedy"
+   ],
+   "iss": [
+    -0.374,
+    0.385,
+    -0.43,
+    -0.231,
+    0.891,
+    -0.085,
+    0.1,
+    0.561
+   ],
+   "sal": [
+    4,
+    6
+   ],
+   "rel": []
+  },
+  {
+   "id": 5,
+   "name": "Ignacio Hernández Cordero",
+   "sex": "M",
+   "yob": 1903,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 1,
+   "father": 0,
+   "spouse": -1,
+   "kids": [],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 25.03,
+   "conv": 14.81,
+   "traits": [
+    "veteran",
+    "stoic"
+   ],
+   "iss": [
+    0.868,
+    0.983,
+    -0.082,
+    -0.032,
+    0.006,
+    -0.008,
+    -0.509,
+    0.335
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     2,
+     "friend",
+     0.6
+    ],
+    [
+     3,
+     "friend",
+     0.57
+    ],
+    [
+     24,
+     "friend",
+     0.53
+    ],
+    [
+     3040,
+     "friend",
+     0.56
+    ],
+    [
+     77,
+     "coworker",
+     0.18
+    ],
+    [
+     3040,
+     "coworker",
+     0.18
+    ],
+    [
+     44,
+     "employer",
+     0.15
+    ],
+    [
+     2,
+     "neighbor",
+     0.12
+    ],
+    [
+     16,
+     "coworker",
+     0.18
+    ],
+    [
+     23,
+     "neighbor",
+     0.12
+    ],
+    [
+     26,
+     "friend",
+     0.46
+    ],
+    [
+     40,
+     "friend",
+     0.45
+    ],
+    [
+     45,
+     "coworker",
+     0.18
+    ],
+    [
+     46,
+     "compadre",
+     0.55
+    ],
+    [
+     54,
+     "coworker",
+     0.18
+    ],
+    [
+     55,
+     "coworker",
+     0.18
+    ],
+    [
+     62,
+     "neighbor",
+     0.12
+    ],
+    [
+     65,
+     "neighbor",
+     0.12
+    ],
+    [
+     66,
+     "neighbor",
+     0.12
+    ],
+    [
+     80,
+     "coworker",
+     0.18
+    ],
+    [
+     3037,
+     "coworker",
+     0.18
+    ]
+   ]
+  },
+  {
+   "id": 6,
+   "name": "Eduardo Hernández Cordero",
+   "sex": "M",
+   "yob": 1904,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 1,
+   "father": 0,
+   "spouse": 11,
+   "kids": [
+    78,
+    79,
+    80
+   ],
+   "occ": "carbonero",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 41.09,
+   "conv": 9.19,
+   "traits": [
+    "hothead",
+    "devout",
+    "opportunist"
+   ],
+   "iss": [
+    1,
+    0.66,
+    -0.568,
+    0.402,
+    0.228,
+    0.229,
+    0.023,
+    -0.24
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     7,
+     "friend",
+     0.48
+    ],
+    [
+     2979,
+     "friend",
+     0.44
+    ],
+    [
+     23,
+     "friend",
+     0.4
+    ],
+    [
+     3040,
+     "friend",
+     0.66
+    ],
+    [
+     19,
+     "coworker",
+     0.18
+    ],
+    [
+     19,
+     "neighbor",
+     0.12
+    ],
+    [
+     15,
+     "coworker",
+     0.18
+    ],
+    [
+     18,
+     "coworker",
+     0.18
+    ],
+    [
+     38,
+     "coworker",
+     0.18
+    ],
+    [
+     46,
+     "neighbor",
+     0.12
+    ]
+   ]
+  },
+  {
+   "id": 7,
+   "name": "Alicia Hernández Cordero",
+   "sex": "F",
+   "yob": 1905,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 1,
+   "father": 0,
+   "spouse": 19,
+   "kids": [
+    46,
+    47,
+    48,
+    49
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": 13.33,
+   "conv": 36.59,
+   "traits": [
+    "stoic",
+    "drinker",
+    "devout"
+   ],
+   "iss": [
+    -0.206,
+    0.464,
+    -0.811,
+    0.591,
+    0.251,
+    -0.157,
+    0.492,
+    0.566
+   ],
+   "sal": [
+    1,
+    6
+   ],
+   "rel": [
+    [
+     6,
+     "friend",
+     0.48
+    ],
+    [
+     3040,
+     "friend",
+     0.57
+    ],
+    [
+     39,
+     "friend",
+     0.66
+    ],
+    [
+     12,
+     "friend",
+     0.64
+    ],
+    [
+     10,
+     "friend",
+     0.63
+    ],
+    [
+     8,
+     "neighbor",
+     0.12
+    ],
+    [
+     23,
+     "friend",
+     0.46
+    ]
+   ]
+  },
+  {
+   "id": 8,
+   "name": "Justo Expósito Gómez",
+   "sex": "M",
+   "yob": 1889,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 9,
+   "kids": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 61.9,
+   "conv": 40.83,
+   "traits": [
+    "hothead"
+   ],
+   "iss": [
+    1,
+    0.8,
+    0.23,
+    0.311,
+    -0.041,
+    0.301,
+    -0.285,
+    0.089
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     7,
+     "neighbor",
+     0.12
+    ],
+    [
+     2982,
+     "friend",
+     0.5
+    ],
+    [
+     19,
+     "neighbor",
+     0.12
+    ],
+    [
+     16,
+     "neighbor",
+     0.12
+    ],
+    [
+     26,
+     "neighbor",
+     0.12
+    ],
+    [
+     38,
+     "friend",
+     0.58
+    ]
+   ]
+  },
+  {
+   "id": 9,
+   "name": "Mercedes Mesa Duarte",
+   "sex": "F",
+   "yob": 1889,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 8,
+   "kids": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 34.08,
+   "conv": 41.29,
+   "traits": [
+    "generous",
+    "idealist"
+   ],
+   "iss": [
+    0.932,
+    0.648,
+    -0.023,
+    0.373,
+    -0.235,
+    0.068,
+    -0.007,
+    0.407
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     2980,
+     "neighbor",
+     0.35
+    ],
+    [
+     37,
+     "friend",
+     0.61
+    ],
+    [
+     28,
+     "friend",
+     0.43
+    ],
+    [
+     19,
+     "neighbor",
+     0.12
+    ],
+    [
+     47,
+     "compadre",
+     0.55
+    ]
+   ]
+  },
+  {
+   "id": 10,
+   "name": "Pura Expósito Mesa",
+   "sex": "F",
+   "yob": 1906,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 9,
+   "father": 8,
+   "spouse": 26,
+   "kids": [
+    51,
+    52
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": -16.78,
+   "conv": 10.4,
+   "traits": [
+    "generous",
+    "stoic"
+   ],
+   "iss": [
+    0.535,
+    1,
+    -0.374,
+    0.098,
+    0.995,
+    -0.044,
+    0.591,
+    -0.112
+   ],
+   "sal": [
+    4,
+    6
+   ],
+   "rel": [
+    [
+     7,
+     "friend",
+     0.63
+    ],
+    [
+     23,
+     "friend",
+     0.63
+    ],
+    [
+     3040,
+     "friend",
+     0.51
+    ],
+    [
+     12,
+     "friend",
+     0.57
+    ],
+    [
+     38,
+     "friend",
+     0.49
+    ],
+    [
+     40,
+     "friend",
+     0.66
+    ],
+    [
+     2981,
+     "compadre",
+     0.55
+    ]
+   ]
+  },
+  {
+   "id": 11,
+   "name": "Delia Expósito Mesa",
+   "sex": "F",
+   "yob": 1909,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 9,
+   "father": 8,
+   "spouse": 6,
+   "kids": [
+    78,
+    79,
+    80
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": 7.24,
+   "conv": 24.73,
+   "traits": [
+    "opportunist",
+    "greedy",
+    "drinker"
+   ],
+   "iss": [
+    -0.017,
+    0.271,
+    -0.484,
+    0.174,
+    1,
+    -0.439,
+    0.312,
+    0.097
+   ],
+   "sal": [
+    4,
+    5
+   ],
+   "rel": [
+    [
+     41,
+     "friend",
+     0.55
+    ],
+    [
+     3041,
+     "friend",
+     0.59
+    ],
+    [
+     19,
+     "neighbor",
+     0.12
+    ],
+    [
+     13,
+     "friend",
+     0.49
+    ]
+   ]
+  },
+  {
+   "id": 12,
+   "name": "Fe Expósito Mesa",
+   "sex": "F",
+   "yob": 1911,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 9,
+   "father": 8,
+   "spouse": -1,
+   "kids": [],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": 52.91,
+   "conv": 22.48,
+   "traits": [
+    "cautious"
+   ],
+   "iss": [
+    -0.216,
+    1,
+    0.004,
+    0.118,
+    0.534,
+    0.148,
+    0.665,
+    0.236
+   ],
+   "sal": [
+    4,
+    6
+   ],
+   "rel": [
+    [
+     7,
+     "friend",
+     0.64
+    ],
+    [
+     10,
+     "friend",
+     0.57
+    ],
+    [
+     3041,
+     "friend",
+     0.43
+    ],
+    [
+     2,
+     "compadre",
+     0.55
+    ],
+    [
+     26,
+     "neighbor",
+     0.12
+    ],
+    [
+     14,
+     "friend",
+     0.67
+    ]
+   ]
+  },
+  {
+   "id": 13,
+   "name": "Olga Expósito Mesa",
+   "sex": "F",
+   "yob": 1912,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 9,
+   "father": 8,
+   "spouse": -1,
+   "kids": [],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": -35,
+   "conv": 57.96,
+   "traits": [
+    "loyalist"
+   ],
+   "iss": [
+    0.418,
+    0.352,
+    -0.633,
+    0.377,
+    0.328,
+    0.376,
+    0.53,
+    0.425
+   ],
+   "sal": [
+    4,
+    6
+   ],
+   "rel": [
+    [
+     11,
+     "friend",
+     0.49
+    ],
+    [
+     26,
+     "friend",
+     0.48
+    ],
+    [
+     19,
+     "neighbor",
+     0.12
+    ],
+    [
+     30,
+     "friend",
+     0.54
+    ],
+    [
+     62,
+     "friend",
+     0.5
+    ]
+   ]
+  },
+  {
+   "id": 14,
+   "name": "Candelaria Expósito Mesa",
+   "sex": "F",
+   "yob": 1915,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 9,
+   "father": 8,
+   "spouse": 31,
+   "kids": [
+    50
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": 26.08,
+   "conv": 33.41,
+   "traits": [
+    "cautious",
+    "gossip",
+    "veteran"
+   ],
+   "iss": [
+    0.29,
+    0.538,
+    -0.097,
+    -0.318,
+    0.864,
+    -0.246,
+    0.529,
+    -0.12
+   ],
+   "sal": [
+    4,
+    1
+   ],
+   "rel": [
+    [
+     12,
+     "friend",
+     0.67
+    ],
+    [
+     16,
+     "compadre",
+     0.55
+    ],
+    [
+     41,
+     "neighbor",
+     0.12
+    ],
+    [
+     41,
+     "friend",
+     0.42
+    ],
+    [
+     62,
+     "friend",
+     0.62
+    ]
+   ]
+  },
+  {
+   "id": 15,
+   "name": "José Expósito Mesa",
+   "sex": "M",
+   "yob": 1918,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 9,
+   "father": 8,
+   "spouse": 33,
+   "kids": [
+    57,
+    58,
+    59,
+    60,
+    61
+   ],
+   "occ": "carbonero",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 36.61,
+   "conv": 31.47,
+   "traits": [
+    "devout",
+    "veteran",
+    "generous"
+   ],
+   "iss": [
+    0.884,
+    0.435,
+    -1,
+    0.125,
+    0.098,
+    0.252,
+    -0.536,
+    0.166
+   ],
+   "sal": [
+    0,
+    5
+   ],
+   "rel": [
+    [
+     76,
+     "friend",
+     0.62
+    ],
+    [
+     6,
+     "coworker",
+     0.18
+    ],
+    [
+     18,
+     "coworker",
+     0.18
+    ],
+    [
+     25,
+     "neighbor",
+     0.12
+    ],
+    [
+     34,
+     "friend",
+     0.67
+    ],
+    [
+     74,
+     "friend",
+     0.5
+    ],
+    [
+     76,
+     "neighbor",
+     0.12
+    ]
+   ]
+  },
+  {
+   "id": 16,
+   "name": "Silvio Pérez Hernández",
+   "sex": "M",
+   "yob": 1878,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 17,
+   "kids": [
+    18,
+    19
+   ],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": 16.26,
+   "conv": 25.19,
+   "traits": [
+    "stoic",
+    "brave"
+   ],
+   "iss": [
+    1,
+    0.523,
+    0.147,
+    0.056,
+    0.154,
+    0.474,
+    0.338,
+    0.525
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     2,
+     "coworker",
+     0.18
+    ],
+    [
+     14,
+     "compadre",
+     0.55
+    ],
+    [
+     2983,
+     "coworker",
+     0.18
+    ],
+    [
+     5,
+     "coworker",
+     0.18
+    ],
+    [
+     8,
+     "neighbor",
+     0.12
+    ],
+    [
+     598,
+     "friend",
+     0.3
+    ],
+    [
+     27,
+     "friend",
+     0.45
+    ],
+    [
+     45,
+     "coworker",
+     0.18
+    ],
+    [
+     98,
+     "coworker",
+     0.18
+    ],
+    [
+     2982,
+     "friend",
+     0.61
+    ]
+   ]
+  },
+  {
+   "id": 17,
+   "name": "Sofía Cordero Martínez",
+   "sex": "F",
+   "yob": 1880,
+   "status": "dead",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 16,
+   "kids": [
+    18,
+    19
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": 30.98,
+   "conv": 27.47,
+   "traits": [
+    "generous",
+    "idealist",
+    "veteran"
+   ],
+   "iss": [
+    1,
+    0.781,
+    -0.535,
+    0.407,
+    0.334,
+    -0.091,
+    -0.056,
+    0.265
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": []
+  },
+  {
+   "id": 18,
+   "name": "Dámaso Pérez Cordero",
+   "sex": "M",
+   "yob": 1899,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 17,
+   "father": 16,
+   "spouse": 25,
+   "kids": [
+    74,
+    75,
+    76,
+    77
+   ],
+   "occ": "carbonero",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": 40.52,
+   "conv": 41.32,
+   "traits": [
+    "hothead",
+    "veteran",
+    "generous"
+   ],
+   "iss": [
+    0.87,
+    0.961,
+    0.181,
+    0.007,
+    -0.021,
+    -0.039,
+    -0.449,
+    0.959
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     15,
+     "coworker",
+     0.18
+    ],
+    [
+     3040,
+     "friend",
+     0.68
+    ],
+    [
+     6,
+     "coworker",
+     0.18
+    ],
+    [
+     22,
+     "neighbor",
+     0.12
+    ],
+    [
+     19,
+     "coworker",
+     0.18
+    ],
+    [
+     23,
+     "friend",
+     0.43
+    ],
+    [
+     24,
+     "friend",
+     0.45
+    ],
+    [
+     38,
+     "coworker",
+     0.18
+    ],
+    [
+     42,
+     "neighbor",
+     0.12
+    ],
+    [
+     63,
+     "compadre",
+     0.55
+    ]
+   ]
+  },
+  {
+   "id": 19,
+   "name": "Juan Pérez Cordero",
+   "sex": "M",
+   "yob": 1901,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 17,
+   "father": 16,
+   "spouse": 7,
+   "kids": [
+    46,
+    47,
+    48,
+    49
+   ],
+   "occ": "carbonero",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": 28.25,
+   "conv": 20.44,
+   "traits": [
+    "greedy",
+    "cautious",
+    "hothead"
+   ],
+   "iss": [
+    0.85,
+    0.565,
+    -0.185,
+    0.714,
+    0.343,
+    -0.066,
+    -0.406,
+    0.501
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     6,
+     "coworker",
+     0.18
+    ],
+    [
+     6,
+     "neighbor",
+     0.12
+    ],
+    [
+     8,
+     "neighbor",
+     0.12
+    ],
+    [
+     9,
+     "neighbor",
+     0.12
+    ],
+    [
+     11,
+     "neighbor",
+     0.12
+    ],
+    [
+     13,
+     "neighbor",
+     0.12
+    ],
+    [
+     2,
+     "friend",
+     0.55
+    ],
+    [
+     25,
+     "friend",
+     0.41
+    ],
+    [
+     18,
+     "coworker",
+     0.18
+    ]
+   ]
+  },
+  {
+   "id": 20,
+   "name": "Sergio Guerra Betancourt",
+   "sex": "M",
+   "yob": 1877,
+   "status": "dead",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 21,
+   "kids": [
+    22,
+    23,
+    24,
+    25,
+    26
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": 36.05,
+   "conv": 28.11,
+   "traits": [
+    "brave"
+   ],
+   "iss": [
+    0.942,
+    0.99,
+    0.131,
+    -0.019,
+    0.307,
+    0.279,
+    0.071,
+    0.214
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": []
+  },
+  {
+   "id": 21,
+   "name": "Zoila Varona Montero",
+   "sex": "F",
+   "yob": 1879,
+   "status": "dead",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 20,
+   "kids": [
+    22,
+    23,
+    24,
+    25,
+    26
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": 17.22,
+   "conv": 23.22,
+   "traits": [
+    "hothead",
+    "gossip"
+   ],
+   "iss": [
+    0.68,
+    0.551,
+    0.246,
+    0.136,
+    0.048,
+    -0.184,
+    -0.543,
+    0.713
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": []
+  },
+  {
+   "id": 22,
+   "name": "Amado Guerra Varona",
+   "sex": "M",
+   "yob": 1898,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 21,
+   "father": 20,
+   "spouse": 39,
+   "kids": [
+    42,
+    43,
+    44,
+    45
+   ],
+   "occ": "hacendado",
+   "fac": "landowners",
+   "eth": "negra",
+   "trueStance": -44.35,
+   "conv": 44.66,
+   "traits": [
+    "hothead",
+    "drinker"
+   ],
+   "iss": [
+    -0.681,
+    -0.588,
+    -0.608,
+    -1,
+    0.297,
+    -0.528,
+    -0.049,
+    1
+   ],
+   "sal": [
+    0,
+    3
+   ],
+   "rel": [
+    [
+     18,
+     "neighbor",
+     0.12
+    ],
+    [
+     26,
+     "friend",
+     0.64
+    ],
+    [
+     25,
+     "compadre",
+     0.55
+    ],
+    [
+     24,
+     "neighbor",
+     0.12
+    ],
+    [
+     25,
+     "employee",
+     0.15
+    ],
+    [
+     26,
+     "employee",
+     0.15
+    ],
+    [
+     41,
+     "employee",
+     0.15
+    ],
+    [
+     55,
+     "employee",
+     0.15
+    ],
+    [
+     56,
+     "employee",
+     0.15
+    ],
+    [
+     74,
+     "neighbor",
+     0.12
+    ],
+    [
+     75,
+     "employee",
+     0.15
+    ],
+    [
+     75,
+     "neighbor",
+     0.12
+    ],
+    [
+     2980,
+     "employee",
+     0.15
+    ],
+    [
+     2983,
+     "employee",
+     0.15
+    ]
+   ]
+  },
+  {
+   "id": 23,
+   "name": "Milagros Guerra Varona",
+   "sex": "F",
+   "yob": 1899,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 21,
+   "father": 20,
+   "spouse": 2,
+   "kids": [
+    62,
+    63,
+    64,
+    65,
+    66
+   ],
+   "occ": "partera",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": -35,
+   "conv": 34.2,
+   "traits": [
+    "greedy",
+    "generous",
+    "loyalist"
+   ],
+   "iss": [
+    0.194,
+    0.86,
+    -0.448,
+    -0.276,
+    -0.258,
+    0.487,
+    -0.106,
+    0.363
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     2982,
+     "friend",
+     0.35
+    ],
+    [
+     6,
+     "friend",
+     0.4
+    ],
+    [
+     10,
+     "friend",
+     0.63
+    ],
+    [
+     7,
+     "friend",
+     0.46
+    ],
+    [
+     18,
+     "friend",
+     0.43
+    ],
+    [
+     5,
+     "neighbor",
+     0.12
+    ],
+    [
+     3041,
+     "rival",
+     -0.35
+    ]
+   ]
+  },
+  {
+   "id": 24,
+   "name": "Benigno Guerra Varona",
+   "sex": "M",
+   "yob": 1901,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 21,
+   "father": 20,
+   "spouse": 40,
+   "kids": [
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73
+   ],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": -35,
+   "conv": 28.67,
+   "traits": [
+    "loyalist",
+    "generous"
+   ],
+   "iss": [
+    1,
+    0.276,
+    -0.488,
+    -0.024,
+    0.389,
+    0.231,
+    -0.177,
+    -0.178
+   ],
+   "sal": [
+    0,
+    5
+   ],
+   "rel": [
+    [
+     2,
+     "friend",
+     0.53
+    ],
+    [
+     5,
+     "friend",
+     0.53
+    ],
+    [
+     22,
+     "neighbor",
+     0.12
+    ],
+    [
+     2979,
+     "friend",
+     0.48
+    ],
+    [
+     18,
+     "friend",
+     0.45
+    ],
+    [
+     3040,
+     "coworker",
+     0.18
+    ],
+    [
+     2981,
+     "coworker",
+     0.18
+    ],
+    [
+     44,
+     "employer",
+     0.15
+    ],
+    [
+     25,
+     "coworker",
+     0.18
+    ],
+    [
+     27,
+     "neighbor",
+     0.12
+    ],
+    [
+     28,
+     "neighbor",
+     0.12
+    ],
+    [
+     36,
+     "neighbor",
+     0.12
+    ],
+    [
+     37,
+     "friend",
+     0.45
+    ],
+    [
+     39,
+     "friend",
+     0.54
+    ],
+    [
+     39,
+     "neighbor",
+     0.12
+    ],
+    [
+     41,
+     "coworker",
+     0.18
+    ],
+    [
+     76,
+     "coworker",
+     0.18
+    ],
+    [
+     3042,
+     "coworker",
+     0.18
+    ],
+    [
+     2428,
+     "friend",
+     0.3
+    ]
+   ]
+  },
+  {
+   "id": 25,
+   "name": "Isabel Guerra Varona",
+   "sex": "F",
+   "yob": 1902,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 21,
+   "father": 20,
+   "spouse": 18,
+   "kids": [
+    74,
+    75,
+    76,
+    77
+   ],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": 35.52,
+   "conv": 18.32,
+   "traits": [
+    "devout",
+    "brave",
+    "gossip"
+   ],
+   "iss": [
+    1,
+    0.882,
+    -0.515,
+    0.351,
+    0.522,
+    -0.108,
+    -0.234,
+    0.97
+   ],
+   "sal": [
+    0,
+    2
+   ],
+   "rel": [
+    [
+     19,
+     "friend",
+     0.41
+    ],
+    [
+     22,
+     "compadre",
+     0.55
+    ],
+    [
+     2,
+     "friend",
+     0.47
+    ],
+    [
+     3041,
+     "friend",
+     0.68
+    ],
+    [
+     24,
+     "coworker",
+     0.18
+    ],
+    [
+     22,
+     "employer",
+     0.15
+    ],
+    [
+     15,
+     "neighbor",
+     0.12
+    ],
+    [
+     42,
+     "coworker",
+     0.18
+    ],
+    [
+     56,
+     "coworker",
+     0.18
+    ],
+    [
+     3037,
+     "coworker",
+     0.18
+    ]
+   ]
+  },
+  {
+   "id": 26,
+   "name": "Regino Guerra Varona",
+   "sex": "M",
+   "yob": 1904,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 21,
+   "father": 20,
+   "spouse": 10,
+   "kids": [
+    51,
+    52
+   ],
+   "occ": "macheteo",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": 30.08,
+   "conv": 24.54,
+   "traits": [
+    "idealist"
+   ],
+   "iss": [
+    0.67,
+    0.569,
+    -0.023,
+    0.976,
+    0.253,
+    0.326,
+    0.201,
+    0.558
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     12,
+     "neighbor",
+     0.12
+    ],
+    [
+     13,
+     "friend",
+     0.48
+    ],
+    [
+     22,
+     "friend",
+     0.64
+    ],
+    [
+     5,
+     "friend",
+     0.46
+    ],
+    [
+     22,
+     "employer",
+     0.15
+    ],
+    [
+     8,
+     "neighbor",
+     0.12
+    ],
+    [
+     30,
+     "coworker",
+     0.18
+    ],
+    [
+     1296,
+     "compadre",
+     0.55
+    ]
+   ]
+  },
+  {
+   "id": 27,
+   "name": "Pedro Peña Yero",
+   "sex": "M",
+   "yob": 1886,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 28,
+   "kids": [
+    29,
+    30,
+    31,
+    32,
+    33,
+    34
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "negra",
+   "trueStance": 35.27,
+   "conv": 20.91,
+   "traits": [
+    "drinker"
+   ],
+   "iss": [
+    0.458,
+    0.968,
+    -0.303,
+    0.085,
+    0.48,
+    0.473,
+    0.697,
+    0.179
+   ],
+   "sal": [
+    0,
+    7
+   ],
+   "rel": [
+    [
+     3042,
+     "friend",
+     0.5
+    ],
+    [
+     2982,
+     "friend",
+     0.41
+    ],
+    [
+     16,
+     "friend",
+     0.45
+    ],
+    [
+     37,
+     "friend",
+     0.66
+    ],
+    [
+     3043,
+     "compadre",
+     0.55
+    ],
+    [
+     24,
+     "neighbor",
+     0.12
+    ],
+    [
+     30,
+     "neighbor",
+     0.12
+    ],
+    [
+     40,
+     "neighbor",
+     0.12
+    ],
+    [
+     68,
+     "neighbor",
+     0.12
+    ]
+   ]
+  },
+  {
+   "id": 28,
+   "name": "Berta Padrón Caballero",
+   "sex": "F",
+   "yob": 1893,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 27,
+   "kids": [
+    29,
+    30,
+    31,
+    32,
+    33,
+    34
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "mulata",
+   "trueStance": -2.34,
+   "conv": 29.04,
+   "traits": [
+    "gossip"
+   ],
+   "iss": [
+    0.881,
+    0.445,
+    -0.035,
+    -0.318,
+    0.876,
+    0.368,
+    0.48,
+    0.847
+   ],
+   "sal": [
+    4,
+    1
+   ],
+   "rel": [
+    [
+     9,
+     "friend",
+     0.43
+    ],
+    [
+     24,
+     "neighbor",
+     0.12
+    ]
+   ]
+  },
+  {
+   "id": 29,
+   "name": "Candelaria Peña Padrón",
+   "sex": "F",
+   "yob": 1915,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 28,
+   "father": 27,
+   "spouse": -1,
+   "kids": [],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "mulata",
+   "trueStance": -7.69,
+   "conv": 23.44,
+   "traits": [
+    "gossip",
+    "kind"
+   ],
+   "iss": [
+    0.234,
+    0.049,
+    -0.769,
+    -0.101,
+    -0.078,
+    -0.014,
+    0.178,
+    0.321
+   ],
+   "sal": [
+    4,
+    1
+   ],
+   "rel": [
+    [
+     2979,
+     "neighbor",
+     0.35
+    ],
+    [
+     30,
+     "friend",
+     0.45
+    ],
+    [
+     62,
+     "friend",
+     0.63
+    ],
+    [
+     30,
+     "neighbor",
+     0.12
+    ],
+    [
+     3041,
+     "friend",
+     0.45
+    ],
+    [
+     2296,
+     "friend",
+     0.3
+    ]
+   ]
+  },
+  {
+   "id": 30,
+   "name": "Esteban Peña Padrón",
+   "sex": "M",
+   "yob": 1917,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 28,
+   "father": 27,
+   "spouse": -1,
+   "kids": [],
+   "occ": "macheteo",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 43.37,
+   "conv": 9.27,
+   "traits": [
+    "drinker",
+    "idealist"
+   ],
+   "iss": [
+    0.157,
+    1,
+    0.29,
+    0.177,
+    0.685,
+    -0.573,
+    0.18,
+    0.191
+   ],
+   "sal": [
+    0,
+    7
+   ],
+   "rel": [
+    [
+     29,
+     "friend",
+     0.45
+    ],
+    [
+     29,
+     "neighbor",
+     0.12
+    ],
+    [
+     76,
+     "friend",
+     0.5
+    ],
+    [
+     34,
+     "friend",
+     0.67
+    ],
+    [
+     3036,
+     "friend",
+     0.59
+    ],
+    [
+     13,
+     "friend",
+     0.54
+    ],
+    [
+     26,
+     "coworker",
+     0.18
+    ],
+    [
+     27,
+     "neighbor",
+     0.12
+    ],
+    [
+     34,
+     "neighbor",
+     0.12
+    ],
+    [
+     424,
+     "friend",
+     0.3
+    ]
+   ]
+  },
+  {
+   "id": 31,
+   "name": "Gumersindo Peña Padrón",
+   "sex": "M",
+   "yob": 1920,
+   "status": "alive",
+   "settlement": "habana",
+   "home": "sierra",
+   "mother": 28,
+   "father": 27,
+   "spouse": 14,
+   "kids": [
+    50
+   ],
+   "occ": "soldado",
+   "fac": "army",
+   "eth": "negra",
+   "trueStance": -35,
+   "conv": 84.14,
+   "traits": [
+    "loyalist",
+    "brave"
+   ],
+   "iss": [
+    -0.359,
+    -0.225,
+    -0.213,
+    -0.9,
+    -0.192,
+    -0.357,
+    0.369,
+    0.494
+   ],
+   "sal": [
+    5,
+    4
+   ],
+   "rel": [
+    [
+     2172,
+     "friend",
+     0.63
+    ],
+    [
+     2164,
+     "friend",
+     0.45
+    ],
+    [
+     433,
+     "friend",
+     0.59
+    ],
+    [
+     2873,
+     "compadre",
+     0.55
+    ],
+    [
+     581,
+     "coworker",
+     0.18
+    ],
+    [
+     1278,
+     "coworker",
+     0.18
+    ],
+    [
+     446,
+     "friend",
+     0.63
+    ],
+    [
+     795,
+     "coworker",
+     0.18
+    ],
+    [
+     1578,
+     "coworker",
+     0.18
+    ],
+    [
+     2603,
+     "friend",
+     0.51
+    ]
+   ]
+  },
+  {
+   "id": 32,
+   "name": "Justo Peña Padrón",
+   "sex": "M",
+   "yob": 1921,
+   "status": "alive",
+   "settlement": "habana",
+   "home": "sierra",
+   "mother": 28,
+   "father": 27,
+   "spouse": 41,
+   "kids": [
+    53,
+    54,
+    55,
+    56
+   ],
+   "occ": "soldado",
+   "fac": "army",
+   "eth": "mulata",
+   "trueStance": -65.6,
+   "conv": 51.56,
+   "traits": [
+    "loyalist",
+    "hothead",
+    "veteran"
+   ],
+   "iss": [
+    -0.267,
+    -0.052,
+    -0.724,
+    -0.365,
+    -0.966,
+    -1,
+    -0.174,
+    0.461
+   ],
+   "sal": [
+    5,
+    4
+   ],
+   "rel": [
+    [
+     821,
+     "friend",
+     0.49
+    ],
+    [
+     776,
+     "friend",
+     0.66
+    ],
+    [
+     2492,
+     "friend",
+     0.65
+    ],
+    [
+     664,
+     "coworker",
+     0.18
+    ],
+    [
+     1309,
+     "coworker",
+     0.18
+    ],
+    [
+     96,
+     "friend",
+     0.47
+    ],
+    [
+     790,
+     "coworker",
+     0.18
+    ],
+    [
+     1261,
+     "coworker",
+     0.18
+    ],
+    [
+     2172,
+     "friend",
+     0.45
+    ],
+    [
+     2293,
+     "friend",
+     0.48
+    ],
+    [
+     3002,
+     "friend",
+     0.44
+    ]
+   ]
+  },
+  {
+   "id": 33,
+   "name": "Hilda Peña Padrón",
+   "sex": "F",
+   "yob": 1923,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 28,
+   "father": 27,
+   "spouse": 15,
+   "kids": [
+    57,
+    58,
+    59,
+    60,
+    61
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "mulata",
+   "trueStance": -25.23,
+   "conv": 15.36,
+   "traits": [
+    "opportunist"
+   ],
+   "iss": [
+    0.284,
+    0.248,
+    -0.382,
+    0.478,
+    0.89,
+    0.931,
+    1,
+    0.772
+   ],
+   "sal": [
+    4,
+    1
+   ],
+   "rel": [
+    [
+     68,
+     "friend",
+     0.44
+    ],
+    [
+     44,
+     "friend",
+     0.53
+    ],
+    [
+     65,
+     "friend",
+     0.51
+    ],
+    [
+     76,
+     "friend",
+     0.57
+    ],
+    [
+     435,
+     "friend",
+     0.3
+    ],
+    [
+     49,
+     "compadre",
+     0.55
+    ],
+    [
+     66,
+     "friend",
+     0.66
+    ],
+    [
+     75,
+     "friend",
+     0.4
+    ],
+    [
+     1440,
+     "friend",
+     0.62
+    ]
+   ]
+  },
+  {
+   "id": 34,
+   "name": "Ursula Peña Padrón",
+   "sex": "F",
+   "yob": 1925,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 28,
+   "father": 27,
+   "spouse": -1,
+   "kids": [],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "negra",
+   "trueStance": 41.18,
+   "conv": 28.73,
+   "traits": [
+    "idealist",
+    "brave",
+    "hothead"
+   ],
+   "iss": [
+    0.404,
+    1,
+    -0.101,
+    0.332,
+    1,
+    -0.172,
+    0.55,
+    0.619
+   ],
+   "sal": [
+    4,
+    6
+   ],
+   "rel": [
+    [
+     30,
+     "friend",
+     0.67
+    ],
+    [
+     68,
+     "friend",
+     0.41
+    ],
+    [
+     47,
+     "friend",
+     0.43
+    ],
+    [
+     352,
+     "friend",
+     0.57
+    ],
+    [
+     15,
+     "friend",
+     0.67
+    ],
+    [
+     63,
+     "friend",
+     0.56
+    ],
+    [
+     66,
+     "compadre",
+     0.55
+    ],
+    [
+     30,
+     "neighbor",
+     0.12
+    ],
+    [
+     48,
+     "friend",
+     0.65
+    ],
+    [
+     77,
+     "friend",
+     0.55
+    ]
+   ]
+  },
+  {
+   "id": 35,
+   "name": "Benigno Padrón Acosta",
+   "sex": "M",
+   "yob": 1872,
+   "status": "dead",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 36,
+   "kids": [
+    37,
+    38,
+    39,
+    40
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 30.72,
+   "conv": 30.19,
+   "traits": [
+    "cautious",
+    "brave"
+   ],
+   "iss": [
+    1,
+    0.948,
+    -0.743,
+    -0.643,
+    1,
+    0.214,
+    -0.18,
+    0.031
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": []
+  },
+  {
+   "id": 36,
+   "name": "Mercedes Tejeda Noa",
+   "sex": "F",
+   "yob": 1874,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 35,
+   "kids": [
+    37,
+    38,
+    39,
+    40
+   ],
+   "occ": "jubilado",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 70.57,
+   "conv": 42.17,
+   "traits": [
+    "devout",
+    "veteran"
+   ],
+   "iss": [
+    0.896,
+    1,
+    -0.167,
+    -0.08,
+    -0.081,
+    0.566,
+    -0.122,
+    -0.263
+   ],
+   "sal": [
+    0,
+    5
+   ],
+   "rel": [
+    [
+     1,
+     "friend",
+     0.41
+    ],
+    [
+     24,
+     "neighbor",
+     0.12
+    ]
+   ]
+  },
+  {
+   "id": 37,
+   "name": "Elena Padrón Tejeda",
+   "sex": "F",
+   "yob": 1895,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 36,
+   "father": 35,
+   "spouse": -1,
+   "kids": [],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": 43.85,
+   "conv": 17.45,
+   "traits": [
+    "stoic"
+   ],
+   "iss": [
+    0.051,
+    0.793,
+    -0.21,
+    0.009,
+    1,
+    0.037,
+    0.838,
+    0.154
+   ],
+   "sal": [
+    1,
+    4
+   ],
+   "rel": [
+    [
+     2979,
+     "neighbor",
+     0.35
+    ],
+    [
+     2981,
+     "neighbor",
+     0.35
+    ],
+    [
+     9,
+     "friend",
+     0.61
+    ],
+    [
+     27,
+     "friend",
+     0.66
+    ],
+    [
+     3,
+     "friend",
+     0.43
+    ],
+    [
+     3042,
+     "friend",
+     0.48
+    ],
+    [
+     24,
+     "friend",
+     0.45
+    ],
+    [
+     3,
+     "compadre",
+     0.55
+    ],
+    [
+     2979,
+     "friend",
+     0.61
+    ]
+   ]
+  },
+  {
+   "id": 38,
+   "name": "Pedro Padrón Tejeda",
+   "sex": "M",
+   "yob": 1898,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 36,
+   "father": 35,
+   "spouse": 4,
+   "kids": [],
+   "occ": "carbonero",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 36.45,
+   "conv": 36.28,
+   "traits": [
+    "stoic",
+    "generous"
+   ],
+   "iss": [
+    1,
+    0.459,
+    -0.292,
+    0.037,
+    0.071,
+    0.13,
+    -0.144,
+    0.062
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     2979,
+     "friend",
+     0.68
+    ],
+    [
+     10,
+     "friend",
+     0.49
+    ],
+    [
+     3040,
+     "friend",
+     0.63
+    ],
+    [
+     8,
+     "friend",
+     0.58
+    ],
+    [
+     18,
+     "coworker",
+     0.18
+    ],
+    [
+     6,
+     "coworker",
+     0.18
+    ],
+    [
+     44,
+     "neighbor",
+     0.12
+    ],
+    [
+     48,
+     "compadre",
+     0.55
+    ],
+    [
+     312,
+     "friend",
+     0.3
+    ]
+   ]
+  },
+  {
+   "id": 39,
+   "name": "Petra Padrón Tejeda",
+   "sex": "F",
+   "yob": 1900,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 36,
+   "father": 35,
+   "spouse": 22,
+   "kids": [
+    42,
+    43,
+    44,
+    45
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": -15.67,
+   "conv": 37.5,
+   "traits": [
+    "idealist",
+    "devout"
+   ],
+   "iss": [
+    0.888,
+    0.105,
+    -0.79,
+    0.462,
+    0.753,
+    0.09,
+    0.52,
+    0.007
+   ],
+   "sal": [
+    4,
+    6
+   ],
+   "rel": [
+    [
+     7,
+     "friend",
+     0.66
+    ],
+    [
+     3041,
+     "friend",
+     0.55
+    ],
+    [
+     24,
+     "friend",
+     0.54
+    ],
+    [
+     40,
+     "friend",
+     0.66
+    ],
+    [
+     24,
+     "neighbor",
+     0.12
+    ],
+    [
+     56,
+     "compadre",
+     0.55
+    ],
+    [
+     219,
+     "friend",
+     0.3
+    ]
+   ]
+  },
+  {
+   "id": 40,
+   "name": "Lourdes Padrón Tejeda",
+   "sex": "F",
+   "yob": 1903,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 36,
+   "father": 35,
+   "spouse": 24,
+   "kids": [
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "blanca",
+   "trueStance": 16.59,
+   "conv": 21.08,
+   "traits": [
+    "veteran",
+    "drinker"
+   ],
+   "iss": [
+    -0.069,
+    0.501,
+    -0.446,
+    -0.016,
+    0.265,
+    0.52,
+    1,
+    -0.169
+   ],
+   "sal": [
+    1,
+    4
+   ],
+   "rel": [
+    [
+     39,
+     "friend",
+     0.66
+    ],
+    [
+     10,
+     "friend",
+     0.66
+    ],
+    [
+     5,
+     "friend",
+     0.45
+    ],
+    [
+     27,
+     "neighbor",
+     0.12
+    ]
+   ]
+  },
+  {
+   "id": 41,
+   "name": "Hilda Rivas Álvarez",
+   "sex": "F",
+   "yob": 1918,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": -1,
+   "father": -1,
+   "spouse": 32,
+   "kids": [
+    53,
+    54,
+    55,
+    56
+   ],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 84.96,
+   "conv": 10.79,
+   "traits": [
+    "hothead",
+    "kind"
+   ],
+   "iss": [
+    0.96,
+    0.138,
+    0.479,
+    0.5,
+    0.376,
+    -0.077,
+    -0.013,
+    0.731
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     11,
+     "friend",
+     0.55
+    ],
+    [
+     14,
+     "neighbor",
+     0.12
+    ],
+    [
+     3041,
+     "friend",
+     0.67
+    ],
+    [
+     14,
+     "friend",
+     0.42
+    ],
+    [
+     42,
+     "friend",
+     0.47
+    ],
+    [
+     24,
+     "coworker",
+     0.18
+    ],
+    [
+     22,
+     "employer",
+     0.15
+    ],
+    [
+     47,
+     "neighbor",
+     0.12
+    ],
+    [
+     62,
+     "friend",
+     0.58
+    ],
+    [
+     75,
+     "coworker",
+     0.18
+    ],
+    [
+     2544,
+     "friend",
+     0.42
+    ],
+    [
+     3036,
+     "coworker",
+     0.18
+    ]
+   ]
+  },
+  {
+   "id": 42,
+   "name": "Georgina Guerra Padrón",
+   "sex": "F",
+   "yob": 1922,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 39,
+   "father": 22,
+   "spouse": -1,
+   "kids": [],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 33.21,
+   "conv": 22.24,
+   "traits": [
+    "idealist",
+    "cautious"
+   ],
+   "iss": [
+    0.9,
+    0.343,
+    -0.649,
+    -0.056,
+    0.887,
+    -0.45,
+    0.276,
+    0.94
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     41,
+     "friend",
+     0.47
+    ],
+    [
+     48,
+     "friend",
+     0.41
+    ],
+    [
+     65,
+     "friend",
+     0.57
+    ],
+    [
+     75,
+     "compadre",
+     0.55
+    ],
+    [
+     2979,
+     "coworker",
+     0.18
+    ],
+    [
+     25,
+     "coworker",
+     0.18
+    ],
+    [
+     18,
+     "neighbor",
+     0.12
+    ],
+    [
+     45,
+     "compadre",
+     0.55
+    ],
+    [
+     47,
+     "friend",
+     0.62
+    ],
+    [
+     63,
+     "friend",
+     0.42
+    ],
+    [
+     68,
+     "friend",
+     0.47
+    ],
+    [
+     75,
+     "coworker",
+     0.18
+    ],
+    [
+     80,
+     "coworker",
+     0.18
+    ],
+    [
+     1440,
+     "friend",
+     0.41
+    ],
+    [
+     2586,
+     "friend",
+     0.51
+    ],
+    [
+     2983,
+     "coworker",
+     0.18
+    ],
+    [
+     3036,
+     "friend",
+     0.47
+    ]
+   ]
+  },
+  {
+   "id": 43,
+   "name": "Concepción Guerra Padrón",
+   "sex": "F",
+   "yob": 1925,
+   "status": "dead",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 39,
+   "father": 22,
+   "spouse": -1,
+   "kids": [],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "mulata",
+   "trueStance": 42.02,
+   "conv": 12.72,
+   "traits": [
+    "cautious"
+   ],
+   "iss": [
+    0.087,
+    0.362,
+    0.738,
+    -0.288,
+    0.405,
+    -0.383,
+    1,
+    0.497
+   ],
+   "sal": [
+    4,
+    1
+   ],
+   "rel": []
+  },
+  {
+   "id": 44,
+   "name": "Felipe Guerra Padrón",
+   "sex": "M",
+   "yob": 1926,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 39,
+   "father": 22,
+   "spouse": 48,
+   "kids": [
+    82,
+    83
+   ],
+   "occ": "mayordomo",
+   "fac": "landowners",
+   "eth": "mulata",
+   "trueStance": -51.94,
+   "conv": 26.67,
+   "traits": [
+    "gossip"
+   ],
+   "iss": [
+    -0.764,
+    -0.521,
+    -0.287,
+    -0.427,
+    0.172,
+    -0.106,
+    -0.257,
+    0.076
+   ],
+   "sal": [
+    0,
+    3
+   ],
+   "rel": [
+    [
+     2,
+     "employee",
+     0.15
+    ],
+    [
+     5,
+     "employee",
+     0.15
+    ],
+    [
+     24,
+     "employee",
+     0.15
+    ],
+    [
+     33,
+     "friend",
+     0.53
+    ],
+    [
+     38,
+     "neighbor",
+     0.12
+    ],
+    [
+     2862,
+     "friend",
+     0.54
+    ],
+    [
+     1424,
+     "friend",
+     0.59
+    ],
+    [
+     2,
+     "compadre",
+     0.55
+    ],
+    [
+     45,
+     "neighbor",
+     0.12
+    ],
+    [
+     54,
+     "employee",
+     0.15
+    ],
+    [
+     70,
+     "friend",
+     0.51
+    ],
+    [
+     70,
+     "compadre",
+     0.55
+    ],
+    [
+     76,
+     "employee",
+     0.15
+    ],
+    [
+     98,
+     "employee",
+     0.15
+    ],
+    [
+     2979,
+     "employee",
+     0.15
+    ],
+    [
+     2981,
+     "employee",
+     0.15
+    ],
+    [
+     3036,
+     "employee",
+     0.15
+    ],
+    [
+     3037,
+     "employee",
+     0.15
+    ],
+    [
+     3040,
+     "employee",
+     0.15
+    ],
+    [
+     3042,
+     "employee",
+     0.15
+    ]
+   ]
+  },
+  {
+   "id": 45,
+   "name": "Hilario Guerra Padrón",
+   "sex": "M",
+   "yob": 1928,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 39,
+   "father": 22,
+   "spouse": -1,
+   "kids": [],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 73.89,
+   "conv": 18.8,
+   "traits": [
+    "drinker"
+   ],
+   "iss": [
+    1,
+    0.829,
+    -0.849,
+    0.529,
+    0.532,
+    -0.122,
+    0.215,
+    0.412
+   ],
+   "sal": [
+    0,
+    7
+   ],
+   "rel": [
+    [
+     3036,
+     "friend",
+     0.53
+    ],
+    [
+     2009,
+     "friend",
+     0.63
+    ],
+    [
+     42,
+     "compadre",
+     0.55
+    ],
+    [
+     5,
+     "coworker",
+     0.18
+    ],
+    [
+     16,
+     "coworker",
+     0.18
+    ],
+    [
+     44,
+     "neighbor",
+     0.12
+    ],
+    [
+     48,
+     "friend",
+     0.65
+    ],
+    [
+     48,
+     "neighbor",
+     0.12
+    ],
+    [
+     57,
+     "coworker",
+     0.18
+    ],
+    [
+     76,
+     "coworker",
+     0.18
+    ]
+   ]
+  },
+  {
+   "id": 46,
+   "name": "Eulalia Pérez Hernández",
+   "sex": "F",
+   "yob": 1925,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 7,
+   "father": 19,
+   "spouse": -1,
+   "kids": [],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "mulata",
+   "trueStance": 33.71,
+   "conv": 10.49,
+   "traits": [
+    "gossip",
+    "drinker"
+   ],
+   "iss": [
+    0.223,
+    0.419,
+    0.071,
+    -0.151,
+    0.047,
+    0.104,
+    0.114,
+    0.735
+   ],
+   "sal": [
+    4,
+    1
+   ],
+   "rel": [
+    [
+     48,
+     "friend",
+     0.51
+    ],
+    [
+     76,
+     "friend",
+     0.58
+    ],
+    [
+     75,
+     "friend",
+     0.61
+    ],
+    [
+     77,
+     "friend",
+     0.68
+    ],
+    [
+     5,
+     "compadre",
+     0.55
+    ],
+    [
+     6,
+     "neighbor",
+     0.12
+    ],
+    [
+     65,
+     "friend",
+     0.65
+    ],
+    [
+     74,
+     "friend",
+     0.7
+    ],
+    [
+     1424,
+     "friend",
+     0.5
+    ]
+   ]
+  },
+  {
+   "id": 47,
+   "name": "Rebeca Pérez Hernández",
+   "sex": "F",
+   "yob": 1927,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 7,
+   "father": 19,
+   "spouse": 64,
+   "kids": [
+    93,
+    94,
+    95
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "mulata",
+   "trueStance": 12.97,
+   "conv": 28.39,
+   "traits": [
+    "hothead"
+   ],
+   "iss": [
+    0.382,
+    0.246,
+    -0.099,
+    0.322,
+    1,
+    -0.161,
+    0.784,
+    0.203
+   ],
+   "sal": [
+    4,
+    1
+   ],
+   "rel": [
+    [
+     2980,
+     "neighbor",
+     0.35
+    ],
+    [
+     34,
+     "friend",
+     0.43
+    ],
+    [
+     41,
+     "neighbor",
+     0.12
+    ],
+    [
+     63,
+     "friend",
+     0.42
+    ],
+    [
+     42,
+     "friend",
+     0.62
+    ],
+    [
+     1296,
+     "friend",
+     0.53
+    ],
+    [
+     48,
+     "friend",
+     0.59
+    ],
+    [
+     9,
+     "compadre",
+     0.55
+    ],
+    [
+     68,
+     "friend",
+     0.69
+    ],
+    [
+     74,
+     "friend",
+     0.43
+    ],
+    [
+     76,
+     "friend",
+     0.52
+    ],
+    [
+     78,
+     "friend",
+     0.63
+    ],
+    [
+     529,
+     "friend",
+     0.3
+    ]
+   ]
+  },
+  {
+   "id": 48,
+   "name": "Lucía Pérez Hernández",
+   "sex": "F",
+   "yob": 1929,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 7,
+   "father": 19,
+   "spouse": 44,
+   "kids": [
+    82,
+    83
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "mulata",
+   "trueStance": 16.4,
+   "conv": 14.82,
+   "traits": [
+    "gossip"
+   ],
+   "iss": [
+    0.547,
+    0.62,
+    0.173,
+    -0.124,
+    0.506,
+    -0.583,
+    -0.146,
+    0.77
+   ],
+   "sal": [
+    4,
+    6
+   ],
+   "rel": [
+    [
+     42,
+     "friend",
+     0.41
+    ],
+    [
+     46,
+     "friend",
+     0.51
+    ],
+    [
+     47,
+     "friend",
+     0.59
+    ],
+    [
+     73,
+     "friend",
+     0.54
+    ],
+    [
+     45,
+     "friend",
+     0.65
+    ],
+    [
+     34,
+     "friend",
+     0.65
+    ],
+    [
+     49,
+     "friend",
+     0.53
+    ],
+    [
+     38,
+     "compadre",
+     0.55
+    ],
+    [
+     45,
+     "neighbor",
+     0.12
+    ],
+    [
+     54,
+     "friend",
+     0.6
+    ],
+    [
+     3037,
+     "compadre",
+     0.55
+    ],
+    [
+     709,
+     "friend",
+     0.3
+    ]
+   ]
+  },
+  {
+   "id": 49,
+   "name": "Rosa Pérez Hernández",
+   "sex": "F",
+   "yob": 1930,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 7,
+   "father": 19,
+   "spouse": 51,
+   "kids": [
+    89
+   ],
+   "occ": "ama",
+   "fac": "middle",
+   "eth": "mulata",
+   "trueStance": 4.52,
+   "conv": 34.86,
+   "traits": [
+    "opportunist",
+    "gossip",
+    "drinker"
+   ],
+   "iss": [
+    0.081,
+    0.06,
+    -0.525,
+    0.058,
+    0.47,
+    0.745,
+    0.75,
+    0.402
+   ],
+   "sal": [
+    4,
+    1
+   ],
+   "rel": [
+    [
+     48,
+     "friend",
+     0.53
+    ],
+    [
+     75,
+     "friend",
+     0.55
+    ],
+    [
+     53,
+     "friend",
+     0.54
+    ],
+    [
+     78,
+     "friend",
+     0.51
+    ],
+    [
+     33,
+     "compadre",
+     0.55
+    ]
+   ]
+  },
+  {
+   "id": 50,
+   "name": "Narciso Peña Expósito",
+   "sex": "M",
+   "yob": 1932,
+   "status": "alive",
+   "settlement": "habana",
+   "home": "sierra",
+   "mother": 14,
+   "father": 31,
+   "spouse": 70,
+   "kids": [
+    90,
+    91,
+    92
+   ],
+   "occ": "vaquero",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": -6.44,
+   "conv": 31.08,
+   "traits": [
+    "hothead",
+    "veteran"
+   ],
+   "iss": [
+    1,
+    0.831,
+    -0.356,
+    0.37,
+    0.305,
+    -0.023,
+    -0.474,
+    0.607
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     2071,
+     "friend",
+     0.45
+    ],
+    [
+     1763,
+     "friend",
+     0.64
+    ],
+    [
+     2487,
+     "friend",
+     0.43
+    ],
+    [
+     1807,
+     "friend",
+     0.4
+    ],
+    [
+     2852,
+     "friend",
+     0.57
+    ],
+    [
+     2761,
+     "compadre",
+     0.55
+    ],
+    [
+     1013,
+     "employer",
+     0.15
+    ],
+    [
+     2771,
+     "rival",
+     -0.35
+    ],
+    [
+     71,
+     "neighbor",
+     0.12
+    ],
+    [
+     898,
+     "friend",
+     0.66
+    ],
+    [
+     1302,
+     "friend",
+     0.48
+    ],
+    [
+     1862,
+     "friend",
+     0.61
+    ],
+    [
+     2891,
+     "friend",
+     0.58
+    ]
+   ]
+  },
+  {
+   "id": 51,
+   "name": "Teófilo Guerra Expósito",
+   "sex": "M",
+   "yob": 1927,
+   "status": "jailed",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 10,
+   "father": 26,
+   "spouse": 49,
+   "kids": [
+    89
+   ],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 32.22,
+   "conv": 26,
+   "traits": [
+    "cautious",
+    "opportunist",
+    "gossip"
+   ],
+   "iss": [
+    0.525,
+    0.392,
+    -0.041,
+    -0.208,
+    0.093,
+    0.47,
+    -0.151,
+    0.707
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": []
+  },
+  {
+   "id": 52,
+   "name": "Tomás Guerra Expósito",
+   "sex": "M",
+   "yob": 1930,
+   "status": "dead",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 10,
+   "father": 26,
+   "spouse": 79,
+   "kids": [
+    81
+   ],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 3.41,
+   "conv": 34.21,
+   "traits": [
+    "devout",
+    "generous"
+   ],
+   "iss": [
+    0.558,
+    0.898,
+    -0.463,
+    0.044,
+    -0.008,
+    -0.171,
+    0.125,
+    1
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": []
+  },
+  {
+   "id": 53,
+   "name": "Regla Peña Rivas",
+   "sex": "F",
+   "yob": 1936,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 41,
+   "father": 32,
+   "spouse": 71,
+   "kids": [],
+   "occ": "estudiante",
+   "fac": "students",
+   "eth": "mulata",
+   "trueStance": -35,
+   "conv": 57.8,
+   "traits": [
+    "loyalist"
+   ],
+   "iss": [
+    1,
+    0.547,
+    -0.065,
+    0.168,
+    0.476,
+    0.04,
+    1,
+    0.717
+   ],
+   "sal": [
+    4,
+    6
+   ],
+   "rel": [
+    [
+     49,
+     "friend",
+     0.54
+    ],
+    [
+     66,
+     "friend",
+     0.57
+    ],
+    [
+     2586,
+     "friend",
+     0.59
+    ],
+    [
+     73,
+     "friend",
+     0.6
+    ],
+    [
+     70,
+     "friend",
+     0.63
+    ],
+    [
+     54,
+     "neighbor",
+     0.12
+    ]
+   ]
+  },
+  {
+   "id": 54,
+   "name": "Lourdes Peña Rivas",
+   "sex": "F",
+   "yob": 1938,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 41,
+   "father": 32,
+   "spouse": 72,
+   "kids": [
+    86
+   ],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 42.32,
+   "conv": 12.59,
+   "traits": [
+    "veteran"
+   ],
+   "iss": [
+    1,
+    0.752,
+    -0.124,
+    0.119,
+    0.118,
+    -0.322,
+    0.058,
+    0.826
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     53,
+     "neighbor",
+     0.12
+    ],
+    [
+     73,
+     "friend",
+     0.52
+    ],
+    [
+     70,
+     "friend",
+     0.52
+    ],
+    [
+     48,
+     "friend",
+     0.6
+    ],
+    [
+     2,
+     "coworker",
+     0.18
+    ],
+    [
+     5,
+     "coworker",
+     0.18
+    ],
+    [
+     44,
+     "employer",
+     0.15
+    ],
+    [
+     55,
+     "neighbor",
+     0.12
+    ],
+    [
+     79,
+     "friend",
+     0.48
+    ]
+   ]
+  },
+  {
+   "id": 55,
+   "name": "Sofía Peña Rivas",
+   "sex": "F",
+   "yob": 1940,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 41,
+   "father": 32,
+   "spouse": -1,
+   "kids": [],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 52.82,
+   "conv": 15.91,
+   "traits": [
+    "drinker"
+   ],
+   "iss": [
+    0.86,
+    0.102,
+    -0.501,
+    -0.436,
+    0.152,
+    0.52,
+    -0.174,
+    0.711
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     54,
+     "neighbor",
+     0.12
+    ],
+    [
+     2108,
+     "friend",
+     0.44
+    ],
+    [
+     78,
+     "friend",
+     0.54
+    ],
+    [
+     70,
+     "friend",
+     0.65
+    ],
+    [
+     5,
+     "coworker",
+     0.18
+    ],
+    [
+     2,
+     "coworker",
+     0.18
+    ],
+    [
+     22,
+     "employer",
+     0.15
+    ],
+    [
+     77,
+     "coworker",
+     0.18
+    ]
+   ]
+  },
+  {
+   "id": 56,
+   "name": "Cecilia Peña Rivas",
+   "sex": "F",
+   "yob": 1941,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 41,
+   "father": 32,
+   "spouse": -1,
+   "kids": [],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 0.17,
+   "conv": 21.61,
+   "traits": [
+    "drinker",
+    "greedy"
+   ],
+   "iss": [
+    0.543,
+    0.196,
+    0.011,
+    0.493,
+    -0.2,
+    0.383,
+    -0.061,
+    0.776
+   ],
+   "sal": [
+    0,
+    7
+   ],
+   "rel": [
+    [
+     2982,
+     "neighbor",
+     0.35
+    ],
+    [
+     2,
+     "coworker",
+     0.18
+    ],
+    [
+     73,
+     "friend",
+     0.44
+    ],
+    [
+     39,
+     "compadre",
+     0.55
+    ],
+    [
+     25,
+     "coworker",
+     0.18
+    ],
+    [
+     22,
+     "employer",
+     0.15
+    ],
+    [
+     70,
+     "neighbor",
+     0.12
+    ],
+    [
+     79,
+     "friend",
+     0.56
+    ],
+    [
+     98,
+     "coworker",
+     0.18
+    ],
+    [
+     2979,
+     "coworker",
+     0.18
+    ]
+   ]
+  },
+  {
+   "id": 57,
+   "name": "Lázaro Expósito Peña",
+   "sex": "M",
+   "yob": 1941,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 33,
+   "father": 15,
+   "spouse": -1,
+   "kids": [],
+   "occ": "guajiro",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 100,
+   "conv": 37.2,
+   "traits": [
+    "brave"
+   ],
+   "iss": [
+    0.684,
+    0.993,
+    -0.349,
+    0,
+    0.133,
+    0.588,
+    -0.364,
+    -0.21
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": [
+    [
+     2983,
+     "friend",
+     0.35
+    ],
+    [
+     80,
+     "friend",
+     0.41
+    ],
+    [
+     76,
+     "coworker",
+     0.18
+    ],
+    [
+     45,
+     "coworker",
+     0.18
+    ],
+    [
+     2723,
+     "friend",
+     0.52
+    ],
+    [
+     3046,
+     "coworker",
+     0.18
+    ],
+    [
+     2294,
+     "friend",
+     0.3
+    ],
+    [
+     2596,
+     "friend",
+     0.3
+    ]
+   ]
+  },
+  {
+   "id": 58,
+   "name": "Faustino Expósito Peña",
+   "sex": "M",
+   "yob": 1943,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 33,
+   "father": 15,
+   "spouse": -1,
+   "kids": [],
+   "occ": "colono",
+   "fac": "peasants",
+   "eth": "blanca",
+   "trueStance": 19.4,
+   "conv": 5,
+   "traits": [
+    "gossip",
+    "greedy"
+   ],
+   "iss": [
+    1,
+    0.529,
+    -0.151,
+    0.563,
+    0.284,
+    -0.206,
+    -0.569,
+    -0.121
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": []
+  },
+  {
+   "id": 59,
+   "name": "Silvia Expósito Peña",
+   "sex": "F",
+   "yob": 1944,
+   "status": "alive",
+   "settlement": "sierra",
+   "home": "sierra",
+   "mother": 33,
+   "father": 15,
+   "spouse": -1,
+   "kids": [],
+   "occ": "nino",
+   "fac": "peasants",
+   "eth": "mulata",
+   "trueStance": 46.79,
+   "conv": 5,
+   "traits": [
+    "hothead",
+    "opportunist"
+   ],
+   "iss": [
+    0.581,
+    0.822,
+    0.44,
+    0.036,
+    0.011,
+    -0.025,
+    0.441,
+    0.565
+   ],
+   "sal": [
+    0,
+    1
+   ],
+   "rel": []
+  }
+ ]
+}

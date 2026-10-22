@@ -1,0 +1,473 @@
+[
+ {
+  "key": "macheteo",
+  "n": "Cortador de caña",
+  "fac": "peasants",
+  "bg": "campesino",
+  "cls": 0,
+  "where": "rural",
+  "w": 12,
+  "sex": "M"
+ },
+ {
+  "key": "colono",
+  "n": "Colono (arrendatario)",
+  "fac": "peasants",
+  "bg": "campesino",
+  "cls": 1,
+  "where": "rural",
+  "w": 8
+ },
+ {
+  "key": "guajiro",
+  "n": "Guajiro (campesino)",
+  "fac": "peasants",
+  "bg": "campesino",
+  "cls": 0,
+  "where": "rural",
+  "w": 12
+ },
+ {
+  "key": "carbonero",
+  "n": "Carbonero",
+  "fac": "peasants",
+  "bg": "campesino",
+  "cls": 0,
+  "where": "rural",
+  "w": 4,
+  "sex": "M"
+ },
+ {
+  "key": "vaquero",
+  "n": "Vaquero",
+  "fac": "peasants",
+  "bg": "campesino",
+  "cls": 0,
+  "where": "rural",
+  "w": 3,
+  "sex": "M"
+ },
+ {
+  "key": "pescador",
+  "n": "Pescador",
+  "fac": "workers",
+  "bg": "pescador",
+  "cls": 0,
+  "where": "coast",
+  "w": 14,
+  "sex": "M"
+ },
+ {
+  "key": "mayordomo",
+  "n": "Mayordomo (capataz)",
+  "fac": "landowners",
+  "bg": "militar",
+  "cls": 2,
+  "where": "rural",
+  "w": 1,
+  "sex": "M"
+ },
+ {
+  "key": "hacendado",
+  "n": "Hacendado (terrateniente)",
+  "fac": "landowners",
+  "bg": "profesional",
+  "cls": 4,
+  "where": "any",
+  "w": 0.6,
+  "sex": "M"
+ },
+ {
+  "key": "bodeguero",
+  "n": "Bodeguero",
+  "fac": "middle",
+  "bg": "servicio",
+  "cls": 2,
+  "where": "any",
+  "w": 2.5
+ },
+ {
+  "key": "dependiente",
+  "n": "Dependiente",
+  "fac": "middle",
+  "bg": "servicio",
+  "cls": 2,
+  "where": "urban",
+  "w": 6
+ },
+ {
+  "key": "maestro",
+  "n": "Maestro/a",
+  "fac": "middle",
+  "bg": "profesional",
+  "cls": 2,
+  "where": "any",
+  "w": 1.4
+ },
+ {
+  "key": "partera",
+  "n": "Partera / curandera",
+  "fac": "peasants",
+  "bg": "campesino",
+  "cls": 0,
+  "where": "rural",
+  "w": 0.8,
+  "sex": "F"
+ },
+ {
+  "key": "medico",
+  "n": "Médico",
+  "fac": "middle",
+  "bg": "profesional",
+  "cls": 3,
+  "where": "urban",
+  "w": 0.8
+ },
+ {
+  "key": "abogado",
+  "n": "Abogado",
+  "fac": "elite",
+  "bg": "profesional",
+  "cls": 3,
+  "where": "urban",
+  "w": 0.8,
+  "sex": "M"
+ },
+ {
+  "key": "comerciante",
+  "n": "Comerciante",
+  "fac": "elite",
+  "bg": "profesional",
+  "cls": 3,
+  "where": "urban",
+  "w": 1.2
+ },
+ {
+  "key": "banquero",
+  "n": "Banquero",
+  "fac": "elite",
+  "bg": "profesional",
+  "cls": 4,
+  "where": "city",
+  "w": 0.5,
+  "sex": "M"
+ },
+ {
+  "key": "funcionario",
+  "n": "Funcionario",
+  "fac": "middle",
+  "bg": "profesional",
+  "cls": 3,
+  "where": "urban",
+  "w": 2
+ },
+ {
+  "key": "periodista",
+  "n": "Periodista",
+  "fac": "middle",
+  "bg": "profesional",
+  "cls": 3,
+  "where": "city",
+  "w": 0.6
+ },
+ {
+  "key": "sacerdote",
+  "n": "Sacerdote",
+  "fac": "church",
+  "bg": "clero",
+  "cls": 3,
+  "where": "any",
+  "w": 0.6,
+  "sex": "M"
+ },
+ {
+  "key": "monja",
+  "n": "Monja",
+  "fac": "church",
+  "bg": "clero",
+  "cls": 2,
+  "where": "urban",
+  "w": 0.5,
+  "sex": "F"
+ },
+ {
+  "key": "obrerocentral",
+  "n": "Obrero del central",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "town",
+  "w": 8,
+  "sex": "M"
+ },
+ {
+  "key": "estibador",
+  "n": "Estibador",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "port",
+  "w": 5,
+  "sex": "M"
+ },
+ {
+  "key": "tabaquero",
+  "n": "Tabaquero",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "city",
+  "w": 2
+ },
+ {
+  "key": "carpintero",
+  "n": "Carpintero",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "urban",
+  "w": 2,
+  "sex": "M"
+ },
+ {
+  "key": "sastre",
+  "n": "Sastre",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "urban",
+  "w": 1.5
+ },
+ {
+  "key": "barbero",
+  "n": "Barbero",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "urban",
+  "w": 1.2,
+  "sex": "M"
+ },
+ {
+  "key": "chofer",
+  "n": "Chofer",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "urban",
+  "w": 2,
+  "sex": "M"
+ },
+ {
+  "key": "mecanico",
+  "n": "Mecánico",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "urban",
+  "w": 1.5,
+  "sex": "M"
+ },
+ {
+  "key": "ferroviario",
+  "n": "Ferroviario",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "town",
+  "w": 1.2,
+  "sex": "M"
+ },
+ {
+  "key": "costurera",
+  "n": "Costurera",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "urban",
+  "w": 3,
+  "sex": "F"
+ },
+ {
+  "key": "lavandera",
+  "n": "Lavandera",
+  "fac": "workers",
+  "bg": "servicio",
+  "cls": 0,
+  "where": "any",
+  "w": 2,
+  "sex": "F"
+ },
+ {
+  "key": "domestica",
+  "n": "Empleada doméstica",
+  "fac": "workers",
+  "bg": "servicio",
+  "cls": 0,
+  "where": "urban",
+  "w": 5,
+  "sex": "F"
+ },
+ {
+  "key": "sindicalista",
+  "n": "Dirigente sindical",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 2,
+  "where": "urban",
+  "w": 0.8
+ },
+ {
+  "key": "obrerofab",
+  "n": "Obrero de fábrica",
+  "fac": "workers",
+  "bg": "obrero",
+  "cls": 1,
+  "where": "city",
+  "w": 4
+ },
+ {
+  "key": "camarero",
+  "n": "Camarero / hotel",
+  "fac": "workers",
+  "bg": "servicio",
+  "cls": 1,
+  "where": "city",
+  "w": 2
+ },
+ {
+  "key": "musico",
+  "n": "Músico",
+  "fac": "workers",
+  "bg": "servicio",
+  "cls": 1,
+  "where": "city",
+  "w": 1
+ },
+ {
+  "key": "casino",
+  "n": "Crupier de casino",
+  "fac": "middle",
+  "bg": "servicio",
+  "cls": 2,
+  "where": "capital",
+  "w": 1.5
+ },
+ {
+  "key": "locutor",
+  "n": "Locutor de radio",
+  "fac": "middle",
+  "bg": "profesional",
+  "cls": 3,
+  "where": "capital",
+  "w": 0.4
+ },
+ {
+  "key": "estudiante",
+  "n": "Estudiante",
+  "fac": "students",
+  "bg": "estudiante",
+  "cls": 2,
+  "where": "any",
+  "w": 0,
+  "age": [
+   14,
+   28
+  ]
+ },
+ {
+  "key": "ama",
+  "n": "Ama de casa",
+  "fac": "middle",
+  "bg": "servicio",
+  "cls": 1,
+  "where": "any",
+  "w": 0,
+  "sex": "F"
+ },
+ {
+  "key": "nino",
+  "n": "Niño/a",
+  "fac": "peasants",
+  "bg": "campesino",
+  "cls": 0,
+  "where": "any",
+  "w": 0,
+  "age": [
+   0,
+   13
+  ]
+ },
+ {
+  "key": "jubilado",
+  "n": "Anciano/a",
+  "fac": "peasants",
+  "bg": "campesino",
+  "cls": 0,
+  "where": "any",
+  "w": 0,
+  "age": [
+   66,
+   99
+  ]
+ },
+ {
+  "key": "soldado",
+  "n": "Soldado",
+  "fac": "army",
+  "bg": "militar",
+  "cls": 1,
+  "where": "any",
+  "w": 0,
+  "sex": "M"
+ },
+ {
+  "key": "guardia",
+  "n": "Guardia rural",
+  "fac": "army",
+  "bg": "militar",
+  "cls": 1,
+  "where": "rural",
+  "w": 0,
+  "sex": "M"
+ },
+ {
+  "key": "policia",
+  "n": "Policía",
+  "fac": "army",
+  "bg": "militar",
+  "cls": 1,
+  "where": "urban",
+  "w": 0,
+  "sex": "M"
+ },
+ {
+  "key": "oficial",
+  "n": "Oficial",
+  "fac": "army",
+  "bg": "militar",
+  "cls": 3,
+  "where": "any",
+  "w": 0,
+  "sex": "M"
+ },
+ {
+  "key": "sim",
+  "n": "Agente del SIM",
+  "fac": "army",
+  "bg": "militar",
+  "cls": 2,
+  "where": "urban",
+  "w": 0,
+  "sex": "M"
+ },
+ {
+  "key": "rebelde",
+  "n": "Rebelde",
+  "fac": "peasants",
+  "bg": "campesino",
+  "cls": 0,
+  "where": "any",
+  "w": 0
+ }
+]

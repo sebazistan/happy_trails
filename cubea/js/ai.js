@@ -411,7 +411,7 @@
       } else if (b.mode === 'engage') { b.seen -= 0.3; if (b.seen <= 0) { b.mode = 'search'; b.searchT = 14; } }
     }
     // morale-based behaviour
-    if (p.morale < 18 && b.mode === 'engage' && !b.rallied) { b.mode = (Math.random() < 0.4 && s.actors.filter((x) => x.side === 'army' && !x.dead && !x.surrendered).length <= 3) ? 'surrender' : 'retreat'; }
+    if ((p.morale < 18 || (p.morale < 34 && p.hp < p.maxHp * 0.4)) && b.mode === 'engage' && !b.rallied) { const reb = s.actors.filter((x) => (x.side === 'rebel') && !x.dead && Math.hypot(x.x - a.x, x.y - a.y) < 230).length, mine = s.actors.filter((x) => x.side === 'army' && !x.dead && !x.surrendered && Math.hypot(x.x - a.x, x.y - a.y) < 230).length; b.mode = (reb >= mine && Math.random() < 0.6 || p.hp < p.maxHp * 0.3 && Math.random() < 0.5) ? 'surrender' : 'retreat'; }
     if (b.mode === 'surrender') { a.surrendered = true; a.weapon && C.dropWeapon(a); a.weaponOut = false; C.say(a, '¡No disparen! ¡Me rindo!', '#7a1d1d', 6); C.emit && C.emit('surrender', a); return; }
     // behaviours
     if (b.mode === 'engage' && b.target && !b.target.dead) {
@@ -601,7 +601,7 @@
       // choose: livestock, wild game, then a civilian with food (peasant/shop)
       let best = null, bd = 9e9;
       for (const an of s.animals) { if (an.dead) continue; const d = Math.hypot(an.x - lead.x, an.y - lead.y); if (d < 420 && d < bd && (an.wild || g.policy.forage !== 'pay' || true)) { bd = d; best = { k: 'animal', o: an }; } }
-      for (const o of s.actors) { if (o.side !== 'civ' || o.dead || o.inside || o.p.needs.food < 10) continue; const d = Math.hypot(o.x - lead.x, o.y - lead.y); if (d < 360 && d < bd * 0.7 && !o.p.rebelHost) { bd = d; best = { k: 'civ', o }; } }
+      for (const o of s.actors) { if (o.side !== 'civ' || o.dead || o.inside || o.p.needs.food < 28 || (o.p.sellCd || 0) > g.min) continue; const d = Math.hypot(o.x - lead.x, o.y - lead.y); if (d < 360 && d < bd * 0.7 && !o.p.rebelHost) { bd = d; best = { k: 'civ', o }; } }
       if (best && (best.o.id === undefined || true)) a.forTarget = best.o, a.forKind = best.k;
       else { followLeader(s, a, dt, lead, 90); return; }
     }
@@ -611,9 +611,9 @@
     a.talking = 1;
     if (a.forKind === 'animal') {
       if (t.dead) { C.harvestAnimal(a, t); a.forTarget = null; return; }
-      if (!t.wild) { C.forageTransaction(a, t, 'animal'); a.forTarget = null; return; }
+      if (!t.wild) { C.forageTransaction(a, t, 'animal'); a.forTarget = null; a.forT = (360 + Math.random() * 240) / G().minPerSec; return; }
       if (a.cd <= 0 && a.weapon) { a.aim = Math.atan2(t.y - a.y, t.x - a.x); C.tryFire(s, a, t.x, t.y - 3); }
-    } else { C.forageTransaction(a, t, 'civ'); a.forTarget = null; }
+    } else { C.forageTransaction(a, t, 'civ'); a.forTarget = null; a.forT = (240 + Math.random() * 240) / G().minPerSec; }
   }
 
   // ---------------- animals ----------------

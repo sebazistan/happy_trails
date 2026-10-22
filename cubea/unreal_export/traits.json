@@ -1,0 +1,72 @@
+[
+ {
+  "key": "idealist",
+  "n": "Idealista",
+  "d": "Hope and dignity move them more; conviction grows fast"
+ },
+ {
+  "key": "opportunist",
+  "n": "Oportunista",
+  "d": "Drifts toward whoever seems to be winning"
+ },
+ {
+  "key": "devout",
+  "n": "Devoto",
+  "d": "Cares deeply about the Church"
+ },
+ {
+  "key": "hothead",
+  "n": "Impulsivo",
+  "d": "Stress and anger spike; may act without orders"
+ },
+ {
+  "key": "loyalist",
+  "n": "Leal al régimen",
+  "d": "Resists persuasion; conviction hard to shake"
+ },
+ {
+  "key": "cautious",
+  "n": "Cauteloso",
+  "d": "Hides opinions; slow to commit"
+ },
+ {
+  "key": "brave",
+  "n": "Valiente",
+  "d": "Resists fear and stress"
+ },
+ {
+  "key": "gossip",
+  "n": "Chismoso",
+  "d": "News about them and by them travels fast"
+ },
+ {
+  "key": "generous",
+  "n": "Generoso",
+  "d": "Shares food readily with those they trust"
+ },
+ {
+  "key": "greedy",
+  "n": "Codicioso",
+  "d": "Sells to the highest bidder; can be bribed"
+ },
+ {
+  "key": "drinker",
+  "n": "Bebedor",
+  "d": "Careless on watch; talks too much"
+ },
+ {
+  "key": "veteran",
+  "n": "Veterano",
+  "d": "Fought in an earlier war or uprising"
+ },
+ {
+  "key": "stoic",
+  "n": "Estoico",
+  "d": "Keeps a steady face under pressure"
+ },
+ {
+  "key": "kind",
+  "n": "Bondadoso",
+  "d": "Kindness shown to them is returned"
+ }
+]

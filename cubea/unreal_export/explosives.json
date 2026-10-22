@@ -1,0 +1,43 @@
+[
+ {
+  "key": "grenade",
+  "n": "Granada",
+  "fuse": 2.1,
+  "rad": 58,
+  "dmg": 150,
+  "frags": 14
+ },
+ {
+  "key": "molotov",
+  "n": "Molotov",
+  "fuse": 0.01,
+  "rad": 34,
+  "dmg": 40,
+  "fire": true,
+  "frags": 0
+ },
+ {
+  "key": "dynamite",
+  "n": "Dinamita",
+  "fuse": 6,
+  "rad": 96,
+  "dmg": 220,
+  "frags": 10
+ },
+ {
+  "key": "mortar",
+  "n": "Mortero",
+  "fuse": 0.01,
+  "rad": 70,
+  "dmg": 170,
+  "frags": 16
+ },
+ {
+  "key": "bomb",
+  "n": "Bomba aérea",
+  "fuse": 0.01,
+  "rad": 100,
+  "dmg": 260,
+  "frags": 18
+ }
+]

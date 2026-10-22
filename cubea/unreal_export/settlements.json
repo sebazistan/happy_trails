@@ -1,0 +1,218 @@
+[
+ {
+  "id": "alegria",
+  "name": "Alegría de Pío",
+  "type": "cane",
+  "pop": 0,
+  "pos": [
+   -77.62,
+   19.97
+  ],
+  "region": "Oriente",
+  "bias": 0,
+  "blurb": "Cane fields near the landing. The army is waiting."
+ },
+ {
+  "id": "sierra",
+  "name": "Sierra Maestra",
+  "type": "sierra",
+  "pop": 110,
+  "pos": [
+   -76.95,
+   19.98
+  ],
+  "region": "Oriente",
+  "bias": 18,
+  "blurb": "Jungle ridges, charcoal-burners, rivers. The only place the army cannot easily reach."
+ },
+ {
+  "id": "palmarito",
+  "name": "Palmarito",
+  "type": "village",
+  "pop": 270,
+  "pos": [
+   -77.2,
+   20.15
+  ],
+  "region": "Oriente",
+  "bias": 6,
+  "blurb": "A foothill batey of cane cutters and tenant farmers (fictional)."
+ },
+ {
+  "id": "cayo",
+  "name": "Cayo Piedra",
+  "type": "fishing",
+  "pop": 150,
+  "pos": [
+   -77.35,
+   19.92
+  ],
+  "region": "Oriente",
+  "bias": 2,
+  "blurb": "A fishing village on the southern coast (fictional)."
+ },
+ {
+  "id": "manzanillo",
+  "name": "Manzanillo",
+  "type": "town",
+  "pop": 560,
+  "pos": [
+   -77.12,
+   20.34
+  ],
+  "region": "Oriente",
+  "bias": 4,
+  "blurb": "Sugar port on the Gulf of Guacanayabo."
+ },
+ {
+  "id": "bayamo",
+  "name": "Bayamo",
+  "type": "town",
+  "pop": 500,
+  "pos": [
+   -76.64,
+   20.38
+  ],
+  "region": "Oriente",
+  "bias": -4,
+  "blurb": "Garrison town of the Cauto plain."
+ },
+ {
+  "id": "santiago",
+  "name": "Santiago de Cuba",
+  "type": "city",
+  "pop": 780,
+  "pos": [
+   -75.82,
+   20.02
+  ],
+  "region": "Oriente",
+  "bias": 12,
+  "blurb": "Cuba's rebel city: students, the underground, the Moncada barracks."
+ },
+ {
+  "id": "habana",
+  "name": "La Habana",
+  "type": "capital",
+  "pop": 900,
+  "pos": [
+   -82.37,
+   23.13
+  ],
+  "region": "La Habana",
+  "bias": 0,
+  "blurb": "Capital of Batista's Cuba: casinos, banks, the Palace, and the money."
+ },
+ {
+  "id": "biran",
+  "name": "Birán",
+  "type": "offmap",
+  "pop": 0,
+  "pos": [
+   -75.66,
+   20.62
+  ],
+  "region": "Oriente"
+ },
+ {
+  "id": "rosario",
+  "name": "Rosario (Argentina)",
+  "type": "offmap",
+  "pop": 0,
+  "pos": null,
+  "region": "Exterior"
+ },
+ {
+  "id": "artemisa",
+  "name": "Artemisa",
+  "type": "offmap",
+  "pop": 0,
+  "pos": [
+   -82.76,
+   22.81
+  ],
+  "region": "La Habana"
+ },
+ {
+  "id": "cardenas",
+  "name": "Cárdenas",
+  "type": "offmap",
+  "pop": 0,
+  "pos": [
+   -81.2,
+   23.04
+  ],
+  "region": "Matanzas"
+ },
+ {
+  "id": "encrucijada",
+  "name": "Encrucijada",
+  "type": "offmap",
+  "pop": 0,
+  "pos": [
+   -79.87,
+   22.61
+  ],
+  "region": "Las Villas"
+ },
+ {
+  "id": "cruces",
+  "name": "Cruces",
+  "type": "offmap",
+  "pop": 0,
+  "pos": [
+   -80.27,
+   22.34
+  ],
+  "region": "Las Villas"
+ },
+ {
+  "id": "yara",
+  "name": "Yara",
+  "type": "offmap",
+  "pop": 0,
+  "pos": [
+   -76.7,
+   20.27
+  ],
+  "region": "Oriente"
+ },
+ {
+  "id": "medialuna",
+  "name": "Media Luna",
+  "type": "offmap",
+  "pop": 0,
+  "pos": [
+   -77.4,
+   20.15
+  ],
+  "region": "Oriente"
+ },
+ {
+  "id": "banes",
+  "name": "Banes",
+  "type": "offmap",
+  "pop": 0,
+  "pos": [
+   -75.72,
+   20.96
+  ],
+  "region": "Oriente"
+ },
+ {
+  "id": "exterior",
+  "name": "Exilio (Miami / México)",
+  "type": "offmap",
+  "pop": 0,
+  "pos": null,
+  "region": "Exterior"
+ },
+ {
+  "id": "galicia",
+  "name": "Galicia (España)",
+  "type": "offmap",
+  "pop": 0,
+  "pos": null,
+  "region": "Exterior"
+ }
+]

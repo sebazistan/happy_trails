@@ -1,0 +1,291 @@
+{
+ "events": [
+  {
+   "id": "patrol",
+   "category": "pressure",
+   "tension": 2,
+   "cooldownDays": 4,
+   "layer": 1
+  },
+  {
+   "id": "informant_hint",
+   "category": "pressure",
+   "tension": 3,
+   "cooldownDays": 20,
+   "layer": 3
+  },
+  {
+   "id": "army_requisition",
+   "category": "pressure",
+   "tension": 3,
+   "cooldownDays": 22,
+   "layer": 3
+  },
+  {
+   "id": "eviction",
+   "category": "pressure",
+   "tension": 3,
+   "cooldownDays": 35,
+   "layer": 3
+  },
+  {
+   "id": "reprisal",
+   "category": "pressure",
+   "tension": 5,
+   "cooldownDays": 40,
+   "layer": 3
+  },
+  {
+   "id": "wounded_arrive",
+   "category": "pressure",
+   "tension": 3,
+   "cooldownDays": 12,
+   "layer": 2
+  },
+  {
+   "id": "airraid",
+   "category": "pressure",
+   "tension": 5,
+   "cooldownDays": 25,
+   "layer": 2
+  },
+  {
+   "id": "offensive",
+   "category": "pressure",
+   "tension": 5,
+   "cooldownDays": 45,
+   "layer": 4
+  },
+  {
+   "id": "misconduct",
+   "category": "pressure",
+   "tension": 4,
+   "cooldownDays": 16,
+   "layer": 3
+  },
+  {
+   "id": "delegation",
+   "category": "social",
+   "tension": 2,
+   "cooldownDays": 8,
+   "layer": 3
+  },
+  {
+   "id": "fiesta",
+   "category": "rest",
+   "tension": 1,
+   "cooldownDays": 25,
+   "layer": 2
+  },
+  {
+   "id": "priest_visit",
+   "category": "social",
+   "tension": 2,
+   "cooldownDays": 30,
+   "layer": 4
+  },
+  {
+   "id": "stranger",
+   "category": "social",
+   "tension": 3,
+   "cooldownDays": 14,
+   "layer": 3
+  },
+  {
+   "id": "teacher",
+   "category": "social",
+   "tension": 1,
+   "cooldownDays": 40,
+   "layer": 3
+  },
+  {
+   "id": "women_volunteers",
+   "category": "social",
+   "tension": 3,
+   "cooldownDays": 60,
+   "layer": 4
+  },
+  {
+   "id": "racial_clubs",
+   "category": "social",
+   "tension": 2,
+   "cooldownDays": 50,
+   "layer": 4
+  },
+  {
+   "id": "students_march",
+   "category": "social",
+   "tension": 3,
+   "cooldownDays": 24,
+   "layer": 5
+  },
+  {
+   "id": "union_call",
+   "category": "social",
+   "tension": 3,
+   "cooldownDays": 30,
+   "layer": 5
+  },
+  {
+   "id": "che_medic",
+   "category": "personal",
+   "tension": 2,
+   "cooldownDays": 18,
+   "layer": 2
+  },
+  {
+   "id": "viejo_story",
+   "category": "rest",
+   "tension": 1,
+   "cooldownDays": 9,
+   "layer": 1
+  },
+  {
+   "id": "psp_offer",
+   "category": "social",
+   "tension": 3,
+   "cooldownDays": 80,
+   "layer": 5
+  },
+  {
+   "id": "havana_salon",
+   "category": "social",
+   "tension": 3,
+   "cooldownDays": 18,
+   "layer": 3
+  },
+  {
+   "id": "sim_net",
+   "category": "pressure",
+   "tension": 4,
+   "cooldownDays": 14,
+   "layer": 3
+  },
+  {
+   "id": "letters_home",
+   "category": "personal",
+   "tension": 2,
+   "cooldownDays": 20,
+   "layer": 3
+  },
+  {
+   "id": "lieutenants",
+   "category": "personal",
+   "tension": 3,
+   "cooldownDays": 40,
+   "layer": 4
+  },
+  {
+   "id": "bodeguero_credit",
+   "category": "lifeline",
+   "tension": 1,
+   "cooldownDays": 15,
+   "layer": 2
+  },
+  {
+   "id": "guard_defects",
+   "category": "lifeline",
+   "tension": 2,
+   "cooldownDays": 25,
+   "layer": 2
+  },
+  {
+   "id": "storm",
+   "category": "lifeline",
+   "tension": 1,
+   "cooldownDays": 18,
+   "layer": 1
+  },
+  {
+   "id": "donation",
+   "category": "lifeline",
+   "tension": 1,
+   "cooldownDays": 18,
+   "layer": 3
+  },
+  {
+   "id": "hidden_wounded",
+   "category": "lifeline",
+   "tension": 1,
+   "cooldownDays": 25,
+   "layer": 3
+  },
+  {
+   "id": "rain_day",
+   "category": "rest",
+   "tension": 1,
+   "cooldownDays": 7,
+   "layer": 1
+  }
+ ],
+ "anchors": [
+  {
+   "id": "regroup",
+   "day": 8
+  },
+  {
+   "id": "laplata",
+   "day": 41
+  },
+  {
+   "id": "eutimio",
+   "day": 65
+  },
+  {
+   "id": "matthews",
+   "day": 74
+  },
+  {
+   "id": "palace",
+   "day": 98
+  },
+  {
+   "id": "uvero",
+   "day": 174
+  },
+  {
+   "id": "frank",
+   "day": 227
+  },
+  {
+   "id": "radio",
+   "day": 446
+  },
+  {
+   "id": "embargo",
+   "day": 464
+  },
+  {
+   "id": "strike",
+   "day": 490
+  },
+  {
+   "id": "verano",
+   "day": 536
+  },
+  {
+   "id": "veranoend",
+   "day": 611
+  },
+  {
+   "id": "platoon",
+   "day": 638
+  },
+  {
+   "id": "caracas",
+   "day": 592
+  },
+  {
+   "id": "columns",
+   "day": 633
+  },
+  {
+   "id": "santaclara",
+   "day": 753
+  },
+  {
+   "id": "newyear",
+   "day": 756
+  }
+ ]
+}

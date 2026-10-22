@@ -1,0 +1,90 @@
+[
+ {
+  "id": "land",
+  "name": "Reforma agraria",
+  "en": "Land reform",
+  "opts": [
+   "Keep the estates",
+   "Fair rents, distribute idle land",
+   "Break up the great estates"
+  ],
+  "deed": "Distribute land to families"
+ },
+ {
+  "id": "health",
+  "name": "Salud y escuelas",
+  "en": "Health & schools",
+  "opts": [
+   "Leave to charity",
+   "Rural clinics and schools",
+   "Free universal care and education"
+  ],
+  "deed": "Treat the sick, open a school"
+ },
+ {
+  "id": "church",
+  "name": "La Iglesia",
+  "en": "The Church",
+  "opts": [
+   "Defer to the Church",
+   "Neutral; protect worship",
+   "Secular state, curb the clergy"
+  ],
+  "deed": "Protect or challenge the parish"
+ },
+ {
+  "id": "property",
+  "name": "Propiedad",
+  "en": "Property & industry",
+  "opts": [
+   "Protect all property",
+   "Regulated mixed economy",
+   "Nationalize key industries"
+  ],
+  "deed": "Protect or seize property"
+ },
+ {
+  "id": "democracy",
+  "name": "Democracia",
+  "en": "Democracy",
+  "opts": [
+   "Rebel command rules",
+   "Elections after victory",
+   "Restore the 1940 Constitution"
+  ],
+  "deed": "Hold open assemblies"
+ },
+ {
+  "id": "justice",
+  "name": "Justicia",
+  "en": "Justice for the regime",
+  "opts": [
+   "Amnesty for soldiers",
+   "Fair trials for crimes",
+   "Revolutionary tribunals"
+  ],
+  "deed": "Hold trials, release prisoners"
+ },
+ {
+  "id": "women",
+  "name": "Las mujeres",
+  "en": "Women's equality",
+  "opts": [
+   "Traditional roles",
+   "Vote, work, equal pay",
+   "Women fight and lead"
+  ],
+  "deed": "Give women real roles"
+ },
+ {
+  "id": "race",
+  "name": "Igualdad racial",
+  "en": "Racial equality",
+  "opts": [
+   "Leave things as they are",
+   "End formal segregation",
+   "Full integration & promotion"
+  ],
+  "deed": "Promote Afro-Cubans, open clubs"
+ }
+]

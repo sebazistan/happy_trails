@@ -1,0 +1,68 @@
+[
+ {
+  "a": "sierra",
+  "b": "palmarito",
+  "footDays": 0.6,
+  "vehicleHours": 2
+ },
+ {
+  "a": "sierra",
+  "b": "cayo",
+  "footDays": 1,
+  "vehicleHours": 3
+ },
+ {
+  "a": "sierra",
+  "b": "santiago",
+  "footDays": 4,
+  "vehicleHours": 7
+ },
+ {
+  "a": "palmarito",
+  "b": "manzanillo",
+  "footDays": 1.5,
+  "vehicleHours": 3
+ },
+ {
+  "a": "palmarito",
+  "b": "bayamo",
+  "footDays": 2.5,
+  "vehicleHours": 5
+ },
+ {
+  "a": "cayo",
+  "b": "manzanillo",
+  "footDays": 2,
+  "vehicleHours": 4
+ },
+ {
+  "a": "manzanillo",
+  "b": "bayamo",
+  "footDays": 1.5,
+  "vehicleHours": 2
+ },
+ {
+  "a": "bayamo",
+  "b": "santiago",
+  "footDays": 5,
+  "vehicleHours": 5
+ },
+ {
+  "a": "santiago",
+  "b": "habana",
+  "footDays": 28,
+  "vehicleHours": 15
+ },
+ {
+  "a": "bayamo",
+  "b": "habana",
+  "footDays": 24,
+  "vehicleHours": 12
+ },
+ {
+  "a": "manzanillo",
+  "b": "habana",
+  "footDays": 25,
+  "vehicleHours": 13
+ }
+]

@@ -198,6 +198,39 @@
     { label: 'Cooperate on specific actions only', sub: 'A small, deniable benefit', fn: () => { g.strikePrep += 6; } },
     { label: 'Decline', sub: 'Keep your freedom of action', fn: () => { for (const p of C.W.people) if (p.fac === 'workers' && p.status === 'alive' && p.sal.includes(3)) p.trueStance -= 1; } },
   ] }) });
+  def({ id: 'havana_salon', cat: 'social', t: 3, cd: 18, layer: 3, w: (g) => g.scene.sid === 'habana' ? 6 : 0, run: (g) => {
+    const don = ['larrea', 'mercedes', 'quesada'].map((k) => C.W.roster[k]).filter((p) => p.status === 'alive');
+    const hostess = C.W.roster.mercedes;
+    return card({ title: 'A salon in the Vedado', icon: '🥂', body: `${C.tagName(hostess)} has invited a few families of means to her house for an evening of guitar and conversation. A rum merchant, a lawyer for political prisoners, and several wives who run the family purse. A man at the back who talks to nobody is certainly SIM. A woman can circulate here without drawing a glance; a bearded man in a borrowed jacket cannot.`, choices: [
+      { label: 'Speak of the nation, and of the dead of Santiago', sub: 'Honest and moving. Good with the middle class.', fn: () => { const m = Math.round(70 + rnd() * 140); g.pipe.balance += m; for (const p of C.W.people) if (p.settlement === 'habana' && p.status === 'alive' && (p.fac === 'middle' || p.fac === 'elite') && rnd() < 0.3) p.trueStance += 2; if (rnd() < 0.25) { g.player.susp = (g.player.susp || 0) + 30; C.log('The man at the back wrote something down.', 'warn'); } C.log(`The salon passes the hat: ${m} pesos for the pipeline.`, 'good'); } },
+      { label: 'Speak of property, order and the 1940 Constitution', sub: 'Reassures merchants; commits you to a moderate line', fn: () => { const m = Math.round(120 + rnd() * 200); g.pipe.balance += m; C.declarePlank(3, 1, 1); C.declarePlank(4, 2, 2); g.trust.elite = clamp(g.trust.elite + 0.08, 0, 1); C.log(`The merchants open their purses: ${m} pesos.`, 'good'); } },
+      { label: 'Say nothing but listen; take names of who might help', sub: 'No money tonight; safer; builds contacts for later pitches', fn: () => { for (const p of don) p.donorCd = 0; g.strikePrep += 1; g.regime.heat -= 1; } },
+      { label: 'Slip away: the man at the back is looking at you', sub: 'Safety first', fn: () => { g.player.susp = 0; } },
+    ] }); } });
+  def({ id: 'sim_net', cat: 'pressure', t: 4, cd: 14, layer: 3, w: (g) => g.scene.sid === 'habana' || g.scene.sid === 'santiago' ? (g.regime.heat > 20 ? 3 : 0.8) : 0, run: (g) => {
+    const cell = C.squadPeople().find((p) => p.covert || p.sex === 'F'); const nm = cell ? C.tagName(cell) : 'a courier';
+    return card({ title: 'The SIM is closing in', icon: '🕴', body: `A friendly clerk at the telephone exchange warns that plainclothes police have been asking about ${nm}'s block. A safehouse may be compromised.`, choices: [
+      { label: 'Move everyone out tonight (costs 30 pesos)', disabled: g.res.money < 30, sub: 'Safe', fn: () => { g.res.money -= 30; g.regime.heat -= 3; } },
+      { label: 'Stay and bluff — change habits, burn papers', sub: 'Cheap. A 35% chance of arrests.', fn: () => { if (rnd() < 0.35 && cell) { cell.status = 'jailed'; C.addEvent({ type: 'arrest', victim: cell, perpSide: 'army', sev: 62, pub: 0.5, x: 0, y: 0, settlement: cell.settlement, text: `${nm} arrested by the SIM`, memText: `${nm} was arrested by the SIM`, headline: `SIM arrests suspected subversive: ${nm}` }); for (const sq of g.squads) sq.members = sq.members.filter((id) => id !== cell.id); } } },
+    ] }); } });
+  def({ id: 'letters_home', cat: 'personal', t: 2, cd: 20, layer: 3, w: (g) => squadPeople().length >= 4 ? 1.6 : 0, run: (g) => {
+    const ps = squadPeople().filter((p) => !p.roster && C.kinOf(p).size > 2); if (ps.length < 2) return null;
+    const lines = []; let morale = 0;
+    for (let i = 0; i < 3 && ps.length; i++) {
+      const p = ps.splice((rnd() * ps.length) | 0, 1)[0]; const kin = [...C.kinOf(p).entries()].filter(([, v]) => v.w >= 0.5).map(([id]) => C.P(id)).filter((q) => q.status !== 'dead'); if (!kin.length) continue; const q = kin[(rnd() * kin.length) | 0];
+      let msg, d;
+      if (q.status === 'jailed') { msg = `writes from visiting hour: ${C.tagName(q)} is still in prison; the family manages.`; d = -4; }
+      else if (q.needs.food < 32) { msg = `says ${C.tagName(q)} and the children are hungry this dead season.`; d = -5; }
+      else if (q.trueStance > 35) { msg = `says ${C.tagName(q)} is proud and tells the neighbours.`; d = 6; }
+      else if (q.trueStance < -35) { msg = `writes that ${C.tagName(q)} says you are throwing your life away.`; d = -3; }
+      else { msg = `sends news of ${C.tagName(q)} and the harvest. All well.`; d = 2; }
+      const rel = C.relLabelEs[C.relativeLabel(p, q)] || 'a relative'; lines.push(`${C.tagName(p)}'s ${rel} ${msg}`); morale += d; p.morale = clamp(p.morale + d, 0, 100);
+    }
+    if (!lines.length) return null;
+    return card({ title: 'Mail call', icon: '✉', body: 'A courier brings letters to the camp. Some are read quietly; some aloud.\n\n' + lines.join('\n'), choices: [
+      { label: 'Read the good ones aloud at the fire', sub: 'Morale up a little', fn: () => { for (const p of squadPeople()) p.morale = clamp(p.morale + 3, 0, 100); } },
+      { label: 'Let each keep their own', fn: () => { } },
+    ] }); } });
   def({ id: 'lieutenants', cat: 'personal', t: 3, cd: 40, layer: 4, w: (g) => g.stats.killedArmy > 2 ? 1.6 : 0.2, run: (g) => card({ title: 'Your lieutenants disagree', icon: '🗣', body: 'Che argues that the prisoners must be tried and the guilty shot: "Revolution without justice is tourism." Almeida, who knows what soldiers are, says to let the conscripts go with their boots and a lesson. Raúl says: "Decide, and be consistent."', choices: [
     { label: 'Free conscripts unharmed; try only the guilty', sub: 'Harms the army\'s will to fight. Costs nothing.', fn: () => { C.setJusticePolicy('mercy'); } },
     { label: 'Try and shoot officers and informers', sub: 'Frightens waverers; costs you with elites and the Church', fn: () => { C.setJusticePolicy('tribunal'); } },

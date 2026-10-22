@@ -1,0 +1,890 @@
+[
+ {
+  "key": "bohio",
+  "n": "Bohío",
+  "w": 3,
+  "h": 2,
+  "fill": [
+   150,
+   120,
+   70
+  ],
+  "roof": [
+   196,
+   170,
+   90
+  ],
+  "tag": "home"
+ },
+ {
+  "key": "casa",
+  "n": "Casa",
+  "w": 3,
+  "h": 3,
+  "fill": [
+   214,
+   190,
+   150
+  ],
+  "roof": [
+   176,
+   84,
+   60
+  ],
+  "tag": "home"
+ },
+ {
+  "key": "casona",
+  "n": "Casa de hacendado",
+  "w": 5,
+  "h": 4,
+  "fill": [
+   236,
+   222,
+   190
+  ],
+  "roof": [
+   150,
+   70,
+   50
+  ],
+  "tag": "home"
+ },
+ {
+  "key": "cuarteria",
+  "n": "Cuartería",
+  "w": 6,
+  "h": 3,
+  "fill": [
+   190,
+   170,
+   140
+  ],
+  "roof": [
+   130,
+   110,
+   100
+  ],
+  "tag": "home"
+ },
+ {
+  "key": "edificio",
+  "n": "Edificio",
+  "w": 5,
+  "h": 4,
+  "fill": [
+   220,
+   210,
+   190
+  ],
+  "roof": [
+   150,
+   150,
+   150
+  ],
+  "tag": "home"
+ },
+ {
+  "key": "bodega",
+  "n": "Bodega",
+  "w": 3,
+  "h": 2,
+  "fill": [
+   220,
+   200,
+   140
+  ],
+  "roof": [
+   160,
+   70,
+   50
+  ],
+  "tag": "shop"
+ },
+ {
+  "key": "tienda",
+  "n": "Tienda",
+  "w": 4,
+  "h": 3,
+  "fill": [
+   230,
+   210,
+   170
+  ],
+  "roof": [
+   150,
+   90,
+   70
+  ],
+  "tag": "shop"
+ },
+ {
+  "key": "cafe",
+  "n": "Café",
+  "w": 3,
+  "h": 2,
+  "fill": [
+   200,
+   160,
+   120
+  ],
+  "roof": [
+   140,
+   70,
+   60
+  ],
+  "tag": "shop"
+ },
+ {
+  "key": "barberia",
+  "n": "Barbería",
+  "w": 2,
+  "h": 2,
+  "fill": [
+   230,
+   200,
+   200
+  ],
+  "roof": [
+   140,
+   80,
+   80
+  ],
+  "tag": "shop"
+ },
+ {
+  "key": "farmacia",
+  "n": "Farmacia",
+  "w": 3,
+  "h": 2,
+  "fill": [
+   210,
+   235,
+   215
+  ],
+  "roof": [
+   90,
+   140,
+   100
+  ],
+  "tag": "shop"
+ },
+ {
+  "key": "gasolinera",
+  "n": "Gasolinera",
+  "w": 4,
+  "h": 3,
+  "fill": [
+   230,
+   230,
+   235
+  ],
+  "roof": [
+   200,
+   50,
+   50
+  ],
+  "tag": "fuel"
+ },
+ {
+  "key": "iglesia",
+  "n": "Iglesia",
+  "w": 5,
+  "h": 5,
+  "fill": [
+   238,
+   232,
+   214
+  ],
+  "roof": [
+   150,
+   120,
+   90
+  ],
+  "tag": "church"
+ },
+ {
+  "key": "capilla",
+  "n": "Capilla",
+  "w": 3,
+  "h": 3,
+  "fill": [
+   238,
+   232,
+   214
+  ],
+  "roof": [
+   150,
+   120,
+   90
+  ],
+  "tag": "church"
+ },
+ {
+  "key": "catedral",
+  "n": "Catedral",
+  "w": 8,
+  "h": 6,
+  "fill": [
+   232,
+   224,
+   200
+  ],
+  "roof": [
+   140,
+   110,
+   90
+  ],
+  "tag": "church"
+ },
+ {
+  "key": "escuela",
+  "n": "Escuela",
+  "w": 5,
+  "h": 3,
+  "fill": [
+   240,
+   230,
+   200
+  ],
+  "roof": [
+   90,
+   130,
+   170
+  ],
+  "tag": "school"
+ },
+ {
+  "key": "univ",
+  "n": "Universidad",
+  "w": 10,
+  "h": 5,
+  "fill": [
+   235,
+   232,
+   222
+  ],
+  "roof": [
+   120,
+   120,
+   130
+  ],
+  "tag": "univ"
+ },
+ {
+  "key": "hospital",
+  "n": "Hospital",
+  "w": 6,
+  "h": 4,
+  "fill": [
+   240,
+   240,
+   240
+  ],
+  "roof": [
+   200,
+   80,
+   80
+  ],
+  "tag": "clinic"
+ },
+ {
+  "key": "clinica",
+  "n": "Clínica",
+  "w": 3,
+  "h": 2,
+  "fill": [
+   240,
+   240,
+   240
+  ],
+  "roof": [
+   200,
+   120,
+   120
+  ],
+  "tag": "clinic"
+ },
+ {
+  "key": "cuartel",
+  "n": "Cuartel",
+  "w": 8,
+  "h": 4,
+  "fill": [
+   160,
+   170,
+   200
+  ],
+  "roof": [
+   70,
+   85,
+   130
+  ],
+  "tag": "army"
+ },
+ {
+  "key": "posta",
+  "n": "Puesto de la Guardia Rural",
+  "w": 4,
+  "h": 3,
+  "fill": [
+   170,
+   180,
+   205
+  ],
+  "roof": [
+   80,
+   95,
+   140
+  ],
+  "tag": "army"
+ },
+ {
+  "key": "policia",
+  "n": "Estación de policía",
+  "w": 5,
+  "h": 3,
+  "fill": [
+   170,
+   180,
+   205
+  ],
+  "roof": [
+   80,
+   95,
+   140
+  ],
+  "tag": "army"
+ },
+ {
+  "key": "sim",
+  "n": "Cuartel del SIM",
+  "w": 5,
+  "h": 3,
+  "fill": [
+   150,
+   150,
+   180
+  ],
+  "roof": [
+   60,
+   60,
+   100
+  ],
+  "tag": "army"
+ },
+ {
+  "key": "ayuntamiento",
+  "n": "Ayuntamiento",
+  "w": 6,
+  "h": 4,
+  "fill": [
+   236,
+   226,
+   200
+  ],
+  "roof": [
+   130,
+   100,
+   80
+  ],
+  "tag": "gov"
+ },
+ {
+  "key": "palacio",
+  "n": "Palacio Presidencial",
+  "w": 9,
+  "h": 6,
+  "fill": [
+   240,
+   232,
+   210
+  ],
+  "roof": [
+   110,
+   110,
+   140
+  ],
+  "tag": "gov"
+ },
+ {
+  "key": "capitolio",
+  "n": "El Capitolio",
+  "w": 9,
+  "h": 6,
+  "fill": [
+   238,
+   236,
+   230
+  ],
+  "roof": [
+   150,
+   150,
+   150
+  ],
+  "tag": "gov"
+ },
+ {
+  "key": "central",
+  "n": "Central azucarero (fábrica)",
+  "w": 9,
+  "h": 6,
+  "fill": [
+   180,
+   160,
+   140
+  ],
+  "roof": [
+   100,
+   90,
+   90
+  ],
+  "tag": "factory"
+ },
+ {
+  "key": "fabrica",
+  "n": "Fábrica",
+  "w": 7,
+  "h": 5,
+  "fill": [
+   180,
+   175,
+   170
+  ],
+  "roof": [
+   100,
+   100,
+   105
+  ],
+  "tag": "factory"
+ },
+ {
+  "key": "ron",
+  "n": "Fábrica de ron",
+  "w": 7,
+  "h": 5,
+  "fill": [
+   190,
+   150,
+   120
+  ],
+  "roof": [
+   110,
+   70,
+   60
+  ],
+  "tag": "factory"
+ },
+ {
+  "key": "almacen",
+  "n": "Almacén",
+  "w": 5,
+  "h": 3,
+  "fill": [
+   190,
+   180,
+   160
+  ],
+  "roof": [
+   110,
+   100,
+   90
+  ],
+  "tag": "store"
+ },
+ {
+  "key": "sindicato",
+  "n": "Sindicato",
+  "w": 4,
+  "h": 3,
+  "fill": [
+   230,
+   190,
+   160
+  ],
+  "roof": [
+   170,
+   70,
+   50
+  ],
+  "tag": "union"
+ },
+ {
+  "key": "cine",
+  "n": "Cine",
+  "w": 4,
+  "h": 3,
+  "fill": [
+   220,
+   200,
+   220
+  ],
+  "roof": [
+   130,
+   90,
+   140
+  ],
+  "tag": "leisure"
+ },
+ {
+  "key": "teatro",
+  "n": "Teatro",
+  "w": 6,
+  "h": 4,
+  "fill": [
+   230,
+   210,
+   200
+  ],
+  "roof": [
+   140,
+   90,
+   90
+  ],
+  "tag": "leisure"
+ },
+ {
+  "key": "hotel",
+  "n": "Hotel",
+  "w": 7,
+  "h": 5,
+  "fill": [
+   236,
+   232,
+   214
+  ],
+  "roof": [
+   130,
+   150,
+   160
+  ],
+  "tag": "hotel"
+ },
+ {
+  "key": "casino",
+  "n": "Casino",
+  "w": 6,
+  "h": 4,
+  "fill": [
+   240,
+   200,
+   210
+  ],
+  "roof": [
+   160,
+   60,
+   100
+  ],
+  "tag": "casino"
+ },
+ {
+  "key": "banco",
+  "n": "Banco",
+  "w": 5,
+  "h": 4,
+  "fill": [
+   226,
+   226,
+   214
+  ],
+  "roof": [
+   120,
+   130,
+   120
+  ],
+  "tag": "bank"
+ },
+ {
+  "key": "radio",
+  "n": "Estación de radio",
+  "w": 4,
+  "h": 3,
+  "fill": [
+   220,
+   220,
+   230
+  ],
+  "roof": [
+   90,
+   90,
+   160
+  ],
+  "tag": "radio"
+ },
+ {
+  "key": "cementerio",
+  "n": "Cementerio",
+  "w": 6,
+  "h": 4,
+  "fill": [
+   200,
+   205,
+   195
+  ],
+  "roof": [
+   150,
+   150,
+   150
+  ],
+  "tag": "cemetery",
+  "open": true
+ },
+ {
+  "key": "muelle",
+  "n": "Muelle",
+  "w": 8,
+  "h": 2,
+  "fill": [
+   150,
+   120,
+   90
+  ],
+  "roof": [
+   150,
+   120,
+   90
+  ],
+  "tag": "pier",
+  "open": true
+ },
+ {
+  "key": "secadero",
+  "n": "Secadero de pescado",
+  "w": 4,
+  "h": 2,
+  "fill": [
+   190,
+   160,
+   120
+  ],
+  "roof": [
+   190,
+   160,
+   120
+  ],
+  "tag": "fishing"
+ },
+ {
+  "key": "cooperativa",
+  "n": "Cooperativa de pescadores",
+  "w": 4,
+  "h": 3,
+  "fill": [
+   170,
+   200,
+   210
+  ],
+  "roof": [
+   90,
+   130,
+   150
+  ],
+  "tag": "fishing"
+ },
+ {
+  "key": "tienda_c",
+  "n": "Tienda de campaña",
+  "w": 2,
+  "h": 2,
+  "fill": [
+   110,
+   120,
+   80
+  ],
+  "roof": [
+   90,
+   100,
+   64
+  ],
+  "tag": "camp"
+ },
+ {
+  "key": "cocina",
+  "n": "Cocina de campamento",
+  "w": 3,
+  "h": 2,
+  "fill": [
+   140,
+   110,
+   80
+  ],
+  "roof": [
+   110,
+   90,
+   60
+  ],
+  "tag": "camp"
+ },
+ {
+  "key": "enfermeria",
+  "n": "Enfermería",
+  "w": 3,
+  "h": 2,
+  "fill": [
+   220,
+   220,
+   210
+  ],
+  "roof": [
+   170,
+   70,
+   70
+  ],
+  "tag": "camp"
+ },
+ {
+  "key": "polvorin",
+  "n": "Polvorín (munición)",
+  "w": 2,
+  "h": 2,
+  "fill": [
+   90,
+   90,
+   90
+  ],
+  "roof": [
+   60,
+   60,
+   60
+  ],
+  "tag": "camp"
+ },
+ {
+  "key": "taller",
+  "n": "Taller",
+  "w": 3,
+  "h": 2,
+  "fill": [
+   150,
+   130,
+   100
+  ],
+  "roof": [
+   100,
+   90,
+   70
+  ],
+  "tag": "camp"
+ },
+ {
+  "key": "radiocamp",
+  "n": "Radio Rebelde",
+  "w": 2,
+  "h": 2,
+  "fill": [
+   150,
+   150,
+   170
+  ],
+  "roof": [
+   90,
+   90,
+   120
+  ],
+  "tag": "camp"
+ },
+ {
+  "key": "escuelacamp",
+  "n": "Escuela rebelde",
+  "w": 3,
+  "h": 2,
+  "fill": [
+   200,
+   190,
+   150
+  ],
+  "roof": [
+   120,
+   110,
+   80
+  ],
+  "tag": "camp"
+ },
+ {
+  "key": "imprenta",
+  "n": "Imprenta",
+  "w": 2,
+  "h": 2,
+  "fill": [
+   200,
+   190,
+   190
+  ],
+  "roof": [
+   120,
+   100,
+   100
+  ],
+  "tag": "camp"
+ },
+ {
+  "key": "pad",
+  "n": "Solar libre",
+  "w": 2,
+  "h": 2,
+  "fill": [
+   140,
+   130,
+   100
+  ],
+  "roof": [
+   140,
+   130,
+   100
+  ],
+  "tag": "pad",
+  "open": true
+ },
+ {
+  "key": "puente",
+  "n": "Puente",
+  "w": 4,
+  "h": 2,
+  "fill": [
+   170,
+   140,
+   100
+  ],
+  "roof": [
+   170,
+   140,
+   100
+  ],
+  "tag": "bridge",
+  "open": true
+ },
+ {
+  "key": "deposito",
+  "n": "Depósito de gasolina",
+  "w": 2,
+  "h": 2,
+  "fill": [
+   180,
+   60,
+   50
+  ],
+  "roof": [
+   140,
+   40,
+   40
+  ],
+  "tag": "fuelstore"
+ },
+ {
+  "key": "torre",
+  "n": "Torre de radio",
+  "w": 1,
+  "h": 1,
+  "fill": [
+   90,
+   90,
+   90
+  ],
+  "roof": [
+   90,
+   90,
+   90
+  ],
+  "tag": "tower"
+ }
+]

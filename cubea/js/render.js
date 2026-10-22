@@ -268,7 +268,8 @@
       case 'collar': c.fillStyle = '#fff'; c.fillRect(-1.6, bh / 2 - 3.4, 3.2, 1.8); break;
       default: break;
     }
-    if (L.beard) { c.fillStyle = rgb(L.hairCol); c.beginPath(); c.moveTo(-bw / 2 + 0.3, bh * 0.05); c.lineTo(bw / 2 - 0.3, bh * 0.05); c.lineTo(bw / 2 - 0.9, bh / 2 - 0.3); c.lineTo(-bw / 2 + 0.9, bh / 2 - 0.3); c.closePath(); c.globalAlpha = 0.92; c.fill(); c.globalAlpha = 1; }
+    const bl = L.beard ? 1 : (a.p.beardLen || 0);
+    if (bl > 0.12) { const top = bh * (0.52 - 0.47 * bl); c.fillStyle = rgb(L.hairCol); c.beginPath(); c.moveTo(-bw / 2 + 0.3, top); c.lineTo(bw / 2 - 0.3, top); c.lineTo(bw / 2 - 0.9, bh / 2 - 0.3); c.lineTo(-bw / 2 + 0.9, bh / 2 - 0.3); c.closePath(); c.globalAlpha = bl < 0.5 ? 0.55 + bl * 0.5 : 0.92; c.fill(); c.globalAlpha = 1; }
   }
 
   const WLEN = { pistol: 5, revolver: 5, rifle: 13, garand: 13, scoped: 14, thompson: 9, mg: 14, shotgun: 12, machete: 8 };
