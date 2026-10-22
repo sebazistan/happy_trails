@@ -74,7 +74,7 @@
       placeInitially(s, a, hr, wd);
       s.actors.push(a);
     }
-    spawnAnimals(s); spawnVehicles(s); if (C.assignMounts) C.assignMounts(s);
+    spawnAnimals(s); spawnVehicles(s); if (C.assignMounts) C.assignMounts(s); if (C.seedCamp) C.seedCamp(s);
   };
 
   // Decide a person's side and equipment: soldiers get weapons by role (officers Thompsons, police pistols/rifles, SIM pistols, soldiers mostly Springfields/Garands) and helmets or kepis; rebels keep their equipment; civilians sometimes carry a machete or pistol.
@@ -700,7 +700,7 @@
       if (t.dead) { C.harvestAnimal(a, t); a.forTarget = null; return; }
       if (!t.wild) { C.forageTransaction(a, t, 'animal'); a.forTarget = null; a.forT = (360 + Math.random() * 240) / G().minPerSec; return; }
       if (a.cd <= 0 && a.weapon) { a.aim = Math.atan2(t.y - a.y, t.x - a.x); C.tryFire(s, a, t.x, t.y - 3); }
-    } else { C.forageTransaction(a, t, 'civ'); a.forTarget = null; a.forT = (240 + Math.random() * 240) / G().minPerSec; }
+    } else { if (C.forageOffer) { if (!a.forWait) { a.forWait = 2.6; C.forageOffer(a, t); return; } a.forWait -= dt; if (a.forWait > 0) return; a.forWait = 0; } C.forageTransaction(a, t, 'civ'); a.forTarget = null; a.forT = (240 + Math.random() * 240) / G().minPerSec; }
   }
 
   // ---------------- animals ----------------

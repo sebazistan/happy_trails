@@ -643,8 +643,7 @@
     if (atCamp) {
       h += `<h3 style="color:var(--gold);margin:10px 0 4px">Build</h3>`;
       for (const id of s.camp.slots) { const b = s.blds[id]; const k = b.slot; const cost = C.padCost(b); h += `<div class="plank"><div class="row"><b>${esc(C.BLD[k].n)}</b><span class="sub">${b.built ? '✔ built' : cost[0] + ' pesos + ' + cost[1] + ' scrap' + (b.labor ? ' (labour ×' + b.labor + ')' : '')}</span></div><div class="sub">${esc(padEffect(k))}</div>${b.built ? '' : `<button class="btn sm" data-b="${id}">Build</button>`}</div>`; }
-      h += `<h3 style="color:var(--gold);margin:10px 0 4px">Workshop & kitchen</h3>`;
-      for (const r of C.RECIPES) { const okNeed = !r.need || g.base.built[r.need]; h += `<div class="row"><span>${esc(r.n)} <span class="sub">${Object.keys(r.cost).map((k) => r.cost[k] + ' ' + k).join(', ') || 'free'}${r.need ? ' · needs ' + C.BLD[r.need].n : ''}</span></span><button class="btn sm" data-r="${r.id}" ${okNeed ? '' : 'disabled'}>Make</button></div>`; }
+      h += `<h3 style="color:var(--gold);margin:10px 0 4px">Workshop & kitchen</h3><div class="sub">Making things happens at benches in the camp, by hand: build a reloading bench, forge, printing press, sewing table or cook pot with the wheel (Q on the ground → Set up a workstation), then Q on the bench → Make…. Cook rations at the pot beside a lit fire; at mealtime the people near it are served.</div>`;
     }
     h += `<h3 style="color:var(--gold);margin:10px 0 4px">Policies</h3><div class="row"><span>Foraging</span><span>${['pay', 'vale', 'take'].map((k) => `<button class="btn sm ${g.policy.forage === k ? 'on' : ''}" data-pol="${k}">${k}</button>`).join(' ')}</span></div>`;
     h += `<div class="sub">Pay: pesos, goodwill. Vale: food now, repay in 30 days (default costs honesty). Take: free and fast; fear, grievance, and kin who remember.</div>`;

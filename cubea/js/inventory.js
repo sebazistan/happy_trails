@@ -276,8 +276,9 @@
       const p = C.P(id); if (!p || p.status !== 'alive') continue; C.initInv(p);
       const portion = p.rat.f;                                   // 1 full, 0.5 half, 0 none
       if (p.needs.food <= 70 && portion > 0) {
-        // first the pack, then the stores
-        if (!(p.inv.food > 0 && p.needs.food < TUNE.eatBelow && eat(p))) {
+        // first the hot pot if they are beside it (workshop.js), then the pack, then the stores
+        if (C.potServe && C.potServe(p, portion)) { fed++; }
+        else if (!(p.inv.food > 0 && p.needs.food < TUNE.eatBelow && eat(p))) {
           const cost = save * portion;
           if (g.res.food >= cost) { g.res.food -= cost; p.needs.food = clamp(p.needs.food + TUNE.ration * portion, 0, 100); fed++; }
           else { short++; p.stress = clamp(p.stress + 4, 0, 100); p.morale = clamp(p.morale - 3, 0, 100); }
