@@ -4,9 +4,11 @@
   const C = (window.C = window.C || {});
   const clamp = C.clamp;
   const G = () => C.G;
+  // SMALL DOM HELPERS: $ (by id), esc (escape HTML), nl (escape + newlines to <br>), pct, col (rgb array → CSS), bar (a needs bar), needCol (green/yellow/red by level), PLACE (settlement name), STATUS labels.
   const $ = (id) => document.getElementById(id);
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const nl = (t) => esc(t).replace(/\n/g, '<br>');
+  // The UI namespace C.ui; other modules (cmdui.js, pack.js, orders.js…) add to it.
   const ui = (C.ui = { overUI: false });
   const pct = (v) => Math.round(v) + '%';
   const col = (rgb) => `rgb(${rgb[0] | 0},${rgb[1] | 0},${rgb[2] | 0})`;
@@ -15,18 +17,24 @@
   const PLACE = (id) => (C.SETTLEMENTS[id] ? C.SETTLEMENTS[id].name : id);
   const STATUS = { alive: '', dead: '† dead', jailed: 'in prison', exile: 'in exile', away: 'away', missing: 'missing' };
 
+  // Remember whether the mouse is over a panel so clicks on panels do not fire the player's gun.
   // overlay mouse tracking so clicks on panels don't fire the gun
   document.addEventListener('mouseover', (e) => { ui.overUI = !!(e.target.closest && e.target.closest('.panel, #modal')); });
 
+  // TOASTS AND THE LOG: short messages at the top and the fading log lines at the bottom; El Viejo's advice appears as a portrait toast.
   // ---------- toast / log ----------
   let toastT = 0;
+  // Show a brief toast.
   ui.toast = function (t) { const el = $('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => (el.style.display = 'none'), 1700); };
   let logLines = [];
+  // Called by C.log: keep the last 6 lines for the on-screen log.
   ui.onLog = function (text, kind) {
     logLines.push({ text, kind: kind || 'info', t: performance.now() }); if (logLines.length > 6) logLines.shift();
     renderLog();
   };
+  // Draw the log lines that are less than 14 s old.
   function renderLog() { const el = $('log'); const now = performance.now(); logLines = logLines.filter((l) => now - l.t < 14000); el.innerHTML = logLines.map((l) => `<div class="${l.kind}">${esc(l.text)}</div>`).join(''); el.style.display = logLines.length && $('top').style.display !== 'none' ? 'block' : 'none'; }
+  // El Viejo's speech bubble with his portrait.
   ui.viejoToast = function (text) {
     let el = $('viejo'); if (!el) { el = document.createElement('div'); el.id = 'viejo'; el.className = 'panel'; el.style.cssText = 'left:8px;bottom:40px;max-width:330px;padding:10px 12px;z-index:6;display:none;font-size:13px;line-height:1.4'; document.body.appendChild(el); }
     el.innerHTML = `<div style="display:flex;gap:10px"><canvas id="vcv" width="48" height="48" style="flex:none;border-radius:8px;background:rgba(0,0,0,.25)"></canvas><div><b style="color:var(--gold)">El Viejo</b><div>${esc(text)}</div></div></div>`;
@@ -34,7 +42,9 @@
     clearTimeout(el._t); el._t = setTimeout(() => (el.style.display = 'none'), Math.min(14000, 4000 + text.length * 55));
   };
 
+  // PORTRAITS: the cube drawn large in the inspector/pack by the same renderer as the map (a stand-in actor for people not in the scene).
   // ---------- portrait ----------
+  // Build a stand-in actor (colour, expression) for a person who has no live actor.
   function fakeActor(p) {
     const a = p.actor;
     const fake = { p, face: 1, anim: 0, moving: false, dead: p.status === 'dead', prone: false, drawColor: C.loyaltyColor(p.stance, p.conv), expr: a ? a.expr : { brow: 0, browY: 0, lid: 0, wide: 0, mouth: 0.1, open: 0, squint: 0, sweat: 0, tear: 0 }, blink: 0, weapon: null, weaponOut: false, muzzle: 0, aim: 0, alpha: 1, x: 0, y: 0, deadRot: 0, isPlayer: false, talking: 0, shooting: 0, pain: 0, panic: 0, camo: 0, smirk: false };
@@ -44,6 +54,7 @@
     return fake;
   }
   ui.portrait = (cv, p, a, scale) => portrait(cv, p, a, scale);   // shared with pack.js
+  // Draw a person's portrait into a canvas at a scale.
   function portrait(cv, p, a, scale) {
     const c = cv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cv.width, cv.height);
     c.setTransform(scale, 0, 0, scale, cv.width / 2, cv.height * 0.8);
@@ -52,7 +63,9 @@
     c.setTransform(1, 0, 0, 1, 0, 0);
   }
 
+  // HUD: the top bar (clock, resources chips, support meter, heat, speed buttons, panels buttons) and the minimap.
   // ---------- HUD ----------
+  // Show the HUD panels and wire the speed and panel buttons.
   ui.start = function () {
     for (const id of ['top', 'left', 'minimap']) $(id).style.display = id === 'top' ? 'flex' : 'block';
     $('log').style.display = 'none';
@@ -60,10 +73,15 @@
     $('bMap').onclick = () => ui.openMap(); $('bMan').onclick = ui.openManifesto; $('bFac').onclick = ui.openFactions; $('bJour').onclick = ui.openJournal; $('bBase').onclick = ui.openBase; $('bHelp').onclick = ui.openHelp;
     ui.refresh();
   };
+  // Highlight the current speed button.
   ui.syncSpeed = function () { const g = G(); document.querySelectorAll('#speed button').forEach((b) => { const v = +b.dataset.sp; b.classList.toggle('on', v === 0 ? g.paused : !g.paused && g.speed === v); }); };
+  // Show the current place's name.
   ui.setWhere = function () { $('where').textContent = G().scene.title || G().scene.name; };
+  // Rebuild the left panel and refresh the HUD.
   ui.refresh = function () { buildLeft(); ui.update(true); };
+  // Resource chips: key in G.res, icon, tooltip.
   const CHIPS = [['food', '🍚', 'Food'], ['money', '₱', 'Pesos'], ['ammo', '•', 'Cartridges'], ['med', '✚', 'Medicine'], ['fuel', '⛽', 'Fuel (stock)'], ['gren', '💣', 'Grenades'], ['guns', '🔫', 'Spare rifles'], ['shell', '🚀', 'Mortar shells'], ['rocket', '🎯', 'Rockets']];
+  // Refresh the HUD each ~0.2 s: clock (or the sea's date), chips (with warnings), support meter, heat bar, army alert, mission text, context hint (what E would do), live squad bars and the inspector.
   ui.update = function (force) {
     const g = G(); if (!g || !g.scene) return;
     const L = g.unlocked.layer;
@@ -93,6 +111,7 @@
     updateLeftLive(); if (g.selected && !g.selected.gone) updateInspectorLive(); renderLog();
     if (g.sea && g.sea.active) { $('hint').innerHTML = g.sea.phase === 'approach' ? `⛵ WASD steers · <kbd>E</kbd> land (when close to the shore) · running her aground also lands you` : `⛵ WASD walks the deck · <kbd>E</kbd> speaks to a man`; } else if (g.vehicle) { const v = g.vehicle; $('hint').innerHTML += `<br>🚗 ${v.def.n}: fuel ${Math.round(v.fuel)}/${v.def.tank} · speed ${Math.round(Math.abs(v.spd))} · <kbd>E</kbd> exit`; }
   };
+  // Text describing what E would do on the nearest interactive thing.
   function hintFor(t) {
     switch (t.kind) {
       case 'actor': return `talk to ${esc(C.tagName(t.o.p))}`; case 'corpse': return `search ${esc(C.tagName(t.o.p))}`; case 'vehicle': return `use ${t.o.def.n}`; case 'item': return `pick up ${esc(t.o.label)}`;
@@ -100,7 +119,9 @@
     }
   }
 
+  // GROUPS PANEL: each group with its stance buttons, hunger/morale bars, obedience, and the order/stance hint; '+ New group from selection'.
   // ---------- squads panel ----------
+  // (see above)
   function buildLeft() {
     const g = G(); const el = $('left'); let h = `<h3>${C.es('squads')}</h3>`;
     for (const sq of g.squads) {
@@ -119,6 +140,7 @@
     const ng = el.querySelector('#newgrp'); if (ng) ng.onclick = () => { const ids = C.selIds(); if (!ids.length) { ui.toast('Select people first'); return; } const nm = window.prompt('Name this group', 'Group ' + (g.squads.length + 1)); if (nm === null) return; const sq = C.newGroup(nm.trim() || undefined, ids); if (sq) { g.curSquad = sq.id; buildLeft(); } };
     el.querySelectorAll('[data-pol]').forEach((b) => b.onclick = () => { g.policy.forage = b.dataset.pol; buildLeft(); });
   }
+  // Live numbers for each group (obedience, hunger, morale, rounds).
   function updateLeftLive() {
     const g = G(); for (const sq of g.squads) {
       const e1 = $('sqo' + sq.id), e2 = $('sqs' + sq.id); if (!e1) continue;
@@ -131,20 +153,25 @@
     }
   }
 
+  // INSPECTOR: click anyone to see face, body, needs, combat experience, loyalty and WHY (the explainStance list), traits, tells, family tree, friends and bonds, memories.
   // ---------- inspector ----------
+  // Hover tooltip (name, role, mood; a rebel's carried food/water and load).
   ui.tipFor = function (a) {
     const p = a.p; const e = a.expr ? a.expr.label : '';
     const role = p.role || (C.OCC[p.occ] ? C.occName(p.occ) : '');
     const carry = (a.side === 'rebel' || a.isPlayer) && p.inv ? `<br><span class="sub">🍚${p.inv.food || 0} 💧${p.inv.water || 0} · load ${C.loadOf(p).toFixed(0)}/${C.capacityOf(p).toFixed(0)} · double-click: pack</span>` : '';
     return `<b>${esc(C.fullName(p))}</b><br><span class="sub">${esc(role)} · ${C.ageOf(p)} · ${esc(ui.emo(e))}</span>${carry}${a.dead ? '<br><span class="sub">† dead</span>' : ''}`;
   };
+  // Show/hide the inspector for a person.
   ui.inspect = function (p, a) {
     const el = $('right');
     if (!p) { el.style.display = 'none'; ui.curP = null; return; }
     ui.curP = p; ui.curA = a || p.actor || null; el.style.display = 'block'; ui.buildInspector();
   };
   const EMO_EN = { sereno: 'calm', hambriento: 'hungry', sediento: 'thirsty', agotado: 'exhausted', temeroso: 'afraid', furioso: 'furious', adolorido: 'in pain', confiado: 'confident', esperanzado: 'hopeful', desanimado: 'despondent' };
+  // Mood label through the lexicon.
   ui.emo = (l) => C.moodName(l);
+  // Build the inspector HTML (static part) for the current person.
   ui.buildInspector = function () {
     const g = G(), p = ui.curP, el = $('right'); if (!p) return; const a = ui.curA; const L = g.unlocked.layer;
     const age = C.ageOf(p); const F = C.FACTIONS[p.fac];
@@ -176,6 +203,7 @@
     $('iClose').onclick = () => { C.select(null); }; const tk = $('iTalk'); if (tk) tk.onclick = () => ui.interact({ kind: 'actor', o: a }); const pk = $('iPack'); if (pk) pk.onclick = () => C.openPack(p);
     updateInspectorLive();
   };
+  // Update the live parts of the inspector (mood, body, needs, loyalty and its explanation).
   function updateInspectorLive() {
     const g = G(), p = ui.curP; if (!p || !$('iMood')) return; const a = ui.curA || p.actor;
     const e = a ? a.expr : C.expressionTargets(fakeActor(p)); $('iMood').textContent = ui.emo(e.label);
@@ -191,7 +219,9 @@
     }
     const bgk = (C.OCC[p.occ] || {}).bg || 'campesino'; const bg = C.BG[bgk]; const bl = $('iBlend'); if (bl) bl.innerHTML = `Blends in: jungle ${Math.round(bg[0] * 100)}% · countryside ${Math.round(bg[1] * 100)}% · town ${Math.round(bg[2] * 100)}% · city ${Math.round(bg[3] * 100)}%${p.sex === 'F' ? ' · <span title="Women draw less suspicion at checkpoints">less suspected in towns</span>' : ''}`;
   }
+  // A clickable person reference (with status).
   function personLink(q) { const st = STATUS[q.status] || ''; return `<span class="link" data-pid="${q.id}">${esc(C.tagName(q))}</span> <span class="sub">${C.ageOf(q)}${q.status !== 'alive' ? ' · ' + st : ''}${q.settlement !== q.home && q.status === 'alive' ? ' · ' + esc(PLACE(q.settlement)) : ''}</span>`; }
+  // The person's relatives (spouse, parents, children, siblings…) and which are dead, jailed or exiled.
   function familyHTML(p) {
     const P = C.P; const rows = [];
     const add = (lab, id) => { if (id >= 0) rows.push(`<div class="row"><span>${lab}</span><span>${personLink(P(id))}</span></div>`); };
@@ -204,23 +234,30 @@
     const bad = [...kin.keys()].filter((id) => ['dead', 'jailed', 'exile'].includes(P(id).status)); if (bad.length) rows.push(`<div class="sub">${bad.slice(0, 4).map((id) => `${esc(C.tagName(P(id)))} (${STATUS[P(id).status]})`).join(' · ')}${bad.length > 4 ? ' …' : ''}</div>`);
     return rows.join('') || '<div class="sub">—</div>';
   }
+  // Bonds (friendships earned in play, strongest first) then other ties.
   function tiesHTML(p) {
     // bonds first (friendships earned in play, strongest first), then the older ties
     const bl = C.bondsOf(p, 4).map((x) => `<div class="row"><span>${C.bondLabel(x.b)} <span class="sub">${Math.round(x.b)}</span></span><span>${personLink(x.q)}</span></div>`);
     const rows = bl.concat(p.rel.filter((r) => r.t !== 'neighbor' && r.t !== 'bond').slice(0, 9 - bl.length).map((r) => `<div class="row"><span>${C.relLabelEs[r.t] || r.t}</span><span>${personLink(C.P(r.id))}</span></div>`));
     return rows.join('') || '<div class="sub">—</div>';
   }
+  // The five most recent memories with their direction (→ rebel / → Batista).
   function memHTML(p) {
     const ms = p.mem.slice().sort((a, b) => b.day - a.day).slice(0, 5);
     if (!ms.length) return '<div class="sub">Nothing in particular.</div>';
     return ms.map((m) => `<div class="row"><span style="max-width:215px">${esc(m.text)}${m.kin && m.kin !== 'self' && m.kin !== 'town' ? ` <span class="sub">(${esc(C.relLabelEs[m.kin] || m.kin)})</span>` : ''}</span><b class="${m.val > 0 ? 'pos' : 'neg'}">${m.val > 0 ? '→ rebel' : '→ Batista'}</b></div>`).join('');
   }
 
+  // MODALS AND CARDS: one modal at a time (time stops while it is open); cards queue.
   // ---------- modal infrastructure ----------
+  // Close the open modal; show the next queued card.
   ui.closeModal = function () { const g = G(); $('modal').style.display = 'none'; if (g) { g.modalOpen = false; g.pendingCard = null; } if (cardQueue.length) { const c = cardQueue.shift(); setTimeout(() => ui.card(c), 120); } };
+  // Open a modal with HTML.
   function openModal(html, wide) { const g = G(); g.modalOpen = true; $('mbox').innerHTML = html; $('mbox').style.maxWidth = wide ? 'min(1060px,96vw)' : 'min(860px,94vw)'; $('modal').style.display = 'flex'; const x = $('mbox').querySelector('.close'); if (x) x.onclick = ui.closeModal; C.snd && C.snd.click(); }
   $('modal').addEventListener('mousedown', (e) => { if (e.target.id === 'modal' && !G().pendingCard) ui.closeModal(); });
+  // Cards waiting for the current modal to close.
   const cardQueue = [];
+  // Show a decision card: title, icon, body and choices (each with a label, a subtitle, an optional disabled flag, and fn). Time stops until a choice is made.
   ui.card = function (c) {
     const g = G(); if (g.modalOpen) { cardQueue.push(c); return; }
     g.pendingCard = c; g.paused = g.paused;
@@ -231,6 +268,7 @@
     $('mbox').querySelectorAll('.choice').forEach((b) => b.onclick = () => { const ch = c.choices[+b.dataset.i]; if (ch.disabled) return; g.pendingCard = null; $('modal').style.display = 'none'; g.modalOpen = false; try { ch.fn && ch.fn(); } catch (e) { console.error(e); } ui.refresh(); if (cardQueue.length && !g.modalOpen) { const n = cardQueue.shift(); setTimeout(() => ui.card(n), 100); } });
   };
   // generic menu (stays open when fn returns true)
+  // A generic menu that stays open while an option returns true (used for talk menus, build menus, polls).
   ui.menu = function (title, lede, opts, head) {
     const g = G();
     let h = `<button class="btn sm close">✕</button>${head || ''}<h2>${esc(title)}</h2><div class="lede">${lede || ''}</div><div class="choices">`;
@@ -240,7 +278,9 @@
     $('mbox').querySelectorAll('.choice').forEach((b) => b.onclick = () => { const o = opts[+b.dataset.i]; if (o.disabled) return; let keep = false; try { keep = o.fn && o.fn(); } catch (e) { console.error(e); } ui.update(true); if (keep && typeof keep === 'function') keep(); else if (keep === true) { ui.menu(title, lede, opts.map((x) => x), head); } else ui.closeModal(); });
   };
 
+  // E on a thing opens the right menu: talk, search a corpse, drive a vehicle, pick up an item, collect game, sabotage an object, build on a plot, enter a building.
   // ---------- interaction menus ----------
+  // (see above)
   ui.interact = function (t) {
     const g = G(); const o = t.o;
     switch (t.kind) {
@@ -254,12 +294,14 @@
       case 'obj': return objMenu(o);
     }
   };
+  // Add a ground item's value to the stores (used by carry orders).
   ui.take = function (it) {
     const g = G();
     if (it.k === 'food') g.res.food += it.amount || 5; else if (it.k === 'ammo') g.res.ammo += it.amount || 10; else if (it.k === 'med') g.res.med += it.amount || 1; else if (it.k === 'fuel') g.res.fuel += it.amount || 5; else if (it.k === 'money') g.res.money += it.amount || 20;
     else if (['gren', 'molo', 'shell', 'rocket'].includes(it.k)) g.res[it.k] = (g.res[it.k] || 0) + (it.amount || 1);
     else if (it.k === 'gun') { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (C.HEAVY.includes(it.wk)) { g.heavy = g.heavy || {}; g.heavy[it.wk] = (g.heavy[it.wk] || 0) + 1; } else if (it.wk !== 'machete') g.res.guns++; }
   };
+  // Pick up a ground item and remove it from the scene.
   function pickUp(it) {
     const g = G(), s = g.scene; const i = s.items.indexOf(it); if (i < 0) return;
     if (it.k === 'food') { g.res.food += it.amount || 5; ui.toast(`+${it.amount || 5} food`); }
@@ -272,7 +314,9 @@
     else if (it.k === 'gun') { const pl = g.player; if (!pl.weapon || C.WEAPONS[it.wk].dmg > C.WEAPONS[pl.weapon.k].dmg * 0.9 && false) { C.giveWeapon(pl, it.wk, it.spare); pl.weapon.mag = it.mag; } else { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (C.HEAVY.includes(it.wk)) { g.heavy = g.heavy || {}; g.heavy[it.wk] = (g.heavy[it.wk] || 0) + 1; } else if (it.wk !== 'machete') g.res.guns++; ui.toast('Spare ' + C.WEAPONS[it.wk].n + ' to the armory — hand it out from the talk menu'); } }
     s.items.splice(i, 1);
   }
+  // Collect the meat of a dead animal.
   function takeMeat(an) { const g = G(), s = g.scene; const i = s.animals.indexOf(an); if (i < 0) return; g.res.food += an.def.food; s.animals.splice(i, 1); ui.toast(`+${an.def.food} food (${an.def.n})`); if (an.def.wild === false) { C.log('You took the meat of a dead ' + an.def.n + '.', 'info'); } }
+  // A corpse: search it (supplies, weapon), bury it with respect (its family hears someone cared), or leave it.
   function corpseMenu(a) {
     const g = G(), p = a.p; const opts = [];
     const hasLoot = !a.looted;
@@ -280,6 +324,7 @@
     opts.push({ label: 'Bury them with respect', sub: p.mil && p.mil.side === 'rebel' ? 'Your people feel it' : 'Their family will hear that someone cared', fn: () => { const i = g.scene.corpses.indexOf(a); if (i >= 0) g.scene.corpses.splice(i, 1); if (p.mil && p.mil.side === 'rebel') for (const q of C.squadPeople()) q.morale = clamp(q.morale + 2, 0, 100); else { C.addEvent({ type: 'burial', victim: p, perpSide: 'rebel', positive: true, sev: 26, pub: 0.1, x: a.x, y: a.y, scene: g.scene, settlement: g.scene.sid, text: `The rebels buried ${C.tagName(p)} with respect`, memText: `The rebels buried ${C.tagName(p)} with respect` }); g.rep.justice = clamp(g.rep.justice + 0.8, 0, 100); } ui.toast('Buried.'); } });
     ui.menu(C.fullName(p), `${C.ageOf(p)} years, ${esc(p.role || (C.OCC[p.occ] ? C.occName(p.occ) : ''))}. ${p.diedBy ? 'Died: ' + esc(p.diedBy) + '.' : ''}`, opts, '');
   }
+  // A vehicle: get in and drive (seats, fuel, tyres), siphon fuel, repair a tyre, or leave it.
   function vehicleMenu(v) {
     const g = G(), s = g.scene; const def = v.def;
     const opts = [];
@@ -293,6 +338,7 @@
     if (!v.wreck && v.army) opts.push({ label: 'Set the vehicle on fire', sub: 'Denies it to the army', fn: () => { v.burning = 8; C.alertScene(s, v.x, v.y, 'shot'); C.log('You torched a military vehicle.', 'info'); } });
     ui.menu(def.n, `${v.army ? 'Army vehicle. ' : ''}${v.wreck ? 'Wrecked.' : 'Parked.'}`, opts);
   }
+  // A sabotage object: plant dynamite, set it on fire with a molotov, or leave it.
   function objMenu(o) {
     const g = G(), s = g.scene; const pl = g.player;
     ui.menu(o.label, 'A target the army depends on.', [
@@ -300,11 +346,14 @@
       { label: 'Set it on fire (needs a molotov)', disabled: !g.res.molo, fn: () => { g.res.molo--; C.throwExplosive(pl, o.x, o.y, 'molotov'); } },
     ]);
   }
+  // A camp plot: cost (after labour discounts), what the building does, and Build.
   function padMenu(b) {
     const g = G(); const k = b.slot; const d = C.BLD[k]; const cost = C.padCost(b); cost[1] = cost[1] * 4;
     ui.menu(`Build: ${d.n}`, `Cost: ${cost[0]} pesos + ${Math.ceil(cost[1] * 0.25)} scrap${b.labor ? ` (labour has cut it ${Math.round(Math.min(.5, b.labor * .15) * 100)}%)` : ''} (you have ${Math.round(g.res.money)} pesos, ${g.res.scrap} scrap).<br>${padEffect(k)}`, [{ label: b.built ? 'Already built' : 'Build it', disabled: b.built, fn: () => { C.buildAtPad(b); } }]);
   }
+  // One-line description of what each camp building gives.
   function padEffect(k) { return { cocina: 'Rations stretch further: meals cost less.', enfermeria: 'Wounded recover faster; bleeding is treated.', taller: 'Craft cartridges, grenades, dynamite.', radiocamp: 'Radio Rebelde: broadcast to the whole island (history: Feb 1958).', escuelacamp: 'Teach recruits to read: hope and dignity rise daily.', imprenta: 'Print pamphlets for students and strikers.', polvorin: 'A hidden ammo store.', tienda_c: 'A tent for the command.' }[k] || ''; }
+  // A building: shops (buy food), clinics (ask for medicine), churches, barracks, camp buildings (craft); entering one lets you talk to people inside.
   function buildingMenu(b) {
     const g = G(), s = g.scene; const inside = s.actors.filter((a) => a.inside && a.bld === b.id && !a.dead);
     const opts = [];
@@ -320,7 +369,9 @@
     ui.menu(b.label, b.tag === 'army' ? 'An army building. Keep away unless you mean business.' : '', opts);
   }
 
+  // TALKING: a menu of options that depend on who they are and what they can offer (see below).
   // ---------- talking to people ----------
+  // One or two lines of local talk built from the world's state (soldiers about, hunger, rumours, their last memory, their faction's view).
   function gossipFor(p) {
     const g = G(), s = g.scene; const out = [];
     const army = s.actors.filter((a) => a.side === 'army' && !a.dead); if (army.length && p.trueStance > -20) out.push(`"There are ${army.length} soldiers around here, ${army.filter((a) => a.brain.mode === 'engage').length ? 'and they are already hunting someone' : 'mostly bored'}."`);
@@ -332,6 +383,7 @@
     if (!out.length) out.push('"Times are hard. What else can I say?"');
     return out;
   }
+  // Build the talk menu: for surrendered soldiers (treat, amnesty, exchange, hold, recruit, interrogate, execute), wounded enemies (treat), rebels (move group, share food, treat wounds, give a rifle or heavy weapon from the armory), civilians (buy/take/ask food, give food, treat, invite to join, forage by gunpoint, pitch for a donation, organise students/unions, hand pipeline funds, seize an estate (land menu), racket options, have your network check, hold a trial).
   function talkMenu(a) {
     const g = G(), s = g.scene, p = a.p, pl = g.player; if (a.dead) return corpseMenu(a);
     const hidden = p.informant && !p.revealed;
@@ -402,6 +454,7 @@
   C.forageTransactionDirect = function (a, mode, qty) {
     const g = G(); const old = g.policy.forage; g.policy.forage = mode; const orig = Math.random; C.forageTransaction(a, a, 'civ'); g.policy.forage = old;
   };
+  // (legacy) release a surrendered soldier; the full set of prisoner choices is in policy.js.
   function releasePrisoner(a) {
     const g = G(), s = g.scene, p = a.p; a.gone = true; const i = s.actors.indexOf(a); if (i >= 0) s.actors.splice(i, 1); p.mil = p.mil; if (a.weapon) C.dropWeapon(a);
     g.regime.armyMorale = clamp(g.regime.armyMorale - 0.5, 0, 100); g.stats.released++; g.rep.justice = clamp(g.rep.justice + 2, 0, 100); C.deed(5, 3);
@@ -414,6 +467,7 @@
     C.addEvent({ type: 'seizure', victim: p, perpSide: 'rebel', val: -1, sev: 62, pub: 0.8, x: 0, y: 0, settlement: s.sid, text: `Rebels seized the estate of ${C.tagName(p)}`, memText: 'Rebels took our land', headline: `Rebels seize the ${C.tagName(p)} estate and hand it to tenants` });
     ui.toast('The land is distributed.');
   };
+  // A public trial of an exposed informer: death, exile, or release with a warning — each with different consequences for the village.
   function trial(a) {
     const g = G(), p = a.p; const s = g.scene;
     ui.menu('The trial of ' + C.fullName(p), `${esc(C.tagName(p))} took money from the army to sell your positions. The village is watching; his kin are in the crowd.`, [
@@ -422,6 +476,7 @@
       { label: 'Release him with a warning', sub: 'He knows you are not savages. And what you know.', fn: () => { p.informant = false; p.trueStance = 0; p.stance = 0; g.rep.justice += 1; } },
     ]);
   }
+  // Ask a rich person for a donation: the chance depends on their stance, your trust among the elite, justice and fear, and how your platform treats property, democracy and land.
   function pitchMenu(p) {
     const g = G(); const base = clamp(0.18 + (p.trueStance + 30) / 220 + g.trust.elite * 0.25 + (g.rep.justice - 50) / 300 - g.rep.fear / 400, 0.04, 0.85);
     const need = (k, lvl) => g.platform.declared[k] && g.platform.pub[k] === lvl;
@@ -445,7 +500,9 @@
     ]);
   }
 
+  // THE ISLAND MAP: places, routes, travel by foot/vehicle (with costs), and which squads go.
   // ---------- map ----------
+  // (see above)
   ui.openMap = function (dest) {
     const g = G(); if (g.over) return; const here = g.scene.sid;
     const W = 760, H = 400;
@@ -493,7 +550,9 @@
     redraw();
   };
 
+  // THE MANIFESTO: announce a position per plank; the coloured dots show which factions like each option; the forecast under each option is the predicted shift in support (policy.js); a secret real plan can differ from the public one (concealment, with the risk of a leak); presets; a poll button.
   // ---------- manifesto ----------
+  // (see above)
   ui.openManifesto = function () {
     const g = G(); if (g.over) return; const P = g.platform;
     let h = `<button class="btn sm close">✕</button><h2>📜 The Manifesto</h2><div class="lede">What you announce, what you will do, and whether people believe you. Unannounced planks mean nothing to anyone. Announced planks become promises; people count the days and the deeds. The coloured dots show how each option sits with: peasants · workers · middle class · students · elites · landowners · church · army.</div>`;
@@ -520,7 +579,9 @@
     $('mbox').querySelectorAll('[data-real]').forEach((s2) => s2.onchange = () => { P.real[+s2.dataset.real] = +s2.value; ui.openManifesto(); });
   };
 
+  // FACTIONS PANEL: each faction's size, mean loyalty, trust in you, and what they care about; women and Afro-Cuban means.
   // ---------- factions ----------
+  // (see above)
   ui.openFactions = function () {
     const g = G(); if (g.over) return; const t = C.factionTable(); const R = g.rep, RG = g.regime;
     const row = (name, v, tr, n, colr) => `<div class="fbar"><span><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${colr || '#aaa'};margin-right:5px"></span>${esc(name)}${n !== undefined ? ` <span class="sub">(${n})</span>` : ''}</span><div class="track"><i style="left:${50 + v / 2}%"></i></div><span class="sub">${v > 0 ? '+' : ''}${v.toFixed(0)}${tr !== undefined ? ` · trust ${Math.round(tr * 100)}%` : ''}</span></div>`;
@@ -536,7 +597,9 @@
     openModal(h, true);
   };
 
+  // JOURNAL TABS: El Viejo (advice), Objectives, news (Bohemia headlines and the log), the Ledger (who you killed, released, executed, recruited), and the Director (its variables, in transparency mode).
   // ---------- journal ----------
+  // (see above)
   ui.openJournal = function (tab) {
     const g = G(); if (g.over) return; tab = tab || 'viejo';
     const tabs = [['viejo', 'El Viejo'], ['obj', 'Objectives'], ['news', 'Bohemia & log'], ['ledger', 'Ledger'], ['dir', 'The Director']];
@@ -568,7 +631,9 @@
     const jp = $('jport'); if (jp) portrait(jp, C.W.roster.anselmo, C.W.roster.anselmo.actor, 3.2);
   };
 
+  // THE CAMP SCREEN: build on the eight plots and craft (recipes need their buildings).
   // ---------- camp ----------
+  // (see above)
   ui.openBase = function () {
     const g = G(); if (g.over) return; const s = g.scene; const atCamp = s.camp;
     let h = `<button class="btn sm close">✕</button><h2>⛺ Camp & workshop</h2><div class="lede">${atCamp ? 'Walk to the dashed pads at the camp and press E to build, or build from here. Slots are fixed: a handful of well-chosen buildings.' : 'You are not at the Sierra camp. You can craft only after reaching it; policies can be set anywhere.'}</div>`;
@@ -587,7 +652,9 @@
     $('mbox').querySelectorAll('[data-pol]').forEach((b) => b.onclick = () => { g.policy.forage = b.dataset.pol; ui.openBase(); buildLeft(); });
   };
 
+  // The help screen: how the game works, controls, command system, fog of war.
   // ---------- help ----------
+  // (see above)
   ui.openHelp = function () {
     openModal(`<button class="btn sm close">✕</button><h2>? How Cubea works</h2><div class="help">
 <p><b>Cubes.</b> Every cube is a person with a name, a family, friends, a job and a memory. <b>Colour = loyalty</b>: blue is Batista's, red is the rebels', white undecided; pale means weakly held. Informers hide their colour until unmasked: read the <i>tells</i> in a person's file, or pay your network to check. (Infiltrators rarely grow a beard.) Green-tinted cubes are camouflaged: peasants blend into jungle, townsfolk into the city, and experience improves both.</p>
@@ -601,7 +668,9 @@
 </div>`);
   };
 
+  // THE END SCREEN: the verdict for the Bay of Pigs (win/loss), or death, collapse or timeout; a ledger of the people's deaths and releases, the coalition (strongest and weakest factions, women and Afro-Cubans), reputation, Washington's ledger and the drift toward a business, and what shaped the run; 'Try again' (same seed, re-rolled landing) and 'Title screen'.
   // ---------- end ----------
+  // (see above)
   ui.showEnd = function (kind) {
     const g = G(); const S = g.stats; const R = g.rep; const t = C.factionTable();
     const tyr = R.fear > 45 && R.justice < 45;

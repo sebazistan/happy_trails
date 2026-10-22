@@ -403,6 +403,47 @@ Every playable scene is generated at a compact size by the existing generators a
 
 English with a lot of Spanish, rising over the game (`lang.js`): `level = day/650` gives 0 → 1; tier-1 words appear with their translation at once ("los barbudos (the bearded ones)"), tier 2–3 later; by about day 500 most nouns are Spanish and translations are dropped. Speech bubbles, building labels, occupations, moods, stances and groups all pass through the lexicon. Texts use `{{key}}` tokens.
 
+## 12i. Inventories, provisions and sharing ✅ (`inventory.js`, `pack.js`)
+
+Every rebel carries a **pack**: rations, canteens, loose cartridges, medicine, grenades, molotovs, mortar shells and bazooka rockets, limited by **weight**. Capacity = `14 × strength + 3`; strength is an individual 0.85–1.15 (from the person's id, *not* sex or age stereotypes) × age × health. Weapons count too (a rifle 4, a BAR 8, a bazooka 7, a mortar 12, a machine gun 11). Above 75% of capacity speed falls, to −35% at 125%.
+
+* **Eating and drinking.** Each person eats from their own pack when hunger falls below 45 and drinks below 50; meals (7, 13, 19h) feed from the column's stores and top the packs up (3 rations, 2 canteens). Standing in shallows refills a canteen.
+* **Sharing.** Every ~3.5 s a person with spare supplies gives a ration or water to the *neediest* comrade within ~2.5 tiles (generous people give sooner, greedy ones keep three). A medic or kind soul hands a bandage to the bleeding. Every act of sharing feeds the bond system.
+* **Ration orders** (Supply tab): food *full / half / none*, water *free / sparing / none*, and *share out* (pool and redistribute evenly). A restriction means the person eats/drinks only when badly in need.
+* **Disobedience.** The chance to break a restriction per check = `0.02 + 0.5·need² + 0.12·(1 − loyalty) + 0.08·(1 − trust) − 0.1·discipline` (halved for stoics, ×1.4 for greedy/drinkers). Someone who cheats says so ("Perdón, jefe… tengo hambre"), and loses trust; discipline slips.
+* **Drag and drop.** Double-click a rebel (or **T**) to open the **Pack**: their items as tiles, nearby comrades, the column's stores and the ground as drop targets. Plain drag = 1, Shift = all, Ctrl = 5. Rules mirror the world: only within hand-over range; stores only near the leader; weight limits enforced; read-only while paused. Dragging the weapon tile onto a comrade hands it over (a novice getting a weapon still causes resentment).
+
+## 12j. Friendship that becomes family ✅ (`bonds.js`)
+
+A **bond** (0–100) per pair of rebels grows with *time near each other*: `+0.05 per game-minute × (1 − b/110)`, ×1.5 in the same group, **×6 when both are in combat**, scaled by personality (kind/generous/gossip faster; cautious/stoic/hothead/greedy slower). One-off jumps: sharing (+1.2), a bandage (+6), pulling someone out of a firefight (+10), surviving a battle together (+3). At 20 a real relationship edge `{t:'bond', w:b/100}` is written to both people; the audience of any event weights it `0.25 + 0.75·w`, so a **full bond (100) counts like a spouse or child (1.0)**: a death grieves a brother-in-arms exactly as it would a brother. Labels: acquaintance, friend (20), close friend (50), brother-in-arms (80). Bonds between people who are apart fade slowly (never below half the peak). The inspector lists the strongest bonds.
+
+## 12k. Period weapons ✅ (`data.js`, `combat.js`, `orders.js`)
+
+Small arms: pistol, revolver, Springfield, Mauser, Garand, **M1 carbine** (light, 15 rounds), scoped rifle, Thompson, **BAR** (heavy, automatic), machine gun, shotgun, machete. **Bazooka:** a slow visible rocket (380 px/s, range 380) that detonates on the first thing it touches — a grenade-like blast, ×3 vehicle damage and fire; **backblast** hurts anyone in the 28-px rear cone, friend or foe (friends lose trust); fires automatically only at vehicles or clusters of three. **60 mm mortar:** crew-served — the *mortar* order makes the tube carrier walk into range (≥90 px, ≤640), deploy (6 s), fire a shell every 3 s with error `14 + 0.06·distance + (no spotter: 36) − 0.12·experience` px, and pack up; the rest of the selection act as crew and hand shells over; friendly fire is real. Heavy weapons come from loot (a BAR 30%, a mortar 18%, a bazooka 15%, a machine gun 12%, scaled by garrison size), the **arms dealer** event (pesos only), or capture; they live in `g.heavy` and are handed out through the talk menu or the pack. The army's rifle mix now includes carbines, Thompsons and a few BARs.
+
+## 12l. Treatment of prisoners, amnesty and mercy ✅ (`policy.js`)
+
+A **mercy index** (−3…+3, half-life 60 days) records how you treat enemy soldiers. It feeds `surrenderBonus = 0.12·mercy + amnesty bonus`, added to the army's chance to surrender when its morale breaks — so mercy *shortens* fights, and executions make the army fight to the last. Options for a surrendered soldier: **treat his wounds and release** (1 medicine; mercy +1.3), **release under amnesty** (some come back to join), **exchange** for a captured rebel (Red Cross), **hold** (eats your food, may escape, needs a verdict), **recruit**, **interrogate**, **execute** (mercy −2.2; if you announced an amnesty it is voided and honesty falls 10). A wounded enemy can be treated where he lies and then surrenders. **Radio Rebelde's amnesty** (all, or rank-and-file) makes a trickle of soldiers desert every day.
+
+## 12m. Land reform ✅ (`policy.js`)
+
+Seizing an estate opens a menu: hand it to the tenants (quick, popular, enrages owners), run it as a **cooperative**, or **buy it out** (45 pesos; owners' anger halved). Families receive land (≈ a third of the village's peasants); output is disrupted for 20 days, then the land yields food and goodwill. Events: tenants occupy idle land (`land_petition`); the **Sierra agrarian law** (Oct 1958) sets a ceiling (30 or 67 caballerías) and a compensation rule (none, bonds, cash) and declares the land plank. Owners flee in 40% of non-compensated seizures.
+
+## 12n. Calibrating the platform ✅ (`policy.js`, manifesto UI)
+
+Every option of every plank shows a **forecast**: the average shift in support across a fixed 700-person sample if you announced it, with the best and worst factions on hover (the platform is temporarily changed and `stanceTarget` re-evaluated; cached per day and platform). **Run a poll** (20 pesos) samples ~40 adults in a town: by-faction mean and % leaning your way with a margin of error; people say what they dare to say (the fearful and informers lean toward the regime).
+
+## 12o. Interface principles ✅
+
+* **Context-aware:** the strip under the command bar offers only what the situation calls for (hungry people → share out; thirst → fetch water; wounded → treat; overloaded → redistribute; filthy camp → latrine; contact → ambush/retreat; unarmed men and spare rifles → open the pack).
+* **Direct manipulation:** drag items between people, stores and ground; Ctrl-drag to select; number keys for groups.
+* **Every number is explainable:** the inspector's loyalty reasons, the danger line, the forecast, the pack's load and slowdown.
+* **Modern look:** glass panels (blur), rounded cards, subtle motion (tile hover, suggestion fade-in), consistent tokens in `:root`.
+
+## 12p. Code conventions ✅
+
+Classic scripts in a fixed order (see the comment in `index.html`); one global namespace `window.C`; state in `C.G` and `C.W`. **Every file starts with a header explaining what it is and why; every section and every function has a comment explaining what it does and why it is shaped that way; every balance number lives in a named TUNE block or table with a comment.** New modules follow the same pattern (`inventory.js`, `bonds.js`, `policy.js`, `pack.js` are the reference examples).
+
 ## 13. Serious risk assessment
 
 See **`RISKS.md`** for the full list. Headlines: scope (three games in one) · the invisible-simulation problem · death spirals · dominant strategies · grind · procedural sameness · perceived AI unfairness · replay value · balance testing · cultural content risk (women, race, violence, a polarising real figure) · performance of crowds · store policy.

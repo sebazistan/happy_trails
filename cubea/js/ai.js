@@ -6,6 +6,7 @@
   const T = C.T, TL = C.TILE, clamp = C.clamp;
   const G = () => C.G;
 
+  // ANIMAL TYPES: display name (Spanish), body size, colours, food value when butchered, speed, and whether they are wild (huntable) or livestock (to be bought or taken).
   const ANIMALS = {
     cow: { n: 'vaca', sz: 7, col: [236, 232, 220], patch: [60, 50, 44], horns: true, food: 40, spd: 10 },
     pig: { n: 'cerdo', sz: 4.5, col: [232, 160, 160], food: 18, spd: 14 },
@@ -16,7 +17,9 @@
   };
   C.ANIMALS = ANIMALS;
 
+  // ACTORS vs PERSONS. A PERSON is the database record (gen.js). An ACTOR is the runtime body in the current scene that points at a person (a.p) and holds position, animation, weapon, orders and AI state. Only the people in the current scene have actors.
   // ---------------- create actors ----------------
+  // Create an actor for a person: position, motion, weapon slot, expression, brain, timers. Links p.actor.
   C.makeActor = function (s, p, x, y) {
     const a = {
       p, id: p.id, x, y, vx: 0, vy: 0, face: 1, anim: 0, moving: false, side: 'civ', squad: -1, isPlayer: false,
@@ -28,13 +31,16 @@
     };
     p.actor = a; return a;
   };
+  // Equip an actor with weapon kind k: a full magazine plus `ammo` spare rounds (default three magazines); records the kind on the person.
   function giveWeapon(a, k, ammo) {
     const w = C.WEAPONS[k]; a.weapon = { k, mag: w.mag, spare: ammo === undefined ? w.mag * 3 : ammo }; a.p.wpn = k;
   }
   C.giveWeapon = giveWeapon;
 
+  // The building of a person's household in this scene, if their household lives here.
   function homeB(s, p) { const h = C.W.houses[p.hh]; if (!h || h.bld < 0) return null; const b = s.blds[h.bld]; return b && s.hhs.includes(h) ? b : null; }
 
+  // Which people appear in a scene: living residents who are rostered, soldiers, or in a household housed in this scene's districts.
   // gather the persons that should be shown in a scene
   C.scenePeople = function (s) {
     const out = []; const ids = C.W.bySet[s.sid] || [];
@@ -48,6 +54,7 @@
     return out;
   };
 
+  // Fill a scene with actors (once): every person from scenePeople, their side and weapon, an initial position from the time of day, plus animals and vehicles.
   C.spawnScene = function (s) {
     if (s.spawned) return; s.spawned = true;
     const R = C.rnd; const hr = G().hour;
@@ -63,6 +70,7 @@
     spawnAnimals(s); spawnVehicles(s);
   };
 
+  // Decide a person's side and equipment: soldiers get weapons by role (officers Thompsons, police pistols/rifles, SIM pistols, soldiers mostly Springfields/Garands) and helmets or kepis; rebels keep their equipment; civilians sometimes carry a machete or pistol.
   function initSide(s, a) {
     const p = a.p;
     if (p.mil && p.mil.side === 'army') {
@@ -82,6 +90,7 @@
     a.speed = (a.speed || 36) * (C.ageOf(p) > 60 ? 0.7 : C.ageOf(p) < 12 ? 0.85 : 1);
   }
 
+  // Put an actor where their schedule says they should be at the current hour: soldiers around the army post; civilians inside their building, at work or at the plaza.
   function placeInitially(s, a, hr, wd) {
     const p = a.p;
     if (a.side === 'army') {
@@ -100,9 +109,13 @@
     a.x = q.x * T + 8; a.y = q.y * T + 8; a.task = plan; a.nextPlan = G().min + 20 + Math.random() * 80;
   }
 
+  // DAILY SCHEDULES: each civilian follows a plan chosen by hour, weekday, age and occupation.
   // ---------------- daily schedule ----------------
+  // Buildings of a given tag (shop, church, school…) in the scene.
   const BYTAG = (s, tag) => s.blds.filter((b) => b.tag === tag && !b.open);
+  // A stable choice of building of a tag for this person (so the same baker always goes to the same shop).
   function pickB(s, a, tag) { const L = BYTAG(s, tag); return L.length ? L[(a.p.id * 7 + 3) % L.length] : null; }
+  // The plan for now: night → home; Sunday mass for the devout; children → school or play; lunch at home; evening at the plaza/café/home; otherwise by occupation (farmers to their fields, charcoal-burners to the kilns, fishermen to the pier, shopkeepers to shops, teachers to schools, doctors to clinics, workers to factories…). Returns {kind:'in'|'work'|'spot', …}.
   function planFor(s, a, hr, wd) {
     const p = a.p, age = C.ageOf(p), R = Math.random;
     const home = homeB(s, p);
@@ -148,7 +161,9 @@
     }
   }
 
+  // ANIMALS AND VEHICLES placed at scene start.
   // ---------------- animals & vehicles ----------------
+  // Chickens and pigs near homes, cows in village fields, wild game in the Sierra (hutías, boars, turkeys).
   function spawnAnimals(s) {
     const R = C.RNG(C.hashStr(s.sid) + 77);
     const add = (k, x, y) => s.animals.push({ k, def: ANIMALS[k], x, y, hx: x, hy: y, face: 1, anim: 0, moving: false, dead: false, wait: R() * 4, hp: k === 'cow' ? 80 : 30, tx: x, ty: y, wild: !!ANIMALS[k].wild });
@@ -159,6 +174,7 @@
     if (s.type === 'sierra') { for (let i = 0; i < 9; i++) { const q = s.randomFree([TL.FOR]); add('hutia', q.x * T + 8, q.y * T + 8); } for (let i = 0; i < 4; i++) { const q = s.randomFree([TL.FOR]); add('boar', q.x * T + 8, q.y * T + 8); } for (let i = 0; i < 3; i++) { const q = s.randomFree([TL.G, TL.FOR]); add('turkey', q.x * T + 8, q.y * T + 8); } }
     if (s.type === 'cane') for (let i = 0; i < 3; i++) { const q = s.randomFree([TL.G]); add('hen', q.x * T + 8, q.y * T + 8); }
   }
+  // Create a vehicle in a scene: type, position, heading, a random partly-full tank, four good tyres, no occupants.
   C.addVehicle = function (s, type, x, y, ang, opt) {
     const d = C.VEHICLES[type]; opt = opt || {};
     const v = { type, def: d, x, y, ang: ang || 0, spd: 0, fuel: opt.fuel !== undefined ? opt.fuel : d.tank * (0.25 + Math.random() * 0.7), tires: [1, 1, 1, 1], hp: d.hp, driver: null, pass: [], wreck: false, burning: 0, gone: false, army: !!d.army, lights: false, route: null, wait: 0, owner: opt.owner || null, engine: 1, loot: opt.loot || 0 };
@@ -166,6 +182,7 @@
     if (d.tank === 0) v.fuel = 0;
     s.vehicles.push(v); return v;
   };
+  // Place the vehicles each location should have: ox-carts in the Sierra and Palmarito, boats at Cayo Piedra, cars/trucks/buses on town roads, army trucks and jeeps at army posts; some town vehicles drive around.
   function spawnVehicles(s) {
     const R = C.RNG(C.hashStr(s.sid) + 5);
     const roadTiles = []; for (let y = 0; y < s.th; y++) for (let x = 0; x < s.tw; x++) { const t = s.tiles[y * s.tw + x]; if (t === TL.ROAD || t === TL.PAVED) roadTiles.push([x, y]); }
@@ -183,12 +200,16 @@
     for (const v of s.vehicles) if ((v.type === 'car' || v.type === 'bus') && R() < 0.5 && (s.type === 'town' || s.type === 'city' || s.type === 'capital')) { v.driving = true; v.fuel = Math.max(v.fuel, 25); v.lights = false; }
   }
 
+  // MOVEMENT: path following and collision-aware stepping.
   // ---------------- movement ----------------
+  // Find a path for an actor to (x,y) and reset its progress.
   function setPath(s, a, x, y, mode) {
     a.path = C.findPath(s, a.x, a.y, x, y, mode || 'foot'); a.pi = 0; a.goalT = 0;
     return !!a.path;
   }
+  // Public wrapper for setPath.
   C.setGoal = function (a, x, y) { return setPath(a.scene, a, x, y); };
+  // Advance along the current path at `speed` px/s; returns true when the end is reached.
   function followPath(s, a, dt, speed) {
     if (!a.path || a.pi >= a.path.length) { a.moving = false; return true; }
     const w = a.path[a.pi]; let dx = w.x - a.x, dy = w.y - a.y; const d = Math.hypot(dx, dy);
@@ -196,6 +217,7 @@
     dx /= d; dy /= d; stepMove(s, a, dx * speed * dt, dy * speed * dt); a.moving = true; if (Math.abs(dx) > 0.2) a.face = dx > 0 ? 1 : -1;
     return false;
   }
+  // Move by (mx,my) with simple sliding collision against impassable tiles; animates the walk cycle.
   function stepMove(s, a, mx, my) {
     const r = 3.6;
     if (!C.footBlocked(s, a.x + mx, a.y, r)) a.x += mx; else if (!C.footBlocked(s, a.x + mx, a.y - 3, r)) { a.x += mx; a.y -= 1; }
@@ -204,11 +226,15 @@
     a.anim += Math.hypot(mx, my) * 0.5;
   }
   C.stepMove = stepMove;
+  // Speed multiplier from terrain cost, limp, rain on soft ground, low energy and the actor's load (a.loadK from inventory.js).
   function terrainSpeed(s, a) { const t = C.tileAt(s, a.x, a.y); let k = 1 / (C.TCOST[t] || 1); if (a.p.limp) k *= 0.72; if (a.prone || a.hide) k *= 0.55; if (G().weather.rain > 0.3 && (t === TL.G || t === TL.TRAIL)) k *= 0.88; if (a.p.needs.energy < 20) k *= 0.8; if (a.loadK) k *= a.loadK; return clamp(k, 0.35, 1.5); }
 
+  // Show a speech bubble (translated by the lexicon for the current Spanish level).
   C.say = function (a, text, col, dur) { a.bubble = { text: C.phrase(text), col, t: dur || 2.6 }; };
 
+  // DETECTION: who sees whom, and who is suspected.
   // ---------------- detection & suspicion ----------------
+  // Would `a` shoot `b`? The army shoots rebels and the player (unless they are undercover and unarmed); rebels shoot soldiers who have not surrendered.
   function isHostile(a, b) { // would a (army/rebel) shoot b?
     if (b.dead || b.inside || b.gone) return false;
     if (a.side === 'army') {
@@ -219,6 +245,7 @@
     return false;
   }
   C.isHostile = isHostile;
+  // How far `viewer` can see `tgt`: base 210 px × daylight × weather × (moving 1.0 / still 0.72) × (hiding 0.7) × (weapon out 1.35, firing ×1.4 more) × (1 − 0.85·camouflage) × viewer experience. Used for the army's awareness and, mirrored, for the player's fog of war.
   function detectRange(viewer, tgt, s) {
     let r = 210;
     const g = G();
@@ -233,6 +260,7 @@
   }
   C.detectRange = detectRange;
 
+  // CAMOUFLAGE: a person's blend with the ground — their occupation's affinity for the terrain category (jungle/rural/town/city) × the terrain they stand on × experience; halved if moving, boosted if hiding or prone, destroyed while shooting. It tints the cube toward the ground and shortens detection range.
   // camouflage: how well does this person blend into the ground they stand on?
   C.camoTarget = function (a, s) {
     const t = C.tileAt(s, a.x, a.y);
@@ -250,6 +278,7 @@
     if (a.side === 'army') k *= 0.25;
     return clamp(k, 0, 0.95);
   };
+  // SUSPICION in towns: undercover rebels are only noticed when armed in view or behaving oddly; women and urban professions draw less suspicion, peasants more, and police profiling of Afro-Cubans is modelled (it was real).
   // women and the urban young are suspected less in cities and towns
   C.suspicionFactor = function (a, s) {
     let k = 1;
@@ -263,7 +292,9 @@
     return k;
   };
 
+  // THE PER-FRAME UPDATE: for each actor, common upkeep, then its side's behaviour (the player is driven by main.js; deck actors by sea.js).
   // ---------------- the per-frame update ----------------
+  // (see above)
   C.updateScene = function (s, dt) {
     const g = G();
     s.time += dt;
@@ -285,6 +316,7 @@
     for (const a of acts) if (a.spotted > 0) a.spotted -= dt;
   };
 
+  // Everything every actor does each frame: timers (shooting, muzzle, pain, panic, talking, blink, cooldown), reloading, the slowly-eased expression and colour (loyalty colour blended with camouflage and pain), needs decay (food, water, energy, shared with the weather), drinking from shallows, the personal inventory tick, bleeding.
   function commonUpdate(s, a, dt) {
     const p = a.p;
     a.shooting = Math.max(0, a.shooting - dt); a.muzzle = Math.max(0, a.muzzle - dt); a.pain = Math.max(0, a.pain - dt * 0.18); a.panic = Math.max(0, a.panic - dt * 0.08);
@@ -339,7 +371,9 @@
   function g_minPerSec() { return G().minPerSec; }
   function g() { return G(); }
 
+  // INSIDE A BUILDING: people stay for a while, then pick a new plan and come out the door.
   // ---- inside a building ----
+  // (see above)
   function insideUpdate(s, a, dt) {
     a.sleeping = G().hour >= 22 || G().hour < 5;
     if (G().min >= a.nextPlan) {
@@ -351,13 +385,16 @@
       applyPlan(s, a, plan);
     }
   }
+  // Start executing a plan: walk to a building door or a spot.
   function applyPlan(s, a, plan) {
     a.task = plan; a.nextPlan = G().min + 50 + Math.random() * 130;
     if (plan.kind === 'in') { const d = s.doorPx(plan.b); setPath(s, a, d.x, d.y + 2); a.task.arrive = false; }
     else if (plan.x !== undefined) { setPath(s, a, plan.x, plan.y); }
   }
 
+  // CIVILIANS: panic and run for the nearest door when shot at; otherwise follow their plan (enter buildings, work with a work animation, wander near a spot).
   // ---- civilians ----
+  // (see above)
   function civUpdate(s, a, dt) {
     const p = a.p;
     // react to gunfire / danger nearby
@@ -381,7 +418,9 @@
     }
   }
 
+  // THE ARMY. Modes: patrol/guard → investigate (heard something) → engage (saw a hostile) → search (lost them) → retreat (morale) or surrender. Soldiers scan for hostiles every ~0.3 s with the detection model, honouring undercover rules in towns; engaged soldiers close to a standing distance and fire; broken morale makes them retreat or surrender (more likely if the rebels are merciful: policy.js surrenderBonus).
   // ---- army ----
+  // (see above)
   function armyUpdate(s, a, dt) {
     const b = a.brain, p = a.p;
     if (a.surrendered) { a.moving = false; a.weaponOut = false; return; }
@@ -458,11 +497,13 @@
     // idle cooling of alert
     s.alert = Math.max(0, s.alert - dt * 0.012);
   }
+  // A patrol destination: random streets in towns, a ring around the post elsewhere.
   function patrolPoint(s, a) {
     const urban = s.type === 'town' || s.type === 'city' || s.type === 'capital';
     if (urban) { const q = s.randomFree([TL.ROAD, TL.PAVED, TL.PLAZA]); return { x: q.x * T + 8, y: q.y * T + 8 }; }
     const post = a.brain.post; const ang = Math.random() * 6.28, r = 30 + Math.random() * 150; return { x: post.x + Math.cos(ang) * r, y: post.y + Math.sin(ang) * r };
   }
+  // Raise the alarm at a point: nearby soldiers investigate; civilians panic. Shots raise the scene's alert a little, arrests a lot.
   // raise the alarm: nearby soldiers investigate, civilians panic
   C.alertScene = function (s, x, y, kind) {
     s.alert = Math.min(1.5, s.alert + (kind === 'shot' ? 0.12 : 0.5));
@@ -473,7 +514,9 @@
     }
   };
 
+  // REBELS. Each rebel follows its squad's STANCE (follow, hold, ambush, scout, forage, harass, withdraw) unless an ORDER is active (orders.js); an actor-level stanceOv set by orders takes priority.
   // ---- rebels ----
+  // The squad stances with a short description.
   C.STANCES = {
     follow: { n: 'Seguir', d: 'Stay close to you. Fire at will.' },
     hold: { n: 'Mantener', d: 'Hold this spot. Fire at will.' },
@@ -483,6 +526,7 @@
     harass: { n: 'Hostigar', d: 'Fire from range, fall back when they close.' },
     withdraw: { n: 'Retirada', d: 'Break contact and return to you.' },
   };
+  // The chance a rebel obeys an order: 0.45 + 0.30·loyalty + 0.18·morale + 0.10·experience + 0.10·discipline + 0.14·trust − hunger − exhaustion − fear − stress − thirst; clamped 0.05–0.99.
   function obedience(a) {
     const p = a.p, n = p.needs;
     const loyal = clamp((p.trueStance + 20) / 120, 0, 1), disc = clamp((G().rep ? G().rep.discipline : 50) / 100, 0, 1);
@@ -491,10 +535,13 @@
     o += 0.14 * (C.trustOf(p) - 55) / 55;
     return clamp(o, 0.05, 0.99);
   }
+  // (exports so the UI and orders can read them)
   C.obedience = obedience; C.detectRange = detectRange;
   C.ai = { get setPath() { return setPath; }, get followPath() { return followPath; }, get terrainSpeed() { return terrainSpeed; }, get whyNot() { return whyNot; }, get obedience() { return obedience; } };
+  // The spoken reason for hesitating (hunger, thirst, exhaustion, fear, morale, stress) — a refusal is never silent.
   function whyNot(a) { const n = a.p.needs; if (n.food < 25) return 'Tengo hambre...'; if (n.water < 20) return 'Sed...'; if (n.energy < 22) return 'Estoy agotado'; if (a.p.fear > 55) return 'Tengo miedo'; if (a.p.morale < 30) return '¿Para qué?'; if (a.p.stress > 70) return 'No puedo más'; return 'Un momento...'; }
 
+  // Legacy squad-wide order (used by events). Each member rolls obedience; those who refuse say why and retry. The command system v2 is in orders.js.
   C.giveOrder = function (squadId, order) { // order: {type, x,y, target}
     const sq = G().squads[squadId]; if (!sq) return;
     let ok = 0, refused = 0;
@@ -508,6 +555,7 @@
     return { ok, refused };
   };
 
+  // The nearest visible hostile within range: checks line of sight and the detection model, so camouflaged enemies are harder to see.
   function nearestEnemy(s, a, maxD) {
     let best = null, bd = maxD;
     for (const o of s.actors) {
@@ -522,6 +570,7 @@
   }
   C.nearestEnemy = nearestEnemy;
 
+  // One rebel's frame: desertion flight; hothead shooting a prisoner; target scan every ~0.25 s; fear breaking morale; fire rules (ambush holds fire until close, scout only on return fire, withdraw/retreat never, launchers only on vehicles or clusters); then the active order via runOrder, else the stance behaviour (hold/ambush/harass/withdraw/scout/forage/follow).
   function rebelUpdate(s, a, dt) {
     const g = G(), sq = a.squad >= 0 ? g.squads[a.squad] : null, p = a.p;
     if (a.pendingOrder) { a.retryT -= dt; if (a.retryT <= 0) { a.retryT = 6; if (Math.random() < obedience(a) + 0.2) { a.order = a.pendingOrder; a.pendingOrder = null; a.orderT = 0.1; } else C.say(a, whyNot(a), '#7a1d1d', 2); } }
@@ -596,6 +645,7 @@
       default: followLeader(s, a, dt, lead, 46); // follow
     }
   }
+  // Follow the leader in a loose formation (a slot per squad member on an arc behind them); runs if far behind.
   function followLeader(s, a, dt, lead, dist, mult) {
     const slot = (a.squadSlot || 0) + 1; const ang = (slot * 0.9) + Math.PI * 0.6; const rr = dist * 0.7 + (slot % 4) * 7;
     const tx = lead.x + Math.cos(ang) * rr, ty = lead.y + Math.sin(ang) * rr + 10;
@@ -605,9 +655,12 @@
       const sp = a.speed * (d > 120 ? 1.35 : 1.0) * (mult || 1) * terrainSpeed(s, a); a.running = d > 120; followPath(s, a, dt, sp);
     } else { a.moving = false; a.path = null; a.prone = false; a.hide = false; }
   }
+  // Placeholder for a rebel with no leader.
   function civilianLike(s, a, dt) { a.moving = false; }
 
+  // FORAGING: a forager picks livestock, game or a civilian with food near the leader, walks there and transacts under the current policy (pay / vale / take); wild game is shot.
   // foraging: look for food nearby; policy decides how
+  // (see above)
   function forageUpdate(s, a, dt, lead) {
     const g = G(); a.hide = false;
     a.forT = (a.forT || 0) - dt;
@@ -633,6 +686,8 @@
   }
 
   // ---------------- animals ----------------
+  // (see above)
+  // ANIMALS wander around home points in short trips and flee (at 2.4× speed) when shot at or scared; they stop at obstacles.
   function updateAnimals(s, dt) {
     for (const an of s.animals) {
       if (an.dead) continue;
@@ -647,9 +702,12 @@
       }
     }
   }
+  // Make animals within r flee from (x,y).
   C.scareAnimals = function (s, x, y, r) { for (const an of s.animals) { if (an.dead) continue; if (Math.hypot(an.x - x, an.y - y) < r) { an.flee = 4; const a = Math.atan2(an.y - y, an.x - x); an.tx = an.x + Math.cos(a) * 120; an.ty = an.y + Math.sin(a) * 120; an.moving = true; } } };
 
+  // VEHICLES: ambient traffic (follow pathfound routes, yield to pedestrians, stop with flat tyres or no fuel), burning vehicles smoke and take damage, wrecks smoulder.
   // ---------------- vehicles ----------------
+  // (see above)
   function updateVehicles(s, dt) {
     for (const v of s.vehicles) {
       if (v.gone) continue;
@@ -671,21 +729,26 @@
       }
     }
   }
+  // Passengers ride with their vehicle (hidden).
   function updateInVehicle(s, a, dt) { const v = a.inVeh; a.x = v.x; a.y = v.y; a.inside = false; a.hiddenInVeh = true; a.alpha = 0; a.moving = false; }
   C.updateInVehicleFlag = function (a) { return a.inVeh ? true : false; };
 
+  // Wreck a vehicle: it burns, explodes, and throws out its occupants hurt.
   // used by combat on vehicle destruction
+  // (see above)
   C.wreckVehicle = function (s, v) {
     v.wreck = true; v.spd = 0; v.burning = Math.max(v.burning, 8);
     C.explode(s, v.x, v.y, 46, 90, null, { frags: 6, vehicle: v });
     for (const a of v.pass.slice()) C.exitVehicle(a, true);
     if (v.driver) C.exitVehicle(v.driver, true);
   };
+  // Board a vehicle if it has room.
   C.enterVehicle = function (a, v) {
     if (v.wreck) return false; if (v.pass.length + (v.driver ? 1 : 0) >= v.def.cap) return false;
     a.inVeh = v; a.hiddenInVeh = true; if (!v.driver) v.driver = a; else v.pass.push(a);
     if (a.isPlayer) { G().vehicle = v; } return true;
   };
+  // Leave a vehicle at a free spot beside it (hurt if it was destroyed).
   C.exitVehicle = function (a, hurt) {
     const v = a.inVeh; if (!v) return; const s = a.scene;
     if (v.driver === a) v.driver = null; else v.pass = v.pass.filter((q) => q !== a);

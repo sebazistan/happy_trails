@@ -25,7 +25,7 @@ first, last, last2 names (paternal surname = `last`, maternal = `last2`); tag = 
 sex 'M'|'F'        yob int          birth/home/settlement  place ids
 status             'alive'|'dead'|'jailed'|'exile'|'away'|'missing'
 mother, father, spouse   ids or -1;   kids[]   ids          (siblings, cousins, in-laws are DERIVED)
-rel[]              {id, t, w}   non-kin edges, symmetric. t ∈ friend|compadre|lover|comrade|coworker|neighbor|employer|employee|rival
+rel[]              {id, t, w}   non-kin edges, symmetric. t ∈ friend|compadre|lover|comrade|coworker|neighbor|employer|employee|rival|**bond** (friendship earned in play; w = bond/100; audience weight 0.25+0.75·w)
 eth                'blanca'|'negra'|'mulata'|'china'|'otra'     social position only, never tinted
 occ, cls, fac      occupation key, class 0–4, faction key
 hh, lineage        household id, lineage id
@@ -45,6 +45,7 @@ hp, maxHp, cracks[{x,y,a,l,n,s,t}], chunks[{pos 0–7, s}], limp, armHurt, bleed
 
 — military —
 mil {side:'army'|'rebel', rank, squad|unit}   wpn   stash   role   note
+inv {food,water,ammo,med,gren,molo,shell,rocket}   rat {f,w} ration allowance 0..1   bonds {otherId→0..100}   bondPeak {…}   stats{brokeRation,foughtWith}   pendingDefect (day a released soldier may join)
 trust 0–100 (default 60: how far this person believes you will not waste them)   leadAcc (seconds near you under fire today)   merc (a mercenary recruit)
 look.beardLen 0–1 (grows with service; infiltrators stay short)
 — look —
@@ -71,7 +72,7 @@ Scene additions: `foxholes[]`, `pings[]`, `exploreCv/explored` (fog memory), `vi
 
 ## 5. Player state (`C.G`)
 
-`res{food,money,ammo,guns,med,fuel,gren,dyn,molo,pamph,vales,cloth,scrap}` (`guns` = spare rifles in the armory) · `policy{forage,justice}` · `platform{pub[8],real[8],declared[8],dayDeclared[8]}` · `deeds[8]` · `promises[]` (vales) · `trust{faction→0–1}` · `rep{fear,justice,honesty,discipline,competence}` · `regime{legit,armyMorale,usSupport,heat}` · `squads[1..9]{id,name,col,members[],stance}` · `sel[]` (selected person ids) · `cmd{pending,tab,vol}` · `hygiene` · `merc` (0–100 mercenary drift) · `rackets{protect,contraband,kidnaps}` · `us{arms,strings,outrage,interests}` · `gov{step,m{sup,rdy,unity,rep,usT,econ},result}` · `sea{phase,t,veh,alert,threat{site→0.1–1.3}}` (opening only) · `opts{fog}` · `stats{killedArmy,killedCiv,lostRebels,executed,released,hired,atrocities{army,rebel},refused}` · `pipe{balance,couriers[]}` · `strikePrep` · `base.built{}` · `unlocked.layer` · `flags{}`
+`res{food,money,ammo,guns,med,fuel,gren,dyn,molo,pamph,vales,cloth,scrap}` (`guns` = spare rifles; `shell` mortar shells; `rocket` bazooka rockets) · `policy{forage,justice}` · `platform{pub[8],real[8],declared[8],dayDeclared[8]}` · `deeds[8]` · `promises[]` (vales) · `trust{faction→0–1}` · `rep{fear,justice,honesty,discipline,competence}` · `regime{legit,armyMorale,usSupport,heat}` · `squads[1..9]{id,name,col,members[],stance}` · `sel[]` (selected person ids) · `cmd{pending,tab,vol}` · `hygiene` · `merc` (0–100 mercenary drift) · `rackets{protect,contraband,kidnaps}` · `us{arms,strings,outrage,interests}` · `gov{step,m{sup,rdy,unity,rep,usT,econ},result}` · `heavy{bar,mg,bazooka,mortar}` (heavy-weapons armory) · `mercy{v,day}` · `pol{amnesty}` · `prisoners[]` · `land{ceiling,comp,estates,families,coops,law,pending[]}` · `sea{phase,t,veh,alert,threat{site→0.1–1.3}}` (opening only) · `opts{fog}` · `stats{killedArmy,killedCiv,lostRebels,executed,released,hired,atrocities{army,rebel},refused}` · `pipe{balance,couriers[]}` · `strikePrep` · `base.built{}` · `unlocked.layer` · `flags{}`
 
 ## 6. Static tables (`js/data.js`)
 

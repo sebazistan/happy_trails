@@ -6,6 +6,8 @@
   const C = (window.C = window.C || {});
 
   // ---------- calendar ----------
+  // THE CALENDAR. Game day 0 is 5 December 1956 (Alegría de Pío). Every date in the game is derived from the day number,
+  // so historical anchors can be written as C.dayOfDate(1958, 4, 9). (The Granma crossing happens *before* day 0 and uses its own label.)
   C.START_UTC = Date.UTC(1956, 11, 5);                 // 5 Dec 1956: Alegría de Pío
   C.dateOf = (day) => new Date(C.START_UTC + day * 86400000);
   const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -13,18 +15,25 @@
   C.dayOfDate = (y, m, d) => Math.round((Date.UTC(y, m - 1, d) - C.START_UTC) / 86400000);
   C.yearOf = (day) => C.dateOf(day).getUTCFullYear();
   // Cuban sugar harvest (zafra) ~ Dec-May; the rest is tiempo muerto (dead season, hunger)
+  // The sugar harvest (zafra) runs roughly December–May. The rest of the year is the *tiempo muerto* (dead season): no work, hunger.
+  // Food needs, prices and strike readiness all key off this.
   C.isZafra = (day) => { const m = C.dateOf(day).getUTCMonth(); return m === 11 || m <= 4; };
 
   // ---------- names ----------
+  // NAME POOLS used by the population generator (gen.js). Spanish given names and surnames, plus small pools for Chinese-Cuban,
+  // West-Indian (Haitian/Jamaican braceros) and Galician families so the island's mixture shows up in the names.
   C.MALE = 'José Juan Pedro Luis Carlos Antonio Manuel Francisco Jesús Rafael Miguel Ramón Ángel Eduardo Roberto Julio Armando Reinaldo Orlando Pablo Fernando Sergio Andrés Alberto Rogelio Ernesto Felipe Héctor Gilberto Osvaldo Nicolás Justo Eladio Evaristo Tomás Isidro Teófilo Wilfredo Lázaro Rolando Esteban Mario Ignacio Benigno Faustino Clemente Narciso Amado Lino Digno Eusebio Cándido Abelardo Baldomero Calixto Dámaso Eligio Florentino Gumersindo Hilario Idelfonso Leoncio Marcelino Nemesio Onelio Primitivo Quintín Regino Silvio Telésforo Urbano Venancio'.split(' ');
   C.FEMALE = 'María Ana Carmen Josefa Rosa Teresa Margarita Lucía Dolores Mercedes Caridad Gladys Ofelia Hilda Zoila Esperanza Altagracia Aurora Blanca Cecilia Digna Eulalia Felicia Georgina Haydée Inés Juana Lidia Marta Nélida Olga Petra Rebeca Sara Tomasa Ursula Vilma Yolanda Zenaida Alicia Berta Candelaria Delia Edelmira Fe Graciela Isabel Leonor Magdalena Natividad Pura Reina Sofía Violeta Amparo Concepción Dulce Elena Francisca Lourdes Milagros Nieves Piedad Regla Silvia'.split(' ');
   C.SURNAMES = 'García Rodríguez Fernández Pérez González Martínez López Sánchez Díaz Hernández Gómez Álvarez Morales Cruz Reyes Ramos Castillo Mesa Torres Rojas Jiménez Suárez Herrera Medina Vega Rivero Peña Acosta Ortega Delgado Cabrera Valdés Molina Cardoso Expósito Quesada Betancourt Céspedes Tamayo Savón Mustelier Pompa Escalona Noa Frómeta Zaldívar Barreto Lorenzo Arencibia Menéndez Alonso Pino Estévez Cordero Bermúdez Ibarra Leyva Aguilera Vidal Zayas Carrazana Peláez Rosales Naranjo Montero Padrón Borges Duarte Guerra Soler Varona Bravo Hidalgo Sarduy Marrero Caballero Gil Ferrer Roque Salazar Varela Orozco Fonseca Linares Lage Mederos Oliva Pacheco Rivas Urrutia Zamora Batista Lara Mena Nápoles Oquendo Palma Quiñones Revilla Santana Tejeda Ulloa Villar Yero'.split(' ');
   C.SURN_CN = ['Chiong', 'Wong', 'Lam', 'Chang', 'Fong', 'Chang', 'Kuan'];            // Chinese-Cuban
   C.SURN_WI = ['Pierre', 'Joseph', 'Williams', 'Thompson', 'Clarke', 'Brown', 'Jean', 'Baptiste'];  // Haitian / British West Indian braceros
   C.SURN_GAL = ['Pardo', 'Seoane', 'Souto', 'Lage', 'Freire', 'Cancio', 'Vilariño', 'Rey'];         // Spanish (Galician) immigrants
+  // Nicknames (apodos) given to a share of people; Cuban naming culture leans heavily on them.
   C.NICKS = ['El Gallego', 'El Negro', 'El Flaco', 'Cuco', 'Mongo', 'Pichi', 'Guajiro', 'El Chino', 'Tato', 'La China', 'El Mudo', 'Pepe Cojo', 'Machete', 'Quiquí', 'La Vieja', 'El Cojo', 'Papi', 'Manolo', 'Yeyo', 'Nené', 'Chicho', 'Beba', 'Cheo', 'Nana'];
 
   // ---------- planks (political platform). q: -1 / 0 / +1 ----------
+  // THE POLITICAL PLATFORM. Eight planks, each with three positions (index 0,1,2 ↔ −1,0,+1 on a person's issue axis).
+  // The manifesto UI lets you announce a position per plank; people react to the ones they care about (their two 'salient' planks).
   C.PLANKS = [
     { id: 'land', name: 'Reforma agraria', en: 'Land reform', opts: ['Keep the estates', 'Fair rents, distribute idle land', 'Break up the great estates'], deed: 'Distribute land to families' },
     { id: 'health', name: 'Salud y escuelas', en: 'Health & schools', opts: ['Leave to charity', 'Rural clinics and schools', 'Free universal care and education'], deed: 'Treat the sick, open a school' },
@@ -39,6 +48,8 @@
 
   // ---------- factions ----------
   // iss: mean issue stance per plank [land,health,church,property,democracy,justice,women,race]; sal: salience weights
+  // THE EIGHT FACTIONS. Each has: a starting mean stance (−100…+100) and spread (sd), a conviction range, the mean position of its
+  // members on every plank (iss) and how much it cares about each plank (sal). Persons are sampled around these means in gen.js.
   C.FACTIONS = {
     peasants:   { name: 'Campesinos', en: 'Peasants',  col: '#7a9a3a', stance: 8,   sd: 24, conv: [8, 38],  iss: [0.8, 0.7, -0.2, 0.2, 0.2, 0.1, -0.1, 0.1], sal: [3, 1.6, 0.5, 0.5, 0.7, 1, 0.5, 0.7] },
     workers:    { name: 'Obreros y sindicatos', en: 'Workers & unions', col: '#c07a2a', stance: 12, sd: 28, conv: [10, 45], iss: [0.5, 0.7, 0.0, 0.5, 0.3, 0.3, 0.1, 0.3], sal: [1, 2, 0.4, 1.5, 1.2, 1, 0.6, 1.3] },
@@ -53,11 +64,15 @@
 
   // ---------- occupations ----------
   // bg = camouflage/background profile; fac = faction; rural/urban availability
+  // CAMOUFLAGE BACKGROUNDS. For each occupation group, how well a person blends into [jungle, rural, town, city]. The renderer tints
+  // cubes toward the ground; undercover rules in towns key off the same numbers.
   C.BG = { // affinity 0..1 for [jungle, rural, town, city]
     campesino: [0.92, 0.78, 0.35, 0.14], pescador: [0.6, 0.7, 0.4, 0.2], obrero: [0.3, 0.35, 0.62, 0.7],
     estudiante: [0.25, 0.3, 0.5, 0.72], profesional: [0.2, 0.3, 0.6, 0.66], servicio: [0.2, 0.3, 0.6, 0.78],
     militar: [0.5, 0.4, 0.4, 0.3], clero: [0.15, 0.4, 0.6, 0.6],
   };
+  // THE OCCUPATION TABLE. Each job has a name, its faction, which background it blends into, class (0 poor … 4 rich), where it occurs
+  // (rural/urban), a sampling weight and sometimes a sex restriction. Spanish names are translated through lang.js at display time.
   C.OCC = {
     // rural
     macheteo:   { n: 'Cortador de caña', fac: 'peasants', bg: 'campesino', cls: 0, where: 'rural', w: 12, sex: 'M' },
@@ -115,6 +130,8 @@
     rebelde:    { n: 'Rebelde', fac: 'peasants', bg: 'campesino', cls: 0, where: 'any', w: 0 },
   };
   // occupation weights by settlement type (pick from where-tags)
+  // Build a weighted list of occupations available to a person of this sex and age in a settlement of this type
+  // (a fishing village has fishermen; a capital has bankers). Used by gen.js when it assigns jobs.
   C.occPool = function (stype, sex, age) {
     const out = [];
     const rural = stype === 'village' || stype === 'sierra' || stype === 'fishing' || stype === 'offmap';
@@ -146,6 +163,8 @@
   };
 
   // ---------- traits ----------
+  // PERSONALITY TRAITS. Each person gets 1–3. Traits modify loyalty drift (idealist, opportunist, devout), behaviour in combat (brave, hothead),
+  // bonds (kind, generous, gossip), rations (stoic, greedy, drinker) and discipline. The text is shown in the inspector.
   C.TRAITS = {
     idealist:    { n: 'Idealista', d: 'Hope and dignity move them more; conviction grows fast' },
     opportunist: { n: 'Oportunista', d: 'Drifts toward whoever seems to be winning' },
@@ -165,6 +184,7 @@
   C.TRAIT_KEYS = Object.keys(C.TRAITS);
 
   // ---------- weapons ----------
+  // (See the key at the top of the table below.)
   // dmg per bullet, rof shots/s, spd px/s, rng px, spread deg, mag, pellets, rel = reload s
   // ---------- weapons ----------
   // Period arms of the Cuban war (1956–59): what rebels carried, captured, or bought, and what Batista's army fielded.
@@ -191,6 +211,8 @@
   };
   C.HEAVY = ['bar', 'mg', 'bazooka', 'mortar'];     // weapons that live in the heavy-weapons armory (g.heavy) rather than "spare rifles"
 
+  // THROWN AND PLACED EXPLOSIVES AND ORDNANCE: fuse seconds, blast radius (px), damage at the centre, shrapnel count. The rocket also does
+  // extra damage to vehicles (vehMult). 'mortar' and 'bomb' are used by the army, the mortar crew order and the air raid.
   C.EXPLOSIVES = {
     grenade:  { n: 'Granada', fuse: 2.1, rad: 58, dmg: 150, frags: 14 },
     molotov:  { n: 'Molotov', fuse: 0.01, rad: 34, dmg: 40, fire: true, frags: 0 },
@@ -201,6 +223,8 @@
   };
 
   // ---------- vehicles ----------
+  // VEHICLE TYPES: size, top speed, seats, fuel tank and burn rate, colour, hit points, number of wheels (tyres can go flat), and flags
+  // (water: boats; army: army vehicles; deck: the Granma, which carries a walkable deck).
   C.VEHICLES = {
     jeep:    { n: 'Jeep Willys', w: 22, h: 12, spd: 170, cap: 4, tank: 38, burn: 0.55, col: [96, 110, 70], hp: 140, wheels: 4 },
     truck:   { n: 'Camión', w: 34, h: 15, spd: 120, cap: 8, tank: 90, burn: 0.9, col: [170, 120, 60], hp: 220, wheels: 4 },
@@ -214,6 +238,8 @@
   };
 
   // ---------- buildings (w,h in tiles) ----------
+  // BUILDING TYPES (w,h in tiles): name, wall and roof colours, and a tag that drives behaviour — 'home', 'shop', 'church', 'army', 'clinic', 'fuel'…
+  // The tag decides what people do inside (scene.js/ui.js).
   C.BLD = {
     bohio:    { n: 'Bohío', w: 3, h: 2, fill: [150, 120, 70], roof: [196, 170, 90], tag: 'home' },
     casa:     { n: 'Casa', w: 3, h: 3, fill: [214, 190, 150], roof: [176, 84, 60], tag: 'home' },
@@ -272,6 +298,8 @@
 
   // ---------- settlements ----------
   // pos = [lon,lat] used on the island map. pop = size of simulated sample (1 Cubean ~ 100 real people)
+  // THE PLACES OF THE GAME. pos = [lon,lat] for the island map; pop = size of the simulated sample (one Cubean ≈ 100 real people);
+  // type selects the generator and the people mix; bias shifts the starting loyalty of the place; 'region' groups provinces.
   C.SETTLEMENTS = {
     alegria:    { id: 'alegria', name: 'Alegría de Pío', type: 'cane', pop: 0, pos: [-77.62, 19.97], region: 'Oriente', bias: 0, blurb: 'Cane fields near the landing. The army is waiting.' },
     bay:        { id: 'bay', name: 'The coast of Oriente', type: 'coast', pop: 0, pos: [-77.75, 19.85], region: 'Oriente', bias: 0, blurb: 'The sea approach to the landing.' },
@@ -295,6 +323,7 @@
     exterior:   { id: 'exterior', name: 'Exilio (Miami / México)', type: 'offmap', pop: 0, pos: null, region: 'Exterior' },
     galicia:    { id: 'galicia', name: 'Galicia (España)', type: 'offmap', pop: 0, pos: null, region: 'Exterior' },
   };
+  // Settlements that have a playable scene (the others are only birthplaces off the map).
   C.PLAYABLE = ['sierra', 'palmarito', 'cayo', 'manzanillo', 'bayamo', 'santiago', 'habana'];
   // travel edges: [a,b,footDays,vehicleHours]
   C.EDGES = [
@@ -304,11 +333,14 @@
     ['santiago', 'habana', 28, 15], ['bayamo', 'habana', 24, 12], ['manzanillo', 'habana', 25, 13],
   ];
   // schematic coastline [lon,lat] for the island map
+  // A schematic coastline for the island-map screen.
   C.COAST = [[-84.95, 21.85], [-84.35, 22.2], [-83.65, 22.75], [-83.0, 22.97], [-82.37, 23.2], [-81.7, 23.1], [-81.1, 23.15], [-80.4, 23.05], [-79.5, 22.7], [-78.7, 22.45], [-77.9, 22.2], [-77.2, 21.7], [-76.6, 21.25], [-75.9, 21.1], [-75.7, 21.0], [-75.0, 20.75], [-74.2, 20.28], [-74.2, 20.05], [-74.9, 19.95], [-75.5, 19.9], [-76.2, 19.95], [-76.9, 19.9], [-77.4, 19.85], [-77.72, 19.85], [-77.6, 20.2], [-77.3, 20.6], [-77.5, 20.95], [-78.2, 21.4], [-78.4, 21.6], [-79.5, 21.65], [-80.4, 22.05], [-81.1, 22.05], [-81.8, 22.3], [-82.5, 22.7], [-83.5, 22.25], [-84.4, 21.9]];
 
   // ---------- historical roster ----------
   // side: 'rebel' | 'llano' | 'peasant' | 'church' | 'union' | 'student' | 'regime' | 'elite' ; at = settlement id the person starts in
   // tag = nametag text override. fam = authored relatives (others are generated). Every authored character gets generated kin as well.
+  // THE HISTORICAL ROSTER — real people who appear by name (see docs/ROSTER.md for verification status).
+  // Each entry: id, names, birth year, role, side, starting settlement, traits, authored relatives; the generator adds ordinary kin around them.
   C.ROSTER = [
     // --- the Granma party (in the Alegría de Pío scene at start) ---
     { id: 'raul', first: 'Raúl', last: 'Castro', last2: 'Ruz', sex: 'M', yob: 1931, birth: 'biran', at: 'party', side: 'rebel', occ: 'rebelde', role: 'Capitán', v: 'ok', traits: ['idealist', 'brave', 'cautious'], exp: 18, st: 96, cv: 95, hair: 'blk',

@@ -1,6 +1,7 @@
 // Command bar: selection summary, filters, volunteer toggle and the tabbed order buttons.
 (function () {
   const C = window.C, G = () => C.G; const ui = C.ui;
+  // Styles for the command bar (injected here so the module is self-contained).
   const css = document.createElement('style');
   css.textContent = `#cmdbar{position:fixed;left:284px;bottom:8px;width:430px;padding:7px 8px;z-index:4;display:none}
 #cmdbar .row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:5px}
@@ -16,6 +17,7 @@
   const bar = document.createElement('div'); bar.id = 'cmdbar'; bar.className = 'panel'; document.body.appendChild(bar);
 
   let built = false, lastTab = null, lastLayer = -1;
+  // Build the static structure once: selection summary, filter and sort menus, volunteer toggle, cancel button, the five/six tabs, the order button grid, the hint line and the suggestion strip.
   function build() {
     const g = G(); const cmd = g.cmd; let h = '';
     h += `<div class="row"><b>Selected <span id="selN">0</span></b><span class="sub" id="selNames" style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis"></span></div>`;
@@ -32,12 +34,14 @@
     bar.querySelector('#stopBtn').onclick = () => C.stopOrders();
     bar.querySelectorAll('[data-tab]').forEach((b) => b.onclick = () => { G().cmd.tab = b.dataset.tab; refresh(); });
   }
+  // Fill the button grid for the current tab; the armed order is highlighted.
   function orderButtons() {
     const g = G(); const tab = g.cmd.tab; const el = bar.querySelector('#ordBtns'); let h = '';
     for (const k in C.ORDERS) { const d = C.ORDERS[k]; if (d.tab !== tab) continue; h += `<button class="btn sm ${g.cmd.pending && g.cmd.pending.type === k ? 'on' : ''}" data-ord="${k}" title="${d.d.replace(/"/g, '&quot;')}">${d.n}</button>`; }
     el.innerHTML = h; el.querySelectorAll('[data-ord]').forEach((b) => b.onclick = () => C.cmdArm(b.dataset.ord));
     lastTab = tab;
   }
+  // Show/hide the bar (hidden at sea and before the game starts), refresh the tab highlight, selection count, names and volunteer label.
   function refresh() {
     const g = G(); if (!g || !g.scene || g.over) { bar.style.display = 'none'; return; }
     if (g.sea && g.sea.active) { bar.style.display = 'none'; return; }
@@ -80,6 +84,7 @@
     for (const s of sg) { const b = document.createElement('button'); b.className = 'sg'; b.textContent = s.t; b.onclick = s.run; box.appendChild(b); }
   }, 500);
 
+  // LIVE HINT under the bar: what the armed order would risk at the cursor (ok / risky / DEADLY with the number of known soldiers), or a reminder of the controls.
   // live hint: what the order under the cursor would risk
   setInterval(() => {
     const g = G(); if (!g || !g.scene || g.over) return;

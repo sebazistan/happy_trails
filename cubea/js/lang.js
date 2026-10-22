@@ -8,12 +8,18 @@
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
   // level thresholds: when the Spanish form first appears (with translation), and how long the translation stays
+  // HOW THE PROGRESSION WORKS
+  // level = day/650 (0 at the start, 1 after ~21 months). A word of tier t appears in Spanish when level ≥ INTRO[t]; for the next SPAN of level
+  // it is shown as 'Spanish (English)'; after that, Spanish alone. Tier 1 words are therefore bilingual from the first days;
+  // tier 3 words only appear in Spanish once the player has heard the others for a long while.
   const INTRO = [0, 0.04, 0.2, 0.42];     // index = tier
   const SPAN = 0.3;                        // level span during which "Spanish (English)" is shown
+  // Current progression level (0..1), or an override for tests.
   C.langLevel = () => { const g = C.G; return g ? clamp(g.day / 650, 0, 1) : 0; };
   C.langOverride = null;                   // set to 0..1 to force a level (testing)
 
   // key: [english, spanish, tier]
+  // THE LEXICON: key → [English, Spanish, tier]. Add a word here, then use C.es('key') in code or {{key}} inside a text passed to C.tx().
   const L = {
     // --- people & roles
     rebel: ['rebel', 'rebelde', 1], rebels: ['rebels', 'rebeldes', 1], barbudos: ['the bearded ones', 'los barbudos', 1], comandante: ['commander', 'comandante', 1], capitan: ['captain', 'capitán', 2], teniente: ['lieutenant', 'teniente', 3],
@@ -49,6 +55,7 @@
   };
   C.LEX = L;
   // helper to format by tier & level
+  // Pick the right form of a word for the current level: English only, 'Spanish (English)', or Spanish only.
   function render(en, es, tier) {
     if (en === es) return es;
     const lvl = C.langOverride !== null ? C.langOverride : C.langLevel(), t0 = INTRO[tier];
@@ -56,10 +63,13 @@
     if (lvl < t0 + SPAN) return es + ' (' + en + ')';
     return es;
   }
+  // C.es(key, capitalise): the lexicon word for the current level.
   C.es = function (key, cap) { const e = L[key]; if (!e) return key; const s = render(e[0], e[1], e[2]); return cap ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
+  // C.tx(text): replace {{key}} (or {{^key}} for Capitalised) tokens in an authored string with the right form.
   C.tx = function (str) { return str ? String(str).replace(/\{\{(\^?)([a-z0-9_]+)\}\}/gi, (m, cap, key) => C.es(key, !!cap)) : str; };
 
   // --- building labels (the map stores Spanish labels; English is shown first) ---
+  // BUILDING LABELS. Scenes store Spanish labels (the historical names); this table gives the English gloss shown first.
   const LAB = {
     'Almacén Larrea (ron y azúcar)': 'Larrea Warehouse (rum & sugar)', 'Almacén de caña': 'Cane warehouse', 'Almacén del puerto': 'Port warehouse', 'Almacén': 'Warehouse', 'Banco Nacional': 'National Bank', 'Banco': 'Bank', 'Barracón': 'Barracks hut',
     'Bodega de Palmarito': 'Palmarito store', 'Bodega': 'Store', 'Bohío abandonado': 'Abandoned hut', 'Buró de Investigaciones (SIM)': 'Bureau of Investigations (SIM)', 'CMQ Radio': 'CMQ Radio', 'Café Paris': 'Café Paris', 'Capilla de San Lázaro': 'Chapel of San Lázaro',
@@ -78,6 +88,7 @@
     'Estación de policía.': 'Police station', 'Embajada de EE.UU.': 'U.S. Embassy', 'Central Estrella (propiedad norteamericana)': 'Estrella Sugar Mill (U.S.-owned)',
   };
   C.LABELS_EN = LAB;
+  // C.lab(label): the display form of a building label. Handles 'Solar:' prefixes (camp plots) and family-house names like 'Bohío Pino'.
   C.lab = function (es) {
     if (!es) return es;
     if (es.indexOf('{{') >= 0) return C.tx(es);
@@ -94,6 +105,7 @@
   };
 
   // --- speech bubbles: existing Spanish lines with English glosses ---
+  // SPEECH BUBBLES. Spanish lines the AI speaks, with an English gloss and a tier, so early on the player reads 'Fire!' and later '¡Fuego!'.
   const PH = {
     'Buena caza': ['Good hunting', 2], 'Es por la causa': ["It's for the cause", 2], 'Gracias, comandante': ['Thank you, commander', 1], 'Gracias, compay': ['Thanks, friend', 1], 'Hay que pasar desapercibido': ['Stay inconspicuous', 3], 'Le pago en un mes': ["I'll pay you in a month", 2],
     'Llévese lo que haga falta': ['Take whatever you need', 2], 'No me convence todavía...': ["I'm not convinced yet...", 2], 'No nos dejen sin nada...': ["Don't leave us with nothing...", 2], 'No tenemos nada...': ['We have nothing...', 2], 'Primero demuestre que cumple.': ['First prove you keep your word.', 3],
@@ -105,11 +117,13 @@
     'Gracias': ['Thanks', 1], '¡Alerta!': ['Alert!', 2], 'Jefe, son demasiados...': ['Chief, there are too many...', 2], 'Es una locura, jefe': ["That's madness, chief", 2], '¡Viva!': ['Long live!', 3], '¡Venceremos!': ['We will win!', 3], '¡Patria o muerte!': ['Homeland or death!', 3],
   };
   C.PH = PH;
+  // C.phrase(text): the display form of a speech-bubble line (see PH). Unknown lines pass through unchanged.
   C.phrase = function (txt) {
     const e = PH[txt]; if (!e) return txt;
     const lvl = C.langOverride !== null ? C.langOverride : C.langLevel(), t0 = INTRO[e[1]];
     if (lvl < t0) return e[0]; if (lvl < t0 + SPAN) return txt + ' (' + e[0] + ')'; return txt;
   };
+  // Convenience wrappers: names of stances, groups, moods, factions, occupations, vehicles and animals, passed through the lexicon.
   // convenience: stance/group/mood/faction/occupation/vehicle names
   C.stName = (k) => C.es('s_' + k, true);
   C.gName = (sq) => (sq.custom ? sq.name : C.es('g_' + sq.id, true));

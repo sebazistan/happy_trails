@@ -5,9 +5,12 @@
   const C = (window.C = window.C || {});
   const T = C.T, TL = C.TILE, clamp = C.clamp;
   const G = () => C.G;
+  // A normal-distributed random number (Box–Muller), used for bullet spread.
   const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283 * v); };
 
+  // EFFECTS: particles (smoke, fire, dust, sparks, flashes, rings, tumbling chunks), delayed callbacks and the update of everything transient in a scene.
   // ---------------- effects ----------------
+  // Particle spawners. Each pushes {k:kind, x,y, vx,vy, r, life,max} onto s.parts; render.js draws them by kind.
   C.fx = {
     smoke(s, x, y, kind) { s.parts.push({ k: kind === 'fire' ? 'fire' : 'smoke', x, y, vx: (Math.random() - 0.5) * 8, vy: -8 - Math.random() * 10, r: kind === 'fire' ? 3 + Math.random() * 2.5 : 4 + Math.random() * 4, life: kind === 'fire' ? 0.6 : 1.8 + Math.random(), max: kind === 'fire' ? 0.6 : 2.4, c: 70 + (Math.random() * 40) | 0 }); },
     dust(s, x, y, n) { for (let i = 0; i < (n || 4); i++) s.parts.push({ k: 'dust', x, y, vx: (Math.random() - 0.5) * 36, vy: (Math.random() - 0.5) * 20 - 6, r: 2 + Math.random() * 3, life: 0.5 + Math.random() * 0.4, max: 0.9 }); },
@@ -19,8 +22,10 @@
       for (let i = 0; i < n; i++) { const ang = Math.random() * 6.283, sp = (big ? 70 : 40) + Math.random() * 90; s.parts.push({ k: 'chunk', x: a.x, y: a.y - 8, z: 0, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp * 0.6, vz: 40 + Math.random() * 60, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 12, r: big ? 1.1 + Math.random() * 1.6 : 0.8 + Math.random() * 1.0, col: i % 3 === 0 ? [90, 20, 20] : col, life: 1.3 + Math.random() * 0.8, max: 2.1 }); }
     },
   };
+  // Run fn after `delay` seconds of scene time (used for fuses, telegraphs and delayed explosions).
   C.later = function (s, delay, fn) { (s.timers = s.timers || []).push({ t: delay, fn }); };
 
+  // Per-frame transient update: particles (physics for tumbling chunks), delayed callbacks, thrown grenades (arc, bounce, fuse → explosion, molotov ignites on landing), ground fires (flames, smoke, burn damage), decal cap.
   C.updateFx = function (s, dt) {
     const parts = s.parts;
     for (let i = parts.length - 1; i >= 0; i--) {
@@ -51,14 +56,18 @@
     }
     if (s.decals.length > 500) s.decals.splice(0, s.decals.length - 500);
   };
+  // Start a ground fire (molotov) that burns for 7 seconds and alarms the scene.
   function igniteArea(s, x, y, r, owner) { s.fires.push({ x, y, r, t: 7, owner }); C.fx.flash(s, x, y, r * 0.8); C.alertScene(s, x, y, 'explosion'); }
 
+  // SHOOTING: projectiles with travel time, spread from skill/stress/motion, noise that alerts the scene, melee, the rocket launcher.
   // ---------------- shooting ----------------
+  // Accuracy 0.05–0.95 from experience (0.12 + 0.78·exp), the veteran trait, less stress, a hurt arm and exhaustion.
   C.accuracyOf = function (a) {
     const p = a.p;
     return clamp(0.12 + p.exp / 100 * 0.78 + (p.traits.includes('veteran') ? 0.08 : 0) - p.stress / 400 - (p.armHurt ? 0.12 : 0) - (p.needs.energy < 25 ? 0.08 : 0), 0.05, 0.98);
   };
   let lastNoise = 0;
+  // Fire the actor's weapon at a point if ready. Handles melee, crew-served weapons (cannot be fired directly) and launchers. Spends a round, sets cooldown/muzzle flash/exposure, computes spread = weapon spread × (1 + movement + stress − prone) × (1.65 − 1.15·accuracy), spawns one bullet (or pellets), adds noise (alerts soldiers and scares animals) and sets combat time for the player's side.
   C.tryFire = function (s, a, tx, ty, bonus) {
     if (a.dead || !a.weapon || a.cd > 0 || a.reload > 0) return false;
     const w = C.WEAPONS[a.weapon.k];
@@ -85,9 +94,11 @@
     if (a.isPlayer || a.side === 'rebel') G().combatT = 8;
     return true;
   };
+  // BAZOOKA: a slow, visible rocket that detonates on the first thing it touches; the backblast hurts anyone in the rear cone; vehicles take extra damage.
   // ---------------- rocket launcher (bazooka) ----------------
   // A slow, visible rocket. It detonates on the first thing it touches (wall, soldier, vehicle, object) or at the end
   // of its range. The BACKBLAST throws hot gas behind the shooter: anyone standing in the rear cone is hurt, friend or foe.
+  // (see above) Spend the loaded rocket, spawn the projectile, hurt people in the 28-px rear cone (friend or foe; friends lose trust), smoke and flash.
   function fireRocket(s, a, tx, ty, w) {
     if (a.weapon.mag <= 0) { if ((a.weapon.spare || 0) > 0) a.reload = w.rel; else { a.cd = 0.8; C.say(a, '¡Sin cohetes!', '#7a1d1d', 1.6); } return false; }
     a.weapon.mag--; a.cd = 1 / w.rof; a.muzzle = 0.12; a.shooting = 1.2; a.exposed = 8;
@@ -109,12 +120,14 @@
     return true;
   }
   // The rocket's warhead: a blast like a grenade, plus extra damage to any vehicle close to the point of impact.
+  // The warhead: a grenade-like blast plus extra damage (and fire) to vehicles near the impact.
   function detonateRocket(s, b) {
     const ex = C.EXPLOSIVES.rocket;
     C.explode(s, b.x, b.y, ex.rad, ex.dmg, b.owner, { frags: ex.frags, kind: 'rocket' });
     for (const v of s.vehicles) { if (v.gone || v.wreck) continue; if (Math.hypot(v.x - b.x, v.y - b.y) < v.def.w * 0.6 + 12) { v.hp -= 90 * (ex.vehMult || 1); v.burning = Math.max(v.burning, 6); if (v.hp <= 0 && !v.wreck) C.wreckVehicle(s, v); } }
   }
   // Collision test for a rocket at its current position. Returns true if it detonated.
+  // Collision test for a rocket: solid terrain, an enemy actor, a vehicle, a sabotage object, or end of range. Armed after 26 px so it cannot hit its shooter; leaves a smoke trail.
   function rocketHit(s, b, tx, ty) {
     const tile = s.tiles[ty * s.tw + tx];
     if (C.bulletBlockChance(tile) >= 1) { detonateRocket(s, b); return true; }
@@ -127,12 +140,14 @@
     if (Math.random() < 0.5) C.fx.smoke(s, b.x, b.y, 'smoke');   // smoke trail
     return false;
   }
+  // Machete: a short arc in front of the attacker hurts the first enemy within 12 px.
   function meleeAttack(s, a, tx, ty) {
     a.cd = 0.8; a.shooting = 0.4; a.aim = Math.atan2(ty - a.y, tx - a.x);
     for (const o of s.actors) { if (o === a || o.dead || o.inside || o.side === a.side) continue; if (Math.hypot(o.x - (a.x + Math.cos(a.aim) * 10), o.y - a.y) < 12) { C.hurt(o, 36 + Math.random() * 16, a, a.aim, 'blade'); return true; } }
     return false;
   }
 
+  // Move every bullet in small sub-steps (no tunnelling), stop it on terrain by block chance, hit the first non-friendly actor within the body radius (smaller when prone), add near-miss SUPPRESSION (stress, fear, morale, civilian panic) to those it passes, damage vehicles (tyres, fuel fire, engine, occupants), animals and sabotage objects.
   C.updateBullets = function (s, dt) {
     const B = s.bullets;
     for (let i = B.length - 1; i >= 0; i--) {
@@ -191,8 +206,11 @@
     }
   };
 
+  // WOUNDS: light hits add CRACKS (heal with food and rest); serious hits cut a permanent CHUNK out of the body (never heals) and reduce maximum health; chunks on the legs make you limp, on the arms hurt aim; serious wounds bleed.
   // ---------------- wounds ----------------
+  // Maps the direction a hit came from (8 compass sectors) to the chunk slot it takes out.
   const DIR8 = [5, 2, 6, 3, 7, 0, 4, 1];      // east, SE, S, SW, W, NW, N, NE  -> notch slot
+  // Apply damage: armour of prone/hiding (−15%) and of a foxhole (−50% vs bullets); pain, stress, fear, morale; blood and sparks; cracks or a chunk (see above); death at 0 hp; the army engages whoever shot it; wounds on enemy soldiers are reported to the event system.
   C.hurt = function (a, dmg, src, ang, kind) {
     if (a.dead) return;
     const s = a.scene, p = a.p, g = G();
@@ -233,6 +251,7 @@
     if (C.emit && src && src.side !== a.side && p.hp < p.maxHp) C.emit('wound', { victim: a, killer: src, dmg });
   };
 
+  // Drop the actor's weapon as a ground item (machetes half the time vanish).
   C.dropWeapon = function (a) {
     if (!a.weapon) return;
     const s = a.scene; if (a.weapon.k === 'machete' && Math.random() < 0.5) { a.weapon = null; return; }
@@ -240,6 +259,7 @@
     a.weapon = null; a.weaponOut = false;
   };
 
+  // Kill an actor: status, body falls, chunks fly, blood decal, weapon dropped, removed from active lists and squads, the player's death ends the game, and the death is published (C.emit → events → memories along the family graph).
   C.die = function (a, killer, cause) {
     if (a.dead) return;
     const s = a.scene, p = a.p, g = G();
@@ -259,7 +279,9 @@
     if (C.snd) C.snd.death(a.x, a.y);
   };
 
+  // EXPLOSIONS: flash, ring, dust and smoke, crater and scorch decals, camera shake, damage to everyone in the radius (falling off with distance and blocked by solid cover), pushback, damage to vehicles, objects and animals, shrapnel bullets, alarm, and a report to the event system.
   // ---------------- explosions ----------------
+  // (see above)
   C.explode = function (s, x, y, rad, dmg, owner, opt) {
     opt = opt || {};
     const g = G();
@@ -298,6 +320,7 @@
     if (C.emit && owner) C.emit('blast', { x, y, rad, owner, kind: opt.kind });
   };
 
+  // Destroy a sabotage object (fuel depot, powder magazine, tower): a big explosion, fire for the depot, and a 'sabotage' event.
   C.destroyObj = function (s, o, owner) {
     if (o.dead) return; o.dead = true; o.hp = 0;
     C.explode(s, o.x, o.y, o.k === 'deposito' ? 78 : o.k === 'polvorin' ? 110 : 40, o.k === 'deposito' ? 140 : o.k === 'polvorin' ? 220 : 60, owner, { frags: 10 });
@@ -305,7 +328,9 @@
     if (C.emit) C.emit('sabotage', { obj: o, owner, scene: s });
   };
 
+  // GRENADES AND DYNAMITE.
   // ---------------- throwing ----------------
+  // Throw a grenade or molotov along an arc toward (tx,ty) (range ≤ 150 px).
   C.throwExplosive = function (a, tx, ty, kind) {
     const s = a.scene, ex = C.EXPLOSIVES[kind]; if (!ex) return false;
     if (a.cd > 0.3) return false;
@@ -316,16 +341,20 @@
     if (G().player === a || a.side === 'rebel') G().combatT = 8;
     return true;
   };
+  // Place a lit dynamite charge (fuse 6 s).
   C.plantDynamite = function (a, x, y) {
     const s = a.scene; s.thrown.push({ k: 'dynamite', x, y, h: 0, vh: 0, vx: 0, vy: 0, t: 0, fuse: C.EXPLOSIVES.dynamite.fuse, owner: a, planted: true });
     C.say(a, '¡Mecha encendida! ¡Corran!', '#7a1d1d', 2.4);
   };
 
+  // ARMY HEAVY WEAPONS: the mortar (also used by rebel mortar crews, with friendly fire) and the air raid.
   // ---------------- army heavy weapons ----------------
+  // A mortar shell: a telegraphing ring and whistle, then the explosion after `delay` seconds.
   C.mortar = function (s, x, y, delay) {
     C.later(s, Math.max(0.1, delay - 1.2), () => { s.parts.push({ k: 'ring', x, y, vx: 0, vy: 0, r: 30, life: 1.2, max: 1.2 }); if (C.snd) C.snd.whistle(x, y); });
     C.later(s, delay, () => C.explode(s, x, y, C.EXPLOSIVES.mortar.rad, C.EXPLOSIVES.mortar.dmg, null, { frags: 14, kind: 'mortar' }));
   };
+  // An air raid along a line: plane shadow, n bombs each telegraphed by a ring, and strafing dust. Telegraphed so the player can read it and react.
   C.airstrike = function (s, x0, y0, x1, y1, n) {
     const L = Math.hypot(x1 - x0, y1 - y0); const dur = 4.5;
     // plane shadow

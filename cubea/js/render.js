@@ -3,11 +3,15 @@
   'use strict';
   const C = (window.C = window.C || {});
   const T = C.T, TL = C.TILE;
+  // PS: terrain chunks are painted at 2× resolution so the map stays crisp when the camera zooms in.
   const PS = 2;                                   // prerender scale
+  // INK and FONT: the dark outline colour and the UI font used for in-world text.
   const INK = 'rgb(38,30,28)';
   const FONT = '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+  // TERRAIN PALETTE: tileColor(type, variation) returns an [r,g,b] for a tile; variation (0–255) gives each tile a slightly different shade so the ground is not flat.
   // ---------- terrain palette ----------
+  // (see above)
   function tileColor(t, v) {
     const k = (v - 128) / 128;               // -1..1
     switch (t) {
@@ -30,10 +34,13 @@
   }
   const rgb = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
 
+  // STATIC TERRAIN IS PAINTED LAZILY IN CHUNKS (16×16 tiles each) onto offscreen canvases and cached with a least-recently-used cap. Each chunk has a ground layer and, only where there is forest, a canopy layer drawn later at 34% opacity over units so people under trees are dimmed.
   // ---------- prerender of the static scene ----------
   // Terrain is painted lazily in 16×16-tile chunks (cached, least-recently-used evicted) so scenes can be very large.
   const CH = 16, CHPX = CH * T;
+  // Create the chunk cache for a scene (nothing is painted until a chunk is first visible).
   C.prerender = function (s) { return { s, chunks: new Map(), cap: 90, tick: 0 }; };
+  // Paint one chunk: tiles (with texture marks for cane rows, rocks, water ripples, fences, grass tufts, forest foliage blobs), then buildings and props that touch it.
   function makeChunk(s, cx, cy) {
     const W = CHPX * PS;
     const x0 = cx * CH, y0 = cy * CH, x1 = Math.min(s.tw, x0 + CH), y1 = Math.min(s.th, y0 + CH);
@@ -85,6 +92,7 @@
     return { cv, cn };
   }
   // draw one layer ('cv' ground, 'cn' canopy) of the visible world rectangle
+  // Draw the visible part of a layer ('cv' ground, 'cn' canopy) by blitting the chunks that intersect the view rectangle, painting missing chunks on demand and evicting the oldest beyond the cap.
   C.drawPre = function (ctx, pre, layer, wx, wy, ww, wh) {
     const s = pre.s; const cx0 = Math.max(0, Math.floor(wx / CHPX)), cy0 = Math.max(0, Math.floor(wy / CHPX)), cx1 = Math.min(Math.ceil(s.tw / CH) - 1, Math.floor((wx + ww) / CHPX)), cy1 = Math.min(Math.ceil(s.th / CH) - 1, Math.floor((wy + wh) / CHPX));
     for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
@@ -96,6 +104,7 @@
     if (pre.chunks.size > pre.cap && layer === 'cn') { const arr = [...pre.chunks.entries()].sort((p, q) => p[1].t - q[1].t); for (let i = 0; i < arr.length - pre.cap; i++) pre.chunks.delete(arr[i][0]); }
   };
 
+  // A building: shadow, walls in the building's colour, a roof with a lighter highlight, a door, and tag-specific decoration (cross for churches, flag for barracks, cross for clinics…).
   function drawBuildingStatic(c, b) {
     const x = b.x * T, y = b.y * T, w = b.w * T, h = b.h * T;
     if (b.key === 'pad') {
@@ -124,6 +133,7 @@
     if (b.tag === 'army') { c.fillStyle = 'rgb(200,50,50)'; c.fillRect(x + 3, y - 2, 6, 4); }
     if (b.key === 'iglesia' || b.key === 'catedral') { c.fillStyle = 'rgb(210,200,175)'; c.fillRect(x + w - 10, y - 12, 8, 14); }
   }
+  // Static props: palms, ceibas, trees, fountains, flags, charcoal kilns, fire pits, etc. (drawn into the ground layer, with trunk/canopy split).
   function drawPropStatic(c, cc, p, R) {
     const x = p.x, y = p.y;
     switch (p.k) {
@@ -145,12 +155,16 @@
     }
   }
 
+  // DRAWING HELPERS.
   // ---------- helpers ----------
   const clamp = C.clamp;
   function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r); c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h); c.lineTo(x + r, y + h); c.quadraticCurveTo(x, y + h, x, y + h - r); c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y); c.closePath(); }
+  // Positions of the eight chunk slots on a cube (four corners and four edge middles) as fractions; a 'chunk' is a permanent missing piece of the body.
   const NOTCH = [[0, 0], [1, 0], [1, 1], [0, 1], [0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5]];
 
+  // EXPRESSION MODEL — a cube's face is computed from its state, never scripted. Each emotion has an intensity from needs, fear, anger, pain, hope, stress and experience; the strongest above a threshold names the face (adolorido, temeroso, furioso, hambriento, sediento, agotado, confiado, esperanzado, desanimado, else sereno); brow, lids, eye width, mouth curve, opening, squint, sweat and tears blend smoothly from the same inputs. A stable per-person temperament offsets the mouth and brows so no two faces are the same.
   // ---------- expression model ----------
+  // Compute the target facial parameters for an actor (they are eased toward in the update loop).
   C.expressionTargets = function (a) {
     const p = a.p, n = p.needs;
     const hunger = (100 - n.food) / 100, thirst = (100 - n.water) / 100, tired = (100 - n.energy) / 100;
@@ -178,9 +192,12 @@
     e.mouth += (h - 0.5) * 0.32; e.brow += ((h * 7.7) % 1 - 0.5) * 0.22;
     return e;
   };
+  // The label of the dominant emotion (used for the mood line).
   C.emotionLabel = (a) => (a.expr ? a.expr.label : 'sereno');
 
+  // THE CUBE FIGURE: body with notches for chunks and cracks for light wounds, face, headgear, arms, legs and weapon, all drawn from actor state.
   // ---------- cube figure ----------
+  // Rectangle (in body-local coordinates) of a missing chunk; 'inflate' grows it slightly to draw the dark outline around the wound.
   function notchRect(ch, bw, bh, inflate) {
     const [nx, ny] = NOTCH[ch.pos], sz = ch.s * Math.min(bw, bh);
     let x0 = -bw / 2 + nx * (bw - sz), y0 = -bh / 2 + ny * (bh - sz), x1 = x0 + sz, y1 = y0 + sz;
@@ -190,6 +207,7 @@
     }
     return [x0, y0, x1 - x0, y1 - y0];
   }
+  // The body: a dark outline silhouette with the chunk notches cut out (so the wound edge is outlined too), then the body colour with cracks drawn over it.
   function drawBody(c, a, bw, bh, col, dead) {
     const p = a.p;
     // dark outline base: the body silhouette grown by a hair, with the missing chunks cut out (so the wound edge is outlined too)
@@ -221,6 +239,7 @@
     c.restore();
   }
 
+  // Eyes, brows, mouth, nose, freckles, mole, glasses, sweat and tears from the expression parameters.
   function drawFace(c, a, bw, bh) {
     const p = a.p, L = p.look, e = a.expr, f = a.face;
     const ex = L.eyeX * bw, ey = (L.eyeY - 0.06) * bh, er = Math.max(0.9, L.eyeR * bw * 1.15);
@@ -263,6 +282,7 @@
     c.restore();
   }
 
+  // Hair, hats (straw, cap, panama, helmet, beret, collar, veil), beard (length from beardLen), moustache, bun and scarf.
   function drawHeadgear(c, a, bw, bh) {
     const L = a.p.look, top = -bh / 2;
     // hair band
@@ -288,7 +308,9 @@
     if (bl > 0.12) { const top = bh * (0.52 - 0.47 * bl); c.fillStyle = rgb(L.hairCol); c.beginPath(); c.moveTo(-bw / 2 + 0.3, top); c.lineTo(bw / 2 - 0.3, top); c.lineTo(bw / 2 - 0.9, bh / 2 - 0.3); c.lineTo(-bw / 2 + 0.9, bh / 2 - 0.3); c.closePath(); c.globalAlpha = bl < 0.5 ? 0.55 + bl * 0.5 : 0.92; c.fill(); c.globalAlpha = 1; }
   }
 
+  // Drawn length of each weapon (px).
   const WLEN = { pistol: 5, revolver: 5, rifle: 13, garand: 13, scoped: 14, thompson: 9, mg: 14, shotgun: 12, machete: 8 };
+  // Draw one cube: shadow, lean/prone/dead transform, legs and arms with walk animation, body, face, headgear, and the weapon pointing along the aim; extras for status (bleeding, working, hiding).
   function drawActor(c, a, t, z) {
     const p = a.p, L = p.look;
     let bw = 10 * L.sw, bh = 10 * L.sh;
@@ -336,9 +358,12 @@
     c.restore();
   }
 
+  // Exported for portraits and previews.
   C.drawActor = (c, a, t, z) => drawActor(c, a, t, z);
   // the leader: an ordinary cube with a gold star and a ring on the ground (see drawScene)
+  // VEHICLES: boats, the Granma (with a plank deck and a crowd of red cubes), wheeled vehicles with windows, lights, flat tyres and wreck/fire states.
   // ---------- vehicles ----------
+  // (see above)
   function drawVehicle(c, v, t) {
     const d = v.def; const w = d.w, h = d.h;
     c.save(); c.translate(v.x, v.y); c.rotate(v.ang);
@@ -376,17 +401,24 @@
     // damage smoke/fire handled in main particles
   }
 
+  // MAIN DRAW: converts world coordinates to the screen, draws the visible chunks, decals, objects, items, then actors/vehicles/animals depth-sorted by y, bullets, thrown grenades, canopy, particles, exits and order markers, then the fog of war, then screen-space labels (buildings, objects, vehicles, tags, speech bubbles), the selection box, and the day/night and weather overlay.
   // ---------- main draw ----------
+  // Device pixel ratio (capped at 2) for crisp rendering on high-DPI screens.
   const dpr = Math.min(2, window.devicePixelRatio || 1);
+  // Render state: the canvas, its context and size in CSS px.
   C.R = { canvas: null, ctx: null, W: 0, H: 0 };
+  // Attach to the canvas and keep it sized to the window.
   C.initRender = function (canvas) {
     C.R.canvas = canvas; C.R.ctx = canvas.getContext('2d');
     const resize = () => { const w = window.innerWidth, h = window.innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; canvas.style.width = w + 'px'; canvas.style.height = h + 'px'; C.R.W = w; C.R.H = h; };
     window.addEventListener('resize', resize); resize();
   };
+  // World → screen coordinates for a camera {x,y,z}.
   C.toScreen = (cam, x, y) => ({ x: (x - cam.x) * cam.z + C.R.W / 2, y: (y - cam.y) * cam.z + C.R.H / 2 });
+  // Screen → world coordinates.
   C.toWorld = (cam, sx, sy) => ({ x: (sx - C.R.W / 2) / cam.z + cam.x, y: (sy - C.R.H / 2) / cam.z + cam.y });
 
+  // Draw text with a dark outline so it stays legible over any terrain.
   function outlinedText(ctx, txt, x, y, size, fill, bold, stroke) {
     ctx.font = (bold ? '600 ' : '') + size + 'px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineWidth = Math.max(2, size * 0.28); ctx.strokeStyle = stroke || 'rgba(12,10,8,.78)'; ctx.lineJoin = 'round'; ctx.strokeText(txt, x, y);
@@ -394,6 +426,7 @@
   }
   C.outlinedText = outlinedText;
 
+  // Draw one frame of the current scene (see MAIN DRAW above).
   C.drawScene = function (s, G, t) {
     const ctx = C.R.ctx, W = C.R.W, H = C.R.H, cam = G.cam;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -523,6 +556,7 @@
     drawAtmosphere(ctx, G, W, H, t);
   };
 
+  // The sea: drifting white wave streaks placed by a hash of the cell, visible only over water tiles.
   function drawWaves(ctx, s, t, vx0, vy0, vw, vh) {
     ctx.save(); ctx.lineCap = 'round';
     const cell = 46; const i0 = Math.floor(vx0 / cell) - 1, i1 = Math.ceil((vx0 + vw) / cell) + 1, j0 = Math.floor(vy0 / cell) - 1, j1 = Math.ceil((vy0 + vh) / cell) + 1;
@@ -534,12 +568,14 @@
     }
     ctx.restore();
   }
+  // Sabotage objects (fuel depots, radio towers…): intact or burnt out.
   function drawObj(ctx, o, t) {
     if (o.dead) { ctx.fillStyle = 'rgba(30,26,24,.85)'; ctx.fillRect(o.x - o.w / 2, o.y - o.h / 2, o.w, o.h); return; }
     if (o.k === 'deposito') { ctx.fillStyle = 'rgb(200,64,52)'; ctx.fillRect(o.x - 12, o.y - 8, 24, 16); ctx.fillStyle = 'rgb(240,230,220)'; ctx.fillRect(o.x - 12, o.y - 3, 24, 4); ctx.strokeStyle = '#2a1a16'; ctx.strokeRect(o.x - 12.5, o.y - 8.5, 25, 17); }
     else if (o.k === 'torre') { ctx.strokeStyle = 'rgb(70,70,76)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(o.x - 6, o.y + 5); ctx.lineTo(o.x, o.y - 18); ctx.lineTo(o.x + 6, o.y + 5); ctx.moveTo(o.x - 3, o.y - 6); ctx.lineTo(o.x + 3, o.y - 6); ctx.moveTo(o.x - 4.4, o.y); ctx.lineTo(o.x + 4.4, o.y); ctx.stroke(); ctx.fillStyle = 'rgb(220,60,60)'; ctx.beginPath(); ctx.arc(o.x, o.y - 18, 1.5 + Math.sin(t * 5) * 0.4, 0, 6.3); ctx.fill(); }
     else if (o.k === 'polvorin') { ctx.fillStyle = 'rgb(90,90,90)'; ctx.fillRect(o.x - 8, o.y - 6, 16, 12); }
   }
+  // Ground items: food, ammunition, medicine, money, guns (and dropped pack items).
   function drawItem(ctx, it, t) {
     ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(it.x - 4, it.y + 1, 9, 3);
     if (it.k === 'food') { ctx.fillStyle = 'rgb(170,130,70)'; ctx.fillRect(it.x - 4, it.y - 4, 8, 7); ctx.fillStyle = 'rgb(220,190,110)'; ctx.fillRect(it.x - 4, it.y - 4, 8, 2); }
@@ -550,6 +586,7 @@
     else if (it.k === 'money') { ctx.fillStyle = 'rgb(90,150,90)'; ctx.fillRect(it.x - 4, it.y - 3, 8, 5); ctx.fillStyle = 'rgb(220,240,200)'; ctx.fillRect(it.x - 1, it.y - 2, 2, 3); }
     else { ctx.fillStyle = 'rgb(200,200,180)'; ctx.fillRect(it.x - 3, it.y - 3, 6, 6); }
   }
+  // Cows, pigs, hens, hutias, boars, drawn as small simple animals.
   function drawAnimal(ctx, a, t) {
     ctx.save(); ctx.translate(a.x, a.y);
     const d = a.def, f = a.face;
@@ -565,6 +602,7 @@
     ctx.fillStyle = 'rgb(50,40,36)'; ctx.fillRect(-d.sz * 0.7, d.sz * 0.45, 1.4, 2.5 + bob); ctx.fillRect(d.sz * 0.6, d.sz * 0.45, 1.4, 2.5 - bob);
     ctx.restore();
   }
+  // Particles: smoke, fire, dust, sparks, chunks tumbling, flashes, expanding rings (telegraphs), plane shadows.
   function drawPart(ctx, p) {
     const k = p.life / p.max;
     switch (p.k) {
@@ -580,6 +618,7 @@
       default: break;
     }
   }
+  // Screen-wide atmosphere: night tint, dusk glow, rain streaks, fog, the explosion flash and the red vignette when you are hurt.
   function drawAtmosphere(ctx, G, W, H, t) {
     const hr = G.hour;
     // darkness 0..1
@@ -599,6 +638,7 @@
     if (G.hurt > 0.02) { const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.7); g.addColorStop(0, 'rgba(120,0,0,0)'); g.addColorStop(1, `rgba(120,0,0,${Math.min(0.55, G.hurt)})`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
   }
 
+  // MINIMAP: terrain as one pixel per tile, buildings, vehicles and actors (army blips only if seen), and the camera rectangle.
   // ---------- minimap ----------
   C.drawMinimap = function (mc, s, G) {
     const ctx = mc.getContext('2d'); const w = mc.width, h = mc.height;

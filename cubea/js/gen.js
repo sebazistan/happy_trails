@@ -4,13 +4,20 @@
 (function () {
   'use strict';
   const C = (window.C = window.C || {});
+  // The 'present' of the world, as a fractional year (Dec 1956). Ages are computed from year of birth against this plus the game day.
   const NOW_Y = 1956.93;
 
+  // THE WORLD DATABASE (C.W). people[] is dense by id (a person's id is its index) — this is the struct-of-arrays candidate for Unreal.
+  // bySet maps a settlement id to the ids currently living there; houses[] are households; roster maps authored keys ('che','raul') to people.
   const W = (C.W = { people: [], bySet: {}, seed: 0, day: 0, player: -1, houses: [], nextEv: 1 });
+  // Age in whole years at game day `day` (defaults to today).
   C.ageOf = (p, day) => Math.floor(NOW_Y + (day === undefined ? W.day : day) / 365.25 - p.yob);
+  // Shorthand: the person with this id.
   C.P = (id) => W.people[id];
 
+  // PERSON FACTORY. Everything about one Cubean is a plain object (see docs/SCHEMA.md); runtime actors are separate (ai.js makeActor).
   // ---------------- person factory ----------------
+  // Pick a paternal surname for the settlement: mostly common Spanish names, a few Galician, West-Indian or Chinese-Cuban ones by place and background.
   function surnameFor(R, sid, eth) {
     if (eth === 'china') return R.pick(C.SURN_CN);
     const r = R();
@@ -19,11 +26,13 @@
     if (r < 0.09) return R.pick(C.SURN_GAL);
     return R.pick(C.SURNAMES);
   }
+  // Sample an ethnicity ('blanca','mulata','negra','china','otra') with a distribution that differs between Havana and the east. Ethnicity is a SOCIAL position variable only (never tints the cube).
   function pickEth(R, sid) {
     const hab = sid === 'habana';
     return R.weighted(hab ? [['blanca', 70], ['mulata', 14], ['negra', 13], ['china', 2], ['otra', 1]]
       : [['blanca', 50], ['mulata', 28], ['negra', 19], ['china', 1], ['otra', 2]]);
   }
+  // Ethnicity of a child from two parents' ethnicities (a white and a Black parent give a mulato child; otherwise one of the two).
   function mixEth(R, a, b) {
     if (a === b) return a;
     const s = new Set([a, b]);
@@ -31,8 +40,12 @@
     if (s.has('mulata')) return R.pick([a, b, 'mulata']);
     return R.pick([a, b]);
   }
+  // Hair colour palette for the look generator.
   const HAIR = { blk: [30, 24, 20], brn: [74, 50, 32], gry: [150, 150, 150], wht: [235, 235, 235], red: [140, 70, 40], blo: [190, 160, 90] };
 
+  // The FACE AND BODY of a cube: eye position and size, brow, mouth, nose, freckles, hair colour and style, glasses, beard/moustache, body width/height,
+  // and an occupation-driven hat (straw for farmers, cap for fishermen, panama for the well-off, collar for priests, veil for nuns). All random draws come
+  // from the seeded R so a seed gives the same faces. Beards at birth are rare; rebels grow them later (sim.js beardLen).
   function makeLook(R, p) {
     const age = C.ageOf(p);
     const hair = p.hair || (age > 62 ? 'wht' : age > 48 ? R.weighted([['gry', 3], ['blk', 3], ['brn', 2]]) : R.weighted([['blk', 6], ['brn', 4], ['red', 0.5], ['blo', 0.6]]));
@@ -56,6 +69,7 @@
     return L;
   }
 
+  // Create a person with all fields at neutral defaults and register them in W.people and W.bySet. `o` carries whatever the caller knows (names, birth year, parents, settlement, authored extras).
   function newPerson(R, o) {
     const sex = o.sex || (R.chance(0.5) ? 'M' : 'F');
     const p = {
@@ -78,14 +92,20 @@
     return p;
   }
   C.newPerson = newPerson;
+  // Full legal name: first + paternal + maternal surname.
   C.fullName = (p) => p.first + ' ' + p.last + (p.last2 ? ' ' + p.last2 : '');
+  // Short nametag shown over a cube: an authored tag if any, else 'First Last'.
   C.tagName = (p) => p.tag || (p.first.split(' ')[0] + ' ' + p.last);
+  // Move a person to another settlement (keeps the bySet lists consistent). Used for travel, migration and joining the rebels.
   C.moveTo = function (p, sid) {
     if (p.settlement === sid) return;
     const a = W.bySet[p.settlement]; if (a) { const i = a.indexOf(p.id); if (i >= 0) a.splice(i, 1); }
     p.settlement = sid; (W.bySet[sid] = W.bySet[sid] || []).push(p.id);
   };
 
+  // FINISHING a person once occupation and age are fixed: occupation → class and faction; 1–3 personality traits; positions on the eight planks
+  // (faction mean + noise, with adjustments for sex, ethnicity, devotion, idealism) and the two planks they care most about (salience);
+  // starting loyalty and conviction around the faction mean (shifted by lineage and settlement bias); needs, literacy, health, body size and face.
   // finishing touches once occupation/age are final
   function finishPerson(R, p, S) {
     const age = C.ageOf(p);
@@ -131,7 +151,9 @@
     if (age < 14) p.look.sw = p.look.sh = 0.62 + age * 0.028;
   }
 
+  // LINEAGES. People are generated as families, not as independent rolls: founder couples → their children → marriages across lineages → grandchildren.
   // ---------------- lineages ----------------
+  // Choose an occupation by age/sex/settlement type: children, retirees, students, housewives, otherwise a weighted pick of the local job pool.
   function occFor(R, sid, S, p) {
     const age = C.ageOf(p);
     if (age < 13) return 'nino';
@@ -141,12 +163,18 @@
     return R.weighted(C.occPool(S.type, p.sex, age));
   }
 
+  // Birth years for a mother's children: she starts at 17–24 and each next child follows 1–3 years later, never after the 'present'.
   function birthYearsForKids(R, motherYob, n) {
     const out = []; let y = motherYob + R.irange(17, 24);
     for (let i = 0; i < n; i++) { if (y > 1956) break; out.push(y); y += R.irange(1, 3); }
     return out;
   }
 
+  // Generate one settlement's population in four phases:
+  //  1. founder couples (born 1868–94) and their native children;
+  //  2. marry the children across lineages (or bring in an outsider spouse) and breed grandchildren; repeat once more for great-grandchildren;
+  //  3. top up with migrant families if the sample is still small;
+  //  4. assign occupations. The result is families with grandparents, uncles, cousins in a realistic age spread.
   function genSettlement(R, S) {
     const sid = S.id;
     const target = S.pop; if (!target) return;
@@ -174,6 +202,7 @@
       lins.push({ id: lid, bias: lb }); lid++;
     }
     // Phase 2: marry G1 adults across lineages, produce G2 kids; marry G2 adults, produce G3 kids
+    // Pair unmarried men and women of different lineages within a plausible age band; if no match is found, sometimes create an outsider spouse. Returns the couples.
     const marryPool = (pool, gen) => {
       const men = pool.filter((p) => p.sex === 'M' && C.ageOf(p) >= 19 && p.spouse < 0 && p.status === 'alive');
       const women = pool.filter((p) => p.sex === 'F' && C.ageOf(p) >= 17 && p.spouse < 0 && p.status === 'alive');
@@ -200,6 +229,7 @@
       }
       return couples;
     };
+    // Give each couple children by a total-fertility target (higher in the countryside, lower for later generations).
     const breed = (couples, tfr) => {
       const kids = [];
       for (const [m, w] of couples) {
@@ -236,7 +266,9 @@
     }
   }
 
+  // HOUSEHOLDS. A household is a head, spouse, unmarried children, and elderly parents living together. People left over become single-person households.
   // ---------------- households ----------------
+  // Group living people into households (see above) and assign a tenure type (wage, tenant, smallholder, squatter in the country; wage, rent, owner in town).
   function makeHouseholds(R) {
     const seen = new Set();
     for (const p of W.people) {
@@ -266,7 +298,9 @@
     }
   }
 
+  // FATES. Before play begins history has already happened: some people have died (by age, illness, childbirth, violence, army), been jailed or exiled, or moved to a bigger city. Those absences are what make families feel real (a jailed brother, a dead father).
   // ---------------- statuses, migration ----------------
+  // Roll each non-authored person's fate by age and place; mark dead/jailed/exile; move migrants to Havana/Santiago; take exiles off the map.
   function applyFates(R) {
     for (const p of W.people) {
       if (p.roster) continue;
@@ -295,13 +329,17 @@
     for (const p of W.people) if (p.status === 'exile') C.moveTo(p, 'exterior');
   }
 
+  // NON-KIN EDGES: friends, compadres (godparent ties), coworkers, employers/employees, neighbours, rivals, lovers. Symmetric; each has a type and a weight.
   // ---------------- relationships (non-kin edges) ----------------
+  // Create a symmetric relationship edge (employer↔employee are mirrored types). Duplicate edges of the same type are ignored.
   function link(a, b, t, w) {
     if (a.id === b.id) return;
     for (const r of a.rel) if (r.id === b.id && r.t === t) return;
     a.rel.push({ id: b.id, t, w }); b.rel.push({ id: a.id, t: t === 'employer' ? 'employee' : t === 'employee' ? 'employer' : t, w });
   }
+  // Exported so other modules (e.g. the roster, the Granma party) can link people.
   C.link = link;
+  // For each settlement and each adult: 2–5 friends of similar age/class, a compadre, coworkers, an employer (for rural workers under a landlord), a neighbour, sometimes a rival, sometimes a cousin or pen-pal in another town; plus a few lovers. Denser edges = richer ripples.
   function makeEdges(R) {
     const per = {};
     for (const p of W.people) if (p.status === 'alive' && C.SETTLEMENTS[p.settlement] && C.SETTLEMENTS[p.settlement].pop > 0) (per[p.settlement] = per[p.settlement] || []).push(p);
@@ -348,8 +386,11 @@
     }
   }
 
+  // GARRISONS. Soldiers and police are drawn from the same population — often sons of *other* places, so a soldier's mother lives elsewhere. That is what lets a death in a barracks echo through a village.
   // ---------------- garrisons ----------------
+  // How many guards, officers, soldiers, police and SIM agents are stationed in each settlement.
   const GARRISON = { sierra: [['guardia', 8], ['oficial', 1], ['soldado', 3]], palmarito: [['guardia', 5], ['oficial', 1]], cayo: [['guardia', 3]], manzanillo: [['soldado', 16], ['policia', 6], ['oficial', 2]], bayamo: [['soldado', 22], ['policia', 6], ['oficial', 3]], santiago: [['soldado', 36], ['policia', 14], ['sim', 6], ['oficial', 5]], habana: [['soldado', 44], ['policia', 32], ['sim', 14], ['oficial', 8]] };
+  // Fill the garrisons: pick young working-class men from other settlements (or invent conscripts), make them soldiers with rank, a little experience and an army allegiance.
   function makeGarrisons(R) {
     const cand = W.people.filter((p) => p.status === 'alive' && p.sex === 'M' && !p.roster && C.ageOf(p) >= 18 && C.ageOf(p) <= 36 && p.cls <= 2 && !['ama', 'estudiante'].includes(p.occ));
     R.shuffle(cand);
@@ -372,7 +413,9 @@
     }
   }
 
+  // SCENE ROLES. Make sure each place has the characters its map needs (priests, doctors, shopkeepers, charcoal-burners…) by re-assigning plausible locals.
   // make sure every place has the characters its scene needs
+  // Target counts of each occupation per settlement.
   const ROLES = {
     sierra: [['carbonero', 6], ['partera', 1]],
     palmarito: [['hacendado', 2], ['mayordomo', 1], ['bodeguero', 1], ['maestro', 1], ['partera', 1], ['sacerdote', 0], ['colono', 6]],
@@ -382,6 +425,7 @@
     santiago: [['sacerdote', 3], ['medico', 6], ['abogado', 5], ['hacendado', 3], ['banquero', 2], ['comerciante', 8], ['maestro', 8], ['sindicalista', 6], ['periodista', 3], ['monja', 4], ['estudiante', 40]],
     habana: [['sacerdote', 3], ['medico', 8], ['abogado', 8], ['hacendado', 5], ['banquero', 6], ['comerciante', 14], ['maestro', 8], ['sindicalista', 8], ['periodista', 5], ['monja', 5], ['locutor', 3], ['casino', 8], ['estudiante', 70], ['funcionario', 8]],
   };
+  // Convert suitable existing locals to reach the ROLES targets (respecting age bands and sex restrictions; priests and nuns are unmarried).
   function ensureRoles(R) {
     for (const sid in ROLES) {
       const S = C.SETTLEMENTS[sid];
@@ -404,10 +448,12 @@
   }
 
   // ---------------- roster ----------------
+  // An off-map relative of an authored character (a mother in Birán, a brother in Havana) — real people in the database, not in any scene.
   function ghost(R, o) { // off-map relative
     const p = newPerson(R, o); p.occ = o.occ || (C.ageOf(p) >= 60 ? 'jubilado' : 'guajiro'); p.roster = null; p.occDone = true;
     finishPerson(R, p, C.SETTLEMENTS[o.settlement]); return p;
   }
+  // Place the historical roster in the world: create each authored person with their traits and loyalty, link them to authored relatives and each other (comrades, friends, informers), and give them generated kin around them. The player's role is Fidel.
   function injectRoster(R) {
     const byId = {}; const castroParents = {};
     // the player's mantle: Fidel
@@ -515,7 +561,9 @@
     W.roster = byId;
   }
 
+  // THE PARTY. The authored Granma members plus young men from across the island who lean rebel, collected into one expedition. Everyone in the party knows two or three others.
   // the Granma party: authored members + converted young men from all over the island
+  // Build the Granma party and its comrade edges; W.party holds their ids.
   function makeParty(R) {
     const party = [];
     for (const r of C.ROSTER) if (r.at === 'party') party.push(W.roster[r.id]);
@@ -529,7 +577,9 @@
     W.party = party.map((p) => p.id);
   }
 
+  // ENTRY POINT.
   // ---------------- entry ----------------
+  // Generate the whole world from a seed (deterministic): settlements in a fixed order, fates, finishing, garrisons, roles, roster, households, edges, party.
   C.genWorld = function (seed) {
     W.people.length = 0; W.houses.length = 0; W.bySet = {}; W.seed = seed; W.day = 0; W.nextEv = 1;
     const R = C.RNG(seed);
@@ -552,10 +602,13 @@
     return W;
   };
 
+  // KINSHIP GRAPH. Kin are DERIVED by traversing mother/father/spouse/kids — they are not stored. A weight 0..1 says how much a person would care what happens to the other.
   // ---------------- kinship graph ----------------
   // returns Map<id, {w, t}> of everyone who would care what happens to person p, weight 0..1
+  // Weights by kin type: spouse and child 1.0, parent 0.9, sibling 0.75, grandparent/grandchild 0.5, aunt/niece 0.35, in-law 0.3, cousin 0.25.
   const KINW = { spouse: 1, child: 1, parent: 0.9, sibling: 0.75, grandparent: 0.5, grandchild: 0.5, aunt: 0.35, niece: 0.35, cousin: 0.25, inlaw: 0.3 };
   C.KINW = KINW;
+  // Map<id,{w,t}> of every relative of p (spouse, children, parents, siblings, grandparents, aunts/uncles, cousins, grandchildren, in-laws, nieces/nephews).
   C.kinOf = function (p) {
     const out = new Map();
     const add = (id, t) => { if (id >= 0 && id !== p.id && !out.has(id)) out.set(id, { w: KINW[t], t }); };
@@ -576,10 +629,13 @@
     for (const x of par) if (x >= 0) P[x].kids.forEach((s) => P[s].kids.forEach((n) => add(n, 'niece')));
     return out;
   };
+  // Weights of non-kin edge types in an event's audience. (Bonds earned in play use relWeight below.)
   const RELW = { friend: 0.4, compadre: 0.5, lover: 0.8, comrade: 0.5, coworker: 0.15, neighbor: 0.12, employer: 0.1, employee: 0.1, rival: -0.2 };
   // Weight of a non-kin edge in the audience of an event. A 'bond' edge (friendship earned in play, see bonds.js) scales
   // from 0.25 (just a friend) to 1.0 (a brother-in-arms): at full strength it counts exactly like a spouse or child.
   const relWeight = (r) => (r.t === 'bond' ? 0.25 + 0.75 * r.w : RELW[r.t]);
+  // THE AUDIENCE OF AN EVENT: everyone who would care about what happens to p — kin, then non-kin edges, then friends-of-close-friends at 40% of the weight (second hop through ties of weight ≥ 0.5).
+  // C.addEvent (sim.js) turns this map into memories, which turn into loyalty shifts.
   C.audienceOf = function (p) {
     const m = C.kinOf(p);
     for (const r of p.rel) { const w = relWeight(r); const cur = m.get(r.id); if (!cur || Math.abs(w) > Math.abs(cur.w)) m.set(r.id, { w, t: r.t }); }
@@ -588,10 +644,12 @@
     for (const [id, v] of first) { const q = W.people[id]; for (const r of q.rel) { const w = relWeight(r) * 0.4 * v.w; if (w > 0.05 && r.id !== p.id && !m.has(r.id)) m.set(r.id, { w, t: '2nd' }); } }
     return m;
   };
+  // What q is to p, for display: a kin type, or an edge type, or null.
   C.relativeLabel = function (p, q) { // what is q to p
     const m = C.kinOf(p).get(q.id); if (m) return m.t;
     for (const r of p.rel) if (r.id === q.id) return r.t;
     return null;
   };
+  // Spanish labels for relationship types (used by the inspector).
   C.relLabelEs = { spouse: 'cónyuge', child: 'hijo/a', parent: 'padre/madre', sibling: 'hermano/a', grandparent: 'abuelo/a', grandchild: 'nieto/a', aunt: 'tío/a', niece: 'sobrino/a', cousin: 'primo/a', inlaw: 'pariente político', friend: 'amigo/a', bond: 'compañero/a de armas', compadre: 'compadre', lover: 'pareja', comrade: 'camarada', coworker: 'compañero/a de trabajo', neighbor: 'vecino/a', employer: 'patrón', employee: 'empleado/a', rival: 'rival', '2nd': 'conocido/a' };
 })();

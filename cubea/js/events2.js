@@ -12,11 +12,14 @@
 
   // =================================================================== rackets & mercenary drift
   // g.merc 0..100: how far the band has drifted from a cause toward a business. It is profitable and it costs you the people.
+  // Create the drift state the first time it is needed: g.merc (0–100) and the counts of each racket.
   C.racketInit = function () { const g = G(); if (g.merc === undefined) { g.merc = 0; g.rackets = { protect: 0, contraband: 0, kidnaps: 0 }; g.racketLog = { earned: 0 }; } };
+  // The two continuing rackets: pesos per day per arrangement and how fast each raises the drift meter.
   const RACKETS = {
     protect: { n: 'Protection payments', per: 5, drift: 0.55, d: 'Shopkeepers and landowners pay so that nothing happens to them.' },
     contraband: { n: 'Contraband runs', per: 9, drift: 0.7, d: 'Rum, cigars, and the white powder the mob pays for, carried by boat.' },
   };
+  // Start a racket. Protection: an extortion event against the shopkeeper, justice/fear/trust costs. Contraband: pesos now, honesty down. Kidnapping: 60% a ransom of 120–340 pesos, 40% the victim is shot; heavy justice/fear costs, heat and American outrage.
   C.racketStart = function (kind, p) {
     const g = G(); C.racketInit();
     if (kind === 'protect') {
@@ -36,6 +39,7 @@
       g.us && (g.us.outrage = (g.us.outrage || 0) + 1);
     }
   };
+  // Daily: income from the rackets (± noise), drift growth, seizures of contraband boats, then the erosion of support and ideals once the drift passes 20, and the milestones.
   C.racketDaily = function () {
     const g = G(); C.racketInit(); const R = g.rackets; let earned = 0, level = 0;
     for (const k in RACKETS) { const n = R[k]; if (!n) continue; level += n; earned += RACKETS[k].per * n * (0.7 + rnd() * 0.6); g.merc = clamp(g.merc + RACKETS[k].drift * n, 0, 100); }
@@ -51,6 +55,7 @@
     }
     mercMilestones();
   };
+  // Drift 30: idealists leave and greedy locals arrive. Drift 55: 'los cobradores' — every faction's trust and justice fall. Drift 80: a lieutenant says the cause is a pretext; trust falls again.
   function mercMilestones() {
     const g = G(), fl = g.flags;
     if (g.merc >= 30 && !fl.mercA) {
@@ -71,6 +76,7 @@
     }
   }
   // opportunities
+  // Event: a lieutenant proposes an easy way to pay for the war (protection, contraband) or you refuse.
   def({ id: 'racket_offer', cat: 'social', t: 3, cd: 40, layer: 3, w: (g) => g.day > 35 && (g.res.money < 70 ? 1.8 : 0.5), run: (g) => {
     C.racketInit(); const who = C.squadPeople().find((p) => p.traits.includes('greedy') || p.traits.includes('opportunist')) || null;
     const sid = pick(['palmarito', 'cayo']); const shop = localPeople(sid, (p) => ['bodeguero', 'comerciante', 'mayordomo', 'tendero'].includes(p.occ) || p.fac === 'landowners' || p.cls >= 2)[0];
@@ -81,12 +87,15 @@
     ] }); } });
 
   // =================================================================== the Americans
+  // Create the American ledger g.us = {arms, strings, outrage, interests} the first time it is needed.
   C.usInit = function () { const g = G(); if (!g.us) g.us = { arms: 0, strings: 0, outrage: 0, interests: 0, courted: false }; };
+  // El Viejo's lines about Washington.
   const YANKEE_TXT = [
     'Batista is not the one who matters. The men in Washington who sign the cheques matter.',
     'The mill is American. The phone company is American. The bank that holds the mortgage is in New York. You will find, compadre, that a country can have a flag and no keys.',
     'Every plane that dropped bombs on the Sierra had a stamp from the United States on its belly.',
   ];
+  // Event: new American planes and bombs for the regime; pamphlets with serial numbers, a journalist, or silence.
   def({ id: 'us_arms', cat: 'pressure', t: 3, cd: 70, layer: 3, w: (g) => g.day > 120 ? 1.5 : 0, run: (g) => {
     C.usInit(); g.us.arms++; g.regime.armyMorale = clamp(g.regime.armyMorale + 4, 0, 100); g.regime.heat += 2;
     C.viejoSays(pick(YANKEE_TXT));
@@ -95,6 +104,7 @@
       { label: 'Send the bomb fragment to a New York journalist', sub: 'Slower. May shift American opinion.', fn: () => { g.regime.usSupport = clamp(g.regime.usSupport - (rnd() < 0.5 ? 3 : 0.5), 0, 100); } },
       { label: 'Say nothing', fn: () => { } },
     ] }); } });
+  // Event: the American mill manager offers money for safe passage; take it, refuse, or sabotage.
   def({ id: 'us_mill', cat: 'social', t: 3, cd: 60, layer: 3, w: (g) => g.day > 60 ? 1.1 : 0, run: (g) => {
     C.usInit();
     return card({ title: 'The mill belongs to someone in Connecticut', icon: '🏭', body: 'The American manager of the central comes to a meeting in a clean white shirt with an interpreter and a briefcase. "My company has employed three thousand of your countrymen for fifty years. We would like to keep working. We would be glad to make a donation to your cause — and in exchange our cane, our trucks and our warehouses are not touched."', choices: [
@@ -102,12 +112,14 @@
       { label: 'Refuse — tell him the harvest belongs to those who cut it', sub: 'Workers cheer; the company will remember.', fn: () => { g.us.interests++; C.deed(3, 6); g.regime.usSupport = clamp(g.regime.usSupport + 2, 0, 100); for (const p of C.W.people) if (p.status === 'alive' && p.fac === 'workers') p.trueStance += 2.5; } },
       { label: 'Sabotage the mill at night', sub: 'A mission. The Americans will notice.', fn: () => { g.us.interests++; g.flags.sabotageMill = true; g.strikePrep += 5; g.regime.heat += 3; C.log('You plan to burn the weighing sheds at the mill.', 'info'); } },
     ] }); } });
+  // Event (Santiago/Havana): American sailors and a woman in a bar; intervene or stay hidden.
   def({ id: 'us_sailors', cat: 'pressure', t: 3, cd: 80, layer: 3, w: (g) => g.day > 50 && ['santiago', 'habana'].includes(g.scene.sid) ? 3 : 0, run: (g) => {
     const sid = g.scene.sid; const victim = localPeople(sid, (p) => p.sex === 'F' && C.ageOf(p) > 16 && C.ageOf(p) < 40)[0]; if (!victim) return null;
     return card({ title: 'Drunk American sailors, a bar, a girl', icon: '⚓', body: `Marines on shore leave from the base at Guantánamo are arguing with the staff of a bar in ${S(sid).name}. One of them has taken ${C.tagName(victim)} by the arm. The police are across the street, not looking. A group of students watches you to see what you do.`, choices: [
       { label: 'Intervene with your people', sub: 'A brawl. The embassy will complain.', fn: () => { C.deed(2, 4); g.regime.heat += 2; g.us && (g.us.outrage++); for (const p of C.W.people) if (p.status === 'alive' && (p.fac === 'students' || p.fac === 'workers' || p.fac === 'peasants')) p.trueStance += 1; C.addEvent({ type: 'aid', victim, perpSide: 'rebel', positive: true, sev: 40, pub: 0.6, x: 0, y: 0, settlement: sid, text: `Rebels intervened to protect ${C.tagName(victim)} from American sailors`, memText: 'The rebels stood between my daughter and the Americans' }); } },
       { label: 'Stay hidden — you are not here for this', sub: 'It is not your job. Yet.', fn: () => { C.addEvent({ type: 'abuse', victim, perpSide: 'army', sev: 58, pub: 0.6, x: 0, y: 0, settlement: sid, text: `American sailors abused ${C.tagName(victim)} and the police did nothing`, memText: 'They did what they wanted, and the police looked the other way' }); } },
     ] }); } });
+  // Event: an embassy man offers American pressure on Batista if you soften the nationalisation plank.
   def({ id: 'us_diplomat', cat: 'social', t: 3, cd: 90, layer: 4, w: (g) => g.day > 220 ? 1.3 : 0, run: (g) => {
     C.usInit();
     return card({ title: 'A man from the embassy', icon: '🇺🇸', body: 'A polite man in a linen suit, "a cultural attaché," finds you through three intermediaries. "Washington has no love for General Batista anymore. We can live with a government of reformers: elections, property respected, no Moscow. We are not asking for much. A few planks in your programme might be softened. A friendly word on the radio."', choices: [
@@ -115,6 +127,7 @@
       { label: 'Thank him and say nothing will change', sub: 'Politely. Washington will remember.', fn: () => { g.us.interests++; C.adjustRep('honesty', 3); } },
       { label: 'Tell him to take it up with the people', sub: 'Heads turn. This will be repeated.', fn: () => { g.us.interests += 2; C.deed(2, 5); for (const p of C.W.people) if (p.status === 'alive' && (p.fac === 'students' || p.fac === 'peasants')) p.trueStance += 1.5; } },
     ] }); } });
+  // Event: a 'journalist' offers arms and money with strings; accept, throw him out, or follow him.
   def({ id: 'us_agent', cat: 'social', t: 3, cd: 120, layer: 4, w: (g) => g.day > 300 ? 1 : 0, run: (g) => {
     C.usInit(); const who = localPeople('santiago', (p) => p.sex === 'M' && C.ageOf(p) > 28)[0];
     return card({ title: 'A "journalist" with a lot of money', icon: '🕴', body: 'A tall man with an American accent and a Havana newspaper\'s press card finds you in the Llano. He is interested in your programme, and in a fund. "We could help with arms. You would keep your independence. We would simply like to know a little more, from time to time."', choices: [
@@ -122,6 +135,7 @@
       { label: 'Throw him out', sub: 'The story gets around.', fn: () => { g.us.interests++; C.deed(3, 4); for (const p of C.W.people) if (p.status === 'alive' && p.fac === 'students') p.trueStance += 1.3; } },
       { label: 'Have him followed (12 pesos)', disabled: g.res.money < 12, sub: 'Learn who he works for.', fn: () => { g.res.money -= 12; C.log('He is staying at a hotel paid for by a company whose board includes a former ambassador.', 'info'); g.us.interests++; } },
     ] }); } });
+  // Event (Havana): the casino mob offers protection money and a cut.
   def({ id: 'mob_casino', cat: 'social', t: 3, cd: 90, layer: 4, w: (g) => g.scene.sid === 'habana' && g.day > 100 ? 2 : 0, run: (g) => {
     C.racketInit(); C.usInit();
     return card({ title: 'The men from the casinos', icon: '🎰', body: 'In Havana, the big hotels belong to men from Miami and New York who pay Batista\'s people a percentage. One of them offers you a deal through a lawyer: protection for their cash couriers and a small cut for your cause, no questions, no politics.', choices: [
@@ -130,6 +144,7 @@
     ] }); } });
 
   // =================================================================== the non-violent path
+  // Event (only if nobody has been killed by you): a silent march — mostly brutalised.
   def({ id: 'peaceful_protest', cat: 'social', t: 3, cd: 35, layer: 3, w: (g) => g.day > 25 && g.stats.killedArmy === 0 && g.stats.executed === 0 ? 2.5 : 0, run: (g) => {
     const sid = pick(['santiago', 'bayamo', 'manzanillo']); const marchers = localPeople(sid, (p) => C.ageOf(p) > 16 && C.ageOf(p) < 60 && p.trueStance > 0).slice(0, 8);
     if (marchers.length < 3) return null;
@@ -144,6 +159,7 @@
     ] }); } });
 
   // misconduct reacts to the drift
+  // Make 'misconduct' more likely as the drift grows.
   const mc = defs().find((e) => e.id === 'misconduct');
   if (mc) { const w0 = mc.w; mc.w = (g) => w0(g) + (g.merc || 0) * 0.035; }
 })();

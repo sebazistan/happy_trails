@@ -2,20 +2,24 @@
 // weather, line of sight, camouflage). Seen ground is remembered but dimmed; unseen shots leave a "ping".
 (function () {
   const C = window.C, G = () => C.G, T = C.T, clamp = C.clamp;
+  // Is fog of war active (the option is on, the game not over)?
   C.fogOn = () => { const g = G(); return !!(g && g.opts && g.opts.fog && !g.over && g.scene); };
 
   // base sight radius for drawing and for "can I see this point"
+  // A viewer's sight radius: 200 px × daylight × weather × (lookout ×1.5) × experience.
   function sightR(v) {
     const g = G(); const dark = g.hour < 5 || g.hour >= 20 ? 0.5 : (g.hour < 7 || g.hour >= 18 ? 0.78 : 1);
     return 200 * dark * (1 - g.weather.rain * 0.25) * (1 - g.weather.fog * 0.35) * (v && v.watching ? 1.5 : 1) * (v && v.p ? 0.85 + 0.3 * clamp(v.p.exp / 60, 0, 1) : 1);
   }
   C.sightR = sightR;
 
+  // Allocate the scene's fog memory (an explored-tiles canvas and the pings list).
   function ensure(s) {
     if (!s.exploreCv) { s.exploreCv = document.createElement('canvas'); s.exploreCv.width = s.tw; s.exploreCv.height = s.th; s.exploreCtx = s.exploreCv.getContext('2d'); s.exploreCtx.fillStyle = '#fff'; s.explored = new Uint8Array(s.tw * s.th); }
     if (!s.pings) s.pings = [];
   }
 
+  // Every 0.2 s: collect viewers (rebels and the player), stamp the explored memory around them, and mark each army actor SEEN if any viewer is in range (detectRange) with a clear line of sight (losOpacity). Seen actors record their last-known position.
   C.fogUpdate = function (s, dt) {
     if (!C.fogOn()) return; ensure(s);
     const g = G();
@@ -42,18 +46,23 @@
     }
   };
 
+  // Is this actor visible to the player right now? (Non-army actors always are.)
   C.visible = function (a) {
     if (!C.fogOn() || a.side !== 'army' || a.isPlayer) return true;
     return (a.visT || -9) > G().time - 0.45;
   };
+  // Is this point inside any viewer's sight? (Used to hide bullets, particles and vehicles in unseen areas.)
   C.pointSeen = function (x, y) {
     if (!C.fogOn()) return true; const s = G().scene; if (!s.viewers) return true;
     for (const v of s.viewers) { const r = sightR(v) * 0.95; if (Math.abs(v.x - x) < r && Math.abs(v.y - y) < r && Math.hypot(v.x - x, v.y - y) < r) return true; }
     return false;
   };
+  // Has this spot ever been seen?
   C.explored = function (x, y) { const s = G().scene; if (!C.fogOn() || !s.explored) return true; const tx = Math.floor(x / T), ty = Math.floor(y / T); if (tx < 0 || ty < 0 || tx >= s.tw || ty >= s.th) return false; return s.exploreCtx.getImageData(tx, ty, 1, 1).data[3] > 100; };
+  // Vehicles are drawn only where someone can see (your own always).
   C.vehVisible = function (v) { if (!C.fogOn()) return true; if (v === G().vehicle) return true; return C.pointSeen(v.x, v.y); };
 
+  // Wrap tryFire: an unseen army shooter leaves a ping ring (larger for machine guns) near its position, with jitter.
   // gunshots you cannot see leave a ping
   const tf = C.tryFire;
   C.tryFire = function (s, a) {
@@ -65,6 +74,7 @@
   };
 
   // overlay: dark where unexplored, dim where remembered, clear where seen now
+  // Draw the overlay: dark where unexplored, dim where only remembered, clear where seen now (soft radial holes per viewer), plus last-known 'ghosts' and the expanding ping rings.
   C.drawFog = function (ctx, s, g, W, H, dpr) {
     if (!C.fogOn()) return; ensure(s);
     const R = C.R; if (!R.fogCv) R.fogCv = document.createElement('canvas');

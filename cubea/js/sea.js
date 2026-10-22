@@ -7,6 +7,7 @@
   const pick = (a) => a[Math.floor(rnd() * a.length)];
 
   // ------------------------------------------------------------------ the coast
+  // THE FOUR LANDING SITES: name, position along the coast (tile x), description and base threat (0.35–0.85). Each run multiplies the base by a random 0.55–1.5 factor, so nobody can learn 'the safe one'.
   const SITES = [
     { id: 'cabo',      x: 20,  name: 'Cabo Cruz', desc: 'A rocky point under a lighthouse. A tiny cove. The mountains are close — so are the guards.', base: 0.85, inland: 'The Sierra is two days away.' },
     { id: 'coloradas', x: 52,  name: 'Las Coloradas', desc: 'A mangrove swamp. The boat will ground far from dry land. Quiet, but the wading is brutal.', base: 0.55, inland: 'Cane country behind it; the army knows this coast.' },
@@ -15,6 +16,7 @@
   ];
   C.LANDING_SITES = SITES;
 
+  // Generate the coast scene: deep sea, reefs, a cliff-and-reef coast everywhere except the four sites (a rocky cove with a lighthouse, a mangrove swamp, a long beach with an army post, a winding river mouth), hills and forest inland.
   C.gen.bay = function (s) {
     const R = s.R, nz = C.makeNoise(31), n2 = C.makeNoise(57);
     s.rect(0, 0, s.tw, s.th, DEEP);
@@ -56,13 +58,16 @@
   };
 
   // ------------------------------------------------------------------ the crossing
+  // Real seconds per day at sea (seven days ≈ 56 s).
   const DAY_LEN = 8;                                   // real seconds per day at sea
+  // Calendar labels for the crossing (25 Nov – 2 Dec 1956).
   const DATES = ['25 Nov', '26 Nov', '27 Nov', '28 Nov', '29 Nov', '30 Nov', '1 Dec', '2 Dec'];
 
   const party = () => C.squadPeople();
   const everyone = (fn) => { for (const p of party()) fn(p); };
   function setNeeds(dn, dm) { everyone((p) => { if (dn) for (const k in dn) p.needs[k] = clamp(p.needs[k] + dn[k], 0, 100); if (dm) p.morale = clamp(p.morale + dm, 0, 100); }); }
 
+  // Start the opening: move the party to the bay scene, put the Granma on it with everyone on deck, roll the hidden threats, freeze the calendar, show the objective.
   C.beginCrossing = function () {
     const g = G();
     const ids = C.W.party.filter((id) => id !== C.W.player);
@@ -84,12 +89,14 @@
   };
 
   // deck movement for the player while at sea
+  // WASD movement of the player on the deck (clamped to the deck rectangle).
   C.deckMove = function (dt, mx, my) {
     const g = G(), a = g.player, v = g.sea.veh; const d = a.deck;
     const sp = 30; d.w = clamp(d.w + mx * sp * dt, -8, 8); d.u = clamp(d.u - my * sp * dt, -27, 27);
     a.moving = !!(mx || my); if (mx) a.face = mx > 0 ? 1 : -1;
     a.x = v.x + d.w; a.y = v.y - d.u; a.anim += (mx || my) ? dt * 40 : 0;
   };
+  // Crew on deck shuffle about, sway and tire slowly.
   C.deckActorUpdate = function (s, a, dt) {
     const g = G(), v = g.sea && g.sea.veh; if (!v || !a.deck) return;
     const d = a.deck; d.t -= dt;
@@ -101,6 +108,7 @@
   };
 
   function card(c) { C.ui.card(c); }
+  // THE SIX CROSSING EVENTS: seasickness (day 1), the leak (2), a man overboard (3), the storm (4), a plane (5), the ration fight (6). Each presents choices that move needs, trust, supplies or the chance of losing someone.
   const EVENTS = [
     { day: 1, run: () => card({ title: 'The sea takes them', icon: '🤢', body: 'By the second night the yacht is rolling hard. Men are bent over the rail; the deck stinks of vomit. The cook has lemons and a little sugar. Someone says out loud that they should have waited for better weather.',
       choices: [
@@ -139,6 +147,7 @@
       ] }) },
   ];
 
+  // Per-frame crossing logic: sail north steadily (cross phase), fire the day's event, set the sea clock; at the end start the approach. In the approach phase it runs the dawn light and the patrol boat.
   C.seaUpdate = function (dt) {
     const g = G(), S = g.sea; if (!S || !S.active) return;
     const v = S.veh, s = g.scene;
@@ -160,6 +169,7 @@
     }
   };
 
+  // The helm unlocks: everyone goes below (into the vehicle), a patrol boat appears, and a card describes the four sites.
   function startApproach() {
     const g = G(), S = g.sea, s = g.scene, v = S.veh; S.phase = 'approach'; S.t0 = S.t; g.weather.target = 0;
     // from now the boat is yours: put everyone below and you at the helm
@@ -174,6 +184,7 @@
     C.log('Land ahead. The helm is yours.', 'info');
   }
 
+  // The patrol boat sweeps the coast; if it comes within 190 px at dawn it may spot you (alert +0.35); a plane may circle later (+0.2).
   function patrolUpdate(dt) {
     const g = G(), S = g.sea, s = g.scene, pb = S.patrol, v = S.veh; if (!pb || pb.wreck) return;
     pb.x += pb.patrol.dir * 22 * dt; pb.ang = pb.patrol.dir > 0 ? 0 : Math.PI; if (pb.x > pb.patrol.x1) pb.patrol.dir = -1; if (pb.x < pb.patrol.x0) pb.patrol.dir = 1;
@@ -183,11 +194,13 @@
   }
 
   // landing: E near the shore or running aground
+  // Is the boat touching land (within 40 px)?
   C.seaNearLand = function () {
     const g = G(), v = g.sea && g.sea.veh; if (!v) return false; const s = g.scene;
     for (let r = 0; r <= 40; r += 10) for (let a = 0; a < 6.28; a += 0.8) { const t = C.tileAt(s, v.x + Math.cos(a) * r, v.y + Math.sin(a) * r); if (t !== DEEP && t !== SHAL) return true; }
     return false;
   };
+  // Land: choose the nearest site (a landing between sites adds +0.18 threat) and resolve it.
   C.seaLand = function () {
     const g = G(), S = g.sea; if (!S || S.phase !== 'approach' || S.landed) return; if (!C.seaNearLand()) { C.ui.toast('Not close enough to land'); return; }
     S.landed = true; const v = S.veh;
@@ -196,6 +209,7 @@
     resolveLanding(site, threat);
   };
 
+  // Outcome = threat + 0.55·alert + noise → ashore unseen / under fire / ambushed on the beach / massacre (60–100% of the party die; sometimes the player; sometimes everyone). Supplies are lost in proportion, the dead's families hear of it, survivors are shaken, and the story continues to Alegría de Pío with an enemy multiplier of 0.7–1.7.
   function resolveLanding(site, threat) {
     const g = G(), S = g.sea;
     const risk = threat + S.alert * 0.55 + (rnd() - 0.5) * 0.4;
@@ -225,6 +239,7 @@
       choices: [{ label: playerDies ? 'Go on…' : 'Go inland', fn: () => { if (playerDies) { g.sea.active = false; g.over = { kind: 'dead', cause: 'killed at the landing' }; return; } C.endSea(site, kind, mult, survivors); } }] });
   }
 
+  // Leave the sea phase and start Alegría de Pío with the survivors.
   C.endSea = function (site, kind, mult, survivors) {
     const g = G(); g.sea.active = false; g.vehicle = null; g.minPerSec = 1.5;
     const intro = `${kind === 'quiet' ? 'Three days of marching' : 'Three days of hiding and marching'} inland from ${site.name}. Wet boots, no food, no sleep. On 5 December, at midday, you rest in a cane field at Alegría de Pío. Someone has told the army where you are.`;

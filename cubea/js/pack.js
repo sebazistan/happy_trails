@@ -66,6 +66,7 @@
   // ------------------------------------------------------------------------------------------------------------------
   // Helpers
   // ------------------------------------------------------------------------------------------------------------------
+  let lastHtml = '', dragging = false;              // render de-duplication and drag guard
   let who = null;                                   // the person whose pack is open
   const SHARE_RANGE = 60;                           // generous version of the sharing range for manual hand-overs
   const near = (a, b) => a && b && Math.hypot(a.x - b.x, a.y - b.y) <= SHARE_RANGE;
@@ -79,7 +80,7 @@
   const nearLeader = (p) => { const g = G(), a = p.actor; return !!(a && g.player && Math.hypot(a.x - g.player.x, a.y - g.player.y) < 140); };
 
   C.openPack = function (p) {
-    const g = G(); if (!p || !g.scene) return; C.initInv(p); who = p; render(); el.style.display = 'block';
+    const g = G(); if (!p || !g.scene) return; C.initInv(p); who = p; lastHtml = ''; render(); el.style.display = 'block';
   };
   C.closePack = function () { who = null; el.style.display = 'none'; };
 
@@ -112,6 +113,8 @@
     h += `<div class="zone" data-to="ground"><div class="ztitle"><span>⬇ Ground</span><span class="zsub">drop here</span></div><div class="gz">`;
     for (const it of items.slice(0, 8)) { const k = ['food', 'ammo', 'med', 'gren', 'molo', 'water'].includes(it.k) ? it.k : null; if (k) h += tile({ from: 'ground', k }, (C.ITEMS[k] || {}).icon || '•', it.amount || 1, it.label || k, true); }
     h += `</div></div></div></div>`;
+    // Only touch the DOM when the content changed (and never during a drag): replacing the tiles mid-drag would cancel it.
+    if (h === lastHtml || dragging) return; lastHtml = h;
     el.innerHTML = h;
     try { ui.portrait && ui.portrait($$('#pkPortrait'), p, a, 2.3); } catch (e) { }
     wire();
@@ -127,15 +130,16 @@
     el.querySelectorAll('[data-rf]').forEach((b) => b.onclick = () => { if (G().paused) return toast('No orders while paused'); C.setRation([who.id], +b.dataset.rf, null); render(); });
     el.querySelectorAll('[data-rw]').forEach((b) => b.onclick = () => { if (G().paused) return toast('No orders while paused'); C.setRation([who.id], null, +b.dataset.rw); render(); });
     el.querySelectorAll('.tile[draggable]').forEach((t) => {
-      t.ondragstart = (e) => { e.dataTransfer.setData('text/plain', JSON.stringify({ from: t.dataset.from, k: t.dataset.k })); e.dataTransfer.effectAllowed = 'move'; };
+      t.ondragend = () => { dragging = false; };
+      t.ondragstart = (e) => { dragging = true; e.dataTransfer.setData('text/plain', JSON.stringify({ from: t.dataset.from, k: t.dataset.k })); e.dataTransfer.effectAllowed = 'move'; };
     });
     el.querySelectorAll('.zone').forEach((z) => {
       z.ondragover = (e) => { e.preventDefault(); z.classList.add('over'); };
       z.ondragleave = () => z.classList.remove('over');
-      z.ondrop = (e) => { e.preventDefault(); z.classList.remove('over'); let d; try { d = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (x) { return; } drop(d, z, e); };
+      z.ondrop = (e) => { dragging = false; e.preventDefault(); z.classList.remove('over'); let d; try { d = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (x) { return; } drop(d, z, e); };
     });
     // the main pack grid is also a target: picking things up from the ground or stores
-    const mine = $$('#pkMine'); if (mine) { mine.ondragover = (e) => e.preventDefault(); mine.ondrop = (e) => { e.preventDefault(); let d; try { d = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (x) { return; } drop(d, { dataset: { to: 'self' } }, e); }; }
+    const mine = $$('#pkMine'); if (mine) { mine.ondragover = (e) => e.preventDefault(); mine.ondrop = (e) => { dragging = false; e.preventDefault(); let d; try { d = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (x) { return; } drop(d, { dataset: { to: 'self' } }, e); }; }
   }
   const $$ = (sel) => el.querySelector(sel);
 
@@ -157,7 +161,7 @@
     const moved = to === 'person' && d.from === 'self' ? C.give(p, dest.p, d.k, amount) : C.transfer(from, dest, d.k, amount);
     if (!moved) { shake(d.k); toast(dest.kind === 'person' ? `${C.tagName(dest.p)} cannot carry any more of that` : 'Nothing moved'); }
     else if (C.snd && C.snd.click) C.snd.click();
-    render();
+    lastHtml = ''; render();
   }
   function shake(k) { const t = el.querySelector(`.tile[data-k="${k}"]`); if (t) { t.classList.remove('shake'); void t.offsetWidth; t.classList.add('shake'); } }
 

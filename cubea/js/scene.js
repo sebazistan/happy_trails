@@ -2,19 +2,27 @@
 (function () {
   'use strict';
   const C = (window.C = window.C || {});
+  // WORLD UNITS. One tile is 16 world px; actors move in px, terrain is in tiles. (In Unreal: 100 uu per tile.)
   const T = 16;                                   // px per tile (world units)
   C.T = T;
   // terrain codes
+  // TERRAIN CODES (tile ids). G grass, FOR forest, ROAD, DEEP water (impassable on foot), SHAL shallows (walkable, slow, drinkable), BLD building footprint, ROCK, CANE sugar cane, SAND, TRAIL, PLAZA, FENCE, PIER, PAVED.
   const G = 0, FOR = 1, ROAD = 2, DEEP = 3, SHAL = 4, BLD = 5, ROCK = 6, CANE = 7, SAND = 8, TRAIL = 9, PLAZA = 10, FENCE = 11, PIER = 12, PAVED = 13;
   C.TILE = { G, FOR, ROAD, DEEP, SHAL, BLD, ROCK, CANE, SAND, TRAIL, PLAZA, FENCE, PIER, PAVED };
   //                 G    FOR  ROAD DEEP SHAL BLD  ROCK CANE SAND TRL  PLZ  FNC  PIER PAVED
+  // Movement cost per terrain (0 = impassable). The pathfinder and walking speed both use it: road 0.7, forest 1.6, shallows 1.7…
   const COST =    [1.0, 1.6, 0.7, 0,   1.7, 0,   0,   1.4, 1.25, 0.8, 0.7, 0,   0.7, 0.65];
+  // Line-of-sight opacity per terrain (0 clear … 1 blocks). Forest 0.3, cane 0.22, buildings and rock 1. Summed along a ray (losOpacity).
   const OPAC =    [0,   0.30,0,   0,   0,   1,   1,   0.22,0,    0,   0,   0.0, 0,   0];
+  // Chance per 8 px that a bullet is stopped by a terrain type (forest and cane partly, buildings and rock fully).
   const BLOCKB =  [0,   0.045,0,  0,   0,   1,   1,   0.02,0,    0,   0,   0,   0,   0]; // bullet-stopping chance per 8px
   C.TCOST = COST; C.TOPAC = OPAC;
 
+  // Cache of generated scenes by settlement id. A scene is generated once, kept for the whole game, and re-entered.
   C.scenes = {};
 
+  // A SCENE is one location's tile map plus everything static or semi-static in it: buildings, props, objects (sabotage targets), points of interest, exits, homes; and the live lists used during play: actors, bullets, particles, items, corpses, decals, vehicles, animals.
+  // Helper methods paint terrain (rect, disc, line), place buildings (addBld), and search for free spots (nearFree, randomFree).
   class Scene {
     constructor(sid, type, tw, th) {
       this.sid = sid; this.type = type; this.tw = tw; this.th = th;
@@ -32,6 +40,7 @@
     set(x, y, t) { if (this.in(x, y)) this.tiles[y * this.tw + x] = t; }
     rect(x, y, w, h, t, onlyOn) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (this.in(i, j) && (!onlyOn || onlyOn.includes(this.get(i, j)))) this.set(i, j, t); }
     disc(cx, cy, r, t, onlyOn) { for (let j = Math.floor(cy - r); j <= cy + r; j++) for (let i = Math.floor(cx - r); i <= cx + r; i++) if ((i - cx) ** 2 + (j - cy) ** 2 <= r * r && this.in(i, j) && (!onlyOn || onlyOn.includes(this.get(i, j)))) this.set(i, j, t); }
+    // Paint a thick polyline of tile type t (optionally only over the listed types).
     line(pts, w, t, onlyOn) {
       for (let k = 0; k < pts.length - 1; k++) {
         const [x0, y0] = pts[k], [x1, y1] = pts[k + 1]; const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2 + 1;
@@ -39,6 +48,7 @@
       }
     }
     isFree(x, y) { return this.in(x, y) && COST[this.get(x, y)] > 0; }
+    // True if a rectangle (plus margin) is free of buildings, water, rock, roads and fences — a legal place for a new building.
     freeRect(x, y, w, h, margin) {
       for (let j = y - margin; j < y + h + margin; j++) for (let i = x - margin; i < x + w + margin; i++) {
         if (!this.in(i, j)) return false; const t = this.get(i, j);
@@ -46,6 +56,7 @@
       }
       return true;
     }
+    // Add a building of type `key` at tile (x,y): stamps BLD tiles unless it is an open structure, computes a door tile, and records the building (label, colours, tag, door, occupants).
     addBld(key, x, y, opts) {
       const d = C.BLD[key]; opts = opts || {};
       const w = opts.w || d.w, h = opts.h || d.h;
@@ -58,6 +69,7 @@
     centerPx(b) { return { x: (b.x + b.w / 2) * T, y: (b.y + b.h / 2) * T }; }
     doorPx(b) { return { x: b.door.tx * T + T / 2, y: b.door.ty * T + T / 2 }; }
     // find a free tile near (tx,ty)
+    // Find a walkable tile near (tx,ty) by searching rings of growing radius.
     nearFree(tx, ty, r, avoid) {
       for (let rr = 0; rr <= (r || 8); rr++) for (let a = 0; a < 12 + rr * 4; a++) {
         const ang = this.R() * 6.283, x = Math.round(tx + Math.cos(ang) * rr), y = Math.round(ty + Math.sin(ang) * rr);
@@ -65,14 +77,18 @@
       }
       return { x: tx, y: ty };
     }
+    // A random walkable tile (optionally of the given terrain types).
     randomFree(tiles) {
       for (let k = 0; k < 400; k++) { const x = this.R.int(this.tw), y = this.R.int(this.th); if (this.isFree(x, y) && (!tiles || tiles.includes(this.get(x, y)))) return { x, y }; }
       return { x: this.tw >> 1, y: this.th >> 1 };
     }
   }
+  // (exported so sea.js and tests can construct scenes)
   C.Scene = Scene;
 
+  // GENERATOR HELPERS shared by all locations.
   // ---------------- generic helpers ----------------
+  // Sprinkle palms, ceibas and trees over tiles of the given types.
   function scatterTrees(s, density, region, tiles) {
     const R = s.R;
     for (let y = 0; y < s.th; y++) for (let x = 0; x < s.tw; x++) {
@@ -81,6 +97,7 @@
       if (R() < density) s.prop(R() < 0.45 ? 'palm' : R() < 0.4 ? 'ceiba' : 'tree', x + R.range(-0.3, 0.3), y + R.range(-0.3, 0.3));
     }
   }
+  // Place one dwelling per household at random free spots inside `area(x,y)`; returns the buildings.
   function placeHouses(s, hhs, kinds, area, spacing) {
     // place dwellings on free land inside area(x,y)=bool, return array of buildings
     const R = s.R, out = [];
@@ -95,17 +112,21 @@
     }
     return out;
   }
+  // Label a dwelling with its head's surname ('Bohío Pino') so the village shows who lives where.
   function famLabel(b, hh) { const head = C.W.people[hh.head]; if (!head) return; const pre = b.key === 'bohio' ? 'Bohío' : b.key === 'casona' ? 'Casona' : 'Casa'; b.label = pre + ' ' + head.last; }
+  // Give each household a dwelling (several households share a building when there are fewer buildings).
   function assignHomes(s, hhs, bldgs) {
     const R = s.R;
     for (let i = 0; i < hhs.length && bldgs.length; i++) {
       const b = bldgs[i % bldgs.length]; hhs[i].bld = b.id; b.hh = hhs[i].id; s.homes.push({ hh: hhs[i].id, bld: b.id }); famLabel(b, hhs[i]);
     }
   }
+  // Surround a scene with a frame of impassable terrain.
   function worldBorder(s, t) { // frame of impassable terrain
     for (let i = 0; i < s.tw; i++) { s.set(i, 0, t); s.set(i, s.th - 1, t); }
     for (let j = 0; j < s.th; j++) { s.set(0, j, t); s.set(s.tw - 1, j, t); }
   }
+  // Add an exit rectangle on a map edge (side n/s/e/w, between two tile coordinates) leading to another scene; opens a corridor through rock, water and forest.
   function addExit(s, side, from, to, label, dest) { // side n/s/e/w, from..to in tiles along the edge
     let r;
     if (side === 'n') r = { x: from, y: 0, w: to - from, h: 3 }; else if (side === 's') r = { x: from, y: s.th - 3, w: to - from, h: 3 };
@@ -116,9 +137,12 @@
     s.exits.push(r);
   }
 
+  // GENERATORS: one function per location builds its terrain, buildings, props, objects (sabotage targets), points of interest, exits and spawn.
+  // Alegría de Pío and the bay keep their tuned sizes; the others are generated compact and then embedded in a larger map (embedScene).
   // ---------------- generators ----------------
   const gen = {};
 
+  // Alegría de Pío: a cane field with a clearing where the party lands, a cart track, two huts, and a scripted exit to the forest in the north-west.
   gen.cane = function (s) {
     const R = s.R, noise = C.makeNoise(7);
     s.rect(0, 0, s.tw, s.th, CANE);
@@ -138,6 +162,7 @@
     s.title = 'Cañaveral de Alegría de Pío';
   };
 
+  // The Sierra Maestra: noise terrain (ridges, forest, grass), a stream, three clearings (the rebel camp with eight build plots, the charcoal-burners' hamlet, the army outpost with fence, powder magazine and fuel depot), trails between them and exits to Cayo Piedra, Palmarito and Santiago.
   gen.sierra = function (s, hhs) {
     const R = s.R, n1 = C.makeNoise(11), n2 = C.makeNoise(23);
     for (let y = 0; y < s.th; y++) for (let x = 0; x < s.tw; x++) {
@@ -192,6 +217,7 @@
     assignHomes(s, hhs, hbs);
   };
 
+  // Palmarito, a foothill batey: a plaza, a shop, a chapel, a school, homesteads and fields.
   gen.village = function (s, hhs) {
     const R = s.R, noise = C.makeNoise(31);
     s.rect(0, 0, s.tw, s.th, G);
@@ -233,6 +259,7 @@
     s.dwellings = homes;
   };
 
+  // Cayo Piedra, a fishing cove: a pier, boat spots, a cooperative, houses and the sea.
   gen.fishing = function (s, hhs) {
     const R = s.R, noise = C.makeNoise(41);
     s.rect(0, 0, s.tw, s.th, G);
@@ -261,6 +288,7 @@
     s.dwellings = homes;
   };
 
+  // Lay a street grid over a town (roads or pavement) and return the blocks between the streets.
   function townGrid(s, opt) { // returns {blocks:[{x,y,w,h}], streets}
     const sx = opt.sx, sy = opt.sy, street = opt.street || 3;
     const blocks = [];
@@ -270,7 +298,9 @@
     for (let x = opt.x0; x + sx + street < s.tw - 2; x += sx) for (let y = opt.y0; y + sy + street < s.th - 2; y += sy) blocks.push({ x: x + street, y: y + street, w: sx - street, h: sy - street, gx: (x - opt.x0) / sx, gy: (y - opt.y0) / sy });
     return blocks;
   }
+  // Clear a one-tile margin around a building so it is always reachable.
   function clearAround(s, x, y, w, h) { for (let j = y - 1; j <= y + h; j++) for (let i = x - 1; i <= x + w; i++) { if (i >= x && i < x + w && j >= y && j < y + h) continue; if (s.get(i, j) === BLD) return false; } return true; }
+  // Pack a city block with buildings in rows, skipping spots that do not fit.
   function fillBlock(s, b, kinds, rowGap) {
     // pack buildings in two rows along block
     const out = [];
@@ -288,6 +318,7 @@
     return out;
   }
 
+  // Shared town builder driven by a spec: terrain/water, street grid, civic buildings in named blocks (plaza, cathedral, barracks…), houses and shops in the rest, household assignment (tenements host four), trees, exits and spawn point. Manzanillo, Bayamo, Santiago and Havana are specs.
   function buildTown(s, hhs, spec) {
     const R = s.R;
     s.rect(0, 0, s.tw, s.th, G);
@@ -327,6 +358,7 @@
     if (spec.after) spec.after(s);
   }
 
+  // Manzanillo: harbour town on the Gulf of Guacanayabo.
   gen.manzanillo = function (s, hhs) {
     buildTown(s, hhs, {
       seed: 61, title: 'Manzanillo', grid: { x0: 12, y0: 10, sx: 14, sy: 13, street: 3, paved: false },
@@ -339,6 +371,7 @@
       after: (s) => { s.pierPx = { x: 7 * T, y: 30 * T }; s.rect(5, 29, 8, 2, PIER); s.boatSpots = [{ x: 5 * T, y: 34 * T }, { x: 4 * T, y: 24 * T }]; s.objs.push({ k: 'deposito', label: 'Depósito de gasolina (puerto)', x: 14 * T, y: 36 * T, hp: 70, w: 28, h: 20 }); },
     });
   };
+  // Bayamo: inland colonial town with a plaza.
   gen.bayamo = function (s, hhs) {
     buildTown(s, hhs, {
       seed: 62, title: 'Bayamo', grid: { x0: 8, y0: 8, sx: 14, sy: 13, street: 3, paved: false },
@@ -351,6 +384,7 @@
       after: (s) => { s.objs.push({ k: 'torre', label: 'Torre de radio', x: 30 * T, y: 22 * T, hp: 50, w: 8, h: 8 }); },
     });
   };
+  // Santiago de Cuba: the east's big city — Moncada, the cathedral, the bay.
   gen.santiago = function (s, hhs) {
     buildTown(s, hhs, {
       seed: 63, title: 'Santiago de Cuba', grid: { x0: 8, y0: 8, sx: 13, sy: 12, street: 3, paved: true },
@@ -364,6 +398,7 @@
       after: (s) => { s.pierPx = { x: 40 * T, y: (s.th - 12) * T }; s.rect(38, s.th - 14, 3, 7, PIER); s.boatSpots = [{ x: 30 * T, y: (s.th - 5) * T }]; s.objs.push({ k: 'torre', label: 'Torre de radio de la policía', x: 66 * T, y: 38 * T, hp: 50, w: 8, h: 8 }); },
     });
   };
+  // Havana: the capital — the Palace, the university, the hotels, the embassy, the pier.
   gen.habana = function (s, hhs) {
     buildTown(s, hhs, {
       seed: 64, title: 'La Habana', grid: { x0: 8, y0: 12, sx: 13, sy: 11, street: 3, paved: true },
@@ -380,6 +415,7 @@
   };
 
   // make sure every building door can be reached from the spawn point (carve a footpath if a door is walled in)
+  // Guarantee that every door is reachable from the spawn point: flood-fill the walkable network, and for any door that is cut off, carve a trail to the nearest reachable tile.
   function ensureAccess(s) {
     const tw = s.tw, th = s.th, N = tw * th; const reach = new Uint8Array(N);
     const st = s.nearFree(Math.floor(s.spawn.x / T), Math.floor(s.spawn.y / T), 10);
@@ -403,12 +439,16 @@
     }
   }
   // ---------------- build / fetch scene ----------------
+  // Compact generation sizes in tiles; SCALE (below) then embeds most of them in a larger map.
   const SIZES = { cane: [84, 60], sierra: [100, 70], village: [72, 52], fishing: [72, 52], manzanillo: [96, 66], bayamo: [96, 66], santiago: [112, 74], habana: [122, 80], bay: [112, 86] };
+  // (generator table exported so sea.js can add the bay)
   C.gen = gen;
   // Scenes are generated at a compact size and then embedded in a much larger map (the surroundings continue the terrain,
   // roads and shorelines outward), so every location is a large place with real countryside around its centre.
+  // LARGE SCENES: the scale factor per location (see embedScene).
   const SCALE = { sierra: 1.9, village: 1.9, fishing: 1.8, manzanillo: 1.7, bayamo: 1.7, santiago: 1.6, habana: 1.6 };
   C.SCENE_SCALE = SCALE;
+  // Build the large scene: copy tiles (softening the old border frame), fill the surroundings, shift every coordinate-bearing object (buildings, props, objects, points of interest, spawn, army, pier, boat spots, plaza, camp, field POIs, vehicles, animals) by the offset, and relocate exits.
   function embedScene(sm, K) {
     const clamp = C.clamp; const sw = sm.tw, sh = sm.th, W = Math.round(sw * K), H = Math.round(sh * K); const ox = (W - sw) >> 1, oy = (H - sh) >> 1;
     const big = new Scene(sm.sid, sm.type, W, H); big.R = sm.R;
@@ -462,6 +502,7 @@
     big.ox = ox; big.oy = oy; big.inner = { x: ox, y: oy, w: sw, h: sh };
     return big;
   }
+  // Fetch (generating on first use) the scene for a settlement: pick the households to house, run the generator, make doors reachable, and embed in the large map.
   C.getScene = function (sid) {
     if (C.scenes[sid]) return C.scenes[sid];
     const S = C.SETTLEMENTS[sid]; const sz = SIZES[sid === 'palmarito' ? 'village' : sid === 'cayo' ? 'fishing' : sid === 'alegria' ? 'cane' : sid];
@@ -481,8 +522,10 @@
     return s;
   };
 
+  // PATHFINDING: grid A* with an octagonal neighbourhood, per-terrain costs and modes ('foot', 'car' prefers roads, 'boat' only water). Work arrays are pooled per scene and stamp-versioned (no allocation per search); nodes expanded are capped at 16,000.
   // ---------------- pathfinding ----------------
   // mode: 'foot' | 'car' (roads strongly preferred, no forest) | 'boat'
+  // Find a path in world px from (x0,y0) to (x1,y1); returns a list of waypoints (collinear ones removed) or null.
   C.findPath = function (s, x0, y0, x1, y1, mode) {
     const tw = s.tw, th = s.th;
     let sx = Math.floor(x0 / T), sy = Math.floor(y0 / T), ex = Math.floor(x1 / T), ey = Math.floor(y1 / T);
@@ -522,6 +565,7 @@
     const sm = []; for (let i = 0; i < out.length; i++) { if (i === 0 || i === out.length - 1 || (out[i + 1].x - out[i].x) * (out[i].y - out[i - 1].y) !== (out[i + 1].y - out[i].y) * (out[i].x - out[i - 1].x)) sm.push(out[i]); }
     return sm;
   };
+  // Nearest legal tile to a blocked start/goal (searching rings up to 14 tiles).
   function nearestOk(s, x, y, cost) {
     for (let r = 1; r < 14; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
@@ -530,6 +574,7 @@
     return null;
   }
 
+  // Would a foot unit of radius r collide with impassable terrain at (x,y)? Tests the four corners.
   // movement/collision test for foot units (radius r px)
   C.footBlocked = function (s, x, y, r) {
     r = r || 4;
@@ -541,7 +586,9 @@
     }
     return false;
   };
+  // Terrain code at a world position (ROCK outside the map).
   C.tileAt = function (s, x, y) { const tx = Math.floor(x / T), ty = Math.floor(y / T); return (tx < 0 || ty < 0 || tx >= s.tw || ty >= s.th) ? ROCK : s.tiles[ty * s.tw + tx]; };
+  // Sum of terrain opacity along the ray between two points; ≥1 means blocked. Used for visibility and fog of war.
   // line-of-sight opacity sum between two points
   C.losOpacity = function (s, x0, y0, x1, y1) {
     const d = Math.hypot(x1 - x0, y1 - y0); const n = Math.ceil(d / (T * 0.5)); let sum = 0, last = -1;
@@ -553,5 +600,6 @@
     }
     return sum;
   };
+  // Chance that a bullet is stopped by a terrain type.
   C.bulletBlockChance = (t) => BLOCKB[t] || 0;
 })();

@@ -3,6 +3,12 @@
   'use strict';
   const C = (window.C = window.C || {});
 
+  // SEEDED RANDOM NUMBERS
+  // C.RNG(seed) returns a function f() that yields floats in [0,1) from a 32-bit seed (mulberry32).
+  // The SAME seed always gives the SAME sequence, which is what makes a world reproducible: population generation, scene
+  // layouts and the Unreal port's golden-data check all depend on it. Helpers hang off the function:
+  //   f.int(n) 0..n-1 · f.range(lo,hi) float · f.irange(lo,hi) inclusive int · f.pick(arr) · f.chance(p) boolean
+  //   f.gauss() standard normal · f.weighted([[item,weight],…]) · f.shuffle(arr) in place (Fisher–Yates).
   // mulberry32 seeded RNG with helpers
   C.RNG = function (seed) {
     let a = seed >>> 0;
@@ -27,8 +33,12 @@
     f.shuffle = (arr) => { for (let i = arr.length - 1; i > 0; i--) { const j = f.int(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
     return f;
   };
+  // Gameplay randomness (combat spread, event rolls, AI choices) is deliberately NOT seeded from the world seed,
+  // so two runs of the same world still play out differently. Anything that must be reproducible uses C.RNG(seed) instead.
   C.rnd = C.RNG((Date.now() ^ 0x5bd1e995) >>> 0);   // gameplay randomness (not seeded)
 
+  // Small math helpers used everywhere: clamp to a range, linear interpolation, distance, a string hash (FNV-1a) that turns
+  // names like 'sierra' into stable seeds, the sign of a number, and thousands-separated formatting.
   C.clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
   C.lerp = (a, b, t) => a + (b - a) * t;
   C.dist = (ax, ay, bx, by) => Math.hypot(bx - ax, by - ay);
@@ -36,11 +46,15 @@
   C.sign = (v) => (v > 0 ? 1 : v < 0 ? -1 : 0);
   C.fmt = (n) => Math.round(n).toLocaleString('en-US');
 
+  // Colours are plain [r,g,b] arrays (0..255). mix blends two colours, rgb renders a CSS string, shade scales brightness.
   // colours: [r,g,b] arrays 0..255
   C.mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
   C.rgb = (c, a) => (a === undefined || a === 1) ? `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})` : `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
   C.shade = (c, k) => [C.clamp(c[0] * k, 0, 255), C.clamp(c[1] * k, 0, 255), C.clamp(c[2] * k, 0, 255)];
 
+  // LOYALTY COLOUR — the game's core legibility trick.
+  // stance runs −100 (committed Batista) … +100 (committed rebel); conviction 0..100 says how firmly it is held.
+  // The colour fades from white (neutral) toward red or blue; weakly held loyalties stay pale. A glance at a crowd shows who is where.
   // Loyalty colour. stance -100(Batista)..+100(Rebel); conviction 0..100 => saturation.
   // White = neutral; deep red = committed rebel; deep blue = committed Batista loyalist.
   const WHITE = [244, 240, 232], RED = [214, 40, 40], BLUE = [38, 82, 205];
@@ -52,6 +66,8 @@
   };
   C.COLORS = { WHITE, RED, BLUE };
 
+  // Value noise (smoothed random lattice) used to shape terrain: forests, hills, shorelines. makeNoise(seed) returns noise(x,y) in [0,1].
+  // A 256×256 random grid is bilinearly interpolated with a smoothstep curve, so neighbouring samples vary smoothly.
   // Cheap value noise for terrain
   C.makeNoise = function (seed) {
     const r = C.RNG(seed), N = 256, g = new Float32Array(N * N);
@@ -65,6 +81,8 @@
     };
   };
 
+  // Binary min-heap used by the pathfinder (scene.js findPath). push(item, priority) / pop() returns the lowest-priority item.
+  // clear() empties it so a pooled instance can be reused between searches without reallocating.
   // Binary heap for A*
   C.Heap = class {
     constructor() { this.a = []; }

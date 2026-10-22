@@ -43,6 +43,7 @@ Orders live in the **command bar** (bottom centre), five tabs. A tab button arms
 | **Ambush** | Slip to a spot, hide, hold fire until close — **F** springs it. |
 | **Patrol** | Walk a loop through the points you click (Enter finishes). |
 | **Retreat** | Run to a place without firing. Never counts as dangerous. |
+| **Mortar fire** | The tube carrier deploys and lobs shells at the point; others in the selection are the crew (they hand over shells). Friendly fire is real. |
 
 ### Recon
 | Order | What it does |
@@ -62,6 +63,13 @@ Orders live in the **command bar** (bottom centre), five tabs. A tab button arms
 | **Build (labour)** | Work a camp plot; each worker cuts the cost 15% (up to 50%). |
 | **Rest** | Sleep where told: energy and health recover. |
 | **Treat wounded** | A medic goes to the nearest wounded friend and uses medicine. |
+
+### Supply (instant; set a standing allowance)
+| Order | What it does |
+|---|---|
+| **Food: full / half / none** | How freely the selected eat from their own packs. Hungry people *disobey* a harsh restriction (see `docs/DESIGN_BIBLE.md` §12i). |
+| **Water: free / sparing / none** | The same for water (e.g. forbid drinking while hiding in an ambush). |
+| **Share out** | Pool everyone's rations and canteens and deal them back evenly. |
 
 ### People
 | Order | What it does |
@@ -127,3 +135,11 @@ Non-combat tasks (dig, latrine, water, carry, build, rest, treat, help, feed) ar
 * Execution is a **Mass Entity** processor per verb family (move/engage/work/observe) or a **StateTree** per verb for named characters. The prototype's `runOrder` switch maps one-to-one onto StateTree tasks.
 * The danger estimate is the same function over the AI perception subsystem's *shared knowledge* (what any friendly actually saw), not world truth.
 * Command UI is **UMG + Common UI**; the order bar is built from the DataAsset registry.
+
+## 9. The Pack (drag and drop) ✅
+
+Double-click a rebel, or press **T**, to open their pack: item tiles you can drag to a nearby comrade, to the column's stores, or to the ground; ground items and stores can be dragged back in. Plain drag = 1, Shift = all, Ctrl = 5. Heavy loads slow people down; the window shows the load bar and the slowdown. Dragging the weapon tile onto a comrade hands it over. The window is read-only while paused. Per-person ration buttons (food/water: free, half, none) are in the pack as well.
+
+## 10. Context-aware suggestions ✅
+
+Below the command bar, up to four buttons appear only when they matter: share out when people are hungry, fetch water when thirsty, treat when wounded and medicine exists, redistribute when overloaded, dig a latrine when the camp is filthy, ambush/retreat on contact, open the pack when rifles are spare and men are unarmed.

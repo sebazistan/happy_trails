@@ -65,3 +65,16 @@ These work best as a **network layer**, not as a ninth faction. People already b
 * Qualitative review by Cubans for speech, names, customs and the "abuse" handling.
 * Which other regions to add first (Camagüey/Las Villas for the columns; Escambray; Isla de Pinos).
 * Whether the networks layer above is worth building before the Unreal port.
+
+## Round 3 decisions (hallmark systems, inventory, bonds, UI)
+
+| Request | What was built | Where |
+|---|---|---|
+| Make the key traits of the Cuban rebels solid | Period weapons incl. bazooka and mortar crews; treatment of prisoners, mercy index and amnesty; land reform (seizure menu, cooperatives, compensation, the Sierra law); platform forecasts and polls | `data.js`, `combat.js`, `orders.js`, `policy.js` |
+| Friendships that become as strong as family | A bond meter per pair: proximity, ×6 in combat, shared rations, bandages; at full strength a bond weighs 1.0 in the audience of events (like a spouse) | `bonds.js`, `gen.js` |
+| Heavily commented code | Every file has a header; every section and function has a comment; balance numbers in documented TUNE blocks | all `js/*.js` |
+| Design Bible up to date | New sections 12i–12p | `docs/DESIGN_BIBLE.md` |
+| Clever, modern, context-aware UI with drag and drop | The Pack window (drag items between people, stores, ground), the suggestion strip, glass styling | `pack.js`, `cmdui.js`, `index.html` |
+| Each soldier has an inventory with a maximum | Weight-based capacity from individual strength, age and health; slowdown when overloaded | `inventory.js` |
+| Soldiers carry food and water and share with comrades | Packs; the neediest comrade within range is helped; medics hand out bandages | `inventory.js` |
+| Restrict food/water; disobedience if loyalty is low or they are too hungry/thirsty | Supply orders; per-check chance to cheat rises with need², low loyalty and low trust; cheating costs trust and discipline | `inventory.js`, `orders.js` |

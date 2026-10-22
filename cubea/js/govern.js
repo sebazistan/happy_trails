@@ -3,6 +3,7 @@
 (function () {
   const C = window.C, G = () => C.G, clamp = C.clamp, rnd = Math.random;
 
+  // Start the post-victory phase: compute the six meters (support from faction means, readiness from party size, unity from the drift/strings/executions, repression from fear/executions/atrocities, tension with Washington from American interests crossed, economy 50) and show the first card.
   C.beginGoverning = function () {
     const g = G(); if (g.over || g.gov) return;
     C.usInit && C.usInit(); C.racketInit && C.racketInit();
@@ -20,6 +21,7 @@
     C.ui.card({ title: 'Havana, January 1959', icon: '🏙', body: 'The column rolls into Havana under a rain of paper. The war is over and the government is yours — a country with a ruined sugar economy, a million people out of work every dead season, a Church, an army with no head, a great American embassy, and sixty thousand cheering people who all want something different.\n\nA few decisions will fix what kind of state you are when someone comes for it.', choices: [{ label: 'Begin', fn: () => next() }] });
   };
 
+  // THE EIGHT GOVERNING DECISIONS: land, trials, press and the vote, American-owned utilities, schools and the Church, the army and militias, women and race, trade and oil. Each option adjusts the meters (see adj).
   const STEPS = [
     () => ({ title: 'The land', icon: '🌾', body: 'Half the cane belongs to a handful of owners, a good part of them American companies. The cane-cutters want the land now. The owners want you to remember who pays.', choices: [
       { label: 'Break the great estates up at once', sub: 'Peasants and workers rejoice. Owners and Washington bristle.', fn: () => adj({ sup: +8, usT: +14, unity: -4, econ: -6 }, 'land', 2) },
@@ -63,22 +65,26 @@
     ] }),
   ];
 
+  // Apply an option's meter changes, a small honesty cost if you backtrack on a declared plank, and show the next card.
   function adj(d, key, level) {
     const g = G(), m = g.gov.m; for (const k in d) m[k] = clamp(m[k] + d[k], 0, 100);
     if (g.platform && g.platform.declared) { const idx = C.PLANK_IDX[key]; if (idx !== undefined) { if (g.platform.real[idx] !== level) C.adjustRep('honesty', g.platform.declared[idx] && g.platform.pub[idx] > level ? -4 : 0); } }
     g.gov.step++; next();
   }
+  // Show the next decision, or the flash-forward after the last.
   function next() {
     const g = G(); const i = g.gov.step;
     if (i < STEPS.length) { const c = STEPS[i](); C.ui.card(c); return; }
     flashForward();
   }
 
+  // The April 1961 card: two years and three months later; the CIA-backed brigade is coming.
   function flashForward() {
     const g = G(), m = g.gov.m;
     C.ui.card({ title: 'April 1961', icon: '📅', body: 'You have governed for two years and three months. Not long. The sugar harvest is up in some provinces and down in others; there are queues in some shops; there are schools where there were none. Across the Straits of Florida, in the offices of an American agency, a plan prepared under the previous administration is about to be carried out.\n\nOn 15 April, planes painted with the markings of your own air force bomb your airfields.', choices: [{ label: 'The brigade lands at Playa Girón', fn: () => invasion() }] });
   }
 
+  // Resolve Playa Girón: score = 0.30·support + 0.28·readiness + 0.20·unity + 0.10·economy + 0.12·(100 − 0.8·repression) − 0.14·drift − 2.5·American strings ± noise; above 48 wins. The text depends on how broad the support was; then the end screen.
   function invasion() {
     const g = G(), m = g.gov.m;
     const merc = g.merc || 0, str = (g.us && g.us.strings) || 0;

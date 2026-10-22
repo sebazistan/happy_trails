@@ -5,9 +5,17 @@
   const C = (window.C = window.C || {});
   const clamp = C.clamp;
   const G = () => C.G;
+  // TUNE — the loyalty engine's balance knobs (all in one place).
+  //  rate     fraction of the gap to the target stance closed per day (before conviction slows it)
+  //  memHalf  half-life in days of an ordinary memory; memHalfKin for memories of a spouse/child/parent/self
+  //  policyW  weight of the declared platform's fit; bgW the rest of the platform; needW hope/dignity; peerW family/friends' pull
+  //  memW     weight of memories; memCap the cap on any one memory's contribution; fearW weight of fear
   C.TUNE = { rate: 0.05, memHalf: 70, memHalfKin: 260, policyW: 46, bgW: 14, needW: 0.2, peerW: 0.12, memW: 0.55, memCap: 75, fearW: 0.25 };
 
+  // NEW GAME. C.G is the whole mutable game state; C.W (gen.js) is the population database. Nothing else holds state.
   // ---------------- new game ----------------
+  // Build a fresh game from a seed: generate the world, then create C.G with the starting squads, resources, platform, reputation, regime meters and flags.
+  // G.res are the column's stores; G.platform holds public and real positions; G.regime = {legit, armyMorale, usSupport, heat}; G.rep = reputation axes.
   C.newGame = function (seed, opts) {
     opts = opts || {}; if (opts.fog === undefined) opts.fog = true;
     C.scenes = {};
@@ -38,14 +46,18 @@
     return g;
   };
 
+  // THE PLAYER'S NAME. You are Fidel under any name typed on the title screen; only the nametag changes, not the person's history.
   // ---------------- the player's name ----------------
+  // Rename the player's person. A typed surname other than 'Castro' clears the maternal surname.
   C.setPlayerName = function (full) {
     const p = C.P(C.W.player); const parts = String(full || 'Fidel Castro').trim().replace(/\s+/g, ' ').split(' ');
     const last = parts.length > 1 ? parts.pop() : 'Castro'; const first = parts.join(' ');
     p.first = first; p.last = last; if (last !== 'Castro') p.last2 = ''; p.tag = first + ' ' + last; p.role = 'Comandante'; p.note = 'You lead the expedition.';
   };
 
+  // COUNTER-INTELLIGENCE. Instead of foresight, the player reads TELLS (ambiguous observations) and can pay a network to investigate.
   // ---------------- counter-intelligence: tells and investigation ----------------
+  // Observable hints about a person: an informer shows some of 'spends more than they earn', 'asks about trails', 'seen near the army post' (deterministically per person); innocents show them rarely; plus clean-shaven rebels after long service and kin in the army.
   C.tells = function (p) {
     const out = []; const h = (k) => (((p.id * 2654435761) ^ (k * 40503)) >>> 0) / 4294967296;
     if (p.informant) {
@@ -60,6 +72,7 @@
     const kin = C.kinOf(p); for (const [id] of kin) { const q = C.P(id); if (q.mil && q.mil.side === 'army' && q.status === 'alive') { out.push('Has kin in the army'); break; } }
     return out;
   };
+  // Pay 12 pesos for a network check: usually right (50–92% depending on how well your network is established), sometimes wrong. Reveals an informer or clears a suspect.
   C.investigate = function (p) {
     const g = G(); if (g.res.money < 12) { C.ui.toast('Needs 12 pesos for the network'); return false; }
     g.res.money -= 12; g.stats.pesos += 12;
@@ -70,9 +83,14 @@
     C.log(`Your network is unsure about ${C.fullName(p)}: some smoke, no proof.`, 'info'); return false;
   };
 
+  // EVENTS AND MEMORY — the heart of the simulation.
+  //  An EVENT happens to a victim. Everyone in the victim's audience (kin, friends, compadres… see gen.js audienceOf) receives a MEMORY of it, scaled by closeness.
+  //  Memories decay (half-life 70 days, 260 for close kin) and each day pull the person's loyalty toward the rebels (+) or the regime (−).
   // ---------------- events and memory ----------------
+  // Append a line to the player's log (newest first, capped at 80) and notify the UI.
   C.log = function (text, kind) { const g = G(); if (!g) return; g.log.unshift({ t: g.min, day: g.day, text, kind: kind || 'info' }); if (g.log.length > 80) g.log.pop(); if (C.ui && C.ui.onLog) C.ui.onLog(text, kind); };
 
+  // Store a memory on a person. Similar memories from the same source within 30 days merge (no farming goodwill). A person remembers at most 9 things: when full, the least important (by value × intensity × recency) is forgotten.
   C.remember = function (p, m) {
     if (p.status !== 'alive' && p.status !== 'away' && p.status !== 'jailed') return;
     // repeated similar deeds towards the same person merge into one stronger memory (no farming goodwill)
@@ -84,10 +102,16 @@
   const sideOf = (a) => (a ? a.side : null);
 
   // base weights per event type: [intensity, valence-sign-by-perp] — see addEvent
+  // Reference table for event types (intensity and text templates).
   const EV = {
     death_army_by_rebel: { int: 52, text: (v) => `${v} was killed by the rebels`, },
   };
 
+  // C.addEvent(ev): publish an event. ev = {type, victim, perpSide:'rebel'|'army'|null, sev 0–100, just, pub 0–1, positive, x,y, scene, settlement, text, memText, headline}.
+  //  1. sign: who benefits? (a killing by the army helps the rebels (+1); a rebel atrocity hurts them (−1)); 'just' acts count 55% as much.
+  //  2. every member of the audience gets a memory with intensity = sev × closeness; witnesses on the scene learn at once, kin within a day, others by gossip (delayed queue).
+  //  3. public events (pub>0) also reach ~140 random townspeople at 35% strength.
+  //  4. big public events become headlines.
   // Generic event: {type, victim: person, perpSide: 'rebel'|'army'|null, perp: person?, sev (0..100), just (bool), pub (0..1), x,y, scene, text, positive (bool)}
   C.addEvent = function (ev) {
     const g = G(); ev.id = C.W.nextEv++; ev.day = g.day; g.events.push(ev); if (g.events.length > 500) g.events.shift();
@@ -127,6 +151,7 @@
     if (ev.headline || ev.sev >= 45) C.log(ev.headline || ev.text, ev.positive ? 'good' : sign > 0 ? 'info' : 'bad');
     return ev;
   };
+  // Apply one memory to a person immediately: store it, and for close kin harden conviction and shift loyalty in the direction of the grief or anger; adjust dignity, safety, fear and stress for deaths, abuse and requisitions.
   function applyMemory(q, mem, w) {
     C.remember(q, mem);
     // immediate reactions: kin shocks harden conviction in the direction of the grief/anger
@@ -141,6 +166,7 @@
     if (w >= 0.7 && mem.kind === 'death') { q.stress = clamp(q.stress + 30, 0, 100); }
   }
 
+  // C.emit(type, o): the combat module reports raw happenings (death, wound, surrender, sabotage, blast); this converts them into events, reputation changes, morale shocks and regime meters.
   // events from combat
   C.emit = function (type, o) {
     const g = G(); if (!g) return;
@@ -189,10 +215,14 @@
     } else if (type === 'blast') { g.regime.heat = clamp(g.regime.heat + 0.4, 0, 100); }
   };
 
+  // SOCIAL ACTIONS. Deeds and reputation adjust the long-term counters (G.deeds[plank], G.rep.*).
   // ---------------- player-facing social actions ----------------
+  // Record progress on a plank (0–100): deeds are what 'prove' a promise (see updateTrust).
   C.deed = function (k, amt) { const g = G(); g.deeds[k] = clamp(g.deeds[k] + amt, 0, 100); };
+  // Change one reputation axis (fear, justice, honesty, discipline, competence), clamped 0–100.
   C.adjustRep = function (key, d) { const g = G(); g.rep[key] = clamp(g.rep[key] + d, 0, 100); };
 
+  // Price of a unit of food: dearer in the dead season and in rain; sympathizers give a discount.
   C.price = function (settlement, who) {
     const g = G(); let base = 0.26;
     base *= C.isZafra(g.day) ? 0.9 : 1.25;                         // tiempo muerto: hungry season, dear food
@@ -201,6 +231,7 @@
     return Math.max(0.1, base * (1 - disc));
   };
 
+  // C.forageTransaction: how rebels get food from civilians under the current policy — PAY (money, goodwill), VALE (an IOU due in 30 days; a promise that must be kept), or TAKE (free, resented, scaled by how poor and hungry the seller is). Each path publishes the right event.
   // rebels buy/take from a civilian (forage stance or player dialog)
   C.forageTransaction = function (a, t, kind) {
     const g = G(), s = a.scene; const policy = g.policy.forage;
@@ -230,8 +261,10 @@
       C.say(a, 'Es por la causa', '#7a1d1d', 1.8); if (kind === 'civ') { t.panic = 0.7; C.say(t, 'No nos dejen sin nada...', '#7a1d1d', 2.4); }
     }
   };
+  // Butchered game or livestock adds its food value to the stores.
   C.harvestAnimal = function (a, an) { const g = G(); g.res.food += an.def.food; C.say(a, 'Buena caza', '#1d4a1d', 1.6); };
 
+  // Vales are repaid (or defaulted on) when due; a default costs honesty and makes an enemy of the creditor's family.
   // vales fall due
   function processVales() {
     const g = G();
@@ -244,12 +277,15 @@
     g.promises = g.promises.filter((p) => !p.paid || p.day > g.day - 3);
   }
 
+  // THE STANCE ENGINE: what loyalty a person is pulled toward today, and why.
   // ---------------- stance engine ----------------
+  // How well the DECLARED position on plank k matches this person's own position (−1…+1; 0 if not declared).
   C.platformFit = function (p, k) { // -1..1 how well the DECLARED plank matches this person; 0 if undeclared
     const g = G(); if (!g.platform.declared[k]) return 0;
     const q = g.platform.pub[k] - 1;           // 0,1,2 -> -1,0,1
     return 1 - Math.abs(q - p.iss[k]);
   };
+  // The target-stance recipe as a list of labelled contributions: the two planks they care most about (× trust in your faction), the rest of the platform, hope & dignity, hunger, memories (decayed), family & friends' pull, opportunism, fear. The inspector shows exactly this list.
   C.explainStance = function (p) {
     const g = G(), TU = C.TUNE, out = [];
     const F = C.FACTIONS[p.fac];
@@ -267,22 +303,28 @@
     out.sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
     return out;
   };
+  // (Placeholder hook for per-person plank weighting; currently 1.)
   function fit0(p, k) { return 1; }
   const kinCache = new Map();
+  // Weighted mean loyalty of a person's close kin and friends — the 'peer pull'. Cached per person (cache cleared when large).
   function peerMean(p) {
     let arr = kinCache.get(p.id);
     if (!arr) { arr = []; const m = C.kinOf(p); for (const [id, o] of m) if (o.w >= 0.3) arr.push([id, o.w]); for (const r of p.rel) if (r.w > 0.1) arr.push([r.id, r.w]); kinCache.set(p.id, arr); }
     let s = 0, w = 0; for (const [id, ww] of arr) { const q = C.P(id); if (q.status === 'dead') continue; s += q.trueStance * ww; w += ww; }
     return w ? s / w : p.trueStance;
   }
+  // What a person SHOWS (informers show a pale friendly stance) versus what they really are.
   C.shownStance = function (a) {
     const p = a.p;
     if (p.informant && !p.revealed) return { v: p.stance, c: Math.max(20, p.conv - 20) };
     return { v: p.trueStance, c: p.conv };
   };
+  // Sum of the explanation list plus the faction's baseline, clamped to −100…+100.
   C.stanceTarget = function (p) { const e = C.explainStance(p); let t = 0; for (const x of e) t += x.v; return clamp(t + C.FACTIONS[p.fac].stance * 0.55, -100, 100); };
 
+  // THE DAILY TICK. Once per game day, for every living person: needs drift (for those not simulated live), healing (cracks heal if fed and rested; chunks never), morale, experience, beard growth, and the loyalty update (move toward the target at a rate slowed by conviction; conviction grows when pushed the way they lean). Then: soldiers may desert, queued memories arrive, vales fall due, atrocities, orders upkeep, rackets, policy; faction trust follows promises vs deeds; regime meters (heat, legitimacy, army morale, US support) drift; leaks expose lies; ruling by fear costs trust.
   // ---------------- daily tick ----------------
+  // (see above)
   C.dayTick = function () {
     const g = G(), TU = C.TUNE, day = g.day;
     kinCache.size > 8000 && kinCache.clear();
@@ -380,6 +422,7 @@
   const squadIds = () => G().squads.flatMap((s) => s.members);
   const squadPeople = () => squadIds().map((id) => C.P(id)).filter((p) => p && p.status === 'alive');
   function rebelsCount() { return squadIds().length; }
+  // Faction trust: for each faction, announced reform planks are tested against deeds after a grace period of 20 days; kept promises raise trust, unkept lower it; conduct (justice, fear) also moves the elite, the Church and the peasants.
   function updateTrust() {
     const g = G();
     for (const f of C.FACTION_KEYS) {
@@ -399,12 +442,14 @@
     g.trust.elite = clamp(g.trust.elite + (g.rep.justice - 50) * 0.00006 - g.rep.fear * 0.00008, 0.02, 1);
     g.trust.church = clamp(g.trust.church + (g.rep.justice - 50) * 0.00006 - g.rep.fear * 0.00005, 0.02, 1);
   }
+  // A leak: your public position on a plank is revealed to differ from your real plan. Honesty and trust collapse among those who care about it.
   C.exposeLie = function (k) {
     const g = G(); g.platform.real[k] = g.platform.pub[k]; g.rep.honesty = clamp(g.rep.honesty - 14, 0, 100);
     for (const f of C.FACTION_KEYS) g.trust[f] = clamp(g.trust[f] - 0.18 * Math.min(1, C.FACTIONS[f].sal[k] / 2), 0.02, 1);
     C.log(`EXPOSED: your public stand on "${C.PLANKS[k].en}" does not match your private plans. Trust collapses among those who care.`, 'bad');
     g.news.unshift({ day: g.day, text: `Leak: rebel leadership "says one thing, plans another" on ${C.PLANKS[k].en.toLowerCase()}` });
   };
+  // A rebel leaves (AWOL), possibly with a rifle; if he was an informer or an enemy, heat rises.
   C.desert = function (p) {
     const g = G(); if (!p.mil || p.mil.side !== 'rebel') return;
     for (const sq of g.squads) sq.members = sq.members.filter((id) => id !== p.id);
@@ -415,13 +460,19 @@
     if (p.informant || p.trueStance < -10) { g.regime.heat = clamp(g.regime.heat + 8, 0, 100); C.log(`...and word is, they went to the army.`, 'bad'); }
   };
 
+  // PER-SOLDIER TRUST (0–100, default 60): how far each soldier believes you will not waste them. Orders (orders.js) and discipline decisions move it; obedience reads it.
   // ---------------- trust in the leader (per soldier) ----------------
   C.trustOf = (p) => (p.trust === undefined ? 60 : p.trust);
   C.addTrust = function (p, d) { p.trust = clamp(C.trustOf(p) + d, 0, 100); };
 
+  // DISCIPLINE: what you do when one of your own commits a crime against civilians. Methods: firing squad, court-martial, private reckoning, ignore.
+  // Each soldier judges the outcome through their own sex, traits, closeness to the offender and the kind of offence — so the troop splits.
   // ---------------- discipline: punishing your own ----------------
+  // Closeness weights of non-kin ties for judging an offender.
   const TIEW = { friend: 0.4, compadre: 0.5, comrade: 0.5, lover: 0.8, coworker: 0.15, neighbor: 0.1, rival: -0.2 };
+  // How close q is to the offender (kin weight or tie weight, 0 if none).
   function tieTo(q, cand) { const rel = C.relativeLabel(q, cand); if (!rel) return 0; if (C.KINW[rel] !== undefined) return C.KINW[rel]; return TIEW[rel] || 0; }
+  // A soldier's appetite for harsh punishment (0..1): more for women, idealists and graver crimes; less for hotheads, drinkers and kind people; much less if close to the offender.
   // would this soldier back harsh punishment for this offence? 0..1
   function harshOpinion(q, cand, kind, method) {
     let o = 0.45;
@@ -431,6 +482,7 @@
     const tie = tieTo(q, cand); o -= (method === 'squad' ? 0.7 : 0.35) * tie;
     return clamp(o + (Math.random() - 0.5) * 0.3, 0, 1);
   }
+  // Carry out the chosen punishment, update reputation/justice/discipline, publish the event for the victim's family, apply each crewman's reaction (approve: +morale/trust; disapprove: −; close friends of a shot man may desert), and show 'The troop reacts'.
   C.punishOffender = function (cand, vic, sid, kind, method) {
     const g = G(); const cn = C.tagName(cand), vn = C.tagName(vic); const grave = kind === 'abuse' || kind === 'killing';
     const crew = C.squadPeople().filter((q) => q.id !== cand.id && q.id !== C.W.player);
@@ -474,7 +526,9 @@
     C.ui.card({ title: 'The troop reacts', icon: '🗣', body: lines.join('\n'), choices: [{ label: 'Carry on', fn: () => { } }] });
   };
 
+  // THE REGIME'S ATROCITIES: each day every garrison soldier has a small chance (rising with heat, bad army morale, hothead/drinker/greedy traits; falling for kind men) of committing theft, looting, beating, abuse, torture or murder against locals. Grave ones are reported to the player (recentAtrocity → the army_abuse event).
   // ---------------- the regime's atrocities (every garrison, every day) ----------------
+  // (see above)
   C.atrocityTick = function () {
     const g = G(); const heatK = 1 + g.regime.heat / 120; g.stats.atrocities = g.stats.atrocities || { army: 0, rebel: 0 };
     for (const sid of C.PLAYABLE) {
@@ -498,8 +552,10 @@
     }
   };
 
+  // ARMING. Rifles are limited (G.res.guns for rifles, G.heavy[...] for BARs, machine guns, bazookas and mortars). Giving one to a novice while veterans carry machetes divides the troop.
   // ---------------- scarce rifles ----------------
   // Arming a novice while experienced men carry machetes divides the troop. Returns the number who resent it.
+  // (Ordinary rifles come from G.res.guns; heavy ones from G.heavy.)
   // Heavy weapons (BAR, MG, bazooka, mortar) come from g.heavy; ordinary rifles from g.res.guns.
   // A heavy weapon given to a novice divides the troop exactly like a rifle does (C.resentment).
   C.armSoldier = function (p, wk) {
@@ -509,6 +565,7 @@
     if (p.actor && p.actor.scene === g.scene) { C.giveWeapon(p.actor, p.wpn, C.WEAPONS[p.wpn].mag * 2); p.actor.weaponOut = true; }
     return C.resentment(p);
   };
+  // Experienced unarmed soldiers resent a novice getting a gun: trust and morale fall, anger rises (more if the novice is a woman and the veteran a traditionalist). Returns how many resent it.
   C.resentment = function (p) {
     let n = 0;
     for (const q of C.squadPeople()) {
@@ -519,7 +576,9 @@
     return n;
   };
 
+  // THE MANIFESTO. declarePlank announces a position (public) and records the real plan; changing a declared position is a flip-flop (trust and honesty fall). Presets are quick starting points.
   // ---------------- platform ----------------
+  // Announce plank k at `level` (0,1,2) with an optional different real plan; flip-flops cost trust and honesty.
   C.declarePlank = function (k, level, realLevel) {
     const g = G(), P = g.platform;
     const was = P.declared[k] ? P.pub[k] : null;
@@ -531,14 +590,17 @@
     if (!P.declared[k] || was !== level) P.dayDeclared[k] = g.day;
     P.declared[k] = true;
   };
+  // Named starting platforms: 'History Will Absolve Me', radical, moderate, order-and-tradition.
   C.presets = {
     historia: { n: '"History Will Absolve Me" (26th of July program)', v: [1, 2, 1, 1, 2, 1, 1, 1] },
     radical: { n: 'Radical transformation', v: [2, 2, 2, 2, 0, 2, 2, 2] },
     moderate: { n: 'Moderate reformists', v: [1, 1, 1, 0, 2, 1, 1, 1] },
     order: { n: 'Order and tradition', v: [0, 1, 0, 0, 1, 0, 0, 0] },
   };
+  // Announce every plank of a preset.
   C.applyPreset = function (key) { const pr = C.presets[key]; pr.v.forEach((lvl, k) => C.declarePlank(k, lvl)); C.log(`Announced: ${pr.n}.`, 'info'); };
 
+  // Aggregated loyalty by faction (mean stance, trust, size) plus the mean for women and for Afro-Cubans; drives the factions panel and the end screen.
   // ---------------- factions table for the UI ----------------
   C.factionTable = function () {
     const g = G(); const rows = {};
@@ -553,12 +615,15 @@
     return { rows: out, women: wN ? wS / wN : 0, afro: aN ? aS / aN : 0, all: g.supportMean || 0 };
   };
 
+  // THE HAVANA PIPELINE. Donors in the capital send money via couriers to the Sierra; each trip can be intercepted (risk falls with experience, and for women).
   // ---------------- couriers (the Havana pipeline) ----------------
+  // Dispatch a courier with money (the balance leaves the pipeline now; it arrives, or is lost, after 6–10 days).
   C.sendCourier = function (carrier, amount) {
     const g = G(); const risk = clamp(0.22 + g.regime.heat * 0.004 - (carrier.p.sex === 'F' ? 0.1 : 0) - carrier.p.exp * 0.0015, 0.05, 0.6);
     g.pipe.couriers.push({ id: carrier.p.id, amount, due: g.day + 6 + Math.floor(Math.random() * 5), risk });
     g.pipe.balance -= amount; C.log(`${C.tagName(carrier.p)} sets out with ${amount} pesos for the Sierra (risk of interception ${Math.round(risk * 100)}%).`, 'info');
   };
+  // Resolve couriers whose trip is due: caught at a checkpoint (money lost, heat up) or delivered.
   function processCouriers() {
     const g = G(); const keep = [];
     for (const c of g.pipe.couriers) {
@@ -570,7 +635,9 @@
     g.pipe.couriers = keep;
   }
 
+  // TRAVEL COST over the edge graph (Dijkstra): foot days and vehicle hours between two playable places.
   // ---------------- travel ----------------
+  // (see above)
   C.travelCost = function (from, to) { // shortest foot days / vehicle hours over the edge graph
     const nodes = C.PLAYABLE, dist = {}, vh = {}, prev = {};
     for (const n of nodes) { dist[n] = 1e9; vh[n] = 1e9; }
@@ -579,6 +646,7 @@
     return { days: dist[to], hours: vh[to] };
   };
 
+  // Quick aggregates over the rebel party (size, mean experience, morale, hunger) for the UI.
   // ---------------- stats helpers for UI ----------------
   C.partyStats = function () {
     const g = G(); const ids = squadIds(); let exp = 0, mor = 0, hung = 0;

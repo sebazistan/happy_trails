@@ -2,12 +2,14 @@
 // and what happens when you send people to a place they are sure will kill them.
 (function () {
   const C = window.C, G = () => C.G, T = C.T, TL = C.TILE, clamp = C.clamp;
+  // Access to the AI's movement helpers (exported by ai.js as C.ai).
   const AI = () => C.ai;
   const toast = (t) => C.ui && C.ui.toast(t);
 
   // ---------------------------------------------------------------- order table
   // need: 'point' (click ground) | 'actor' (click an enemy) | 'pad' (click a camp plot) | 'none' (now)
   // danger: how much the order exposes people (multiplier on the danger estimate)
+  // THE ORDER TABLE (see docs/COMMANDS.md). Each order: tab (which command-bar tab), name, need ('point' click the ground, 'actor' click a soldier, 'pad' click a camp plot, 'none' immediate), danger (how much it exposes people, ×0 … 1), work (seconds a task takes), instant (supply orders that apply at once) and a description.
   C.ORDERS = {
     move:    { tab: 'move',  n: 'Move',            need: 'point', danger: 0.8, d: 'Walk to a place. Shift queues waypoints.' },
     follow:  { tab: 'move',  n: 'Follow me',       need: 'none',  danger: 0,   d: 'Drop what you are doing and stay close to the leader.' },
@@ -51,32 +53,40 @@
   C.ORDER_TABS = [['move', 'Move'], ['fight', 'Fight'], ['recon', 'Recon'], ['camp', 'Camp'], ['people', 'People'], ['supply', 'Supply']];
 
   // ---------------------------------------------------------------- selection & groups
+  // The ids of the selected people (alive rebels); falls back to the current group when nothing is selected.
   C.selIds = function () {
     const g = G(); g.sel = (g.sel || []).filter((id) => { const p = C.P(id); return p && p.status === 'alive' && p.mil && p.mil.side === 'rebel'; });
     if (g.sel.length) return g.sel;
     const sq = g.squads[g.curSquad]; return sq ? sq.members.slice() : [];
   };
+  // Select these people: stores the list and flags their actors (msel) for the gold ring.
   C.setSel = function (ids) {
     const g = G(); g.sel = ids.slice();
     const set = new Set(g.sel);
     for (const a of g.scene.actors) a.msel = set.has(a.p.id) && !a.isPlayer;
     if (C.ui && C.ui.refreshCmd) C.ui.refreshCmd();
   };
+  // The selected people's actors in the current scene.
   C.selActors = () => C.selIds().map((id) => C.P(id).actor).filter((a) => a && a.scene === G().scene && !a.dead && !a.gone);
+  // Colours for up to nine groups.
   C.GROUP_COLS = ['#e4574b', '#e8a23a', '#5ab0e8', '#7fd07a', '#b58be8', '#e88bb4', '#8be8d2', '#d6d66a', '#c0875a'];
+  // Create a named group (up to nine) from the given people.
   C.newGroup = function (name, ids) {
     const g = G(); if (g.squads.length >= 9) { toast('Nine groups at most'); return null; }
     const id = g.squads.length; const sq = { id, name: name || ('Group ' + (id + 1)), col: C.GROUP_COLS[id], members: [], stance: 'follow', fireNow: false, custom: true };
     g.squads.push(sq); if (ids && ids.length) C.assignGroup(id, ids); return sq;
   };
+  // Move people into group n (removing them from other groups).
   C.assignGroup = function (n, ids) {
     const g = G(); const sq = g.squads[n]; if (!sq) return;
     for (const id of ids) { const p = C.P(id); if (!p || id === C.W.player) continue; for (const q of g.squads) q.members = q.members.filter((x) => x !== id); sq.members.push(id); if (p.mil) p.mil.squad = n; if (p.actor) { p.actor.squad = n; p.actor.stanceOv = null; } }
     C.ui.refresh && C.ui.refresh();
   };
+  // Select all members of group n (and make it the current group).
   C.selectGroup = function (n) { const g = G(); const sq = g.squads[n]; if (!sq) return; g.curSquad = n; C.setSel(sq.members.filter((id) => C.P(id).status === 'alive')); };
 
   // filters on the whole party
+  // Selection filters by what the person is: armed, no rifle, wounded, healthy, veterans, green, rested, women, brave, hotheads, medics & kind.
   C.FILTERS = {
     all:     ['Everyone', (p) => true],
     armed:   ['Armed', (p) => p.wpn && p.wpn !== 'machete'],
@@ -91,7 +101,9 @@
     hothead: ['Hotheads', (p) => p.traits.includes('hothead')],
     kind:    ['Medics & kind', (p) => p.traits.includes('kind') || p.occ === 'medico' || p.occ === 'enfermera'],
   };
+  // The living rebels (except the leader) who have actors in this scene.
   C.partyPeople = () => C.squadPeople().filter((p) => p.id !== C.W.player && p.actor && p.actor.scene === G().scene);
+  // Select everyone matching a filter, optionally ordered by experience or health.
   C.selectBy = function (key, sortKey) {
     const f = C.FILTERS[key]; let ps = C.partyPeople().filter(f[1]);
     if (sortKey === 'exp') ps.sort((a, b) => b.exp - a.exp); else if (sortKey === 'hp') ps.sort((a, b) => b.hp - a.hp);
@@ -99,12 +111,15 @@
   };
 
   // ---------------------------------------------------------------- danger
+  // A weapon's relative power (damage × rate of fire relative to a rifle) for the danger estimate.
   const power = (a) => { const w = a.weapon ? C.WEAPONS[a.weapon.k] : null; if (!w) return 0.2; return clamp(w.dmg * Math.min(w.rof, 6) / 43, 0.2, 9); };
+  // The enemy soldiers KNOWN to be near a point: seen in the last 120 s (using last-known positions for those now out of sight). Only what someone actually saw counts.
   C.knownEnemiesNear = function (x, y, r) {
     const g = G(), s = g.scene; const out = [];
     for (const a of s.actors) { if (a.side !== 'army' || a.dead) continue; const seen = (a.seenEver || -999) > g.time - 120; if (!seen && C.fogOn()) continue; const px = a.lastSeen && !C.visible(a) ? a.lastSeen.x : a.x, py = a.lastSeen && !C.visible(a) ? a.lastSeen.y : a.y; if (Math.hypot(px - x, py - y) < r) out.push(a); }
     return out;
   };
+  // Estimate how deadly an order is: known enemy power near the target (plus a known army post) over our power (weapon × experience × health), times the order's own danger factor. Returns {level:'ok'|'risky'|'deadly', ratio, foes}.
   C.orderDanger = function (acts, order) {
     const g = G(), s = g.scene, def = C.ORDERS[order.type]; if (!def || !def.danger) return { level: 'ok', ratio: 0, foes: 0 };
     const pts = order.pts || [{ x: order.tgt ? order.tgt.x : order.x, y: order.tgt ? order.tgt.y : order.y }]; if (pts[0].x === undefined) return { level: 'ok', ratio: 0, foes: 0 };
@@ -119,6 +134,7 @@
   };
 
   // willingness 0..1 to do something dangerous
+  // How willing a person is to do something dangerous (0..1): trust, experience, morale, fear, stress, traits (brave/idealist/veteran up; cautious down), and an early-war bonus.
   C.willing = function (p) {
     const g = G(); let w = 0.35 + C.trustOf(p) / 160 + p.exp / 330 + (p.morale - 50) / 220 - p.fear / 260 - p.stress / 330;
     if (p.traits.includes('brave')) w += 0.2; if (p.traits.includes('idealist')) w += 0.1; if (p.traits.includes('hothead')) w += 0.08; if (p.traits.includes('cautious')) w -= 0.15; if (p.traits.includes('veteran')) w += 0.07;
@@ -127,7 +143,9 @@
   };
 
   // ---------------------------------------------------------------- issuing
+  // Spread a group around a target point in a grid so they do not stack on one spot.
   function slotOffset(i, n) { const cols = Math.ceil(Math.sqrt(n)); return { dx: ((i % cols) - (cols - 1) / 2) * 12, dy: (Math.floor(i / cols) - (Math.ceil(n / cols) - 1) / 2) * 12 }; }
+  // Pick who steps forward: those with willingness above 0.5 (with some randomness), up to the requested count; the rest look at the ground.
   function volunteersFor(acts, order, count) {
     const def = C.ORDERS[order.type];
     const scored = acts.map((a) => ({ a, w: C.willing(a.p) * (0.7 + Math.random() * 0.6) })).sort((x, y) => y.w - x.w);
@@ -135,6 +153,7 @@
     return { yes: yes.map((q) => q.a), no: looked.map((q) => q.a) };
   }
 
+  // THE ENTRY POINT FOR ORDERS: block while paused; supply orders apply instantly; volunteers if requested; estimate the danger; for 'deadly' orders show the argument card (reconsider / lead them yourself / that is an order); then apply.
   C.issue = function (order, opt) {
     opt = opt || {}; const g = G(), s = g.scene; if (!s) return;
     if (g.paused) { toast('No orders while paused — time is part of the pressure'); return; }
@@ -167,6 +186,7 @@
     apply(acts, order, dg, opt);
   };
 
+  // Apply an order to each person: refusal outcomes for deadly orders (a refuser deserts or balks), obedience roll otherwise (a 'no' is spoken and retried), trust changes, queueing, and the order marker.
   function apply(acts, order, dg, opt) {
     const g = G(), s = g.scene, def = C.ORDERS[order.type]; const n = acts.length;
     const refused = [], deserted = [], balked = [];
@@ -197,6 +217,7 @@
     else if (dg.level !== 'ok' && order.type !== 'retreat') toast(dg.level === 'deadly' ? 'They go, grimly.' : 'They do not like the odds.');
   }
 
+  // Create each person's own copy of the order with a formation offset.
   function makeOrder(order, off, a, i) {
     const o = Object.assign({ t: 0, phase: 'go', w: 0 }, order);
     if (o.pts) o.pts = o.pts.map((q) => ({ x: q.x + off.dx * 0.5, y: q.y + off.dy * 0.5 })), o.pi = 0;
@@ -204,6 +225,7 @@
     return o;
   }
 
+  // Consequences of a refusal: balkers lose trust and stand still; deserters leave the troop (support near zero, a few defect to the army and may inform, their families hear why); summary card.
   function refuseOutcome(refused, deserted, balked, order) {
     const g = G();
     for (const p of balked) { C.addTrust(p, -9); p.morale = clamp(p.morale - 8, 0, 100); if (p.actor) C.say(p.actor, 'No voy. Es una muerte segura.', '#7a1d1d', 4); }
@@ -222,11 +244,13 @@
     C.ui.card({ title: 'They will not go', icon: '✋', body: `${nm(refused)} refuse${refused.length === 1 ? 's' : ''}.\n\n${deserted.length ? nm(deserted) + ' walk' + (deserted.length === 1 ? 's' : '') + ' out of the camp. Whatever they felt for the cause is gone, and their families will hear why.\n' : ''}${balked.length ? nm(balked) + ' stand' + (balked.length === 1 ? 's' : '') + ' rooted to the spot and will not look at you.' : ''}`, choices: [{ label: 'It cannot be helped', fn: () => { } }] });
   }
 
+  // Finish an order: start the next queued one or return to the stance.
   function endOrder(a, keepStance) {
     a.working = false; a.path = null; a.pathFor = null;
     if (a.orderQ && a.orderQ.length) { a.order = a.orderQ.shift(); a.orderT = 0.1; return; }
     a.order = null; if (!keepStance && a.stanceOv && !['forage'].includes(a.stanceOv)) a.stanceOv = null;
   }
+  // Backspace: cancel orders of the selection.
   C.stopOrders = function () {
     const g = G(); if (g.paused) { toast('No orders while paused'); return; }
     for (const a of C.selActors()) { a.order = null; a.orderQ = []; a.pendingOrder = null; a.stanceOv = null; a.working = false; a.watching = false; a.path = null; }
@@ -234,20 +258,25 @@
   };
 
   // ---------------------------------------------------------------- execution (called from rebelUpdate)
+  // Tasks that are dropped when the shooting starts.
   const NONCOMBAT = { dig: 1, latrine: 1, water: 1, carry: 1, build: 1, rest: 1, treat: 1, help: 1, feed: 1 };
+  // Walk toward a point with the AI's path helpers; true on arrival.
   function goto(s, a, o, x, y, dt, mult) {
     const AIx = AI();
     if (!a.path || a.pathFor !== o || o.gx !== x || o.gy !== y) { AIx.setPath(s, a, x, y); a.pathFor = o; o.gx = x; o.gy = y; }
     const done = AIx.followPath(s, a, dt, a.speed * (mult || 1) * AIx.terrainSpeed(s, a));
     return done || Math.hypot(x - a.x, y - a.y) < 12;
   }
+  // Nearest item of a list passing a filter.
   function nearest(list, a, f) { let best = null, bd = 9e9; for (const o of list) { if (f && !f(o)) continue; const d = Math.hypot(o.x - a.x, o.y - a.y); if (d < bd) { bd = d; best = o; } } return best; }
+  // The nearest shallow-water tile (cached per scene).
   function waterSpot(s, a) {
     if (s.waterCache === undefined) { const pts = []; for (let ty = 1; ty < s.th - 1; ty++) for (let tx = 1; tx < s.tw - 1; tx++) { const t = s.tiles[ty * s.tw + tx]; if (t === TL.SHAL) pts.push({ x: tx * T + 8, y: ty * T + 8 }); } s.waterCache = pts; }
     return nearest(s.waterCache, a);
   }
 
   // returns true when the order consumed this frame (the unit should not run its stance behaviour)
+  // THE ORDER EXECUTOR (called from rebelUpdate each frame): the behaviour of each order — attack (advance and stop to fight), focus, ambush/watch/hold/guard (go there then hold with a stance override), patrol (loop between points), retreat (run, no firing), scout/stalk (sneak, look 14 s, report, return), dig/latrine/rest/build (go, work, effect), water (fetch and bring back), carry (collect ground items and bring them), treat (bandage the nearest wounded), help/feed (work for a peasant or livestock), mortar. Returns true when it consumed the frame.
   C.runOrder = function (s, a, o, dt, lead, tgt) {
     const g = G(), p = a.p, def = C.ORDERS[o.type]; if (!def) { a.order = null; return false; }
     // non-combat tasks are dropped when the shooting starts
@@ -374,13 +403,19 @@
     return true;
   }
 
+  // FOXHOLES: a unit standing in one takes half damage from bullets.
   // foxhole cover (used by combat.hurt)
+  // (see above)
   C.inFoxhole = function (a) { const s = a.scene; if (!s || !s.foxholes) return false; for (const f of s.foxholes) if (Math.abs(f.x - a.x) < 9 && Math.abs(f.y - a.y) < 9) return true; return false; };
 
+  // LABOUR: each worker who has helped cuts a camp building's cost 15% (up to 50%).
   // building discounts from labour
+  // (see above)
   C.padCost = function (b) { const k = b.slot; const cost = C.BUILD_COST[k]; const f = 1 - Math.min(0.5, (b.labor || 0) * 0.15); return [Math.ceil(cost[0] * f), Math.ceil(cost[1] * 0.25 * f)]; };
 
+  // DAILY UPKEEP: camp hygiene decays (dysentery strikes when it is low and there is no latrine); leading from the front under fire earns trust (more in the early war).
   // ---------------------------------------------------------------- daily upkeep
+  // (see above)
   C.ordersDaily = function () {
     const g = G(); if (g.hygiene === undefined) g.hygiene = 70;
     const party = C.squadPeople().length; g.hygiene = clamp(g.hygiene - (0.8 + party * 0.06), 0, 100);

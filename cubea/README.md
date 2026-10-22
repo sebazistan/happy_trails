@@ -46,6 +46,10 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 * **Discipline:** soldiers of every side can steal, beat, murder and — rarely — "abuse"; for your own you choose between firing squad, court-martial, a private reckoning, or letting it pass, and the troop is divided about it. Rifles are scarce; arming novices divides the veterans.
 * **Rackets:** protection, contraband and kidnapping pay — and drift the band toward a business, losing support and idealists.
 * **The Americans:** arms shipments, an American-owned mill, sailors on leave, a diplomat, an agent, the casino mob, the nationalisation question, the invasion.
+* **Packs and provisions:** every soldier carries a limited load (rations, canteens, ammunition, medicine, shells, rockets), shares with comrades in need, and can be ordered to ration food and water — hungry or thirsty people disobey a harsh restriction. **Drag and drop** items between people, the stores and the ground (double-click a soldier, or **T**).
+* **Friendship:** bonds grow with time near each other, six times faster in combat; a full bond weighs like a brother's.
+* **Weapons:** carbines, BARs, a bazooka (backblast!), 60 mm mortars with crews.
+* **Prisoners & amnesty, land reform, platform forecasts and polls.**
 * **Economy:** food/pesos/ammo/medicine/fuel/spare rifles, pay–owe–take foraging, vales (IOUs), crafting, an 8-pad camp, the Havana pipeline with couriers.
 * **Vehicles:** jeep, truck, car, bus, army trucks, oxcart, boats, the Granma — fuel, flats, wrecks, fire.
 * **Politics:** 8 factions, 8 planks, public vs. private platform, promises/deeds/trust, reputation, regime meters, a general strike, a women's platoon, racial-equality decisions, a non-violent path where marchers are mostly brutalised.
@@ -58,7 +62,7 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 ```
 cubea/
   index.html              page + CSS
-  js/                     util data lang gen scene render ai combat fog orders sea sim events events2 govern audio ui cmdui main
+  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack main
                           (classic scripts → works from file://)
   docs/                   DESIGN_BIBLE · DECISIONS · COMMANDS · SCHEMA · UNREAL_CODE_BIBLE · ROSTER · RISKS · IDEAS_AND_QUESTIONS
   tools/
@@ -74,6 +78,11 @@ npm i -D playwright            # once (and install a Chromium)
 node tools/harness/events_exercise.js   # every event + anchor + choice + end screen
 node tools/harness/soak.js              # 120 days of random play; checks NaNs/crashes
 node tools/harness/atrocity.js          # army atrocity tick, offender punishment, arming resentment
+node tools/harness/inventory.js         # packs, eating, sharing, rations, disobedience
+node tools/harness/bonds.js             # friendship growth and family-strength weight
+node tools/harness/weapons.js           # bazooka, backblast, mortar crew, load
+node tools/harness/policy.js            # mercy, prisoners, land reform, forecast, poll
+node tools/harness/pack_ui.js           # drag and drop in the Pack window
 node tools/harness/sea.js               # the crossing, six landings, hand-off to Alegría de Pío
 node tools/harness/ripple.js            # the family-graph ripple of a single killing
 node tools/harness/calibrate.js         # pay / owe / take foraging policy over 90 days

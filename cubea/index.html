@@ -146,6 +146,9 @@ table.t td,table.t th{padding:3px 6px;border-bottom:1px solid var(--line);text-a
   </div>
 </div>
 
+<!-- SCRIPT ORDER MATTERS (classic scripts, no modules, so the game runs from file://):
+     util → data → lang → gen → scene → render → ai → combat → fog → orders → sea → inventory → bonds → sim → events → events2 → govern → policy → audio → ui → cmdui → pack → main
+     Each file adds to the global namespace window.C; later files extend or wrap earlier ones (fog wraps tryFire; events2/policy add events to the Director's table). -->
 <script src="js/util.js"></script>
 <script src="js/data.js"></script>
 <script src="js/lang.js"></script>
