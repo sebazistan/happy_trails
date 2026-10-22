@@ -527,7 +527,8 @@
     withdraw: { n: 'Retirada', d: 'Break contact and return to you.' },
   };
   // The chance a rebel obeys an order: 0.45 + 0.30·loyalty + 0.18·morale + 0.10·experience + 0.10·discipline + 0.14·trust − hunger − exhaustion − fear − stress − thirst; clamped 0.05–0.99.
-  function obedience(a) {
+  function obedience(a) { return Math.min(0.98, Math.max(0.02, obedience0(a) + (C.creedObedience && a.p ? C.creedObedience(a.p) : 0))); }
+  function obedience0(a) {
     const p = a.p, n = p.needs;
     const loyal = clamp((p.trueStance + 20) / 120, 0, 1), disc = clamp((G().rep ? G().rep.discipline : 50) / 100, 0, 1);
     let o = 0.45 + 0.30 * loyal + 0.18 * (p.morale - 50) / 50 + 0.10 * p.exp / 100 + 0.10 * (disc - 0.5) - 0.28 * (100 - n.food) / 100 * (n.food < 40 ? 1.2 : 0.4) - 0.2 * (100 - n.energy) / 100 * (n.energy < 30 ? 1 : 0.3) - 0.22 * p.fear / 100 - 0.12 * p.stress / 100 - 0.15 * (n.water < 25 ? 1 : 0);

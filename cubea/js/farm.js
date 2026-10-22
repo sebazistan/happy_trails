@@ -98,14 +98,14 @@
       if (!best) return 'No unassigned plot.';
       best.d.family = q.last || C.tagName(q); best.d.pid = q.id; best.d.state = 'granted'; best.d.grantDay = g.day; best.d.coop = s.estate && s.estate.mode === 'together';
       L.families++; q.needs.hope = clamp(q.needs.hope + 15, 0, 100); q.trueStance += 6; C.deed && C.deed(0, 6);
-      for (const pr of g.promises) if (pr.kind === 'land' && pr.who === q.id && !pr.paid) { pr.paid = true; C.log(`You kept your word to ${C.tagName(q)}: the plot is theirs.`, 'good'); }
+      if (C.promiseFulfil) C.promiseFulfil(q, 'land');
       C.addEvent({ type: 'land_grant', victim: q, perpSide: 'rebel', val: 1, sev: 28, pub: 0.5, x: tg.x, y: tg.y, settlement: s.sid, text: `${C.tagName(q)}'s family was given land`, memText: 'The rebels gave us our own land' });
       C.say(tg.o, '¡Es nuestra!', '#1d5b2a', 3); C.log(`${C.tagName(q)}'s family receives ${TUNE.sizes[best.d.size].lab}. They need seed, a hoe and water — a deed is not a harvest.`, 'good'); return null; } });
 
   C.registerVerb({ id: 'sow', n: 'Sow maize', icon: '🌱', kinds: ['thing:parcel'], reach: 36, dur: (a, tg) => 6 + TUNE.sizes[tg.o.d.size].n * 1.5,
     check: (a, tg) => { const d = tg.o.d; if (d.state === 'sown') return 'Already sown.'; const sz = TUNE.sizes[d.size]; if (!has(a, 'hoe')) return 'Needs a hoe.'; if (!has(a, 'seed', sz.seed)) return `Needs ${sz.seed} seed.`; return null; },
     done: (a, tg) => {
-      const s = a.scene, d = tg.o.d, sz = TUNE.sizes[d.size]; C.invTake(a.p, 'seed', sz.seed); d.state = 'sown'; d.sownDay = G().day;
+      const s = a.scene, d = tg.o.d, sz = TUNE.sizes[d.size]; C.invTake(a.p, 'seed', sz.seed); d.state = 'sown'; const owner = d.pid && C.W.people.find((x) => x.id === d.pid); if (owner && C.promiseFulfil) C.promiseFulfil(owner, 'seed'); d.sownDay = G().day;
       const cols = Math.ceil(Math.sqrt(sz.n)), step = (sz.side - 12) / Math.max(1, cols - 1 || 1);
       for (let i = 0; i < sz.n; i++) C.addThing(s, 'crop', tg.x - sz.side / 2 + 6 + (i % cols) * step, tg.y - sz.side / 2 + 14 + Math.floor(i / cols) * step, { g: 0, parcel: tg.o.id, dry: 0, wet: false });
       return null; } });

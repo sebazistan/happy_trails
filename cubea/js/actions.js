@@ -297,7 +297,7 @@
   C.registerVerb({
     id: 'treat', n: 'Bandage', icon: '✚', kinds: ['actor'], reach: 16, dur: 5,
     check: (a, tg) => (G().res.med < 1 && !has(a, 'med') ? 'No medicine.' : tg.o.p.hp >= tg.o.p.maxHp - 3 && !tg.o.p.bleed ? 'Not hurt.' : null),
-    done: (a, tg) => { const q = tg.o.p; if (!C.invTake(a.p, 'med', 1)) G().res.med--; q.hp = Math.min(q.maxHp, q.hp + 28); q.bleed = 0; if (q.ill) q.ill = null; C.bondEvent && C.bondEvent(a.p, q, 'treated'); return null; },
+    done: (a, tg) => { const q = tg.o.p; if (!C.invTake(a.p, 'med', 1)) G().res.med--; q.hp = Math.min(q.maxHp, q.hp + 28); q.bleed = 0; if (C.promiseFulfil) C.promiseFulfil(q, 'medicine'); if (q.ill) q.ill = null; C.bondEvent && C.bondEvent(a.p, q, 'treated'); return null; },
   });
 
   // ------------------------------------------------------------------------------------------------------------------
