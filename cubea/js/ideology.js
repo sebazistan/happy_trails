@@ -227,4 +227,26 @@
   C.creedObedience = function (p) { const g = G(); if (!g.creed) return 0; const al = C.alignment(p); return al * TUNE.obeyDisc * (0.5 + Math.max(0, g.creed.disciplina)) - (g.creedGap || 0) * 0.1; };
   /** Inspector lines for a person. */
   C.creedLines = function (p) { C.initCreed(); const cr = C.crOf(p); const al = C.alignment(p); return { values: AX.map((k) => ({ k, v: cr[k] })), alignment: al, zeal: Math.round(p.zeal || 0), sceptic: sceptic(p) > 0.5 }; };
+
+  // ------------------------------------------------------------------------------------------------------------------
+  // THE CREED PANEL (Y): what you have said vs what you have done, how your people stand, and the promises you owe.
+  // ------------------------------------------------------------------------------------------------------------------
+  const cs = document.createElement('style');
+  cs.textContent = '#creed{position:fixed;left:50%;top:70px;transform:translateX(-50%);width:min(520px,94vw);z-index:6;display:none;padding:10px 14px}#creed h3{margin:6px 0 4px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold)}#creed .bar{display:flex;align-items:center;gap:6px;font-size:12px;margin:2px 0}#creed .bar b{width:78px;font-weight:500}#creed .t{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:4px;position:relative}#creed .t i{position:absolute;top:0;bottom:0;border-radius:4px}';
+  document.head.appendChild(cs);
+  function creedPanel() {
+    const g = G(); let el = document.getElementById('creed'); if (!el) { el = document.createElement('div'); el.id = 'creed'; el.className = 'panel'; document.body.appendChild(el); }
+    if (el.style.display === 'block') { el.style.display = 'none'; return; }
+    C.initCreed(); const d = C.deedsOf(); const ppl = g.squads.flatMap((s) => s.members).map(C.P).filter((p) => p && p.status === 'alive');
+    const avg = ppl.length ? ppl.reduce((s, p) => s + C.alignment(p), 0) / ppl.length : 0, zeal = ppl.length ? ppl.reduce((s, p) => s + (p.zeal || 0), 0) / ppl.length : 0;
+    const bar = (v, col) => `<div class="t"><i style="left:${v < 0 ? 50 + v * 50 : 50}%;width:${Math.abs(v) * 50}%;background:${col}"></i></div>`;
+    const open = g.promises.filter((p) => p.kind !== 'vale' && !p.paid && !p.broken);
+    el.innerHTML = `<h3>What you say (gold) and what you do (green)</h3>${AX.map((k) => `<div class="bar"><b>${k}</b>${bar(g.creed[k], '#e8c36a')}${bar(d[k], '#7fd07a')}</div>`).join('')}
+      <h3>Your people</h3><div style="font-size:12px">Agree with you: <b>${Math.round((avg + 1) * 50)}%</b> · zeal: <b>${Math.round(zeal)}</b> · word-vs-deed gap: <b>${Math.round((g.creedGap || 0) * 100)}%</b>${(g.creedGap || 0) > 0.35 ? ' <span style="color:#e57">— they are noticing</span>' : ''}</div>
+      <h3>Promises you owe</h3><div style="font-size:12px">${open.length ? open.map((p) => `${C.tagName(C.P(p.who) || { first: '?', last: '' })}: ${p.kind} (${Math.max(0, p.due - g.day)} d)`).join('<br>') : 'None.'}</div>
+      <div style="font-size:11px;opacity:.6;margin-top:6px">Say things with the wheel (Q) on people or ground; read at a fire or board; nail up posters. Y closes this.</div>`;
+    el.style.display = 'block';
+  }
+  window.addEventListener('keydown', (e) => { const g = G(); if (!g || !g.scene || g.over || g.modalOpen || e.__cubea === undefined && false) return; if (e.target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return; if (e.key === 'y' || e.key === 'Y') creedPanel(); });
+  C.openCreed = creedPanel;
 })();

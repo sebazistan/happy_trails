@@ -3,11 +3,11 @@
   'use strict';
   const C = (window.C = window.C || {});
   // AUDIO STATE: the WebAudio context (created on first user input, as browsers require), a master gain, a one-second buffer of white noise reused for every sound, an on/off flag and a throttle table.
-  let ctx = null, master = null, noiseBuf = null, on = true, last = {};
+  let vol0 = 0.35, ctx = null, master = null, noiseBuf = null, on = true, last = {};
   // Create the audio context lazily; failure (no audio support) silently disables sound.
   function init() {
     if (ctx) return; try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.35; master.connect(ctx.destination);
+      ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = vol0; master.connect(ctx.destination);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     } catch (e) { ctx = null; }
   }
@@ -29,7 +29,7 @@
   function throttle(k, ms) { const n = performance.now(); if (last[k] && n - last[k] < ms) return false; last[k] = n; return true; }
   // The sound API used by combat and the UI: shot(kind,x,y) by loudness class, hit, death, boom (scaled by blast radius), whistle (incoming shell/bomb), plane, click, chime; toggle() for the N key. No audio files — everything is synthesised.
   C.snd = {
-    init, toggle() { on = !on; return on; },
+    init, toggle() { on = !on; return on; }, setVolume(v) { vol0 = v; if (master) master.gain.value = v; },
     shot(kind, x, y) { if (!ctx) return; const v = vol(x, y); if (!throttle('s' + kind + (x | 0 >> 5), 28)) return; if (kind === 1) noise(0.11, 3200, 600, 0.55 * v, 'bandpass', 0.7); else if (kind === 3) noise(0.16, 2400, 300, 0.7 * v, 'lowpass'); else noise(0.2, 2000, 220, 0.8 * v, 'lowpass'); tone(160, 60, 0.07, 0.25 * v, 'square'); },
     hit(x, y) { if (!ctx) return; const v = vol(x, y); if (!throttle('h', 40)) return; noise(0.08, 900, 200, 0.5 * v, 'lowpass'); tone(110, 50, 0.1, 0.3 * v, 'triangle'); },
     death(x, y) { if (!ctx) return; const v = vol(x, y); tone(190, 60, 0.35, 0.22 * v, 'sawtooth'); },

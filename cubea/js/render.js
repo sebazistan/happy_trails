@@ -433,7 +433,7 @@
     ctx.fillStyle = '#1b2418'; ctx.fillRect(0, 0, W, H);
     if (!s.pre) s.pre = C.prerender(s);
     const z = cam.z;
-    const shx = G.shake > 0 ? (Math.random() - 0.5) * G.shake * 6 : 0, shy = G.shake > 0 ? (Math.random() - 0.5) * G.shake * 6 : 0;
+    const shx = G.shake > 0 && !(C.settings && C.settings.reduceShake) ? (Math.random() - 0.5) * G.shake * 6 : 0, shy = G.shake > 0 ? (Math.random() - 0.5) * G.shake * 6 : 0;
     // static ground
     ctx.save(); ctx.setTransform(dpr * z, 0, 0, dpr * z, dpr * (-cam.x * z + W / 2 + shx), dpr * (-cam.y * z + H / 2 + shy));
     ctx.imageSmoothingEnabled = true;
