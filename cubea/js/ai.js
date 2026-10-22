@@ -414,7 +414,8 @@
       } else if (b.mode === 'engage') { b.seen -= 0.3; if (b.seen <= 0) { b.mode = 'search'; b.searchT = 14; } }
     }
     // morale-based behaviour
-    if ((p.morale < 18 || (p.morale < 34 && p.hp < p.maxHp * 0.4)) && b.mode === 'engage' && !b.rallied) { const reb = s.actors.filter((x) => (x.side === 'rebel') && !x.dead && Math.hypot(x.x - a.x, x.y - a.y) < 230).length, mine = s.actors.filter((x) => x.side === 'army' && !x.dead && !x.surrendered && Math.hypot(x.x - a.x, x.y - a.y) < 230).length; b.mode = (reb >= mine && Math.random() < 0.6 || p.hp < p.maxHp * 0.3 && Math.random() < 0.5) ? 'surrender' : 'retreat'; }
+    if ((p.morale < 18 || (p.morale < 34 && p.hp < p.maxHp * 0.4)) && b.mode === 'engage' && !b.rallied) { const reb = s.actors.filter((x) => (x.side === 'rebel') && !x.dead && Math.hypot(x.x - a.x, x.y - a.y) < 230).length, mine = s.actors.filter((x) => x.side === 'army' && !x.dead && !x.surrendered && Math.hypot(x.x - a.x, x.y - a.y) < 230).length; const sb = C.surrenderBonus ? C.surrenderBonus() : 0;   // mercy record + amnesty make surrender attractive (policy.js)
+      b.mode = (reb >= mine && Math.random() < 0.6 + sb || p.hp < p.maxHp * 0.3 && Math.random() < 0.5 + sb) ? 'surrender' : 'retreat'; }
     if (b.mode === 'surrender') { a.surrendered = true; a.weapon && C.dropWeapon(a); a.weaponOut = false; C.say(a, '¡No disparen! ¡Me rindo!', '#7a1d1d', 6); C.emit && C.emit('surrender', a); return; }
     // behaviours
     if (b.mode === 'engage' && b.target && !b.target.dead) {

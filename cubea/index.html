@@ -12,14 +12,15 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#111;color:var(--ink);font:13px/1.35 "Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;user-select:none}
 #game{position:fixed;inset:0;display:block;cursor:crosshair}
-.panel{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:10px;backdrop-filter:blur(3px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.panel{position:fixed;background:linear-gradient(180deg,rgba(44,35,27,.92),rgba(30,24,18,.92));border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(8px);box-shadow:0 8px 28px rgba(0,0,0,.45)}
 #top{top:8px;left:50%;transform:translateX(-50%);display:flex;gap:14px;align-items:center;padding:6px 12px;z-index:5;max-width:98vw;flex-wrap:wrap;justify-content:center}
 #top .clock{font-weight:600;min-width:150px}
 #top .clock small{display:block;color:var(--mute);font-weight:400;font-size:11px}
 .chip{display:inline-flex;gap:5px;align-items:center;padding:2px 8px;background:rgba(255,255,255,.07);border-radius:999px;white-space:nowrap}
 .chip b{font-weight:700}
 .chip.warn{background:rgba(220,74,58,.28)}
-.btn{background:rgba(255,255,255,.09);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:4px 9px;cursor:pointer;font:inherit}
+.btn{background:rgba(255,255,255,.09);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:4px 9px;cursor:pointer;font:inherit;transition:background .12s,transform .08s}
+.btn:active{transform:scale(.97)}
 .btn:hover{background:rgba(255,255,255,.18)}
 .btn.on{background:var(--gold);color:#241a10;border-color:var(--gold);font-weight:700}
 .btn.sm{padding:2px 6px;font-size:11px}
@@ -162,9 +163,11 @@ table.t td,table.t th{padding:3px 6px;border-bottom:1px solid var(--line);text-a
 <script src="js/events.js"></script>
 <script src="js/events2.js"></script>
 <script src="js/govern.js"></script>
+<script src="js/policy.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/cmdui.js"></script>
+<script src="js/pack.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

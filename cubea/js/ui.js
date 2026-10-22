@@ -43,6 +43,7 @@
     if (a) { fake.drawColor = a.drawColor; }
     return fake;
   }
+  ui.portrait = (cv, p, a, scale) => portrait(cv, p, a, scale);   // shared with pack.js
   function portrait(cv, p, a, scale) {
     const c = cv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cv.width, cv.height);
     c.setTransform(scale, 0, 0, scale, cv.width / 2, cv.height * 0.8);
@@ -134,7 +135,8 @@
   ui.tipFor = function (a) {
     const p = a.p; const e = a.expr ? a.expr.label : '';
     const role = p.role || (C.OCC[p.occ] ? C.occName(p.occ) : '');
-    return `<b>${esc(C.fullName(p))}</b><br><span class="sub">${esc(role)} · ${C.ageOf(p)} · ${esc(ui.emo(e))}</span>${a.dead ? '<br><span class="sub">† dead</span>' : ''}`;
+    const carry = (a.side === 'rebel' || a.isPlayer) && p.inv ? `<br><span class="sub">🍚${p.inv.food || 0} 💧${p.inv.water || 0} · load ${C.loadOf(p).toFixed(0)}/${C.capacityOf(p).toFixed(0)} · double-click: pack</span>` : '';
+    return `<b>${esc(C.fullName(p))}</b><br><span class="sub">${esc(role)} · ${C.ageOf(p)} · ${esc(ui.emo(e))}</span>${carry}${a.dead ? '<br><span class="sub">† dead</span>' : ''}`;
   };
   ui.inspect = function (p, a) {
     const el = $('right');
@@ -167,11 +169,11 @@
     h += `<h3 style="margin-top:8px">Family</h3>` + familyHTML(p);
     h += `<h3 style="margin-top:8px">Friends & ties</h3>` + tiesHTML(p);
     h += `<h3 style="margin-top:8px">What they remember</h3>` + memHTML(p);
-    h += `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${a && !a.dead && !a.isPlayer && a.scene === g.scene ? `<button class="btn sm" id="iTalk">Talk (E)</button>` : ''}<button class="btn sm" id="iClose">Close</button></div>`;
+    h += `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${a && !a.dead && !a.isPlayer && a.scene === g.scene ? `<button class="btn sm" id="iTalk">Talk (E)</button>` : ''}${a && !a.dead && (a.side === 'rebel' || a.isPlayer) && a.scene === g.scene ? `<button class="btn sm" id="iPack">Pack (T)</button>` : ''}<button class="btn sm" id="iClose">Close</button></div>`;
     el.innerHTML = h;
     try { portrait($('portrait'), p, a, 4.6); } catch (e) { }
     el.querySelectorAll('[data-pid]').forEach((n) => n.onclick = () => { const q = C.P(+n.dataset.pid); ui.inspect(q, q.actor && q.actor.scene === g.scene ? q.actor : null); });
-    $('iClose').onclick = () => { C.select(null); }; const tk = $('iTalk'); if (tk) tk.onclick = () => ui.interact({ kind: 'actor', o: a });
+    $('iClose').onclick = () => { C.select(null); }; const tk = $('iTalk'); if (tk) tk.onclick = () => ui.interact({ kind: 'actor', o: a }); const pk = $('iPack'); if (pk) pk.onclick = () => C.openPack(p);
     updateInspectorLive();
   };
   function updateInspectorLive() {
@@ -255,6 +257,7 @@
   ui.take = function (it) {
     const g = G();
     if (it.k === 'food') g.res.food += it.amount || 5; else if (it.k === 'ammo') g.res.ammo += it.amount || 10; else if (it.k === 'med') g.res.med += it.amount || 1; else if (it.k === 'fuel') g.res.fuel += it.amount || 5; else if (it.k === 'money') g.res.money += it.amount || 20;
+    else if (['gren', 'molo', 'shell', 'rocket'].includes(it.k)) g.res[it.k] = (g.res[it.k] || 0) + (it.amount || 1);
     else if (it.k === 'gun') { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (C.HEAVY.includes(it.wk)) { g.heavy = g.heavy || {}; g.heavy[it.wk] = (g.heavy[it.wk] || 0) + 1; } else if (it.wk !== 'machete') g.res.guns++; }
   };
   function pickUp(it) {
@@ -264,6 +267,8 @@
     else if (it.k === 'med') { g.res.med += it.amount || 1; ui.toast('+ medicine'); }
     else if (it.k === 'fuel') { g.res.fuel += it.amount || 5; }
     else if (it.k === 'money') { g.res.money += it.amount || 20; }
+    else if (['gren', 'molo', 'shell', 'rocket'].includes(it.k)) { g.res[it.k] = (g.res[it.k] || 0) + (it.amount || 1); ui.toast(`+${it.amount || 1} ${C.ITEMS[it.k].n}`); }
+    else if (it.k === 'water') { C.invAdd(g.player.p, 'water', it.amount || 1); ui.toast('+ water'); }
     else if (it.k === 'gun') { const pl = g.player; if (!pl.weapon || C.WEAPONS[it.wk].dmg > C.WEAPONS[pl.weapon.k].dmg * 0.9 && false) { C.giveWeapon(pl, it.wk, it.spare); pl.weapon.mag = it.mag; } else { g.res.ammo += Math.max(5, (it.mag || 0) + (it.spare || 0)); if (C.HEAVY.includes(it.wk)) { g.heavy = g.heavy || {}; g.heavy[it.wk] = (g.heavy[it.wk] || 0) + 1; } else if (it.wk !== 'machete') g.res.guns++; ui.toast('Spare ' + C.WEAPONS[it.wk].n + ' to the armory — hand it out from the talk menu'); } }
     s.items.splice(i, 1);
   }
@@ -338,11 +343,16 @@
     const head = `<canvas id="mport" width="84" height="84" style="float:right;border-radius:8px;background:rgba(0,0,0,.25);margin-left:10px"></canvas>`;
     const lede = `${esc(p.role || (C.OCC[p.occ] ? C.occName(p.occ) : ''))}, ${C.ageOf(p)}. Feeling <b>${a.expr ? ui.emo(a.expr.label) : '…'}</b>.${hidden ? '' : ` ${p.trueStance > 20 ? 'Leans rebel.' : p.trueStance < -20 ? 'Leans Batista.' : 'Undecided.'}`}<br><span class="sub">${esc(gossipFor(p)[0])}</span>`;
     // ---- surrendered / wounded soldiers
+    if (army && !a.surrendered && a.p.hp < a.p.maxHp * 0.5) opts.push({ label: 'Treat his wounds (1 medicine)', sub: 'He is down. An enemy treated is an enemy who may stop fighting.', disabled: g.res.med < 1, fn: () => { C.treatEnemy(a); } });
     if (army && a.surrendered) {
-      opts.push({ label: 'Disarm and release', sub: 'Mercy: no grievance, and the army hears of it', fn: () => { releasePrisoner(a); } });
+      // the army's surrendered man: every option is a statement about who you are (see policy.js, the mercy index)
+      opts.push({ label: 'Treat his wounds and release him (1 medicine)', sub: 'Mercy. The army hears of it; more will surrender.', disabled: g.res.med < 1 || (p.hp >= p.maxHp - 3 && !p.bleed), fn: () => { C.handlePrisoner(a, 'treat'); } });
+      opts.push({ label: 'Release him under amnesty', sub: 'Disarmed, with a safe-conduct. Some will come back and join you.', fn: () => { C.handlePrisoner(a, 'amnesty'); } });
+      opts.push({ label: 'Exchange him for a captured rebel', sub: 'Through the Red Cross — if the army holds any of yours.', fn: () => { C.handlePrisoner(a, 'exchange'); } });
+      opts.push({ label: 'Hold him in the camp', sub: 'He eats your food and may escape. A verdict will be needed.', fn: () => { C.handlePrisoner(a, 'detain'); } });
       opts.push({ label: 'Recruit him (defect to the rebels)', sub: p.trueStance > -30 ? 'He may agree' : 'Unlikely', fn: () => { if (Math.random() < clamp(0.25 + (p.trueStance + 40) / 120 + (g.rep.justice - 50) / 200, 0.05, 0.85)) { p.trueStance = 40; C.recruit(p, p.exp); ui.toast('He joins you.'); a.gone = true; a.inside = true; const i = s.actors.indexOf(a); if (i >= 0) s.actors.splice(i, 1); } else ui.toast('"No, jefe. My family is in Bayamo."'); } });
       opts.push({ label: 'Interrogate (get the army’s positions)', fn: () => { ui.toast('He talks: positions marked.'); s.spotted = s.spotted || []; for (const q of s.actors) if (q.side === 'army' && !q.dead) s.spotted.push({ x: q.x, y: q.y, t: 20 }); g.rep.fear += 1; } });
-      opts.push({ label: 'Execute', sub: 'An unarmed man. His family will never forgive it.', fn: () => { C.die(a, pl, 'executed'); g.stats.executed++; g.rep.justice = clamp(g.rep.justice - 12, 0, 100); g.rep.fear = clamp(g.rep.fear + 8, 0, 100); } });
+      opts.push({ label: 'Execute', sub: 'An unarmed man. His family will never forgive it, and the army will fight on.', fn: () => { C.handlePrisoner(a, 'execute'); } });
     }
     // ---- own soldiers
     else if (rebel) {
@@ -380,7 +390,7 @@
           if (['pescador', 'estibador'].includes(p.occ)) opts.push({ label: 'Arrange contraband runs on his boat', sub: 'Rum, cigars, and worse. Profitable; corrosive.', fn: () => { C.racketStart('contraband', p); return true; } });
           if ((p.fac === 'elite' || p.fac === 'landowners') && p.cls >= 3 && (s.type === 'city' || s.type === 'capital' || s.type === 'town')) opts.push({ label: 'Kidnap for ransom', sub: 'A fortune, if it works. Rebels do not usually do this. It will be remembered.', fn: () => { C.racketStart('kidnap', p); return true; } });
         }
-        if (p.occ === 'mayordomo' || p.fac === 'landowners') opts.push({ label: 'Seize the estate and distribute the land', sub: 'The peasants cheer; landowners will never forgive', fn: () => { C.seizeEstate(p); } });
+        if (p.occ === 'mayordomo' || p.fac === 'landowners') opts.push({ label: 'Seize the estate and distribute the land', sub: 'The peasants cheer; landowners will never forgive', fn: () => { C.land.seizeMenu(p); } });
         if (p.informant && !p.revealed || C.tells(p).length) opts.push({ label: 'Have your network check on this person (12 pesos)', sub: 'Discreet inquiries; usually right', disabled: g.res.money < 12 || p.revealed, fn: () => { C.investigate(p); buildLeft(); ui.update(true); } });
         if (p.informant && p.revealed) { opts.push({ label: 'Hold a trial', sub: 'Calls the village; verdict visible to all', fn: () => { trial(a); } }); }
         if (p.roster === 'anselmo') { opts.splice(1, 0, { label: 'Ask El Viejo for advice', fn: () => { ui.openJournal('viejo'); } }); }
@@ -488,12 +498,15 @@
     const g = G(); if (g.over) return; const P = g.platform;
     let h = `<button class="btn sm close">✕</button><h2>📜 The Manifesto</h2><div class="lede">What you announce, what you will do, and whether people believe you. Unannounced planks mean nothing to anyone. Announced planks become promises; people count the days and the deeds. The coloured dots show how each option sits with: peasants · workers · middle class · students · elites · landowners · church · army.</div>`;
     h += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${Object.keys(C.presets).map((k) => `<button class="btn sm" data-pre="${k}">${C.presets[k].n}</button>`).join('')}</div>`;
+    const FC = C.forecastAll();   // predicted shift in support for every option (policy.js)
+    h += `<div class="sub" style="margin-bottom:6px">The small figure under each option is the <b>forecast</b>: the average change in support across the island if you announce it (best and worst factions on hover). <button class="btn sm" id="pollBtn">Run a poll (20 pesos)</button></div>`;
     C.PLANKS.forEach((pl, k) => {
       const decl = P.declared[k]; const mism = decl && P.pub[k] !== P.real[k];
       h += `<div class="plank"><div class="row"><b>${pl.name} <span class="sub">${pl.en}</span></b><span class="sub">deeds ${Math.round(g.deeds[k])}% ${decl ? '· announced ' + Math.max(0, g.day - P.dayDeclared[k]) + 'd ago' : '· not announced'}${mism ? ' · <b style="color:#ff9d8c">⚠ secret plan differs</b>' : ''}</span></div><div class="opts">`;
       pl.opts.forEach((o, i) => {
         const q = i - 1; const dots = C.FACTION_KEYS.map((f) => { const fit = 1 - Math.abs(q - C.FACTIONS[f].iss[k]); const cc = fit > 0.6 ? '#7fc46a' : fit > 0.2 ? '#cdd58a' : fit > -0.2 ? '#e6b84e' : '#dc4a3a'; return `<span title="${C.fName(f)}: ${fit > 0.6 ? 'likes' : fit > 0.2 ? 'ok' : fit > -0.2 ? 'cool' : 'dislikes'}" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cc};margin-right:2px"></span>`; }).join('');
-        h += `<button class="btn ${decl && P.pub[k] === i ? 'on' : ''}" data-k="${k}" data-i="${i}">${esc(o)}<br>${dots}</button>`;
+        const fc = FC[k][i]; const tip = `Best: ${fc.best.map((f) => C.fName(f) + ' ' + (fc.byFaction[f] > 0 ? '+' : '') + fc.byFaction[f].toFixed(1)).join(', ')} · Worst: ${fc.worst.map((f) => C.fName(f) + ' ' + (fc.byFaction[f] > 0 ? '+' : '') + fc.byFaction[f].toFixed(1)).join(', ')}`;
+        h += `<button class="btn ${decl && P.pub[k] === i ? 'on' : ''}" data-k="${k}" data-i="${i}" title="${esc(tip)}">${esc(o)}<br>${dots}<br><span class="sub" style="color:${fc.overall > 0.4 ? '#9fdc8a' : fc.overall < -0.4 ? '#ff9d8c' : 'inherit'}">forecast ${fc.overall > 0 ? '+' : ''}${fc.overall.toFixed(1)}</span></button>`;
       });
       h += `</div>`;
       if (decl) h += `<div class="sub" style="margin-top:4px">Secret intent: <select data-real="${k}" style="background:#0003;color:inherit;border:1px solid var(--line);border-radius:5px">${pl.opts.map((o, i) => `<option value="${i}" ${P.real[k] === i ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select> <span class="sub">(a gap leaks eventually, and trust collapses)</span></div>`;
@@ -501,6 +514,7 @@
     });
     h += `<div class="sub">Trust: ${C.FACTION_KEYS.map((f) => `${C.fName(f)} ${Math.round(g.trust[f] * 100)}%`).join(' · ')}</div>`;
     openModal(h, true);
+    $('pollBtn').onclick = () => { ui.menu('Run a poll', 'Which town? About forty people will be asked; people say what they dare to say.', C.PLAYABLE.map((sid) => ({ label: C.SETTLEMENTS[sid].name, fn: () => { const r = C.pollSettlement(sid, 20); if (!r) return; const rows = Object.keys(r.byFaction).map((f) => `<div class="row"><span>${C.fName(f)} <span class="sub">(n=${r.byFaction[f].n})</span></span><b>${Math.round(r.byFaction[f].pctRebel * 100)}% with you · mean ${r.byFaction[f].mean.toFixed(0)}</b></div>`).join(''); ui.menu('Poll: ' + C.SETTLEMENTS[sid].name, `Overall ${Math.round(r.pctRebel * 100)}% lean to you, ${Math.round(r.pctBatista * 100)}% to Batista (±${Math.round(r.margin * 100)}%).<br>${rows}`, [{ label: 'Back to the manifesto', fn: () => { ui.openManifesto(); } }]); } }))); };
     $('mbox').querySelectorAll('[data-pre]').forEach((b) => b.onclick = () => { C.applyPreset(b.dataset.pre); ui.openManifesto(); });
     $('mbox').querySelectorAll('[data-k]').forEach((b) => b.onclick = () => { const k = +b.dataset.k, i = +b.dataset.i; const keepReal = P.declared[k] && P.real[k] !== P.pub[k] ? P.real[k] : undefined; C.declarePlank(k, i, keepReal !== undefined ? keepReal : i); ui.openManifesto(); });
     $('mbox').querySelectorAll('[data-real]').forEach((s2) => s2.onchange = () => { P.real[+s2.dataset.real] = +s2.value; ui.openManifesto(); });
