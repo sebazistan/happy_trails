@@ -1,7 +1,7 @@
 # CUBEA
 
 *A low-poly game of the Cuban Revolution, Dec 1956 – Jan 1959 (and a flash-forward to April 1961), where every cube has a family.*
-**Prototype 0.2 — HTML + JavaScript, 2D top-down, no build step.** The design and the Unreal Engine plan are in `docs/`.
+**Prototype 0.3 — HTML + JavaScript, 2D top-down, no build step.** The design and the Unreal Engine plan are in `docs/`.
 
 > This folder is **self-contained** and independent of the rest of this repository. To move it into its own project: copy the `cubea/` folder out; nothing else is referenced.
 
@@ -25,6 +25,7 @@ You are **Fidel** — under whatever name you type on the title screen. Your cub
 | **F** spring an ambush | **V** fog of war on/off |
 | **Space** pause (no orders while paused) · speeds in the top bar | **M** map · **P** manifesto · **I** factions · **J** journal · **B** camp · **H** help |
 | **Tab** cycle squadmates · **U** reveal all systems · **N** sound | **Wheel** zoom |
+| **Q** / Alt+click: context wheel (verbs for what is under the cursor) | **K** actions & recorder · **Y** creed & promises · **Esc** menu (save/load/settings/keys) |
 
 **Click anyone** to see their face, needs, loyalty and *why*, their **family tree**, friends, what they remember, and *what you have noticed* about them. Click a relative to jump to them.
 
@@ -55,6 +56,11 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 * **Politics:** 8 factions, 8 planks, public vs. private platform, promises/deeds/trust, reputation, regime meters, a general strike, a women's platoon, racial-equality decisions, a non-violent path where marchers are mostly brutalised.
 * **The Director:** tension model, spiral sensor, ~40 event types, 17 conditional historical anchors; El Viejo as in-world adviser.
 * **Language:** English with Spanish creeping in over the game; early translations are dropped later.
+* **Physical verbs (round 4):** a context wheel; placed things (stakes, plots, hammocks, latrines, racks, fires, postas, blackboards, posters); an **action recorder** (record once, any soldier repeats; on any failure it stops, says why and walks back); routines at set hours. See `docs/PLAYER_AGENCY.md`.
+* **Camp life:** latrines and foul ground, dysentery, spoilage on racks vs ground, firewood and daylight smoke, hammocks, night watch, literacy lessons, sick call (`js/camp.js`).
+* **Land reform in the field:** serve notice → survey plots with stakes → grant to families → sow, water, harvest; a deed without seed loses faith (`js/farm.js`).
+* **Ideology:** six values per person, the creed you preach vs the deeds you do, speeches, pamphlets, posters, letters, a state-dependent voice, a promise ledger (`js/ideology.js`, `docs/IDEOLOGY.md`).
+* **A finished-game shell:** pause menu, settings (volume, UI size, shake, contrast, Spanish level, autosave), **key rebinding**, 3 save slots + autosave (`js/settings.js`).
 * **8 locations + the coast**, each a large map; terrain is painted in cached chunks.
 
 ## Folder layout
@@ -62,9 +68,9 @@ When Havana falls, eight governing decisions calibrate the state you inherit, an
 ```
 cubea/
   index.html              page + CSS
-  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack main
+  js/                     util data lang gen scene render ai combat fog orders sea inventory bonds sim events events2 govern policy audio ui cmdui pack things actions camp farm ideology settings main
                           (classic scripts → works from file://)
-  docs/                   DESIGN_BIBLE · DECISIONS · COMMANDS · SCHEMA · UNREAL_CODE_BIBLE · ROSTER · RISKS · IDEAS_AND_QUESTIONS
+  docs/                   DESIGN_BIBLE · DECISIONS · COMMANDS · SCHEMA · UNREAL_CODE_BIBLE · ROSTER · RISKS · IDEAS_AND_QUESTIONS · RESEARCH · PLAYER_AGENCY · IDEOLOGY
   tools/
     export_unreal_data.js  → unreal_export/*.json (DataTables + population_golden.json)
     harness/               Playwright test harnesses: soak, event exerciser, atrocity, sea, ripple, calibration, ambush bots
@@ -83,6 +89,11 @@ node tools/harness/bonds.js             # friendship growth and family-strength 
 node tools/harness/weapons.js           # bazooka, backblast, mortar crew, load
 node tools/harness/policy.js            # mercy, prisoners, land reform, forecast, poll
 node tools/harness/pack_ui.js           # drag and drop in the Pack window
+node tools/harness/actions.js          # recorder: success, missing bucket → stop + walk back, missing target
+node tools/harness/camp.js             # latrines, foul ground, spoilage, fuel, watch, school
+node tools/harness/farm.js             # notice → survey → grant → sow → harvest, drought
+node tools/harness/ideology.js         # creed, letters vs speeches, hypocrisy, promises, voice
+node tools/harness/settings.js         # save/load round trip, key rebinding
 node tools/harness/sea.js               # the crossing, six landings, hand-off to Alegría de Pío
 node tools/harness/ripple.js            # the family-graph ripple of a single killing
 node tools/harness/calibrate.js         # pay / owe / take foraging policy over 90 days
@@ -94,5 +105,6 @@ node tools/export_unreal_data.js        # refresh unreal_export/
 * 2D top-down with simple art; no cover system yet; crowds are capped (~300 actors/scene); the countryside around each town is terrain and trees only.
 * Only one Sierra outpost is playable (La Plata); El Uvero, Santa Clara and the columns are resolved as abstract battles.
 * Roster birthplaces marked 🟡/⚠ in `docs/ROSTER.md` need verification before release.
-* No save/load (the world is seed-deterministic; save-as-deltas is designed in the Unreal bible).
+* Save/load stores the seed + changes (game state, changed people, placed things, party positions); actors, loose items and vehicles in *other* scenes are regenerated. Colour-blind palette not yet (team colours are not centralised in the renderer).
+* Hammocks are placed on stakes, not between trees; boiling water is not modelled (distance from latrine to water is); plots are not owned by individuals after the grant (family name only).
 * The "networks" layer (santería houses, cabildos, lodges, regional clubs) is designed (`docs/DECISIONS.md`), not built.

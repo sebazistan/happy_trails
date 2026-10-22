@@ -664,7 +664,8 @@
 <p><b>Disobedience.</b> People will say it when you point them at a position that is known to be crushing. If you insist, some will refuse — and a man who thinks he was sent to die leaves, with his family's trust. Leading from the front, especially early in the war, earns the trust that lets you ask more later.</p>
 <p><b>Fog of war.</b> Soldiers are hidden unless one of your people can see them (range, light, rain, cover, camouflage). Gunfire you cannot see leaves a ping. <kbd>V</kbd> turns the fog off.</p>
 <p><b>Balance.</b> Too soft and your men steal, desert and fail; too severe and you rule by fear, losing the towns, the Church and the Havana money. The winning path is narrow and fair. Rackets and smuggling pay — and turn the band into a business.</p>
-<p><b>Hotkeys.</b> WASD move, Shift run, C hide, X weapon, G grenade, R reload, E use, F ambush, V fog of war, Z rest, Space pause, Backspace cancel orders, 1–9 groups, M map, P manifesto, I factions, J journal, B camp, Tab cycle squadmates, N sound.</p>
+<p><b>Hotkeys.</b> WASD move, Shift run, C hide, X weapon, G grenade, R reload, E use, F ambush, V fog of war, Z rest, Space pause, Backspace cancel orders, 1–9 groups, M map, P manifesto, I factions, J journal, B camp, Tab cycle squadmates, N sound. <b>New:</b> Q context wheel (verbs for whatever is under the cursor), K actions &amp; recorder, Y creed &amp; promises, Esc menu (save/load/settings/rebind keys).</p>
+<p><b>Physical verbs.</b> Land, camp life, food, fuel, the watch, school and the revolution's words are things you <i>do</i>, at a place, with items and time — not buttons. Record an action once (K → Record), and any soldier can repeat it; if something is missing it stops, says why, and walks back.</p>
 </div>`);
   };
 
