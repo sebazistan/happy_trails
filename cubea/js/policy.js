@@ -96,6 +96,7 @@
     }
     if (kind === 'detain') {
       if (g.prisoners.length >= 8) { toast('You cannot hold more than eight prisoners'); return false; }
+      if (C.captureActor) return C.captureActor(a, g.player);
       removeActor(a); p.status = 'jailed'; p.note = 'Held by the rebels.'; g.prisoners.push(p.id); C.log(`${C.tagName(p)} is held in the camp.`, 'info'); return true;
     }
     if (kind === 'execute') {

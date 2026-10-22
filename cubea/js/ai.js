@@ -441,6 +441,7 @@
   // (see above)
   function armyUpdate(s, a, dt) {
     const b = a.brain, p = a.p;
+    if (a.captive && C.captiveUpdate && C.captiveUpdate(s, a, dt)) return;   // a prisoner is a person on the ground (captives.js)
     if (a.surrendered) { a.moving = false; a.weaponOut = false; return; }
     b.detT = (b.detT || 0) - dt;
     // look for hostiles every ~0.3s
