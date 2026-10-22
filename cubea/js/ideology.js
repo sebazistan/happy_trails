@@ -232,7 +232,7 @@
   // THE CREED PANEL (Y): what you have said vs what you have done, how your people stand, and the promises you owe.
   // ------------------------------------------------------------------------------------------------------------------
   const cs = document.createElement('style');
-  cs.textContent = '#creed{position:fixed;left:50%;top:70px;transform:translateX(-50%);width:min(520px,94vw);z-index:6;display:none;padding:10px 14px}#creed h3{margin:6px 0 4px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold)}#creed .bar{display:flex;align-items:center;gap:6px;font-size:12px;margin:2px 0}#creed .bar b{width:78px;font-weight:500}#creed .t{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:4px;position:relative}#creed .t i{position:absolute;top:0;bottom:0;border-radius:4px}';
+  cs.textContent = '#creed{position:fixed;left:50%;top:70px;transform:translateX(-50%);width:min(520px,94vw);z-index:6;display:none;padding:10px 14px}#creed h3{margin:6px 0 4px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold)}#creed .bar{display:flex;align-items:center;gap:6px;font-size:12px;margin:5px 0;min-height:20px;line-height:1.3}#creed .bar>div.t+div.t{margin-left:-2px}#creed .bar b{width:78px;font-weight:500}#creed .t{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:4px;position:relative}#creed .t i{position:absolute;top:0;bottom:0;border-radius:4px}';
   document.head.appendChild(cs);
   function creedPanel() {
     const g = G(); let el = document.getElementById('creed'); if (!el) { el = document.createElement('div'); el.id = 'creed'; el.className = 'panel'; document.body.appendChild(el); }

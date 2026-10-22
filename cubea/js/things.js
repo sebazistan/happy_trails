@@ -122,21 +122,38 @@
     const wv = C.toWorld(g.cam, sx, sy); const targets = C.targetsAt(wv.x, wv.y);
     // the most specific target first (things, animals, actors, trees, water) and ground last
     const verbs = []; const seen = new Set();  // entries {v: concrete verb (with .param), tg: target}
-    for (const tg of targets) for (const v of C.verbsFor(tg)) { const key = v.id + ':' + (v.param || '') + ':' + tg.kind + (tg.o && tg.o.id || ''); if (seen.has(key)) continue; seen.add(key); verbs.push({ v, tg }); }
+    const takenKind = {}; for (const tg of targets) { if ((tg.kind === 'actor' || tg.kind === 'animal') && takenKind[tg.kind]) continue; if (tg.kind === 'actor' || tg.kind === 'animal') takenKind[tg.kind] = 1; for (const v of C.verbsFor(tg)) { const key = v.id + ':' + JSON.stringify(v.param || '') + ':' + tg.kind + (tg.o && tg.o.id || ''); if (seen.has(key)) continue; seen.add(key); verbs.push({ v, tg }); } }
     if (!verbs.length) { ui.toast('Nothing to do there'); return; }
     const who = C.actorsForVerb(); const rec = g.rec && g.rec.on;
     const first = targets[0];
     let h = `<div class="tg">${C.es ? first.label : first.label}${rec ? '<br><b style="color:#ff8a7a">● recording</b>' : ''}</div><div class="hub" id="wheelClose" title="Close (Esc)">✕</div>`;
     wheel.style.left = sx + 'px'; wheel.style.top = sy + 'px'; wheel.innerHTML = h; wheel.style.display = 'block';
-    const n = verbs.length, R = Math.max(62, 24 + n * 9);
-    verbs.forEach((e, i) => {
-      const ang = -Math.PI / 2 + (i / n) * Math.PI * 2; const b = document.createElement('div');
-      const why = e.v.check ? e.v.check((who[0] && who[0].p) ? who[0] : g.player, e.tg, e.v.param) : null;
-      b.className = 'vb' + (why ? ' off' : ''); b.innerHTML = `${e.v.icon || ''} ${e.v.label ? e.v.label(e.tg, e.v.param) : e.v.n}${why ? `<small>${why}</small>` : ''}`;
-      b.style.left = Math.cos(ang) * R + 'px'; b.style.top = Math.sin(ang) * R + 'px';
-      b.onclick = () => { if (why) { ui.toast(why); return; } C.closeWheel(); C.doVerb(e.v, e.tg, e.v.param); };
-      wheel.appendChild(b);
-    });
+    // GROUPING: one node per verb per target; a verb with several variants (which item to take, which speech to give…)
+    // opens a second ring when clicked, so the wheel never shows thirty buttons at once.
+    const groups = []; const gi = {};
+    for (const e of verbs) { const key = e.v.id + '|' + (e.tg.kind === 'thing' ? e.tg.o.id : ''); if (gi[key] === undefined) { gi[key] = groups.length; groups.push({ v: e.v, tg: e.tg, list: [] }); } groups[gi[key]].list.push(e); }
+    const actor0 = (who[0] && who[0].p) ? who[0] : g.player;
+    const whyOf = (e) => (e.v.check ? e.v.check(actor0, e.tg, e.v.param) : null);
+    const node = (label, ang, R, why, fn, sub) => {
+      const b = document.createElement('div'); b.className = 'vb' + (why ? ' off' : ''); b.innerHTML = label + (sub || why ? `<small>${why || sub}</small>` : '');
+      b.style.left = Math.cos(ang) * R + 'px'; b.style.top = Math.sin(ang) * R + 'px'; b.onclick = () => { if (why) { ui.toast(why); return; } fn(); }; wheel.appendChild(b); return b;
+    };
+    const ring = (items) => { const n = items.length; return Math.max(66, 26 + n * 10); };
+    const clearNodes = () => wheel.querySelectorAll('.vb').forEach((x) => x.remove());
+    const top = () => {
+      clearNodes(); const R = ring(groups);
+      groups.forEach((gr, i) => {
+        const ang = -Math.PI / 2 + (i / groups.length) * Math.PI * 2, one = gr.list.length === 1;
+        const ok = gr.list.filter((e) => !whyOf(e)).length; const why = one ? whyOf(gr.list[0]) : (ok ? null : whyOf(gr.list[0]) || 'Not possible now');
+        node(`${gr.v.icon || ''} ${one && gr.v.label ? gr.v.label(gr.tg, gr.v.param) : gr.v.n}${one ? '' : ' ▸'}`, ang, R, why, () => { if (one) { C.closeWheel(); C.doVerb(gr.list[0].v, gr.list[0].tg, gr.list[0].v.param); } else sub(gr); }, one ? '' : `${gr.list.length} ways`);
+      });
+    };
+    const sub = (gr) => {
+      clearNodes(); const R = ring(gr.list);
+      gr.list.forEach((e, i) => { const ang = -Math.PI / 2 + (i / gr.list.length) * Math.PI * 2; node(e.v.label ? e.v.label(e.tg, e.v.param) : e.v.n, ang, R, whyOf(e), () => { C.closeWheel(); C.doVerb(e.v, e.tg, e.v.param); }); });
+      wheel.querySelector('.hub').title = 'Back'; wheel.querySelector('.hub').onclick = () => { top(); wheel.querySelector('.hub').onclick = C.closeWheel; wheel.querySelector('.hub').title = 'Close (Esc)'; };
+    };
+    top();
     document.getElementById('wheelClose').onclick = C.closeWheel;
   };
   C.closeWheel = function () { wheel.style.display = 'none'; wheel.innerHTML = ''; };

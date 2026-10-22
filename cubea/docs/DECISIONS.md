@@ -78,3 +78,17 @@ These work best as a **network layer**, not as a ninth faction. People already b
 | Each soldier has an inventory with a maximum | Weight-based capacity from individual strength, age and health; slowdown when overloaded | `inventory.js` |
 | Soldiers carry food and water and share with comrades | Packs; the neediest comrade within range is helped; medics hand out bandages | `inventory.js` |
 | Restrict food/water; disobedience if loyalty is low or they are too hungry/thirsty | Supply orders; per-check chance to cheat rises with need², low loyalty and low trust; cheating costs trust and discipline | `inventory.js`, `orders.js` |
+
+## Round 4 decisions (agency, camp, land, ideology, shell)
+
+| Request | What was built | Where |
+|---|---|---|
+| Compare with other RTS/squad games; use what players enjoy | Research with honest provenance (sourced vs recalled), design lessons table | `docs/RESEARCH.md` |
+| No "redistribute land" button; important things in the world, in real time | Physical verbs on placed things; context wheel; land reform as notice → survey → grant → sow → harvest | `things.js`, `actions.js`, `farm.js`, `docs/PLAYER_AGENCY.md` |
+| Many commands, messages and promises that vary with context | **Voice**: lines that depend on the listener's state; promise ledger with fulfilment checks | `ideology.js` |
+| Ideology as a functional part; indoctrination by hand-tailored values | Six values per person, creed = what you say, deeds = what you do, gap = hypocrisy; texts, speeches, pamphlets, posters, letters | `ideology.js`, `docs/IDEOLOGY.md` |
+| Action recording like Photoshop actions, stops with explanation, returns to start | Recorder + macro engine; spot/distance and specific/nearest toggles; legible failure; routines | `actions.js` |
+| Daily routine: latrine, food storage, sleeping, fuel, watches, literacy, medical | Camp life model and preset chores | `camp.js` |
+| Simplify/modernise UI; settings and real-game features | Grouped wheel (second ring for variants), pause menu, settings, key rebinding, saves, autosave | `settings.js`, `things.js` |
+
+Choices to note: (1) **orders still cannot be given while paused**; recording happens in real time. (2) Conversation stays a menu (what you *say*); everything else is a verb. (3) The creed has no slider: it is the average of what you actually said. (4) Historical details marked [recalled] in `RESEARCH.md` must be verified against the primary texts before release.
