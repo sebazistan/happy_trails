@@ -405,10 +405,67 @@
   // ---------------- build / fetch scene ----------------
   const SIZES = { cane: [84, 60], sierra: [100, 70], village: [72, 52], fishing: [72, 52], manzanillo: [96, 66], bayamo: [96, 66], santiago: [112, 74], habana: [122, 80], bay: [112, 86] };
   C.gen = gen;
+  // Scenes are generated at a compact size and then embedded in a much larger map (the surroundings continue the terrain,
+  // roads and shorelines outward), so every location is a large place with real countryside around its centre.
+  const SCALE = { sierra: 1.9, village: 1.9, fishing: 1.8, manzanillo: 1.7, bayamo: 1.7, santiago: 1.6, habana: 1.6 };
+  C.SCENE_SCALE = SCALE;
+  function embedScene(sm, K) {
+    const clamp = C.clamp; const sw = sm.tw, sh = sm.th, W = Math.round(sw * K), H = Math.round(sh * K); const ox = (W - sw) >> 1, oy = (H - sh) >> 1;
+    const big = new Scene(sm.sid, sm.type, W, H); big.R = sm.R;
+    const n1 = C.makeNoise(11), n2 = C.makeNoise(23), nz = C.makeNoise(41);
+    const refl = (v, n) => { const p = 2 * n; v = ((v % p) + p) % p; return v < n ? v : p - 1 - v; };
+    // the compact map, with its impassable frame softened (it was a map edge, now it is just ground)
+    const ring = (x, y) => x === 0 || y === 0 || x === sw - 1 || y === sh - 1;
+    const keep = (t) => t === TRAIL || t === ROAD || t === PAVED || t === SHAL;
+    const conv = (t) => (t === BLD || t === FENCE || t === PLAZA ? G : t === PIER ? SHAL : t);
+    for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) {
+      let t = sm.tiles[y * sw + x];
+      if (ring(x, y) && !keep(t)) { const ix = clamp(x, 1, sw - 2), iy = clamp(y, 1, sh - 2); t = conv(sm.tiles[iy * sw + ix]); }
+      big.tiles[(y + oy) * W + x + ox] = t; big.var[(y + oy) * W + x + ox] = sm.var[y * sw + x];
+    }
+    for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
+      if (X >= ox && X < ox + sw && Y >= oy && Y < oy + sh) continue;
+      const mx = refl(X - ox, sw), my = refl(Y - oy, sh); let t = conv(sm.tiles[my * sw + mx]);
+      if (t === ROAD || t === PAVED) t = (Math.abs(X - ox - mx) + Math.abs(Y - oy - my) > 3) ? G : t;     // roads leave the town, they do not mirror back
+      if (sm.type === 'sierra') { const x = X - ox, y = Y - oy; const h = n1(x * 0.07, y * 0.07) * 0.72 + n2(x * 0.19, y * 0.19) * 0.28; t = h > 0.69 ? ROCK : h > 0.46 ? FOR : (n2(x * 0.3, y * 0.3) > 0.58 ? FOR : G); }
+      else if (t === G) { const q = nz(X * 0.11, Y * 0.11); if (q > 0.64) t = FOR; else if (q < 0.3 && (sm.type === 'village' || sm.type === 'fishing' || sm.type === 'town')) t = CANE; }
+      big.tiles[Y * W + X] = t;
+    }
+    // objects keep their identity; only coordinates move
+    const px = ox * T, py = oy * T;
+    for (const b of sm.blds) { b.x += ox; b.y += oy; if (b.door) { b.door.tx += ox; b.door.ty += oy; } }
+    for (const p of sm.props) { p.x += px; p.y += py; }
+    for (const o of sm.objs) { o.x += px; o.y += py; }
+    for (const o of sm.pois) { if (o.tx !== undefined) { o.tx += ox; o.ty += oy; } if (o.x !== undefined) { o.x += px; o.y += py; } }
+    big.blds = sm.blds; big.props = sm.props; big.objs = sm.objs; big.pois = sm.pois; big.homes = sm.homes;
+    for (const k of ['spawn', 'army', 'pierPx']) if (sm[k]) { big[k] = Object.assign({}, sm[k]); big[k].x += px; big[k].y += py; }
+    if (sm.boatSpots) big.boatSpots = sm.boatSpots.map((q) => ({ x: q.x + px, y: q.y + py }));
+    if (sm.plaza) big.plaza = { x: sm.plaza.x + ox, y: sm.plaza.y + oy, ...(sm.plaza.r !== undefined ? { r: sm.plaza.r } : {}) };
+    if (sm.camp) { big.camp = sm.camp; big.camp.x += ox; big.camp.y += oy; }
+    if (sm.fieldPois) big.fieldPois = sm.fieldPois.map((q) => ({ tx: q.tx + ox, ty: q.ty + oy }));
+    for (const k of ['hamlet', 'dwellings', 'larrea']) if (sm[k] !== undefined) big[k] = sm[k];
+    big.title = sm.title; big.camp = big.camp || sm.camp;
+    // exits move to the edge of the big map, joined to the old ones by a track
+    for (const e of sm.exits) {
+      const n = Object.assign({}, e);
+      if (e.side === 'n') { n.x = e.x + ox; n.y = 0; big.rect(n.x, 0, n.w, oy + e.h, TRAIL, [G, FOR, ROCK, CANE, SAND]); }
+      else if (e.side === 's') { n.x = e.x + ox; n.y = H - n.h; big.rect(n.x, oy + sh - e.h, n.w, H - (oy + sh - e.h), TRAIL, [G, FOR, ROCK, CANE, SAND]); }
+      else if (e.side === 'w') { n.y = e.y + oy; n.x = 0; big.rect(0, n.y, ox + e.w, n.h, TRAIL, [G, FOR, ROCK, CANE, SAND]); }
+      else { n.y = e.y + oy; n.x = W - n.w; big.rect(ox + sw - e.w, n.y, W - (ox + sw - e.w), n.h, TRAIL, [G, FOR, ROCK, CANE, SAND]); }
+      big.exits.push(n);
+    }
+    for (const v of sm.vehicles) { v.x += px; v.y += py; big.vehicles.push(v); }
+    for (const an of sm.animals) { an.x += px; an.y += py; big.animals.push(an); }
+    big.pre = null; big.S = sm.S; big.name = sm.name;
+    // trees and palms in the new countryside
+    const R = big.R; for (let i = 0; i < W * H * 0.012; i++) { const X = (R() * W) | 0, Y = (R() * H) | 0; if ((X >= ox && X < ox + sw && Y >= oy && Y < oy + sh) || big.get(X, Y) !== G) continue; big.prop(R() < 0.6 ? 'palm' : 'tree', X, Y); }
+    big.ox = ox; big.oy = oy; big.inner = { x: ox, y: oy, w: sw, h: sh };
+    return big;
+  }
   C.getScene = function (sid) {
     if (C.scenes[sid]) return C.scenes[sid];
     const S = C.SETTLEMENTS[sid]; const sz = SIZES[sid === 'palmarito' ? 'village' : sid === 'cayo' ? 'fishing' : sid === 'alegria' ? 'cane' : sid];
-    const s = new Scene(sid, S.type, sz[0], sz[1]);
+    let s = new Scene(sid, S.type, sz[0], sz[1]);
     // households to house (cap by scene capacity)
     const cap = { sierra: 6, palmarito: 62, cayo: 38, manzanillo: 90, bayamo: 84, santiago: 100, habana: 112, cane: 0 }[sid];
     const hhsAll = C.W.houses.filter((h) => h.sid === sid && h.members.some((m) => C.W.people[m].status === 'alive'));
@@ -416,8 +473,10 @@
     const hhs = R.shuffle(hhsAll.slice()).slice(0, cap);
     const fn = sid === 'palmarito' ? gen.village : sid === 'cayo' ? gen.fishing : sid === 'alegria' ? gen.cane : gen[sid] || gen.sierra;
     fn(s, hhs);
-    s.hhs = hhs;
     ensureAccess(s);
+    const K = SCALE[sid === 'palmarito' ? 'village' : sid === 'cayo' ? 'fishing' : sid] || 1;
+    if (K > 1) s = embedScene(s, K);
+    s.hhs = hhs;
     C.scenes[sid] = s;
     return s;
   };
@@ -436,24 +495,26 @@
     if (!ok(ex, ey)) { const q = nearestOk(s, ex, ey, cost); if (!q) return null; ex = q.x; ey = q.y; }
     if (!ok(sx, sy)) { const q = nearestOk(s, sx, sy, cost); if (!q) return null; sx = q.x; sy = q.y; }
     const h = (x, y) => Math.hypot(x - ex, y - ey);
-    const g = new Float32Array(tw * th).fill(1e9), from = new Int32Array(tw * th).fill(-1), closed = new Uint8Array(tw * th);
-    const heap = new C.Heap(); const si = sy * tw + sx, ei = ey * tw + ex;
-    g[si] = 0; heap.push(si, h(sx, sy));
+    // pooled work arrays: a stamp marks which entries belong to this search, so nothing is reallocated or cleared
+    let P = s._pp; if (!P) P = s._pp = { g: new Float32Array(tw * th), from: new Int32Array(tw * th), seen: new Uint32Array(tw * th), closed: new Uint32Array(tw * th), stamp: 0, heap: new C.Heap() };
+    const stamp = ++P.stamp, g = P.g, from = P.from, seen = P.seen, closed = P.closed;
+    const heap = P.heap; heap.size && heap.clear && heap.clear(); const si = sy * tw + sx, ei = ey * tw + ex;
+    seen[si] = stamp; g[si] = 0; from[si] = -1; heap.push(si, h(sx, sy));
     let n = 0;
     const DX = [1, -1, 0, 0, 1, 1, -1, -1], DY = [0, 0, 1, -1, 1, -1, 1, -1];
-    while (heap.size && n++ < 9000) {
-      const cur = heap.pop(); if (closed[cur]) continue; closed[cur] = 1;
+    while (heap.size && n++ < 16000) {
+      const cur = heap.pop(); if (closed[cur] === stamp) continue; closed[cur] = stamp;
       if (cur === ei) break;
       const cx = cur % tw, cy = (cur / tw) | 0;
       for (let d = 0; d < 8; d++) {
         const nx = cx + DX[d], ny = cy + DY[d]; if (!ok(nx, ny)) continue;
         if (d >= 4 && (!ok(cx + DX[d], cy) || !ok(cx, cy + DY[d]))) continue;
-        const ni = ny * tw + nx; if (closed[ni]) continue;
+        const ni = ny * tw + nx; if (closed[ni] === stamp) continue;
         const ng = g[cur] + cost(s.tiles[ni]) * (d >= 4 ? 1.414 : 1);
-        if (ng < g[ni]) { g[ni] = ng; from[ni] = cur; heap.push(ni, ng + h(nx, ny)); }
+        if (seen[ni] !== stamp || ng < g[ni]) { seen[ni] = stamp; g[ni] = ng; from[ni] = cur; heap.push(ni, ng + h(nx, ny)); }
       }
     }
-    if (from[ei] < 0 && ei !== si) return null;
+    if (seen[ei] !== stamp || (from[ei] < 0 && ei !== si)) return null;
     const out = []; let c = ei;
     while (c !== si && c >= 0) { out.push({ x: (c % tw) * T + T / 2, y: ((c / tw) | 0) * T + T / 2 }); c = from[c]; }
     out.reverse();

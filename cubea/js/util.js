@@ -69,6 +69,7 @@
   C.Heap = class {
     constructor() { this.a = []; }
     get size() { return this.a.length; }
+    clear() { this.a.length = 0; }
     push(item, pri) {
       const a = this.a; a.push([pri, item]); let i = a.length - 1;
       while (i > 0) { const p = (i - 1) >> 1; if (a[p][0] <= a[i][0]) break; [a[p], a[i]] = [a[i], a[p]]; i = p; }

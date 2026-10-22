@@ -31,14 +31,19 @@
   const rgb = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
 
   // ---------- prerender of the static scene ----------
-  C.prerender = function (s) {
-    const W = s.tw * T * PS, H = s.th * T * PS;
-    const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
-    const cn = document.createElement('canvas'); cn.width = W; cn.height = H; const cc = cn.getContext('2d');
-    c.scale(PS, PS); cc.scale(PS, PS);
-    const R = C.RNG(C.hashStr(s.sid) + 9);
+  // Terrain is painted lazily in 16×16-tile chunks (cached, least-recently-used evicted) so scenes can be very large.
+  const CH = 16, CHPX = CH * T;
+  C.prerender = function (s) { return { s, chunks: new Map(), cap: 90, tick: 0 }; };
+  function makeChunk(s, cx, cy) {
+    const W = CHPX * PS;
+    const x0 = cx * CH, y0 = cy * CH, x1 = Math.min(s.tw, x0 + CH), y1 = Math.min(s.th, y0 + CH);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = W; const c = cv.getContext('2d');
+    let cn = null, cc = null;
+    c.scale(PS, PS); c.translate(-cx * CHPX, -cy * CHPX);
+    const R = C.RNG(C.hashStr(s.sid) + 9 + cx * 7919 + cy * 104729);
     const tw = s.tw;
-    for (let y = 0; y < s.th; y++) for (let x = 0; x < tw; x++) {
+    const needCanopy = () => { if (!cn) { cn = document.createElement('canvas'); cn.width = W; cn.height = W; cc = cn.getContext('2d'); cc.scale(PS, PS); cc.translate(-cx * CHPX, -cy * CHPX); } };
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
       const t = s.tiles[y * tw + x], v = s.var[y * tw + x];
       c.fillStyle = rgb(tileColor(t === TL.BLD ? TL.G : t, v)); c.fillRect(x * T, y * T, T + 0.5, T + 0.5);
       const px = x * T, py = y * T;
@@ -69,15 +74,26 @@
           const bx = px + R() * T, by = py + R() * T, r = 4 + R() * 4, shade = 0.78 + R() * 0.45;
           const col = `rgba(${(46 * shade) | 0},${(98 * shade) | 0},${(44 * shade) | 0},.95)`;
           c.fillStyle = col; c.beginPath(); c.arc(bx, by, r, 0, 6.3); c.fill();
-          cc.fillStyle = col; cc.beginPath(); cc.arc(bx, by, r, 0, 6.3); cc.fill();
+          needCanopy(); cc.fillStyle = col; cc.beginPath(); cc.arc(bx, by, r, 0, 6.3); cc.fill();
         }
       }
     }
-    // buildings
-    for (const b of s.blds) drawBuildingStatic(c, b);
-    // props
-    for (const p of s.props) drawPropStatic(c, cc, p, R);
+    // buildings and props that touch this chunk
+    const bx0 = x0 * T - 24, by0 = y0 * T - 40, bx1 = x1 * T + 24, by1 = y1 * T + 24;
+    for (const b of s.blds) { const bxp = b.x * T, byp = b.y * T; if (bxp + b.w * T < bx0 || bxp > bx1 || byp + b.h * T < by0 || byp > by1) continue; drawBuildingStatic(c, b); }
+    for (const p of s.props) { if (p.x < bx0 || p.x > bx1 || p.y < by0 || p.y > by1) continue; if (!cc && (p.k === 'tree' || p.k === 'palm' || p.k === 'ceiba')) needCanopy(); drawPropStatic(c, cc || c, p, R); }
     return { cv, cn };
+  }
+  // draw one layer ('cv' ground, 'cn' canopy) of the visible world rectangle
+  C.drawPre = function (ctx, pre, layer, wx, wy, ww, wh) {
+    const s = pre.s; const cx0 = Math.max(0, Math.floor(wx / CHPX)), cy0 = Math.max(0, Math.floor(wy / CHPX)), cx1 = Math.min(Math.ceil(s.tw / CH) - 1, Math.floor((wx + ww) / CHPX)), cy1 = Math.min(Math.ceil(s.th / CH) - 1, Math.floor((wy + wh) / CHPX));
+    for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
+      const key = cy * 4096 + cx; let ch = pre.chunks.get(key);
+      if (!ch) { ch = makeChunk(s, cx, cy); pre.chunks.set(key, ch); }
+      ch.t = ++pre.tick; const img = ch[layer]; if (!img) continue;
+      const ov = layer === 'cv' ? 0.6 : 0; ctx.drawImage(img, 0, 0, CHPX * PS, CHPX * PS, cx * CHPX, cy * CHPX, CHPX + ov, CHPX + ov);
+    }
+    if (pre.chunks.size > pre.cap && layer === 'cn') { const arr = [...pre.chunks.entries()].sort((p, q) => p[1].t - q[1].t); for (let i = 0; i < arr.length - pre.cap; i++) pre.chunks.delete(arr[i][0]); }
   };
 
   function drawBuildingStatic(c, b) {
@@ -390,7 +406,7 @@
     ctx.imageSmoothingEnabled = true;
     const vx0 = cam.x - W / 2 / z - 8, vy0 = cam.y - H / 2 / z - 8, vw = W / z + 16, vh = H / z + 16;
     const sx0 = Math.max(0, vx0), sy0 = Math.max(0, vy0), sw = Math.min(s.tw * T - sx0, vw), sh = Math.min(s.th * T - sy0, vh);
-    if (sw > 0 && sh > 0) ctx.drawImage(s.pre.cv, sx0 * PS, sy0 * PS, sw * PS, sh * PS, sx0, sy0, sw, sh);
+    if (sw > 0 && sh > 0) C.drawPre(ctx, s.pre, 'cv', sx0, sy0, sw, sh);
     const vis = (x, y, r) => x > vx0 - r && x < vx0 + vw + r && y > vy0 - r && y < vy0 + vh + r;
     if (s.type === 'coast') drawWaves(ctx, s, t, vx0, vy0, vw, vh);
     // decals: craters, scorch, blood
@@ -443,7 +459,7 @@
     for (const g of s.thrown) { ctx.fillStyle = g.k === 'molotov' ? 'rgb(200,120,40)' : 'rgb(50,60,40)'; ctx.beginPath(); ctx.arc(g.x, g.y - g.h, 2.2, 0, 6.3); ctx.fill(); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(g.x, g.y, 2, 1, 0, 0, 6.3); ctx.fill(); }
     // canopy over everything (partial) so actors in the forest are dimmed
     ctx.globalAlpha = 0.34;
-    if (sw > 0 && sh > 0) ctx.drawImage(s.pre.cn, sx0 * PS, sy0 * PS, sw * PS, sh * PS, sx0, sy0, sw, sh);
+    if (sw > 0 && sh > 0) C.drawPre(ctx, s.pre, 'cn', sx0, sy0, sw, sh);
     ctx.globalAlpha = 1;
     // particles
     for (const p of s.parts) if (vis(p.x, p.y, 20) && (p.k === 'text' || C.pointSeen(p.x, p.y))) drawPart(ctx, p);
