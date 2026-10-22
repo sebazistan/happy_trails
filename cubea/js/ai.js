@@ -387,6 +387,7 @@
   // (see above)
   function insideUpdate(s, a, dt) {
     a.sleeping = G().hour >= 22 || G().hour < 5;
+    if (C.insideAware) C.insideAware(s, a);                       // meals indoors (aware.js)
     if (G().min >= a.nextPlan) {
       // leave and take a new plan
       const b = s.blds[a.bld];
@@ -408,6 +409,7 @@
   // (see above)
   function civUpdate(s, a, dt) {
     const p = a.p;
+    if (C.civAware && C.civAware(s, a, dt)) return;           // aware.js: eyes, ears, judgement and a reaction repertoire
     // react to gunfire / danger nearby
     if (a.panic > 0.5 || a.hurtT > 0) {
       // run for the nearest door or away from danger
@@ -423,6 +425,7 @@
     a.working = false;
     const done = followPath(s, a, dt, a.speed * 0.85 * terrainSpeed(s, a));
     if (done) {
+      if (t.kind === 'in' && t.b && C.lockedFor && C.lockedFor(t.b, a)) { a.task = null; a.nextPlan = 0; a.wait = 3 + Math.random() * 4; return; }   // the door is barred
       if (t.kind === 'in' && t.b) { a.inside = true; a.bld = t.b.id; a.nextPlan = G().min + 40 + Math.random() * 140; if (t.b.tag === 'church') a.nextPlan = G().min + 60 + Math.random() * 40; }
       else if (t.kind === 'work') { a.wait = 4 + Math.random() * 10; if (Math.random() < 0.35) setPath(s, a, t.x + (Math.random() - 0.5) * 40, t.y + (Math.random() - 0.5) * 30); }
       else { a.wait = 2 + Math.random() * 9; if (Math.random() < 0.8) setPath(s, a, t.x + (Math.random() - 0.5) * 80, t.y + (Math.random() - 0.5) * 50); }
@@ -518,10 +521,11 @@
   // raise the alarm: nearby soldiers investigate, civilians panic
   C.alertScene = function (s, x, y, kind) {
     s.alert = Math.min(1.5, s.alert + (kind === 'shot' ? 0.12 : 0.5));
+    if (C.hearSound) C.hearSound(s, x, y, kind === 'shot' ? 1 : 2, kind === 'shot' ? 'shot' : 'boom');
     for (const o of s.actors) {
       if (o.dead || o.inside) continue; const d = Math.hypot(o.x - x, o.y - y);
       if (o.side === 'army' && d < 520 && o.brain.mode !== 'engage' && !o.surrendered) { o.brain.mode = 'investigate'; o.brain.lastX = x; o.brain.lastY = y; o.brain.moveT = 0; }
-      else if (o.side === 'civ' && d < (kind === 'shot' ? 160 : 260)) { o.panic = Math.min(1, o.panic + (kind === 'shot' ? 0.45 : 0.7)); o.fleeing = false; }
+      else if (o.side === 'civ' && !C.hearSound && d < (kind === 'shot' ? 160 : 260)) { o.panic = Math.min(1, o.panic + (kind === 'shot' ? 0.45 : 0.7)); o.fleeing = false; }
     }
   };
 
