@@ -285,6 +285,7 @@
   // THE PERCEPTION PASS + MEALS AND REST
   // ------------------------------------------------------------------------------------------------------------------
   C.civAware = function (s, a, dt) {
+    if (a.recruit && C.recruitBehave && C.recruitBehave(s, a, dt)) return true;     // a volunteer waiting at the camp (recruits.js)
     const g = G(), p = a.p; const aw = (a.aw = a.aw || { state: 'calm' });
     // heading follows movement
     if (a.px !== undefined) { const mx = a.x - a.px, my = a.y - a.py; if (mx * mx + my * my > 0.04) a.hd = Math.atan2(my, mx); }
