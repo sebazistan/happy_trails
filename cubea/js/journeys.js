@@ -160,7 +160,7 @@
     const mt = s.mule; if (!mt) return; const a = mt.drover;
     if (a.dead) { for (const an of mt.mules) an.owner = null; s.mule = null; return; }
     const d = Math.hypot(mt.tx - a.x, mt.ty - a.y);
-    if (!mt.arrived) { a.task = null; if (d > 14) { C.ai.followPath(s, a, dt, a.speed * C.ai.terrainSpeed(s, a)); } else { mt.arrived = true; mt.t = 0; const c = mt.cargo; g.res.food += c.food; g.res.ammo += c.ammo; g.res.med += c.med; C.log(`The mule train arrives: ${c.food} food${c.ammo ? ', ' + c.ammo + ' cartridges' : ''}${c.med ? ', ' + c.med + ' medicine' : ''}.`, 'good'); C.say(a, '¡Mercancía de la llanura!', '#1d5b2a', 4); } }
+    if (!mt.arrived) { a.task = null; if (d > 14) { C.ai.followPath(s, a, dt, a.speed * C.ai.terrainSpeed(s, a)); } else { mt.arrived = true; mt.t = 0; const c = mt.cargo; g.res.food += c.food; g.res.ammo += c.ammo; g.res.med += c.med; if (C.moraleDeliver) C.moraleDeliver(c); C.log(`The mule train arrives: ${c.food} food${c.ammo ? ', ' + c.ammo + ' cartridges' : ''}${c.med ? ', ' + c.med + ' medicine' : ''}.`, 'good'); C.say(a, '¡Mercancía de la llanura!', '#1d5b2a', 4); } }
     else { mt.t += dt; a.moving = false; if (mt.t > 40) { a.gone = true; const i = s.actors.indexOf(a); if (i >= 0) s.actors.splice(i, 1); for (const an of mt.mules) { const j = s.animals.indexOf(an); if (j >= 0) s.animals.splice(j, 1); } s.mule = null; } }
     // the mules follow their drover in a line
     mt.mules.forEach((an, i) => { if (an.dead) return; const tx = a.x - 14 - i * 13, ty = a.y + 2 + (i % 2) * 5; const dd = Math.hypot(tx - an.x, ty - an.y); if (dd > 4) { const sp = 34 * (dd > 40 ? 1.6 : 1); an.x += (tx - an.x) / dd * sp * dt; an.y += (ty - an.y) / dd * sp * dt; an.moving = true; an.anim += sp * dt * 0.6; an.face = a.x >= an.x ? 1 : -1; an.wait = 1; } else an.moving = false; });
@@ -178,7 +178,7 @@
   };
   C.registerVerb({ id: 'receive_funds', n: 'Receive the pipeline money', icon: '💰', kinds: ['actor'], reach: 26, dur: 4,
     check: (a, tg) => (!tg.o.courier ? 'Not a courier.' : null),
-    done: (a, tg) => { const g = G(), c = tg.o.courier; g.res.money += c.amount; g.stats.pesos += c.amount; g.courierQ = (g.courierQ || []).filter((x) => x !== c); tg.o.courier = null; tg.o.recruit = null; C.log(`${c.amount} pesos from Havana reach the Sierra.`, 'good'); C.say(tg.o, 'Con el cariño de La Habana.', '#1d5b2a', 3); C.bondEvent && C.bondEvent(a.p, tg.o.p, 'shared', 1); return null; } });
+    done: (a, tg) => { const g = G(), c = tg.o.courier; g.res.money += c.amount; g.stats.pesos += c.amount; g.courierQ = (g.courierQ || []).filter((x) => x !== c); if (C.moraleDeliver) C.moraleDeliver({ carta: 2 + Math.floor(rnd() * 4) }); tg.o.courier = null; tg.o.recruit = null; C.log(`${c.amount} pesos from Havana reach the Sierra.`, 'good'); C.say(tg.o, 'Con el cariño de La Habana.', '#1d5b2a', 3); C.bondEvent && C.bondEvent(a.p, tg.o.p, 'shared', 1); return null; } });
   // the pipeline's arrival is now a person on foot (processCouriers in sim.js calls this when a trip succeeds)
   C.sendCourier = send;
 })();

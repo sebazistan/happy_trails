@@ -26,6 +26,8 @@
 **Status words (NEW):** `a.sbub{text, key, t}` (the small word bubble) built from `C.statesOf(a)`: hungry, thirsty, tired, sleepy, overheated, freezing, soaked, sore feet, filthy, happy, miserable, angry, afraid, stressed, bored, grieving, shaken, hopeless, hopeful, in pain, bleeding, sick, doubting.
 **Needs that arise from the camp (not per-person):** latrine use, foul ground, hammocks, firewood, smoke exposure, watch cover, lessons (see `camp.js`).
 
+**Morale (morale.js):** `p.inv.guitar` (carrier) · `a.playing{song, until}` · `a.nextSong` · `p.drunk` (until minute) · `p.drinks` · stores `g.res.{guitar, cafe, tabaco, ron, domino, pelota, carta}` · fire `d.coffee`.
+
 **Added with captives, recruits, services and journeys:** `a.captive{keeper, tied, free, release, escaped, questioned, fedDay}` (a prisoner) · `a.recruit{since, tx, ty, vouched, suspect}` (a volunteer waiting) · `a.courier` · `a.muleDrover` · `a.carried{a,b}` / `a.carrying` (stretcher) · `a.onCot` · `p.helper` (covert eyes at home) · `a.checkpoint` (a guard at a barrier).
 
 ## C. Civilians and soldiers of the other side (same person record, plus)

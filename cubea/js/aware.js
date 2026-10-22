@@ -132,6 +132,7 @@
       heading(a, x, y);
       if (kind === 'shot' || kind === 'boom') { a.panic = Math.min(1, (a.panic || 0) + (kind === 'boom' ? 0.6 : 0.3) * (1.2 - d / r)); startReaction(s, a, soundReaction(s, a, x, y, kind, d / r), { x, y }); }
       else if (kind === 'shout') { if (!a.react && rnd() < 0.5) startReaction(s, a, pick({ glance: 2, stare: 1.5, gather: 0.6 + (has(a.p, 'brave') ? 1 : 0), home_lock: 0.4 + (has(a.p, 'timid') ? 1.2 : 0), flee: has(a.p, 'timid') ? 0.8 : 0.1 }), { x, y }); }
+      else if (kind === 'music') { if (!a.react && rnd() < 0.4) startReaction(s, a, pick({ stare: 2, approach: 1.2, glance: 1, gather: 0.6 }), { x, y }); }
       else if (kind === 'scream') { if (!a.react) startReaction(s, a, has(a.p, 'brave') || has(a.p, 'idealist') ? 'approach' : 'stare', { x, y }); }
       else if (kind === 'engine' && !a.react && rnd() < 0.3) startReaction(s, a, 'glance', { x, y });
     }

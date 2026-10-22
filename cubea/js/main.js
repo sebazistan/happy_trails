@@ -497,6 +497,7 @@
     if (C.huntTick) C.huntTick(s, g.min - prevMin);   // meat rots, snares fire (hunting.js)
     if (C.campTick) C.campTick(s, g.min - prevMin);   // camp life: hourly consequences of what is on the ground (camp.js)
     if (g.day !== prevDay) { dailyHooks(); }
+    if (C.moraleTick) C.moraleTick(s, dt);          // the guitar and other morale boosters (morale.js)
     if (C.sickTick) C.sickTick(s, dt);
     if (C.journeyTick) C.journeyTick(s, dt); if (C.muleTick) C.muleTick(s, dt); if (C.courierTick) C.courierTick(s, dt);   // the road, mule trains, couriers (journeys.js)
     if (C.recruitTick) C.recruitTick(s, dt);          // volunteers arrive at the camp's edge (recruits.js)
