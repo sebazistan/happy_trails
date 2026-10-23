@@ -1,0 +1,685 @@
+<title>Chicken Farmer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one game column. Stats strip + day track on top, canvas stage, touch pad (phones only), tuning panel below. */
+:root {
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --bg: #e8eee1;
+  --panel: #f7f9f3;
+  --fg: #1b2a1d;
+  --muted: #566a59;
+  --line: #c6d1bd;
+  --accent: #d99a12;
+  --accent-ink: #241900;
+  --good: #2c7a43;
+  --bad: #b9402a;
+  --track-day: #f1d684;
+  --track-night: #3a4a74;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101712; --panel: #18211a; --fg: #e4ecdf; --muted: #97a998; --line: #2b392d;
+    --accent: #efb53a; --accent-ink: #241900; --good: #6cc386; --bad: #ee7b63;
+    --track-day: #8c6f1d; --track-night: #1b2540;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101712; --panel: #18211a; --fg: #e4ecdf; --muted: #97a998; --line: #2b392d;
+  --accent: #efb53a; --accent-ink: #241900; --good: #6cc386; --bad: #ee7b63;
+  --track-day: #8c6f1d; --track-night: #1b2540;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-block: 16px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.app { max-width: 1040px; margin: 0 auto; display: grid; gap: 12px; }
+header h1 { font-family: var(--font-display); font-size: 30px; line-height: 1.1; margin: 0; text-wrap: balance; }
+header p { margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 65ch; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-width: 0; }
+.stat .k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.stat .v { font-family: var(--font-display); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .v small { font-family: var(--font-body); font-size: 12px; font-weight: 500; color: var(--muted); }
+
+.track { position: relative; height: 10px; border-radius: 5px; border: 1px solid var(--line);
+  background: linear-gradient(90deg,
+    var(--track-night) 0 25%, var(--track-day) 25% 75%, var(--track-night) 75% 100%); }
+.track i { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: var(--fg); transform: translateX(-2px); }
+.track-labels { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 8px; }
+
+.stage { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #6f9a52; }
+canvas { display: block; width: 100%; aspect-ratio: 16 / 10; touch-action: none; }
+
+.touch { display: none; align-items: center; justify-content: space-between; gap: 16px; }
+@media (pointer: coarse), (max-width: 700px) { .touch { display: flex; } }
+.stick { position: relative; width: 132px; height: 132px; border-radius: 50%; background: var(--panel); border: 2px solid var(--line); touch-action: none; flex: none; }
+.stick b { position: absolute; left: 40px; top: 40px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); pointer-events: none; }
+.pad { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.act { width: 92px; height: 92px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); font-family: var(--font-display); font-size: 34px; font-weight: 700; touch-action: none; }
+.act small { display: block; font-family: var(--font-body); font-size: 11px; font-weight: 600; margin-top: -6px; }
+
+.btn { font: inherit; font-size: 14px; font-weight: 500; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+.btn[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.keys { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 13px; }
+kbd { font-family: var(--font-mono); font-size: 11px; background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; color: var(--fg); }
+
+details.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0 16px; }
+details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--font-display); font-weight: 700; font-size: 17px; }
+.panel-body { display: grid; gap: 16px; padding-bottom: 16px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px 20px; }
+.slider { min-width: 0; }
+.slider label { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.slider output { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.slider input[type=range] { width: 100%; accent-color: var(--accent); }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.states { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; }
+.states span b { color: var(--fg); font-weight: 500; }
+.note { color: var(--muted); font-size: 13px; max-width: 70ch; margin: 0; }
+</style>
+
+<main class="app">
+  <header>
+    <h1>Chicken Farmer</h1>
+    <p>2D test of the farm loop from the dev guide. Hens wander, flee, flock, head in at dusk and lay eggs. You collect, feed and sell.</p>
+  </header>
+
+  <section class="stats" aria-label="Farm status">
+    <div class="stat"><div class="k">Time</div><div class="v"><span id="sClock">07:12</span> <small id="sDay">Day 1</small></div></div>
+    <div class="stat"><div class="k">Basket</div><div class="v"><span id="sEggs">0</span> <small>eggs</small></div></div>
+    <div class="stat"><div class="k">Money</div><div class="v">$<span id="sMoney">0</span></div></div>
+    <div class="stat"><div class="k">Hens</div><div class="v"><span id="sHens">5</span></div></div>
+    <div class="stat"><div class="k">Feed</div><div class="v"><span id="sFeed">0</span> <small>scoops</small></div></div>
+    <div class="stat" style="display:flex;align-items:center"><button class="btn primary" id="buy" type="button" style="width:100%">Buy hen $14</button></div>
+  </section>
+
+  <div>
+    <div class="track" aria-hidden="true"><i id="mark"></i></div>
+    <div class="track-labels" aria-hidden="true"><span>00</span><span>06 dawn</span><span>12</span><span>18 dusk</span><span>24</span></div>
+  </div>
+
+  <div class="stage"><canvas id="c" aria-label="Chicken farm game board"></canvas></div>
+
+  <section class="touch" aria-label="Touch controls">
+    <div class="stick" id="stick"><b id="knob"></b></div>
+    <div class="pad">
+      <button class="btn" id="btnSneak" type="button" aria-pressed="false">Sneak</button>
+      <button class="act" id="btnAct" type="button">F<small>Act</small></button>
+    </div>
+  </section>
+
+  <div class="keys">
+    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</span>
+    <span><kbd>F</kbd> act (egg, gate, feed, sell)</span>
+    <span><kbd>Shift</kbd> sneak</span>
+    <span><kbd>G</kbd> debug view</span>
+  </div>
+
+  <details class="panel" open>
+    <summary>Tuning and test tools</summary>
+    <div class="panel-body">
+      <div class="sliders" id="sliders"></div>
+      <div class="tools">
+        <button class="btn" id="bDebug" type="button" aria-pressed="false">Debug view</button>
+        <button class="btn" id="bDusk" type="button">Skip to dusk</button>
+        <button class="btn" id="bDawn" type="button">Skip to dawn</button>
+        <button class="btn" id="bAdd10" type="button">+10 hens</button>
+        <button class="btn" id="bSub10" type="button">&minus;10 hens</button>
+        <button class="btn" id="bReset" type="button">Reset farm</button>
+      </div>
+      <div class="states" id="states"></div>
+      <p class="note">Covers roadmap steps 2 to 10: farmer and F-key actions, wander, flee with hysteresis, separation, day and night, the gate, eggs, selling, and feeding. Left out: roof occlusion (step 1), hatching (step 11) and everything after. Hens near the pen gate drift out when it is open, and at dusk any hen left outside a closed gate waits there until you open it.</p>
+    </div>
+  </details>
+</main>
+
+<script>
+(function () {
+'use strict';
+
+/* ---------- helpers ---------- */
+const W = 960, H = 600, TAU = Math.PI * 2;
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const rand = (a, b) => a + Math.random() * (b - a);
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+const cv = $('c'), ctx = cv.getContext('2d');
+let S = 1, bg = null;
+
+/* ---------- tuning (every number the guide says to expose) ---------- */
+const T = { walk: 32, fleeMult: 3.6, fleeR: 70, attractR: 140, sep: 1.2, egg: 28, dayLen: 180, farmerSpeed: 105,
+  sneakK: 0.5, wanderR: 60, pauseMin: 0.8, pauseMax: 3.2, forageR: 70, gateBias: 0.3, gateRange: 200, feedBoost: 8, price: 2, henCost: 14, rot: 150 };
+const SLIDERS = [
+  ['walk', 'Hen walk speed', 15, 70, 1, v => v + ' px/s'],
+  ['fleeMult', 'Flee speed multiplier', 1.5, 6, 0.1, v => '×' + v.toFixed(1)],
+  ['fleeR', 'Flee radius (exit is 1.5×)', 30, 140, 1, v => v + ' px'],
+  ['attractR', 'Feed attract radius', 60, 260, 1, v => v + ' px'],
+  ['sep', 'Separation weight', 0, 3, 0.1, v => v.toFixed(1)],
+  ['egg', 'Egg interval', 8, 90, 1, v => v + ' s'],
+  ['dayLen', 'Day length', 40, 600, 5, v => v + ' s'],
+  ['farmerSpeed', 'Farmer speed', 50, 180, 1, v => v + ' px/s']
+];
+(function buildSliders() {
+  const box = $('sliders');
+  SLIDERS.forEach(([k, label, min, max, step, fmt]) => {
+    const d = document.createElement('div'); d.className = 'slider';
+    d.innerHTML = '<label for="t-' + k + '"><span>' + label + '</span><output id="o-' + k + '"></output></label>' +
+      '<input type="range" id="t-' + k + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + T[k] + '">';
+    box.appendChild(d);
+    const inp = d.querySelector('input'), out = d.querySelector('output');
+    const sync = () => { T[k] = parseFloat(inp.value); out.textContent = fmt(T[k]); };
+    inp.addEventListener('input', sync); sync();
+  });
+})();
+
+/* ---------- world layout ---------- */
+const PEN = { x0: 86, y0: 166, x1: 397, y1: 467 };
+const FENCE = [
+  { x: 80, y: 160, w: 323, h: 6 }, { x: 80, y: 467, w: 323, h: 6 }, { x: 80, y: 160, w: 6, h: 313 },
+  { x: 397, y: 160, w: 6, h: 130 }, { x: 397, y: 350, w: 6, h: 123 }
+];
+const GATE = { x: 400, y: 320, rect: { x: 397, y: 290, w: 6, h: 60 }, in: { x: 372, y: 320 }, out: { x: 434, y: 320 } };
+const HUTCH = { x: 104, y: 182, w: 92, h: 52 }, DOOR = { x: 150, y: 234 }, DOOR_OUT = { x: 150, y: 253 };
+const BARN = { x: 640, y: 36, w: 220, h: 96 };
+const BIN = { x: 540, y: 150, w: 26, h: 26 }, BIN_PT = { x: 553, y: 163 };
+const STAND = { x: 770, y: 330, w: 112, h: 30 }, STAND_PT = { x: 826, y: 345 };
+const TREES = [{ x: 640, y: 480 }, { x: 715, y: 520 }, { x: 40, y: 70 }, { x: 905, y: 500 }, { x: 560, y: 540 }, { x: 300, y: 60 }];
+const SOLIDS = FENCE.concat([HUTCH, BARN, BIN, STAND], TREES.map(t => ({ x: t.x - 8, y: t.y - 8, w: 16, h: 16 })));
+
+/* ---------- state ---------- */
+const world = { t: 0.30, day: 1, curfew: false, warned: false, clock: 0 };
+const gate = { open: false, anim: 0 };
+const farmer = { x: 500, y: 330, vx: 0, vy: 0, face: 0, r: 9, scoops: 0, basket: 0, money: 0, sneak: false, step: 0 };
+let hens = [], eggs = [], bugs = [], floats = [], toast = { txt: '', t: 0 }, nextId = 1;
+let debug = false, action = null, fps = 60;
+
+function insidePen(p) { return p.x > PEN.x0 && p.x < GATE.x && p.y > PEN.y0 && p.y < PEN.y1; }
+function blockedAt(x, y, m) { for (const R of SOLIDS) if (x > R.x - m && x < R.x + R.w + m && y > R.y - m && y < R.y + R.h + m) return true; return false; }
+
+function pushOut(p, r, R) {
+  const cx = clamp(p.x, R.x, R.x + R.w), cy = clamp(p.y, R.y, R.y + R.h);
+  const dx = p.x - cx, dy = p.y - cy, d2 = dx * dx + dy * dy;
+  if (d2 >= r * r) return;
+  if (d2 < 1e-6) {
+    const l = p.x - R.x, rr = R.x + R.w - p.x, t = p.y - R.y, b = R.y + R.h - p.y, m = Math.min(l, rr, t, b);
+    if (m === l) p.x = R.x - r; else if (m === rr) p.x = R.x + R.w + r; else if (m === t) p.y = R.y - r; else p.y = R.y + R.h + r;
+    return;
+  }
+  const d = Math.sqrt(d2), k = (r - d) / d; p.x += dx * k; p.y += dy * k;
+}
+function collide(p, r) {
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < SOLIDS.length; j++) pushOut(p, r, SOLIDS[j]);
+    if (!gate.open) pushOut(p, r, GATE.rect);
+  }
+  p.x = clamp(p.x, r, W - r); p.y = clamp(p.y, r, H - r);
+}
+
+/* ---------- spawning ---------- */
+const BREEDS = [{ body: '#f4efe2', wing: '#d9d1bd' }, { body: '#b9733c', wing: '#935626' }, { body: '#9aa0a4', wing: '#767d82' }];
+function newHen(x, y) {
+  const c = { id: nextId++, x, y, vx: 0, vy: 0, ang: rand(0, TAU), r: 7, state: 'WANDER', route: [], pause: rand(0, 2), thinkT: rand(0, 0.2),
+    eggT: T.egg * rand(0.3, 1), fedCool: 0, fleeOff: 0, breed: BREEDS[Math.floor(Math.random() * 3)], phase: rand(0, TAU),
+    stuckT: 0, sx: x, sy: y, waiting: false, gateSeen: gate.open, bug: null, eatBug: null, wx: 0, wy: 0 };
+  if (world.curfew) setReturn(c);
+  hens.push(c); return c;
+}
+function penPoint() { for (let i = 0; i < 30; i++) { const x = rand(PEN.x0 + 14, PEN.x1 - 14), y = rand(PEN.y0 + 14, PEN.y1 - 14); if (!blockedAt(x, y, 12)) return { x, y }; } return { x: 250, y: 380 }; }
+function spawnBug(b) {
+  for (let i = 0; i < 30; i++) {
+    const inPen = Math.random() < 0.55;
+    const x = inPen ? rand(PEN.x0 + 12, PEN.x1 - 12) : rand(20, W - 20), y = inPen ? rand(PEN.y0 + 12, PEN.y1 - 12) : rand(20, H - 20);
+    if (!blockedAt(x, y, 14) && (inPen || !(x > 70 && x < 410 && y > 150 && y < 480))) { b.x = x; b.y = y; b.alive = true; b.claim = null; return; }
+  }
+}
+function resetFarm() {
+  Object.assign(world, { t: 0.30, day: 1, curfew: false, warned: false });
+  Object.assign(farmer, { x: 500, y: 330, vx: 0, vy: 0, scoops: 0, basket: 0, money: 0, sneak: false });
+  gate.open = false; gate.anim = 0; hens = []; eggs = []; floats = []; bugs = [];
+  for (let i = 0; i < 5; i++) { const p = penPoint(); newHen(p.x, p.y); }
+  for (let i = 0; i < 12; i++) { const b = { x: 0, y: 0, alive: true, claim: null, respawn: 0, ph: rand(0, TAU) }; spawnBug(b); bugs.push(b); }
+  for (let i = 0; i < 2; i++) { const p = penPoint(); eggs.push({ x: p.x, y: p.y, age: 0 }); }
+  $('btnSneak').setAttribute('aria-pressed', 'false');
+  say('New farm. Pick up the eggs and open the gate to let the hens out.');
+}
+function say(txt) { toast.txt = txt; toast.t = 4; }
+function float(x, y, txt, col) { floats.push({ x, y, txt, col: col || '#fff', t: 1.3 }); }
+
+/* ---------- hen brain: state machine (guide section 05) ---------- */
+function setReturn(c) {
+  c.state = 'RETURN'; c.gateSeen = gate.open; c.waiting = false;
+  if (insidePen(c)) c.route = [{ x: DOOR_OUT.x + rand(-6, 6), y: DOOR_OUT.y }];
+  else if (gate.open) c.route = [{ x: GATE.out.x, y: GATE.out.y }, { x: GATE.in.x, y: GATE.in.y }, { x: DOOR_OUT.x + rand(-6, 6), y: DOOR_OUT.y }];
+  else { c.waiting = true; c.route = [{ x: 425 + rand(0, 34), y: 296 + rand(0, 48) }]; }
+}
+function think(c) {
+  const dF = dist(c, farmer), fr = T.fleeR * (farmer.sneak ? T.sneakK : 1);
+  if (world.curfew) {
+    if (c.state === 'ROOST') return;
+    if (c.state !== 'RETURN') { setReturn(c); return; }
+    if (c.gateSeen !== gate.open || (!c.route.length && !c.waiting)) setReturn(c);
+    return;
+  }
+  if (c.state === 'ROOST') { c.x = DOOR_OUT.x + rand(-8, 8); c.y = DOOR_OUT.y + 4; c.state = 'WANDER'; c.route = []; c.pause = rand(0.2, 1); c.vx = c.vy = 0; return; }
+  if (c.state === 'RETURN') { c.state = 'WANDER'; c.route = []; c.waiting = false; }
+  if (farmer.scoops > 0 && dF < T.attractR) { if (c.state !== 'APPROACH') { c.state = 'APPROACH'; c.route = []; releaseBug(c); } return; }
+  if (c.state === 'APPROACH') { if (farmer.scoops > 0 && dF < T.attractR * 1.3) return; c.state = 'WANDER'; c.route = []; c.pause = rand(0.3, 1); }
+  if (c.state === 'FLEE') { if (dF > fr * 1.5) { c.state = 'WANDER'; c.route = []; c.pause = rand(0.3, 0.9); } return; }
+  if (farmer.scoops === 0 && dF < fr) { c.state = 'FLEE'; c.fleeOff = rand(-0.26, 0.26); c.route = []; c.pause = 0; releaseBug(c); return; }
+  if (c.pause <= 0 && !c.route.length) pickTarget(c);
+}
+function releaseBug(c) { if (c.bug) { c.bug.claim = null; c.bug = null; } c.eatBug = null; }
+function pickTarget(c) {
+  const inside = insidePen(c);
+  if (Math.random() < 0.6) {
+    let best = null, bd = T.forageR;
+    for (const b of bugs) { if (!b.alive || b.claim) continue; if (insidePen(b) !== inside) continue; const d = dist(c, b); if (d < bd) { bd = d; best = b; } }
+    if (best) { best.claim = c.id; c.bug = best; c.state = 'FORAGE'; c.route = [{ x: best.x, y: best.y }]; return; }
+  }
+  if (gate.open) {
+    if (inside && dist(c, GATE.in) < T.gateRange && Math.random() < T.gateBias) {
+      const g = { x: GATE.out.x + rand(24, 100), y: clamp(GATE.y + rand(-120, 120), 30, H - 30) };
+      if (!blockedAt(g.x, g.y, 10)) { c.state = 'ESCAPE'; c.route = [{ x: GATE.in.x, y: GATE.in.y }, { x: GATE.out.x, y: GATE.out.y }, g]; return; }
+    } else if (!inside && dist(c, GATE.out) < 150 && Math.random() < 0.15) {
+      const g = penPoint(); c.state = 'WANDER'; c.route = [{ x: GATE.out.x, y: GATE.out.y }, { x: GATE.in.x, y: GATE.in.y }, g]; return;
+    }
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = rand(0, TAU), d = rand(16, T.wanderR);
+    let x = c.x + Math.cos(a) * d, y = c.y + Math.sin(a) * d;
+    if (inside) { x = clamp(x, PEN.x0 + 12, PEN.x1 - 12); y = clamp(y, PEN.y0 + 12, PEN.y1 - 12); }
+    else { x = clamp(x, 16, W - 16); y = clamp(y, 16, H - 16); if (x > 74 && x < 410 && y > 154 && y < 478) continue; }
+    if (blockedAt(x, y, 10)) continue;
+    c.state = 'WANDER'; c.route = [{ x, y }]; return;
+  }
+  c.pause = rand(0.4, 1.2);
+}
+function arrive(c) {
+  if (c.state === 'RETURN') {
+    if (c.waiting) return;
+    c.state = 'ROOST'; c.x = DOOR.x; c.y = DOOR.y - 14; c.vx = c.vy = 0; return;
+  }
+  if (c.state === 'FORAGE') { c.pause = 0.6; c.eatBug = c.bug; return; }
+  c.state = 'WANDER'; c.pause = rand(T.pauseMin, T.pauseMax);
+}
+
+/* ---------- spatial grid for neighbour queries ---------- */
+const CELL = 32, GW = Math.ceil(W / CELL), GH = Math.ceil(H / CELL);
+let grid = [];
+function buildGrid() {
+  grid = new Array(GW * GH);
+  for (const c of hens) { if (c.state === 'ROOST') continue; const i = clamp(Math.floor(c.x / CELL), 0, GW - 1) + clamp(Math.floor(c.y / CELL), 0, GH - 1) * GW; (grid[i] || (grid[i] = [])).push(c); }
+}
+
+function steer(c, dt) {
+  if (c.state === 'ROOST') return;
+  let dx = 0, dy = 0, sp = 0;
+  if (c.state === 'FLEE') {
+    const a = Math.atan2(c.y - farmer.y, c.x - farmer.x) + c.fleeOff;
+    dx = Math.cos(a); dy = Math.sin(a); sp = T.walk * T.fleeMult;
+  } else if (c.state === 'APPROACH') {
+    const d = dist(c, farmer);
+    if (d > 14) { dx = (farmer.x - c.x) / d; dy = (farmer.y - c.y) / d; sp = T.walk * 1.9 * Math.min(1, d / 30 + 0.3); }
+  } else if (c.pause > 0) {
+    c.pause -= dt;
+    if (c.pause <= 0 && c.eatBug) {
+      const b = c.eatBug; c.eatBug = null; c.bug = null;
+      if (b.alive) { b.alive = false; b.respawn = 18; c.eggT -= 4; float(c.x, c.y - 12, 'peck', '#ffe9a8'); }
+      c.state = 'WANDER'; c.pause = rand(0.2, 0.8);
+    }
+  } else if (c.route.length) {
+    const w = c.route[0], d = dist(c, w), last = c.route.length === 1;
+    if (d < (last ? 5 : 9)) { c.route.shift(); if (!c.route.length) arrive(c); }
+    else { dx = (w.x - c.x) / d; dy = (w.y - c.y) / d; sp = c.state === 'RETURN' ? T.walk * 2.2 : T.walk; }
+  }
+  /* separation */
+  let sx = 0, sy = 0;
+  const gx = Math.floor(c.x / CELL), gy = Math.floor(c.y / CELL), R = 15;
+  for (let j = gy - 1; j <= gy + 1; j++) for (let i = gx - 1; i <= gx + 1; i++) {
+    if (i < 0 || j < 0 || i >= GW || j >= GH) continue;
+    const cell = grid[i + j * GW]; if (!cell) continue;
+    for (const o of cell) {
+      if (o === c) continue;
+      const ex = c.x - o.x, ey = c.y - o.y, d2 = ex * ex + ey * ey;
+      if (d2 < R * R && d2 > 0.01) { const d = Math.sqrt(d2), k = (R - d) / R; sx += ex / d * k; sy += ey / d * k; }
+    }
+  }
+  const tx = dx * sp + sx * T.sep * 45, ty = dy * sp + sy * T.sep * 45;
+  const a = Math.min(1, dt * 6);
+  c.vx += (tx - c.vx) * a; c.vy += (ty - c.vy) * a;
+  const ox = c.x, oy = c.y;
+  c.x += c.vx * dt; c.y += c.vy * dt;
+  collide(c, c.r);
+  if (dt > 0) { c.vx = (c.x - ox) / dt; c.vy = (c.y - oy) / dt; }
+  const spd = Math.hypot(c.vx, c.vy);
+  if (spd > 5) { let da = Math.atan2(c.vy, c.vx) - c.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); c.ang += da * Math.min(1, dt * 10); }
+  c.phase += spd * dt * 0.35;
+  /* stuck detection */
+  if (c.route.length && c.pause <= 0 && (c.state === 'WANDER' || c.state === 'FORAGE' || c.state === 'ESCAPE')) {
+    c.stuckT += dt;
+    if (Math.hypot(c.x - c.sx, c.y - c.sy) > 6) { c.sx = c.x; c.sy = c.y; c.stuckT = 0; }
+    else if (c.stuckT > 2.2) { c.route = []; c.pause = 0.3; c.stuckT = 0; releaseBug(c); }
+  } else { c.stuckT = 0; c.sx = c.x; c.sy = c.y; }
+}
+
+/* ---------- farmer, input, actions ---------- */
+const keys = new Set(), joy = { x: 0, y: 0 };
+function moveVec() {
+  let x = joy.x, y = joy.y;
+  if (keys.has('a') || keys.has('arrowleft')) x -= 1;
+  if (keys.has('d') || keys.has('arrowright')) x += 1;
+  if (keys.has('w') || keys.has('arrowup')) y -= 1;
+  if (keys.has('s') || keys.has('arrowdown')) y += 1;
+  const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; }
+  return { x, y };
+}
+function updateFarmer(dt) {
+  const v = moveVec(), sneak = farmer.sneak || keys.has('shift');
+  farmer.sneakNow = sneak;
+  const sp = T.farmerSpeed * (sneak ? 0.55 : 1);
+  farmer.vx = v.x * sp; farmer.vy = v.y * sp;
+  farmer.x += farmer.vx * dt; farmer.y += farmer.vy * dt;
+  collide(farmer, farmer.r);
+  if (Math.hypot(v.x, v.y) > 0.1) { farmer.face = Math.atan2(v.y, v.x); farmer.step += dt * sp * 0.12; }
+}
+function findAction() {
+  const near = eggs.filter(e => dist(e, farmer) < 32);
+  if (near.length) return { label: near.length > 1 ? 'Collect ' + near.length + ' eggs' : 'Collect egg', run: () => { eggs = eggs.filter(e => dist(e, farmer) >= 32); farmer.basket += near.length; float(farmer.x, farmer.y - 18, '+' + near.length + ' egg', '#fff4c2'); } };
+  if (dist(farmer, STAND_PT) < 64 && farmer.basket > 0) { const n = farmer.basket, pay = n * T.price; return { label: 'Sell ' + n + ' egg' + (n > 1 ? 's' : '') + ' · $' + pay, run: () => { farmer.money += pay; farmer.basket = 0; float(farmer.x, farmer.y - 18, '+$' + pay, '#b8f0a8'); } }; }
+  if (dist(farmer, BIN_PT) < 46) return { label: farmer.scoops > 0 ? 'Refill feed' : 'Take feed', run: () => { farmer.scoops = 10; float(farmer.x, farmer.y - 18, 'feed ready', '#ffe9a8'); } };
+  if (dist(farmer, GATE) < 56) return { label: gate.open ? 'Close gate' : 'Open gate', run: () => { gate.open = !gate.open; } };
+  if (farmer.scoops > 0) return { label: 'Drop feed', run: () => { farmer.scoops = 0; } };
+  return null;
+}
+function doAction() { const a = findAction(); if (a) a.run(); }
+
+addEventListener('keydown', e => {
+  const tg = e.target && e.target.tagName; if (tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA') return;
+  const k = e.key.toLowerCase();
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k) || (k === ' ' && tg !== 'BUTTON')) e.preventDefault();
+  if (e.repeat) { keys.add(k); return; }
+  keys.add(k);
+  if (k === 'f' || k === 'e' || (k === ' ' && tg !== 'BUTTON')) doAction();
+  if (k === 'g') toggleDebug();
+});
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => keys.clear());
+
+const stick = $('stick'), knob = $('knob'); let sid = null;
+function stickMove(e) {
+  const r = stick.getBoundingClientRect();
+  let x = (e.clientX - (r.left + r.width / 2)) / (r.width / 2), y = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+  const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; }
+  if (m < 0.15) { joy.x = 0; joy.y = 0; } else { joy.x = x; joy.y = y; }
+  knob.style.transform = 'translate(' + x * 34 + 'px,' + y * 34 + 'px)';
+}
+stick.addEventListener('pointerdown', e => { sid = e.pointerId; stick.setPointerCapture(e.pointerId); stickMove(e); });
+stick.addEventListener('pointermove', e => { if (e.pointerId === sid) stickMove(e); });
+const stickEnd = e => { if (e.pointerId !== sid) return; sid = null; joy.x = joy.y = 0; knob.style.transform = ''; };
+stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd);
+$('btnAct').addEventListener('pointerdown', e => { e.preventDefault(); doAction(); });
+$('btnSneak').addEventListener('click', function () { farmer.sneak = !farmer.sneak; this.setAttribute('aria-pressed', farmer.sneak ? 'true' : 'false'); });
+
+function toggleDebug() { debug = !debug; $('bDebug').setAttribute('aria-pressed', debug ? 'true' : 'false'); }
+$('bDebug').addEventListener('click', toggleDebug);
+$('bDusk').addEventListener('click', () => { world.t = 0.70; });
+$('bDawn').addEventListener('click', () => { world.t = 0.255; world.day++; });
+$('bAdd10').addEventListener('click', () => { for (let i = 0; i < 10 && hens.length < 200; i++) { const p = penPoint(); newHen(p.x, p.y); } });
+$('bSub10').addEventListener('click', () => { hens.splice(Math.max(0, hens.length - 10), 10); });
+$('bReset').addEventListener('click', resetFarm);
+$('buy').addEventListener('click', () => {
+  if (farmer.money < T.henCost || hens.length >= 200) return;
+  farmer.money -= T.henCost; const p = penPoint(); newHen(p.x, p.y); float(p.x, p.y - 12, 'new hen', '#fff');
+});
+
+/* ---------- simulation step ---------- */
+function update(dt) {
+  /* clock and day/night events */
+  world.t += dt / T.dayLen;
+  if (world.t >= 1) { world.t -= 1; world.day++; }
+  const curfew = world.t >= 0.72 || world.t < 0.27;
+  if (curfew !== world.curfew) {
+    world.curfew = curfew; world.warned = false;
+    say(curfew ? 'Dusk. The hens are heading in.' : 'Dawn. The hens are up.');
+  }
+  if (world.curfew && !world.warned && (world.t >= 0.80 || world.t < 0.27 && world.t > 0.02)) {
+    world.warned = true;
+    const out = hens.filter(h => h.state !== 'ROOST').length;
+    if (out) say(out + ' hen' + (out > 1 ? 's' : '') + ' still outside' + (gate.open ? '.' : '. Open the gate.'));
+  }
+  gate.anim += ((gate.open ? 1 : 0) - gate.anim) * Math.min(1, dt * 8);
+  updateFarmer(dt);
+  buildGrid();
+  for (const c of hens) {
+    c.thinkT -= dt;
+    if (c.thinkT <= 0) { think(c); c.thinkT = (dist(c, farmer) < 160 ? 0.06 : 0.2) + Math.random() * 0.03; }
+    steer(c, dt);
+    c.fedCool -= dt;
+    if (c.state !== 'ROOST') {
+      c.eggT -= dt;
+      if (c.eggT <= 0) { eggs.push({ x: c.x, y: c.y, age: 0 }); c.eggT = T.egg * rand(0.8, 1.2); float(c.x, c.y - 12, 'egg', '#fff4c2'); }
+    }
+    if (c.state === 'APPROACH' && farmer.scoops > 0 && c.fedCool <= 0 && dist(c, farmer) < farmer.r + c.r + 6) {
+      farmer.scoops--; c.fedCool = 1.2; c.eggT = Math.max(1, c.eggT - T.feedBoost); float(c.x, c.y - 12, 'fed', '#ffb3c1');
+    }
+  }
+  for (const e of eggs) e.age += dt;
+  eggs = eggs.filter(e => e.age < T.rot);
+  for (const b of bugs) { if (!b.alive) { b.respawn -= dt; if (b.respawn <= 0) spawnBug(b); } }
+  for (const f of floats) { f.t -= dt; f.y -= dt * 14; }
+  floats = floats.filter(f => f.t > 0);
+  toast.t -= dt;
+  action = findAction();
+}
+
+/* ---------- rendering ---------- */
+function buildBG() {
+  bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
+  const g = bg.getContext('2d'), rnd = mulberry(7);
+  g.scale(S, S);
+  g.fillStyle = '#7ea25a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 70; i++) { g.fillStyle = rnd() < 0.5 ? 'rgba(96,140,70,.35)' : 'rgba(150,185,100,.28)'; g.beginPath(); g.ellipse(rnd() * W, rnd() * H, 30 + rnd() * 60, 14 + rnd() * 30, rnd() * 3, 0, TAU); g.fill(); }
+  g.lineWidth = 1;
+  for (let i = 0; i < 1100; i++) { const x = rnd() * W, y = rnd() * H; g.strokeStyle = rnd() < 0.5 ? 'rgba(70,110,50,.55)' : 'rgba(170,205,120,.45)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 3, y - 3 - rnd() * 3); g.stroke(); }
+  /* dirt paths */
+  g.strokeStyle = 'rgba(176,148,100,.8)'; g.lineWidth = 34; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(420, 320); g.lineTo(520, 320); g.lineTo(553, 190); g.moveTo(520, 320); g.lineTo(826, 372); g.stroke();
+  g.lineWidth = 1; g.lineCap = 'butt';
+  /* pen floor */
+  g.fillStyle = '#cdb88c'; g.fillRect(PEN.x0, PEN.y0, PEN.x1 - PEN.x0, PEN.y1 - PEN.y0);
+  for (let i = 0; i < 420; i++) { const x = PEN.x0 + rnd() * (PEN.x1 - PEN.x0), y = PEN.y0 + rnd() * (PEN.y1 - PEN.y0); g.strokeStyle = rnd() < 0.5 ? 'rgba(230,205,130,.8)' : 'rgba(150,120,80,.45)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 5 + rnd() * 4, y + (rnd() - 0.5) * 3); g.stroke(); }
+  /* fence */
+  const post = (x, y) => { g.fillStyle = '#5f3d22'; g.fillRect(x - 4, y - 4, 8, 8); };
+  FENCE.forEach(R => {
+    g.fillStyle = '#946239'; g.fillRect(R.x, R.y, R.w, R.h);
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(R.x, R.y + R.h, R.w, 2);
+    if (R.w > R.h) for (let x = R.x + 3; x <= R.x + R.w; x += 26) post(x, R.y + R.h / 2); else for (let y = R.y + 3; y <= R.y + R.h; y += 26) post(R.x + R.w / 2, y);
+  });
+  post(400, 290); post(400, 350);
+  /* hutch */
+  g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(HUTCH.x + 4, HUTCH.y + 5, HUTCH.w, HUTCH.h);
+  g.fillStyle = '#a8412c'; g.fillRect(HUTCH.x, HUTCH.y, HUTCH.w, HUTCH.h);
+  g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 1;
+  for (let y = HUTCH.y + 8; y < HUTCH.y + HUTCH.h; y += 8) { g.beginPath(); g.moveTo(HUTCH.x, y); g.lineTo(HUTCH.x + HUTCH.w, y); g.stroke(); }
+  g.fillStyle = '#7c2d1e'; g.fillRect(HUTCH.x, HUTCH.y + HUTCH.h / 2 - 2, HUTCH.w, 4);
+  g.fillStyle = '#1c120c'; g.beginPath(); g.moveTo(DOOR.x - 11, DOOR.y); g.lineTo(DOOR.x - 11, DOOR.y - 10); g.arc(DOOR.x, DOOR.y - 10, 11, Math.PI, 0); g.lineTo(DOOR.x + 11, DOOR.y); g.fill();
+  /* barn */
+  g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(BARN.x + 6, BARN.y + 7, BARN.w, BARN.h);
+  g.fillStyle = '#8f3a2b'; g.fillRect(BARN.x, BARN.y, BARN.w, BARN.h);
+  g.fillStyle = '#6f2a1e'; g.fillRect(BARN.x, BARN.y + BARN.h / 2 - 3, BARN.w, 6);
+  for (let x = BARN.x + 10; x < BARN.x + BARN.w; x += 14) { g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x, BARN.y, 2, BARN.h); }
+  g.fillStyle = '#efe6d2'; g.font = '600 13px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText('BARN', BARN.x + BARN.w / 2, BARN.y + BARN.h / 2 + 5);
+  /* feed bin */
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(BIN.x + 15, BIN.y + 17, 15, 12, 0, 0, TAU); g.fill();
+  g.fillStyle = '#566a8c'; g.beginPath(); g.arc(BIN.x + 13, BIN.y + 13, 14, 0, TAU); g.fill();
+  g.fillStyle = '#e1c15c'; g.beginPath(); g.arc(BIN.x + 13, BIN.y + 13, 10, 0, TAU); g.fill();
+  g.fillStyle = '#1b2a1d'; g.font = '600 10px "DM Sans", sans-serif'; g.fillText('FEED', BIN.x + 13, BIN.y + 40);
+  /* egg stand */
+  g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(STAND.x + 3, STAND.y + 4, STAND.w, STAND.h);
+  g.fillStyle = '#a8743f'; g.fillRect(STAND.x, STAND.y, STAND.w, STAND.h);
+  for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#f1ebdc' : '#b9402a'; g.fillRect(STAND.x - 4 + i * 15.5, STAND.y - 26, 15.5, 24); }
+  g.fillStyle = '#fff'; g.font = '700 11px "DM Sans", sans-serif'; g.fillText('EGGS $' + T.price, STAND.x + STAND.w / 2, STAND.y + 19);
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (bg) buildBG(); });
+
+function ell(x, y, rx, ry) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU); }
+function drawHen(c) {
+  ctx.save(); ctx.translate(c.x, c.y);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(0, 3, 8, 5); ctx.fill();
+  ctx.rotate(c.ang);
+  const bob = Math.sin(c.phase) * 0.9, peck = (c.pause > 0 && c.state !== 'ROOST') ? Math.max(0, Math.sin(world.clock * 9 + c.id)) * 2 : 0;
+  ctx.fillStyle = c.breed.body; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(-12, 0 + bob * 0.3); ctx.lineTo(-6, 3); ctx.fill();
+  ell(0, bob * 0.4, 8, 6.4); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = c.breed.wing; ell(-1.5, 0, 4.6, 3.2); ctx.fill();
+  ctx.fillStyle = c.breed.body; ctx.beginPath(); ctx.arc(6 + peck, 0, 3.4, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#d33a2c'; ell(6.4 + peck, 0, 1.8, 1.2); ctx.fill();
+  ctx.fillStyle = '#e8921c'; ctx.beginPath(); ctx.moveTo(9 + peck, -1.4); ctx.lineTo(12.5 + peck, 0); ctx.lineTo(9 + peck, 1.4); ctx.fill();
+  ctx.restore();
+}
+function drawFarmer() {
+  const f = farmer;
+  ctx.save(); ctx.translate(f.x, f.y);
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ell(0, 4, 11, 7); ctx.fill();
+  ctx.rotate(f.face);
+  const sw = Math.sin(f.step) * 3;
+  ctx.fillStyle = '#2f5d94'; ell(0, 0, 8, 10); ctx.fill();
+  ctx.fillStyle = '#e8b890'; ctx.beginPath(); ctx.arc(5, -9 + sw * 0.2, 3, 0, TAU); ctx.arc(5, 9 - sw * 0.2, 3, 0, TAU); ctx.fill();
+  if (f.scoops > 0) { ctx.fillStyle = '#7a4f2a'; ctx.beginPath(); ctx.arc(13, 0, 5.5, 0, TAU); ctx.fill(); ctx.fillStyle = '#e8c85c'; ctx.beginPath(); ctx.arc(13, 0, 3.6, 0, TAU); ctx.fill(); }
+  ctx.fillStyle = '#e3c36d'; ctx.beginPath(); ctx.arc(0, 0, 8.6, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#a98a3c'; ctx.lineWidth = 1.4; ctx.stroke();
+  ctx.fillStyle = '#b4452f'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, TAU); ctx.fill();
+  ctx.restore();
+  if (f.sneakNow) { ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.font = '600 9px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('sneak', f.x, f.y + 22); }
+}
+function drawGate() {
+  const a = gate.anim * Math.PI / 2, ex = 400 + Math.sin(a) * 60, ey = 290 + Math.cos(a) * 60;
+  ctx.strokeStyle = '#c28d56'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(400, 290); ctx.lineTo(ex, ey); ctx.stroke();
+  ctx.strokeStyle = '#8a5a30'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(400, 290); ctx.lineTo(ex, ey); ctx.stroke();
+}
+function drawTree(t) {
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(t.x + 6, t.y + 12, 26, 14); ctx.fill();
+  ctx.fillStyle = '#6b4a2a'; ctx.beginPath(); ctx.arc(t.x, t.y, 6, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#33703a'; ctx.beginPath(); ctx.arc(t.x, t.y - 16, 26, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#438a47'; ctx.beginPath(); ctx.arc(t.x - 7, t.y - 22, 15, 0, TAU); ctx.fill();
+}
+const STATE_COL = { WANDER: '#ffffff', FORAGE: '#ffe27a', FLEE: '#ff7b6b', APPROACH: '#8df0a8', RETURN: '#8fc4ff', ROOST: '#c5a8ff', ESCAPE: '#ffb15c' };
+function bubble(txt, x, y, strong) {
+  ctx.font = '600 12px "DM Sans", sans-serif'; ctx.textAlign = 'center';
+  const w = ctx.measureText(txt).width + 22, h = 22; x = clamp(x, w / 2 + 4, W - w / 2 - 4); y = clamp(y, h + 4, H - 6);
+  ctx.fillStyle = strong ? 'rgba(236,172,32,.96)' : 'rgba(20,28,22,.82)';
+  ctx.beginPath(); ctx.roundRect(x - w / 2, y - h, w, h, 11); ctx.fill();
+  ctx.fillStyle = strong ? '#241900' : '#fff'; ctx.fillText(txt, x, y - 7);
+}
+function render() {
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  if (bg) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(bg, 0, 0); ctx.restore(); }
+  drawGate();
+  /* bugs */
+  for (const b of bugs) if (b.alive) { const w = Math.sin(world.clock * 6 + b.ph) * 1.2; ctx.fillStyle = '#2b2218'; ctx.beginPath(); ctx.arc(b.x + w, b.y, 1.9, 0, TAU); ctx.fill(); }
+  /* eggs */
+  for (const e of eggs) {
+    const old = e.age > T.rot - 30, blink = old && Math.floor(world.clock * 4) % 2;
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(e.x + 1, e.y + 3, 4, 2.4); ctx.fill();
+    ctx.fillStyle = blink ? '#b9a98a' : '#fbf5e4'; ctx.strokeStyle = '#8a7a58'; ctx.lineWidth = 1; ell(e.x, e.y, 3.6, 4.6); ctx.fill(); ctx.stroke();
+  }
+  /* hutch occupants */
+  const asleep = hens.filter(h => h.state === 'ROOST').length;
+  if (asleep) { ctx.fillStyle = '#fff'; ctx.font = '600 12px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('z'.repeat(1 + Math.floor(world.clock * 1.5) % 3) + ' ' + asleep, HUTCH.x + HUTCH.w / 2, HUTCH.y + 18); }
+  /* entities sorted by y */
+  const list = hens.filter(h => h.state !== 'ROOST'); list.push(farmer);
+  list.sort((a, b) => a.y - b.y);
+  for (const o of list) o === farmer ? drawFarmer() : drawHen(o);
+  for (const o of list) if (o !== farmer && o.state === 'RETURN' && o.waiting) { ctx.fillStyle = '#fff'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('z z', o.x, o.y - 12); }
+  for (const t of TREES) drawTree(t);
+  for (const f of floats) { ctx.globalAlpha = clamp(f.t / 0.5, 0, 1); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.font = '700 12px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.txt, f.x + 1, f.y + 1); ctx.fillStyle = f.col; ctx.fillText(f.txt, f.x, f.y); ctx.globalAlpha = 1; }
+  /* night */
+  const sun = Math.sin((world.t - 0.25) * TAU), light = clamp((sun + 0.15) / 0.5, 0, 1), dark = (1 - light) * (1 - light * 0.2);
+  if (dark > 0.01) {
+    ctx.fillStyle = 'rgba(8,12,44,' + (dark * 0.62).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    [[HUTCH.x + 46, HUTCH.y + 26, 90], [STAND.x + 56, STAND.y - 10, 110], [BARN.x + 110, BARN.y + 80, 100], [GATE.x, GATE.y, 60]].forEach(([x, y, r]) => {
+      const gr = ctx.createRadialGradient(x, y, 2, x, y, r); gr.addColorStop(0, 'rgba(255,200,110,' + (dark * 0.45).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,200,110,0)');
+      ctx.fillStyle = gr; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    });
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  if (debug) renderDebug();
+  if (action) bubble('F  ' + action.label, farmer.x, farmer.y - 22, true);
+  if (toast.t > 0 && toast.txt) { ctx.globalAlpha = clamp(toast.t, 0, 1); bubble(toast.txt, W / 2, 34, false); ctx.globalAlpha = 1; }
+}
+function renderDebug() {
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(255,255,255,.14)';
+  for (let x = 0; x <= W; x += CELL) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += CELL) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  const fr = T.fleeR * (farmer.sneakNow ? T.sneakK : 1);
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = 'rgba(255,120,100,.95)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, fr, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,120,100,.4)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, fr * 1.5, 0, TAU); ctx.stroke();
+  if (farmer.scoops > 0) { ctx.strokeStyle = 'rgba(120,240,160,.9)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, T.attractR, 0, TAU); ctx.stroke(); ctx.strokeStyle = 'rgba(120,240,160,.35)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, T.attractR * 1.3, 0, TAU); ctx.stroke(); }
+  ctx.setLineDash([]);
+  ctx.font = '500 9px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+  for (const c of hens) {
+    if (c.state === 'ROOST') continue;
+    const col = STATE_COL[c.state] || '#fff';
+    if (c.route.length) { ctx.strokeStyle = col; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.moveTo(c.x, c.y); c.route.forEach(w => ctx.lineTo(w.x, w.y)); ctx.stroke(); ctx.globalAlpha = 1; }
+    ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + c.vx * 0.25, c.y + c.vy * 0.25); ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(c.x - 20, c.y - 22, 40, 11);
+    ctx.fillStyle = col; ctx.fillText(c.state, c.x, c.y - 14);
+  }
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(6, 6, 190, 36);
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.font = '500 11px "JetBrains Mono", monospace';
+  ctx.fillText(Math.round(fps) + ' fps  ·  ' + hens.length + ' hens', 12, 21);
+  ctx.fillText('eggs ' + eggs.length + '  ·  bugs ' + bugs.filter(b => b.alive).length, 12, 35);
+}
+
+/* ---------- HUD (DOM) ---------- */
+let hudT = 0;
+function hud(dt) {
+  hudT -= dt; if (hudT > 0) return; hudT = 0.12;
+  const hrs = world.t * 24, hh = Math.floor(hrs), mm = Math.floor((hrs - hh) * 60);
+  $('sClock').textContent = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  $('sDay').textContent = 'Day ' + world.day;
+  $('sEggs').textContent = farmer.basket; $('sMoney').textContent = farmer.money;
+  $('sHens').textContent = hens.length; $('sFeed').textContent = farmer.scoops;
+  $('mark').style.left = (world.t * 100).toFixed(2) + '%';
+  $('buy').disabled = farmer.money < T.henCost || hens.length >= 200;
+  const n = {}; hens.forEach(h => n[h.state] = (n[h.state] || 0) + 1);
+  $('states').innerHTML = ['WANDER', 'FORAGE', 'ESCAPE', 'FLEE', 'APPROACH', 'RETURN', 'ROOST'].map(s => '<span>' + s + ' <b>' + (n[s] || 0) + '</b></span>').join('');
+}
+
+/* ---------- loop ---------- */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (dt > 0) fps += (1 / dt - fps) * 0.05;
+  world.clock += dt;
+  update(dt); render(); hud(dt);
+  requestAnimationFrame(frame);
+}
+function fit() {
+  const r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.max(2, Math.round(r.width * dpr)); cv.height = Math.round(cv.width * H / W); S = cv.width / W; buildBG();
+}
+new ResizeObserver(fit).observe(cv);
+fit(); resetFarm();
+window.__farm = { world, farmer, gate, get hens() { return hens; }, get eggs() { return eggs; }, T, update, doAction };
+requestAnimationFrame(frame);
+})();
+</script>
