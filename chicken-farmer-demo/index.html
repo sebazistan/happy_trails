@@ -202,7 +202,7 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
       <p><b>Catching hens.</b> Hens see mostly straight ahead, and they only hear you when you move without sneaking. Press <b>C</b> (or the Sneak button) to switch sneaking on, creep up behind a hen and pick her up. You can carry three, a little slower for each. Carry them to the pen and put them down. Yellow cones show what nearby hens can see while you sneak.</p>
       <p><b>Growing the farm.</b> The pen holds about one hen per 4,400 square pixels and the coop has a fixed number of roosts. Hens that cannot roost sleep out in the pen, where foxes find them easily. A feeder lets three hens eat at once and a water trough lets two drink at once, and they empty faster the more hens you keep. Drive west off the end of the road to Emil &amp; Gus Farm Supply in town. Buy fence sections, gates, feeders, troughs, coop lumber and feed, then drive home and unload at the bin or the barn. Press <b>B</b> for build mode: pick a tool, then click or tap the map to place. Remove puts a piece back in your supplies. Extend the coop from the plank sign on its east side.</p>
       <p><b>Dusk.</b> Hens head for the coop. The door shuts later in the evening, so get every hen in, close the gate, and check the fence. A hen left outside is fox food.</p>
-      <p><b>Pets.</b> Your wife puts food in the dog and cat bowls by the front door every morning and evening, and warns you when the food runs low. Buy a month of dog food and cat food at Emil &amp; Gus. A hungry dog wanders off for a few days and, if you keep neglecting him, leaves for good. Hungry cats start killing hens. Cats chase hens for fun now and then and hop over fences. The dog sleeps most of the night, but he will chase off a fox that comes close. He cannot catch the hawk that sometimes swoops in by day.</p>
+      <p><b>Pets.</b> Your wife puts food in the dog and cat bowls by the front door every morning and evening, and warns you when the food runs low. Buy a month of dog food and cat food at Emil &amp; Gus. A hungry dog wanders off for a few days and, if you keep neglecting him, leaves for good. Hungry cats start killing hens. Rats come for unattended eggs, mostly at night. Chase one, sneak up while it is eating, and catch it with F. Hens peck at them without much luck, the dog is too slow, and the cats are the real rat catchers, and a hungry cat is glad of the meal. Bugs only top up a hen's hunger; they never replace feed. Cats chase hens for fun now and then and hop over fences. The dog sleeps most of the night, but he will chase off a fox that comes close. He cannot catch the hawk that sometimes swoops in by day.</p>
       <p><b>Night.</b> Foxes come. They dig under fence sections, slip through an open gate and steal eggs and hens. Walk at one to scare it off, then repair any hole in the fence. When your energy runs low, sleep in the farmhouse. If you pass out, you lose the night.</p>
     </div>
   </details>
@@ -265,8 +265,9 @@ let S = 1, bg = null;
 /* ---------- tuning (every number the guide says to expose) ---------- */
 const T = { walk: 32, fleeMult: 3.6, fleeR: 70, attractR: 140, sep: 1.2, egg: 60, dayLen: 240, farmerSpeed: 105,
   sneakK: 0.5, fov: 150, hear: 34, wanderR: 60, pauseMin: 0.8, pauseMax: 3.2, forageR: 70, gateBias: 0.3, gateRange: 200, price: 2,
-  henCost: 14, rot: 300, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 105, carsRoad: 5, carsStand: 4, hawkPct: 5 };
+  henCost: 14, rot: 300, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 105, carsRoad: 5, carsStand: 4, hawkPct: 5, rats: 3 };
 const SLIDERS = [
+  ['rats', 'Most rats at once', 0, 6, 1, v => v],
   ['walk', 'Hen walk speed', 15, 70, 1, v => v + ' px/s'],
   ['fleeMult', 'Flee speed multiplier', 1.5, 6, 0.1, v => '×' + v.toFixed(1)],
   ['fleeR', 'Flee radius (exit is 1.5×)', 30, 140, 1, v => v + ' px'],
@@ -428,6 +429,7 @@ const bin = { stock: 120 };
 const farmer = { x: 500, y: 330, vx: 0, vy: 0, face: 0, r: 9, carry: null, scoops: 0, basket: 0, money: 40, sneak: false, sneakNow: false,
   step: 0, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null, held: [], away: false };
 const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, steer: 0, load: { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0 } };
+let rats = []; const ratStats = { caught: 0, eggs: 0, t: 40, noteDay: -1 };
 let hens = [], foxes = [], eggs = [], bugs = [], piles = [], floats = [], toast = { txt: '', t: 0 }, nextId = 1, logItems = [];
 let debug = false, action = null, fps = 60;
 
@@ -668,7 +670,7 @@ function arrive(c) {
 }
 function finishAct(c) {
   const a = c.act; c.act = null;
-  if (a.k === 'bug') { const b = a.b; c.bug = null; if (b && b.alive) { b.alive = false; b.respawn = 18; c.eggT -= 4; c.hunger = Math.min(1, c.hunger + 0.12); float(c.x, c.y - 12, 'peck', '#ffe9a8'); } }
+  if (a.k === 'bug') { const b = a.b; c.bug = null; if (b && b.alive) { b.alive = false; b.respawn = 30; c.eggT -= 2; c.hunger = Math.min(1, c.hunger + 0.05); float(c.x, c.y - 12, 'peck', '#ffe9a8'); } }
   else if (a.k === 'pile') {
     const p = a.p;
     if (p.amt > 0.01) { p.amt -= 0.25; c.hunger = Math.min(1, c.hunger + 0.2); c.eggT -= 1.2; }
@@ -1023,6 +1025,8 @@ function findAction() {
   const ph = F.held.length < 3 ? pickableHen() : null;
   const pickAct = ph ? { label: 'Pick up hen (' + (F.held.length + 1) + '/3)', run: () => pickUp(ph) } : null;
   if (pickAct && F.sneakNow) return pickAct;
+  const rt = nearestRat(F, 30);
+  if (rt) return { label: 'Catch the rat', run: () => { if (Math.random() < 0.85) catchRat(rt, 'You'); else { rt.noticeT = 9; float(F.x, F.y - 18, 'missed!', '#fff'); } } };
   const near = eggs.filter(e => !e.inHutch && dist(e, F) < 32);
   if (near.length) return { label: near.length > 1 ? 'Collect ' + near.length + ' eggs' : 'Collect egg', run: () => collectEggs(near) };
   if (pickAct) return pickAct;
@@ -1103,7 +1107,8 @@ function feedWindow() { const t = world.t; return (t > 0.255 && t < 0.33 && worl
 function resetPets() {
   Object.assign(dog, { x: 430, y: 164, vx: 0, vy: 0, state: 'REST', timer: 4, wT: 0, hunger: 0.7, starve: 0, goodT: 0, leaves: 0, awayT: 0, gone: false, chaseT: 0, tired: 0, alert: 0, bark: 0, target: null });
   cats = CAT_DEFS.map((d, i) => ({ pet: 'cat', name: d.name, col: d.col, mark: d.mark, slot: i, x: 500 + i * 20, y: 156 + (i % 2) * 14, vx: 0, vy: 0, ang: rand(0, TAU), r: 5, state: 'SIT', timer: rand(2, 8), cool: rand(30, 90),
-    hunger: 0.7, starve: 0, target: null, jump: false, phase: rand(0, 6), wT: 0, isFox: true }));
+    hunger: 0.7, starve: 0, target: null, jump: false, phase: rand(0, 6), wT: 0, isFox: true, ratCool: 0, keenT: 0, keen: false }));
+  rats = []; ratStats.caught = 0; ratStats.eggs = 0; ratStats.t = 40; dog.ratCool = 0; dog.ratT = 0;
   hawks = []; feathers = []; bowls.dog = 1; bowls.cat = 1; food.dog = 14; food.cat = 14;
   world.fedAMDay = 0; world.fedPMDay = 0; world.hawkAt = -1;
 }
@@ -1147,7 +1152,7 @@ function dogBed() {
 function leaveDog() { dog.state = 'LEAVING'; say(dog.name + ' is starving and wanders off down the road.', true); }
 function updateDog(dt) {
   const d = dog; if (d.gone) return;
-  d.bark -= dt; if (d.tired > 0) d.tired -= dt;
+  d.bark -= dt; if (d.tired > 0) d.tired -= dt; d.ratCool = (d.ratCool || 0) - dt;
   if (d.state === 'AWAY') {
     d.awayT -= dt;
     if (d.awayT <= 0) { d.state = 'RETURN'; d.x = -30; d.y = 556; d.hunger = 0.7; d.starve = 0; say(d.name + ' trots back up the road, looking well fed.'); }
@@ -1190,6 +1195,14 @@ function updateDog(dt) {
     return;
   }
   if (d.state === 'BARK') { d.state = 'REST'; d.timer = 4; }
+  const rt = d.ratCool <= 0 ? nearestRat(d, d.state === 'SLEEP' ? 55 : 150) : null;
+  if (rt) {                                         /* slow and clumsy: only catches a rat that stops to eat */
+    d.state = 'RAT'; d.ratT = (d.ratT || 0) + dt; const dd = steerPet(d, rt.x, rt.y, 62, dt);
+    if (dd < 14) { d.ratCool = 2.5; if (Math.random() < 0.15) catchRat(rt, d.name + ' the dog'); else rt.noticeT = 9; }
+    if (d.ratT > 6) { d.ratCool = 9; d.ratT = 0; }
+    return;
+  }
+  if (d.state === 'RAT') { d.state = 'REST'; d.timer = 3; d.ratT = 0; }
   if (bowls.dog > 0.03 && d.hunger < (world.curfew ? 0.3 : 0.62)) {
     d.state = 'EAT'; const dd = steerPet(d, DOG_BOWL.x - 4, DOG_BOWL.y + 13, 55, dt);
     if (dd < 16) { const e = Math.min(bowls.dog, 0.05 * dt); bowls.dog -= e; d.hunger = Math.min(1, d.hunger + e * 0.6); }
@@ -1226,9 +1239,21 @@ const huntable = h => !(h.state === 'ROOST' || h.state === 'NEST' || h.state ===
 function updateCat(c, dt) {
   c.hunger = clamp(c.hunger - dt / (T.dayLen * 1.4), 0, 1);
   if (c.hunger < 0.2 && bowls.cat < 0.03) c.starve += dt / T.dayLen; else if (c.hunger > 0.45) c.starve = Math.max(0, c.starve - dt / T.dayLen * 1.5);
-  c.cool -= dt; c.timer -= dt; c.killCool = (c.killCool || 0) - dt;
+  c.cool -= dt; c.timer -= dt; c.ratCool -= dt; c.keenT -= dt; if (c.keenT <= 0) { c.keenT = 6; c.keen = Math.random() < 0.45; } c.killCool = (c.killCool || 0) - dt;
   const night = world.curfew;
   const jumpCheck = () => { c.jump = false; for (const f of FENCE) if (!f.broken && c.x > f.x - 6 && c.x < f.x + f.w + 6 && c.y > f.y - 6 && c.y < f.y + f.h + 6) { c.jump = true; return; } for (const g of gates) if (!g.open && c.x > g.rect.x - 6 && c.x < g.rect.x + g.rect.w + 6 && c.y > g.rect.y - 6 && c.y < g.rect.y + g.rect.h + 6) { c.jump = true; return; } };
+  const rt = c.ratCool <= 0 && (c.keen || c.hunger < 0.6 || c.starve > 0.2) ? nearestRat(c, c.state === 'NAP' ? 130 : 230) : null;
+  if (rt) {                                          /* cats like a rat, and a hungry cat is glad of the meal */
+    if (c.state !== 'STALK') { c.state = 'STALK'; c.stalkT = 0; } c.stalkT += dt;
+    const d = steerPet(c, rt.x, rt.y, 108, dt, true); jumpCheck();
+    if (d < 10) {
+      if (Math.random() < 0.7) { catchRat(rt, c.name + ' the cat'); c.hunger = Math.min(1, c.hunger + 0.5); c.starve = Math.max(0, c.starve - 0.3); c.ratCool = 12; c.state = 'SIT'; c.timer = 4; float(c.x, c.y - 12, 'rat!', '#ffd27a'); }
+      else { rt.noticeT = 9; c.ratCool = 1.5; }
+    }
+    if (c.stalkT > 7) { c.ratCool = 10; c.state = 'SIT'; }
+    return;
+  }
+  if (c.state === 'STALK') { c.state = 'SIT'; c.timer = 2; }
   if (c.starve > 0.5) {                              /* a starving cat starts killing hens */
     if (!c.target || !hens.includes(c.target) || !huntable(c.target)) { let b = null, bd = 450; for (const h of hens) if (huntable(h)) { const d = dist(c, h); if (d < bd) { bd = d; b = h; } } c.target = b; }
     if (c.target) { c.state = 'HUNT'; const d = steerPet(c, c.target.x, c.target.y, 118, dt, true); jumpCheck(); if (d < 12 && c.killCool <= 0) { killHen(c.target, c.name + ' the cat'); c.killCool = T.dayLen * 0.12; c.target = null; } return; }
@@ -1305,7 +1330,109 @@ function updateHawk(h, dt) {
   }
   if (h.carry) { h.carry.x = h.x; h.carry.y = h.y; }
 }
+/* ---------- rats ---------- */
+const nearestRat = (p, R) => { let b = null, bd = R; for (const r of rats) { if (r.hidden) continue; const d = dist(p, r); if (d < bd) { bd = d; b = r; } } return b; };
+function catchRat(r, by) {
+  const i = rats.indexOf(r); if (i < 0) return;
+  rats.splice(i, 1); ratStats.caught++; float(r.x, r.y - 10, 'caught a rat', '#ffd27a');
+  say(by + ' caught a rat.');
+}
+function spawnRat() {
+  const side = Math.floor(Math.random() * 3), x = side === 0 ? -10 : side === 1 ? W + 10 : rand(40, W - 40), y = side === 2 ? -10 : rand(60, ROAD.y0 - 60);
+  rats.push({ rat: true, x, y, vx: 0, vy: 0, ang: 0, r: 3.5, phase: rand(0, 6), state: 'SEEK', t: 0, target: null, eaten: 0, scare: 0, fleeT: 0, noticeT: 0, eatT: 0, hidden: false, hideT: 0, leave: false });
+}
+function ratFear(r) {
+  let ax = 0, ay = 0, n = 0;
+  const add = (o, R) => { const d = dist(r, o); if (d < R) { const w = (R - d) / R + 0.3; ax += (r.x - o.x) / (d || 1) * w; ay += (r.y - o.y) / (d || 1) * w; n++; } };
+  if (!farmer.inside && !farmer.sleeping && !farmer.away) add(farmer, farmer.sneakNow ? 38 : 85);
+  for (const h of hens) if (solidHen(h) && h.state !== 'SLEEP') add(h, 48);
+  if (!dog.gone && dog.state !== 'AWAY' && dog.state !== 'LEAVING') add(dog, dog.state === 'SLEEP' ? 22 : dog.state === 'RAT' || dog.state === 'CHASE' ? 120 : 65);
+  for (const c of cats) if (c.state !== 'NAP') add(c, c.state === 'STALK' ? 85 : 40);
+  return n ? { x: ax, y: ay } : null;
+}
+function updateRats(dt) {
+  for (const h of hens) h.ratCool = (h.ratCool || 0) - dt;
+  ratStats.t -= dt;
+  if (ratStats.t <= 0) {
+    ratStats.t = T.dayLen * rand(0.12, 0.2);
+    if (rats.length < T.rats) {
+      const loose = eggs.filter(e => !e.rotten && e.age > 25).length;
+      if (Math.random() < (world.curfew ? 1 : 0.4) * (loose >= 6 ? 0.7 : loose >= 2 ? 0.35 : 0.06)) spawnRat();
+    }
+  }
+  for (const r of rats) {
+    r.t += dt;
+    if (r.hidden) {                                  /* inside the coop, after a nest egg */
+      r.hideT -= dt; if (r.hideT <= 0) {
+        const e = r.target; r.hidden = false; r.x = DOOR_OUT.x + rand(-6, 6); r.y = DOOR_OUT.y + 6;
+        if (e && eggs.includes(e)) { eggs.splice(eggs.indexOf(e), 1); r.eaten++; ratStats.eggs++; ratEggNote(); if (farmer.inside === 'hutch') float(e.x, e.y - 10, 'egg eaten', '#e8c0a0'); }
+        r.target = null; r.state = r.eaten >= 2 ? 'LEAVE' : 'SEEK';
+      }
+      continue;
+    }
+    const fear = ratFear(r);
+    if (fear && r.state !== 'LEAVE') {
+      if (r.state === 'EAT' && r.noticeT < 0.6) r.noticeT += dt;      /* a moment to notice, which is the chance to sneak up */
+      else { if (r.state !== 'FLEE') { r.scare++; if (r.scare >= 8) r.leave = true; } r.state = 'FLEE'; r.fleeT = 1.3; r.flee = fear; r.noticeT = 0; }
+    }
+    if (r.state === 'FLEE') {
+      if (fear) r.flee = fear; r.fleeT -= dt;
+      const L = Math.hypot(r.flee.x, r.flee.y) || 1;
+      steerPet(r, r.x + r.flee.x / L * 80 + rand(-10, 10), r.y + r.flee.y / L * 80 + rand(-10, 10), 128, dt, true, true);
+      if (r.fleeT <= 0 && !fear) r.state = r.leave ? 'LEAVE' : 'SEEK';
+    } else if (r.state === 'EAT') {
+      r.vx = r.vy = 0; r.eatT -= dt;
+      if (r.eatT <= 0) { const e = r.target; if (e && eggs.includes(e)) { eggs.splice(eggs.indexOf(e), 1); r.eaten++; ratStats.eggs++; ratEggNote(); float(r.x, r.y - 10, 'egg eaten', '#e8c0a0'); } r.target = null; r.state = r.eaten >= 2 ? 'LEAVE' : 'SEEK'; }
+    } else if (r.state === 'LEAVE') {
+      const e = edgeTarget(r); steerPet(r, e.x, e.y, 80, dt, true, true);
+    } else {
+      if (!r.target || !eggs.includes(r.target) || r.target.rotten) {
+        let b = null, bs = 1e9;
+        for (const e of eggs) { if (e.rotten || (e.inHutch && !hutch.doorOpen)) continue; const sc = dist(r, e) + (e.inHutch ? 150 : 0); if (sc < bs) { bs = sc; b = e; } }
+        r.target = b; if (!b && r.t > 6) r.state = 'LEAVE';
+      }
+      const e = r.target;
+      if (e) {
+        const tx = e.inHutch ? DOOR_OUT.x : e.x, ty = e.inHutch ? DOOR_OUT.y + 4 : e.y;
+        let gx = tx, gy = ty;
+        if (r.detourT > 0) { r.detourT -= dt; gx = r.dx; gy = r.dy; }
+        const d = steerPet(r, gx, gy, 72, dt, true, true);
+        if (Math.hypot(r.vx, r.vy) < 12) r.stuckT = (r.stuckT || 0) + dt; else r.stuckT = 0;
+        if (r.stuckT > 0.4) {                        /* walls and trees: slide round them */
+          r.stuckT = 0; const L = Math.hypot(tx - r.x, ty - r.y) || 1, ux = (tx - r.x) / L, uy = (ty - r.y) / L, sg = Math.random() < 0.5 ? 1 : -1;
+          r.dx = r.x - uy * sg * 70 - ux * 15; r.dy = r.y + ux * sg * 70 - uy * 15; r.detourT = 1.1;
+        }
+        if (d < (e.inHutch ? 8 : 6)) { if (e.inHutch) { r.hidden = true; r.hideT = 2.6; r.vx = r.vy = 0; } else { r.state = 'EAT'; r.eatT = 1.8; r.noticeT = 0; } }
+      } else { const t = edgeTarget(r); steerPet(r, t.x, t.y, 50, dt, true, true); }
+    }
+    if (r.state !== 'FLEE' && r.state !== 'EAT' && !r.hidden) {      /* hens try to peck it, without much luck */
+      for (const h of hens) {
+        if (h.ratCool > 0 || world.curfew || (h.state !== 'WANDER' && h.state !== 'FORAGE') || insidePen(h) !== insidePen(r)) continue;
+        const d = dist(h, r); if (d > 95) continue;
+        h.ratCool = 2.5; h.state = 'WANDER'; h.act = null; releaseBug(h); h.pause = 0; h.route = [{ x: r.x, y: r.y }]; break;
+      }
+    }
+    for (const h of hens) if (h.state === 'WANDER' && h.ratCool > 0 && dist(h, r) < 14) { h.ratCool = 3; r.noticeT = 9; float(h.x, h.y - 12, 'peck!', '#fff'); }
+    if (r.x < -30 || r.x > W + 30 || r.y < -30 || r.y > H + 30) r.gone = true;
+  }
+  rats = rats.filter(r => !r.gone);
+}
+function ratEggNote() { if (ratStats.noteDay !== world.day) { ratStats.noteDay = world.day; say('A rat got into the eggs.', true); } }
+function drawRat(o) {
+  const run = Math.hypot(o.vx, o.vy), w = Math.sin(o.phase * 3) * 1.4;
+  ctx.save(); ctx.translate(o.x, o.y);
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ell(0, 3, 6, 2.4); ctx.fill();
+  ctx.rotate(o.ang);
+  ctx.strokeStyle = '#c99a8e'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-5, 0); ctx.quadraticCurveTo(-9, w * 2, -13, w * 3); ctx.stroke();
+  ctx.fillStyle = '#6e625b'; ell(0, 0, 6, 3.2); ctx.fill();
+  ctx.fillStyle = '#7d716a'; ell(5.5, 0, 3, 2.3); ctx.fill();
+  ctx.fillStyle = '#d9b2a8'; ctx.beginPath(); ctx.arc(4.2, -2.4, 1.2, 0, TAU); ctx.arc(4.2, 2.4, 1.2, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#e8c9c0'; ctx.fillRect(8, -0.6, 1.4, 1.2);
+  ctx.fillStyle = '#111'; ctx.fillRect(6.2, -1.3, 1, 1); ctx.fillRect(6.2, 0.4, 1, 1);
+  ctx.restore();
+}
 function updatePets(dt) {
+  updateRats(dt);
   if (world.hawkAt >= 0 && !world.curfew && world.t >= world.hawkAt) { world.hawkAt = -1; spawnHawk(); }
   updateDog(dt);
   for (const c of cats) updateCat(c, dt);
@@ -2337,11 +2464,11 @@ function render() {
   drawCones();
   /* entities sorted by y */
   const list = hens.filter(h => h.state !== 'ROOST' && h.state !== 'NEST' && h.state !== 'HELD'); foxes.forEach(f => list.push(f));
-  if (!dog.gone && dog.state !== 'AWAY') list.push(dog); cats.forEach(c => list.push(c));
+  if (!dog.gone && dog.state !== 'AWAY') list.push(dog); cats.forEach(c => list.push(c)); rats.forEach(r => { if (!r.hidden) list.push(r); });
   if (wife.vis && wife.state !== 'HOME') list.push(wife); people.forEach(p => { if (!p.hidden) list.push(p); });
   if (!farmer.driving && !(farmer.sleeping && farmer.inside)) list.push(farmer);
   list.sort((a, b) => a.y - b.y);
-  for (const o of list) o.pet ? drawPet(o) : o === farmer ? drawFarmer() : o.isFox ? drawFox(o) : o.npc ? drawPerson(o) : drawHen(o);
+  for (const o of list) o.pet ? drawPet(o) : o.rat ? drawRat(o) : o === farmer ? drawFarmer() : o.isFox ? drawFox(o) : o.npc ? drawPerson(o) : drawHen(o);
   drawStandAwning();
   for (const h of farmer.held) drawHen(h, { x: h.x, y: h.y, ang: h.ang, s: 0.85 });
   drawTruck(); drawRoofs(); drawDoors(); drawCoopMarker();
@@ -2450,7 +2577,7 @@ function hud(dt) {
   $('sSupplies').textContent = sup.length ? sup.join(' \u00b7 ') : 'none yet (buy in town)';
   const dogS = dog.gone ? 'gone for good' : dog.state === 'AWAY' ? 'away' : dog.hunger < 0.2 ? 'starving' : dog.hunger < 0.5 ? 'hungry' : 'content';
   const hungryCats = cats.filter(c => c.hunger < 0.35).length;
-  $('sPets').innerHTML = dog.name + ': ' + dogS + ', food ' + food.dog + ' (' + Math.floor(food.dog / 2) + ' days)<br>Cats: ' + (hungryCats ? hungryCats + ' hungry' : 'fed') + ', food ' + food.cat + ' (' + Math.floor(food.cat / 2) + ' days)';
+  $('sPets').innerHTML = dog.name + ': ' + dogS + ', food ' + food.dog + ' (' + Math.floor(food.dog / 2) + ' days)<br>Cats: ' + (hungryCats ? hungryCats + ' hungry' : 'fed') + ', food ' + food.cat + ' (' + Math.floor(food.cat / 2) + ' days)<br>Rats: ' + rats.length + ' about, ' + ratStats.caught + ' caught, ' + ratStats.eggs + ' eggs lost';
   $('mark').style.left = (world.t * 100).toFixed(2) + '%';
   const penFull = world.penCount >= pen.cap;
   $('buy').disabled = farmer.money < T.henCost || hens.length >= 200 || penFull; $('buy').textContent = penFull ? 'Pen is full' : 'Buy hen $' + T.henCost;
@@ -2475,7 +2602,7 @@ function fit() {
 }
 new ResizeObserver(fit).observe(cv);
 fit(); resetFarm();
-window.__farm = { dog, bowls, food, performFeeding, spawnHawk, featherBurst, get cats() { return cats; }, get hawks() { return hawks; }, get feathers() { return feathers; }, newHen, penPoint, troughUsers, separateHens, world, farmer, truck, gates, hutch, bin, feeders, waterers, FENCE, pen, inv, recomputePen, addFenceSection, makeGate, build, setBuild, setTool, buildClick, updateGhost, trip, startTrip, leaveTown, cart, cartAdd, shopBuy, truckLoad: truck.load, extendCoop, coopCap, nestCount, T, update, doAction, findAction, spawnFox, wakeUp,
+window.__farm = { get rats() { return rats; }, ratStats, spawnRat, catchRat, bugs, dog, bowls, food, performFeeding, spawnHawk, featherBurst, get cats() { return cats; }, get hawks() { return hawks; }, get feathers() { return feathers; }, newHen, penPoint, troughUsers, separateHens, world, farmer, truck, gates, hutch, bin, feeders, waterers, FENCE, pen, inv, recomputePen, addFenceSection, makeGate, build, setBuild, setTool, buildClick, updateGhost, trip, startTrip, leaveTown, cart, cartAdd, shopBuy, truckLoad: truck.load, extendCoop, coopCap, nestCount, T, update, doAction, findAction, spawnFox, wakeUp,
   stand, roadside, fridge, wife, spawnCar, get cars() { return cars; }, get people() { return people; },
   get hens() { return hens; }, get eggs() { return eggs; }, get foxes() { return foxes; } };
 requestAnimationFrame(frame);
