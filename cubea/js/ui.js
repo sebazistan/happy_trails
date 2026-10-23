@@ -33,7 +33,7 @@
     renderLog();
   };
   // Draw the log lines that are less than 14 s old.
-  function renderLog() { const el = $('log'); const now = performance.now(); logLines = logLines.filter((l) => now - l.t < 14000); el.innerHTML = logLines.map((l) => `<div class="${l.kind}">${esc(l.text)}</div>`).join(''); el.style.display = logLines.length && $('top').style.display !== 'none' ? 'block' : 'none'; }
+  function renderLog() { const el = $('log'); const now = performance.now(); logLines = logLines.filter((l) => now - l.t < 14000).slice(-3); el.innerHTML = logLines.map((l) => `<div class="${l.kind}">${esc(l.text)}</div>`).join(''); el.style.display = logLines.length && $('top').style.display !== 'none' ? 'block' : 'none'; }
   // El Viejo's speech bubble with his portrait.
   ui.viejoToast = function (text) {
     let el = $('viejo'); if (!el) { el = document.createElement('div'); el.id = 'viejo'; el.className = 'panel'; el.style.cssText = 'left:8px;bottom:40px;max-width:330px;padding:10px 12px;z-index:6;display:none;font-size:13px;line-height:1.4'; document.body.appendChild(el); }
