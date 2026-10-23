@@ -33,6 +33,7 @@
     { id: 'help', n: 'Help', k: 'H', open: () => orig.help() },
     { id: 'menu', n: 'Menu', k: 'Esc', menu: true },
   ];
+  C.nbTabs = TABS;
   const orig = { journal: ui.openJournal, map: ui.openMap, manifesto: ui.openManifesto, factions: ui.openFactions, base: ui.openBase, help: ui.openHelp };
   let current = LS.get('cubea_nb') || 'journal';
 

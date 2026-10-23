@@ -42,3 +42,6 @@
 
 ## F. Metrics we probably still want (candidates)
 Per person: **nutrition quality** (hot vs cold meals, protein), **hydration history**, **morale causes** (a short log), **sleep quality** (ground vs hammock), **skills** (marksmanship, first aid, driving, tracking, literacy level, carpentry, cooking — separate from `exp`), **fatigue per limb / carrying stress**, **disease exposure**, **addictions** (tobacco, coffee, rum), **letters/home contact**, **religious practice**, **ranks and command of others**, **debts and promises made *to* them**, **personal grudges** (named), **hunting skill**, **weapon familiarity per weapon**, **ammo discipline**. Per squad: **cohesion**, **fieldcraft**, **noise discipline**, **supply days**. Per camp: **comfort**, **cleanliness**, **security**, **visibility** (smoke, noise, light).
+
+## G. Round 10 additions
+`g.expo{sid}` camp exposure % · `g.packedCamp[]` gear struck and carried · `ITEMS.gear` (packed-camp weight) · `g.suspects` / `g.watched{id:untilDay}` · `a.slip` (informer sneaking out) · `thing.d.feast{until,day}` on fires · `g.waiting` (wait-here) · `g.diary[{day,place,w,ev[]}]` · `C.settings.compactUI/autoSlow` · localStorage `cubea_guided`, `cubea_nb`.

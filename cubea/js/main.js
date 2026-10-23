@@ -458,7 +458,7 @@
   // Once per game day: loyalty tick and bonds decay, the layered reveal of interface systems (support meter day 8, factions day 25…), weather, the Director's daily pick, outpost mission check, end conditions.
   function dailyHooks() {
     const g = G();
-    C.dayTick(); C.bondDaily(); if (C.farmDaily) C.farmDaily(); if (C.creedDaily) C.creedDaily(); if (C.climateDaily) C.climateDaily(); if (C.recruitDaily) C.recruitDaily(); if (C.muleDaily) C.muleDaily();
+    C.dayTick(); C.bondDaily(); if (C.farmDaily) C.farmDaily(); if (C.creedDaily) C.creedDaily(); if (C.climateDaily) C.climateDaily(); if (C.recruitDaily) C.recruitDaily(); if (C.campingDaily) C.campingDaily(); if (C.diaryDaily) C.diaryDaily(); if (C.ritualsDaily) C.ritualsDaily(); if (C.muleDaily) C.muleDaily();
     // the layered reveal: systems unlock as the story advances
     { const TH = [[3, 8, 'Locals: peasants remember how you treat them (support meter, loyalty details).'], [4, 25, 'Factions: peasants, workers, students, elites, landowners, the Church and the army are now tracked (⚖ Factions).'], [5, 60, 'Politics: you can now announce a platform (📜 Manifesto). Announced planks become promises.'], [6, 100, 'The island: the cities, the pipeline from Havana, the unions and the students are in play.']];
       for (const [L, d, msg] of TH) if (g.unlocked.layer < L && g.day >= d) { g.unlocked.layer = L; C.log('NEW SYSTEM — ' + msg, 'good'); C.ui.toast('New system unlocked'); C.ui.refresh(); } }
@@ -497,7 +497,9 @@
     if (C.huntTick) C.huntTick(s, g.min - prevMin);   // meat rots, snares fire (hunting.js)
     if (C.campTick) C.campTick(s, g.min - prevMin);   // camp life: hourly consequences of what is on the ground (camp.js)
     if (g.day !== prevDay) { dailyHooks(); }
-    if (C.timeTick) C.timeTick(s, dt); if (C.dutyTick) C.dutyTick(s);          // auto-slow, waiting, the duty board (convenience.js)
+    if (C.snd && C.snd.ambient) C.snd.ambient(dt);   // crickets, birds, rain, wind, fire, engine (audio.js)
+    if (C.timeTick) C.timeTick(s, dt); if (C.dutyTick) C.dutyTick(s);
+    if (C.campingTick) C.campingTick(s); if (C.feastTick) C.feastTick(s); if (C.suspectTick) C.suspectTick(s, dt);          // auto-slow, waiting, the duty board (convenience.js)
     if (C.moraleTick) C.moraleTick(s, dt);          // the guitar and other morale boosters (morale.js)
     if (C.sickTick) C.sickTick(s, dt);
     if (C.journeyTick) C.journeyTick(s, dt); if (C.muleTick) C.muleTick(s, dt); if (C.courierTick) C.courierTick(s, dt);   // the road, mule trains, couriers (journeys.js)
@@ -626,7 +628,7 @@
   const seedEl = document.getElementById('seed');
   const startGame = (mode) => {
     const msg = document.getElementById('genmsg'); msg.textContent = 'Generating 3,000 Cubeans, their families and friends…';
-    setTimeout(() => { const seed = parseInt(seedEl.value, 10) || 1956; const pname = (document.getElementById('pname').value || '').trim() || 'Fidel Castro'; try { try { localStorage.setItem('cubea_name', pname); } catch (e) { } C.snd && C.snd.init(); C.beginGame(mode, seed, 0, false, pname); document.getElementById('title').style.display = 'none'; } catch (err) { msg.textContent = 'Error: ' + err.message; console.error(err); } }, 30);
+    setTimeout(() => { const seed = parseInt(seedEl.value, 10) || 1956; const pname = (document.getElementById('pname').value || '').trim() || 'Fidel Castro'; try { try { localStorage.setItem('cubea_name', pname); } catch (e) { } C.snd && C.snd.init(); C.beginGame(mode, seed, 0, false, pname); document.getElementById('title').style.display = 'none';  if (C.startGuide) C.startGuide(); } catch (err) { msg.textContent = 'Error: ' + err.message; console.error(err); } }, 30);
   };
   const qs = new URLSearchParams(location.search); if (qs.get('seed')) seedEl.value = qs.get('seed');
   try { const sn = localStorage.getItem('cubea_name'); if (sn) document.getElementById('pname').value = sn; } catch (e) { }

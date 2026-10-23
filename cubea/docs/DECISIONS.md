@@ -109,3 +109,16 @@ Crafting became benches, rationing became a cook pot with servings at mealtime, 
 
 ## Round 9: morale boosters (`morale.js`)
 A guitar with a real carrying cost, played when safe (never with soldiers within earshot; the army can hear music), plus coffee, cigars, rum (aim and discipline cost), dominoes, pelota and mail. They act on the happiness/boredom/grief/stress layer from `climate.js`, so the status words ("happy", "bored", "grieving") show the effect.
+
+## Round 10: a tidy screen (UI polish and the last in-world conveniences)
+* **One notebook** (`notebook.js`): Journal · Map · Manifesto · Factions · Camp · Actions · Creed · Diary · Help · Menu as tabs on one modal; the six top-bar buttons are gone. Old hotkeys open the matching tab.
+* **Lens keys** (`lens.js`): hold L (or tap to cycle, wheel while held) to overlay what the enemy sees, what carries sound and smoke, camp exposure, supplies. Information lives in the world, not in panels.
+* **Declutter** (`declutter.js`): compact side panels that expand on hover, three-line log, command bar only when something is selected.
+* **Convenience** (`convenience.js`): wheel ranks verbs by use, middle-click repeats the last verb, the duty board on the blackboard gives standing chores, "wait here" verb, auto-slow on contact.
+* **Break / make camp** (`camping.js`): pack the camp into gear carried by people and vehicles, unpack it elsewhere. A camp that stays too long becomes *exposed* (smoke, footprints, noise), raising raid odds; moving resets it.
+* **Feasts and funerals** (`rituals.js`): a calendar of Cuban feast days; roasting a pig at a lit fire feeds and bonds the camp (stronger on a feast day) but raises exposure; toasts; burials draw mourners.
+* **Informer tells** (`suspects.js`): informers behave like informers (slip out at night, ask questions); you can have a man watched, ask him, or search his kit. Mistakes cost trust.
+* **Diary** (`diary.js`): each night an entry is written from the day's log; read it in the notebook.
+* **Sound** (`audio.js`): procedural ambience (cicadas, frogs, wind, rain) and guitar notes in sync with the morale beat.
+* **Guided start** (`guide.js`): El Viejo speaks five short lines, each waiting for you to do the thing (walk, Q wheel, a verb, hold L, J). F2 skips; never runs on loaded games or `?auto=`.
+* **Developer overlay** (`devlens.js`): F3 shows fps, counts, clock and the hovered actor's raw state.

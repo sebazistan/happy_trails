@@ -63,6 +63,7 @@
   function visibility(ctx, s, cam, W, H, z, g) {
     const night = g.hour >= 19.5 || g.hour < 5.5, day = !night; const sc = (px) => px * z;
     // soldiers: the distance at which each would pick you out right now
+    if (C.campExposure && s.camp && C.campExposure(s) > 0) { ctx.fillStyle = 'rgba(255,200,120,0.95)'; ctx.font = '12px sans-serif'; const cp = C.toScreen(cam, s.camp.x * C.T, s.camp.y * C.T); ctx.fillText('camp known: ' + C.campExposure(s) + '%', cp.x - 40, cp.y - 30); }
     const pl = g.player; for (const a of s.actors) { if (a.side !== 'army' || a.dead || a.inside) continue; const sp = C.toScreen(cam, a.x, a.y); if (sp.x < -300 || sp.x > W + 300 || sp.y < -300 || sp.y > H + 300) continue; const r = C.detectRange(a, pl, s) * (C.alertMod ? C.alertMod(a) : 1); ring(ctx, sp.x, sp.y, sc(r), 'rgba(230,80,70,0.55)', null, true); }
     // fires: smoke by day, glow by night
     for (const t of s.things || []) { const sp = C.toScreen(cam, t.x, t.y); if (t.k === 'fire' && t.d.lit) ring(ctx, sp.x, sp.y, sc(day ? 300 : 220), day ? 'rgba(200,200,200,0.7)' : 'rgba(255,170,60,0.75)', day ? 'smoke can be seen from afar' : 'firelight', false); if (t.k === 'radioset' && t.d.air > g.time) ring(ctx, sp.x, sp.y, sc(500), 'rgba(255,230,120,0.8)', 'on the air — they are triangulating', false); }

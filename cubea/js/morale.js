@@ -105,6 +105,7 @@
         const pl = a.playing; const why = C.safeToPlay(s, a); a.moving = false; a.working = false;
         if (g.time > pl.until || why || a.suppressed > 0) { if (why && !pl.asked) C.say(a, 'Mejor paro…', '#444', 3); a.playing = null; a.nextSong = g.time + TUNE.play.pause * (0.5 + rnd()); continue; }
         const S = SONGS[pl.song], ls = listeners(s, a, TUNE.play.range), e = TUNE.song, ef = S.effect;
+        if (C.snd && C.snd.guitar && g.time > (pl.beatT || 0)) { pl.beatT = g.time + (pl.song === 'bolero' ? 0.62 : pl.song === 'marcha' ? 0.4 : 0.5); pl.beat = (pl.beat || 0) + 1; const pp = g.player; C.snd.guitar(pl.song, pl.beat, pp ? Math.hypot(pp.x - a.x, pp.y - a.y) : 0); }
         if (g.time > pl.nextLine) { pl.nextLine = g.time + 7 + rnd() * 5; C.say(a, S.line, '#6a3a8a', 5); }
         for (const q of ls.concat(g.player && !ls.includes(g.player) && Math.hypot(g.player.x - a.x, g.player.y - a.y) < TUNE.play.range ? [g.player] : [])) {
           const p = q.p, m = p.mind || (C.initBody(p), p.mind); if (!m) continue;
