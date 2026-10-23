@@ -117,7 +117,7 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
     <div class="stat"><div class="k">Feeder</div><div class="v"><span id="sFeeder">10</span><small>/20</small></div><div class="meter" id="mFeeder"><i></i></div></div>
     <div class="stat"><div class="k">Water</div><div class="v"><span id="sWater">8</span><small>/12</small></div><div class="meter" id="mWater"><i></i></div></div>
     <div class="stat"><div class="k">Coop clean</div><div class="v"><span id="sClean">90</span><small>%</small></div><div class="meter" id="mClean"><i></i></div></div>
-    <div class="stat"><div class="k">Feed in bin</div><div class="v"><span id="sBin">120</span> <small id="sCarry"></small></div></div>
+    <div class="stat"><div class="k">Feed in bin</div><div class="v"><span id="sBin">120</span></div><div class="k" id="sCarry" style="margin-top:2px">&nbsp;</div></div>
     <div class="stat"><div class="k">Egg stall price</div><div class="v">$<span id="sMarket">4</span><small>/egg</small></div></div>
     <div class="stat buy"><button class="btn primary" id="buy" type="button" style="width:100%">Buy hen $14</button></div>
   </section>
@@ -140,7 +140,7 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
   <div class="keys">
     <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk or drive</span>
     <span><kbd>F</kbd> act (see the bubble over you)</span>
-    <span><kbd>Shift</kbd> sneak</span>
+    <span><kbd>C</kbd> or <kbd>Shift</kbd> toggle sneak</span>
     <span><kbd>G</kbd> debug view</span>
   </div>
 
@@ -151,6 +151,7 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
     <div class="howto">
       <p><b>Morning.</b> The coop door opens at dawn. Open the pen gate so hens can range. Hens wake hungry. Take feed from the bin or the barn, then fill the feeder, or scatter feed on the ground and watch them peck it until it is gone. Fill the water trough from the pump (fill the can, then act at the trough). Hens with an empty belly or throat stop laying, and neglected hens eventually die.</p>
       <p><b>Daytime.</b> Most hens lay in the coop nest boxes. Go inside the coop (the roof fades away) and collect from the nests. A few lay out in the yard. Collect eggs before they rot. Sell at the farm stand for a flat price, or load the truck and drive it to the roadside stall, where the price changes each day. The feed shop sells sacks that you drive back to the bin. Clean the coop when it gets dirty. Rain makes mud and sends hens under cover.</p>
+      <p><b>Catching hens.</b> Hens see mostly straight ahead, and they only hear you when you move without sneaking. Press <b>C</b> (or the Sneak button) to switch sneaking on, creep up behind a hen and pick her up. You can carry three, a little slower for each. Carry them to the pen and put them down. Yellow cones show what nearby hens can see while you sneak.</p>
       <p><b>Dusk.</b> Hens head for the coop. The door shuts later in the evening, so get every hen in, close the gate, and check the fence. A hen left outside is fox food.</p>
       <p><b>Night.</b> Foxes come. They dig under fence sections, slip through an open gate and steal eggs and hens. Walk at one to scare it off, then repair any hole in the fence. When your energy runs low, sleep in the farmhouse. If you pass out, you lose the night.</p>
     </div>
@@ -194,12 +195,14 @@ let S = 1, bg = null;
 
 /* ---------- tuning (every number the guide says to expose) ---------- */
 const T = { walk: 32, fleeMult: 3.6, fleeR: 70, attractR: 140, sep: 1.2, egg: 60, dayLen: 240, farmerSpeed: 105,
-  sneakK: 0.5, wanderR: 60, pauseMin: 0.8, pauseMax: 3.2, forageR: 70, gateBias: 0.3, gateRange: 200, price: 2,
+  sneakK: 0.5, fov: 150, hear: 34, wanderR: 60, pauseMin: 0.8, pauseMax: 3.2, forageR: 70, gateBias: 0.3, gateRange: 200, price: 2,
   henCost: 14, rot: 150, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 190 };
 const SLIDERS = [
   ['walk', 'Hen walk speed', 15, 70, 1, v => v + ' px/s'],
   ['fleeMult', 'Flee speed multiplier', 1.5, 6, 0.1, v => '×' + v.toFixed(1)],
   ['fleeR', 'Flee radius (exit is 1.5×)', 30, 140, 1, v => v + ' px'],
+  ['fov', 'Hen field of view', 60, 300, 10, v => v + '°'],
+  ['hear', 'Hearing radius (when not sneaking)', 0, 80, 1, v => v + ' px'],
   ['attractR', 'Feed attract radius', 60, 260, 1, v => v + ' px'],
   ['sep', 'Separation weight', 0, 3, 0.1, v => v.toFixed(1)],
   ['egg', 'Egg interval', 20, 140, 1, v => v + ' s'],
@@ -268,10 +271,10 @@ const world = { t: 0.30, day: 1, curfew: false, warned: false, clock: 0, doorShu
   rain: 0, rainOn: false, rainAt: -1, rainLeft: 0, wet: 0, market: 4, lost: 0 };
 const gate = { open: false, anim: 0 };
 const hutch = { doorOpen: true, dirt: 0.15 };
-const LAYBLOCK = { ROOST: 1, NEST: 1, RETURN: 1, FLEE: 1, CAUGHT: 1, LAY: 1 };
+const LAYBLOCK = { ROOST: 1, NEST: 1, RETURN: 1, FLEE: 1, CAUGHT: 1, LAY: 1, HELD: 1 };
 const bin = { stock: 120 };
 const farmer = { x: 500, y: 330, vx: 0, vy: 0, face: 0, r: 9, carry: null, scoops: 0, basket: 0, money: 0, sneak: false, sneakNow: false,
-  step: 0, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null };
+  step: 0, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null, held: [] };
 const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, sacks: 0 };
 let hens = [], foxes = [], eggs = [], bugs = [], piles = [], floats = [], toast = { txt: '', t: 0 }, nextId = 1, logItems = [];
 let debug = false, action = null, fps = 60;
@@ -323,6 +326,7 @@ function newHen(x, y) {
     eggT: T.egg * rand(0.3, 1), fedCool: 0, fleeOff: 0, breed: BREEDS[Math.floor(Math.random() * 3)], phase: rand(0, TAU),
     stuckT: 0, sx: x, sy: y, waiting: false, gateSeen: gate.open, bug: null, act: null, threat: null,
     hunger: rand(0.3, 0.7), thirst: rand(0.5, 0.9), health: 1, pile: null, nest: 0, nestT: 0 };
+  c.lookA = c.ang; c.lookT = rand(0.5, 3);
   if (world.curfew) setReturn(c);
   hens.push(c); return c;
 }
@@ -336,7 +340,7 @@ function spawnBug(b) {
 }
 function resetFarm() {
   Object.assign(world, { t: 0.30, day: 1, curfew: false, warned: false, doorShut: false, foxSpawned: false, rain: 0, rainOn: false, rainAt: -1, rainLeft: 0, wet: 0, market: 4, lost: 0 });
-  Object.assign(farmer, { x: 500, y: 330, vx: 0, vy: 0, carry: null, scoops: 0, basket: 0, money: 0, sneak: false, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null });
+  Object.assign(farmer, { x: 500, y: 330, vx: 0, vy: 0, carry: null, scoops: 0, basket: 0, money: 0, sneak: false, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null, held: [] });
   Object.values(BLD).forEach(b => b.roof = 1); piles = [];
   Object.assign(truck, { x: 600, y: 492, ang: 0, v: 0, cargo: 0, sacks: 0 });
   Object.assign(hutch, { doorOpen: true, dirt: 0.15 }); bin.stock = 120; FEEDER.level = 6; WATERER.level = 8;
@@ -359,6 +363,18 @@ function setReturn(c) {
 }
 function nearestFox(c, r) { let b = null, bd = r; for (const f of foxes) { if (f.state === 'LEAVE' && f.carry) continue; const d = dist(c, f); if (d < bd) { bd = d; b = f; } } return b; }
 function releaseBug(c) { if (c.bug) { c.bug.claim = null; c.bug = null; } if (c.act && c.act.k === 'bug') c.act = null; }
+/* hens see in a cone ahead; they only hear a farmer who is moving and not sneaking */
+function henSees(c) {
+  const dx = farmer.x - c.x, dy = farmer.y - c.y, d = Math.hypot(dx, dy);
+  const sneak = farmer.sneakNow, drive = farmer.driving;
+  const moving = drive ? Math.abs(truck.v) > 20 : Math.hypot(farmer.vx, farmer.vy) > 8;
+  const hear = (sneak || !moving) ? 0 : T.hear * (drive ? 3 : 1);
+  if (d < hear) return true;
+  const vis = T.fleeR * (sneak ? T.sneakK : 1) * (drive ? 1.4 : 1);
+  if (d > vis) return false;
+  let da = Math.atan2(dy, dx) - c.ang; da = Math.atan2(Math.sin(da), Math.cos(da));
+  return Math.abs(da) <= T.fov * Math.PI / 360;
+}
 function nearestPile(c, r) { let b = null, bd = r; for (const p of piles) { if (p.amt <= 0.01) continue; if (insidePen(p) !== insidePen(c)) continue; const d = dist(c, p); if (d < bd) { bd = d; b = p; } } return b; }
 function boxCount(i) { let n = 0; for (const e of eggs) if (e.inHutch && e.box === i) n++; return n; }
 function freeBox() { let b = -1, bn = NEST_CAP; for (let i = 0; i < NESTS; i++) { const n = boxCount(i); if (n < bn) { bn = n; b = i; } } return b; }
@@ -393,7 +409,7 @@ function think(c) {
   if (c.state === 'LAY') { if (!hutch.doorOpen || !insidePen(c)) layHere(c); return; }
   const farmerThreat = !holdingFeed() && seen;
   if (c.state === 'FLEE') { if (!farmerThreat || dF > fr * 1.5) { c.state = 'WANDER'; c.threat = null; c.route = []; c.pause = rand(0.3, 0.9); } else return; }
-  if (farmerThreat && dF < fr) { c.state = 'FLEE'; c.threat = farmer; c.fleeOff = rand(-0.26, 0.26); c.route = []; c.pause = 0; c.act = null; c.pile = null; releaseBug(c); return; }
+  if (farmerThreat && henSees(c)) { c.state = 'FLEE'; c.threat = farmer; c.fleeOff = rand(-0.26, 0.26); c.route = []; c.pause = 0; c.act = null; c.pile = null; releaseBug(c); return; }
   if (c.state === 'EAT' && c.pile && c.pile.amt <= 0.01) { c.pile = null; c.state = 'WANDER'; c.route = []; c.pause = 0.2; }
   if (c.hunger < 0.95) {
     if (c.state === 'EAT' && c.pile) return;
@@ -475,7 +491,7 @@ const CELL = 32, GW = Math.ceil(W / CELL), GH = Math.ceil(H / CELL);
 let grid = [];
 function buildGrid() {
   grid = new Array(GW * GH);
-  for (const c of hens) { if (c.state === 'ROOST' || c.state === 'CAUGHT' || c.state === 'NEST') continue; const i = clamp(Math.floor(c.x / CELL), 0, GW - 1) + clamp(Math.floor(c.y / CELL), 0, GH - 1) * GW; (grid[i] || (grid[i] = [])).push(c); }
+  for (const c of hens) { if (c.state === 'ROOST' || c.state === 'CAUGHT' || c.state === 'NEST' || c.state === 'HELD') continue; const i = clamp(Math.floor(c.x / CELL), 0, GW - 1) + clamp(Math.floor(c.y / CELL), 0, GH - 1) * GW; (grid[i] || (grid[i] = [])).push(c); }
 }
 function steer(c, dt) {
   if (c.state === 'ROOST' || c.state === 'CAUGHT') return;
@@ -516,7 +532,11 @@ function steer(c, dt) {
   collide(c, c.r);
   if (dt > 0) { c.vx = (c.x - ox) / dt; c.vy = (c.y - oy) / dt; }
   const spd = Math.hypot(c.vx, c.vy);
-  if (spd > 5) { let da = Math.atan2(c.vy, c.vx) - c.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); c.ang += da * Math.min(1, dt * 10); }
+  if (spd > 5) { let da = Math.atan2(c.vy, c.vx) - c.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); c.ang += da * Math.min(1, dt * 10); c.lookA = c.ang; }
+  else {
+    c.lookT -= dt; if (c.lookT <= 0) { c.lookT = rand(1.2, 3.5); c.lookA = c.ang + rand(-1.8, 1.8); }
+    let da = c.lookA - c.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); c.ang += da * Math.min(1, dt * 3);
+  }
   c.phase += spd * dt * 0.35;
   if (c.route.length && c.pause <= 0 && c.state !== 'FLEE' && c.state !== 'RETURN' && c.state !== 'LAY') {
     c.stuckT += dt;
@@ -572,7 +592,7 @@ function foxThink(f) {
   }
   let best = null, bs = 1e9;
   for (const h of hens) {
-    if (h.state === 'ROOST' || h.state === 'CAUGHT') continue;
+    if (h.state === 'ROOST' || h.state === 'CAUGHT' || h.state === 'NEST' || h.state === 'HELD') continue;
     const r = routeFor(f, h), sc = dist(f, h) + (r === false ? 220 : 0);
     if (sc < bs) { bs = sc; best = { kind: 'hen', o: h, r }; }
   }
@@ -673,7 +693,7 @@ function moveVec() {
 }
 function updateFarmer(dt) {
   if (farmer.sleeping) { farmer.sneakNow = false; return; }
-  const v = moveVec(), sneak = farmer.sneak || keys.has('shift');
+  const v = moveVec(), sneak = farmer.sneak;
   if (farmer.inside) {
     const R = BLD[farmer.inside].r, sp = T.farmerSpeed * 0.75;
     farmer.x = clamp(farmer.x + v.x * sp * dt, R.x + 12, R.x + R.w - 12); farmer.y = clamp(farmer.y + v.y * sp * dt, R.y + 12, R.y + R.h - 9);
@@ -701,7 +721,7 @@ function updateFarmer(dt) {
   }
   truck.v *= Math.max(0, 1 - 4 * dt);
   const tired = farmer.energy < 0.2 ? 0.65 : 1, mud = inMud(farmer) ? 0.7 : 1;
-  const sp = T.farmerSpeed * (sneak ? 0.55 : 1) * tired * mud;
+  const sp = T.farmerSpeed * (sneak ? 0.55 : 1) * tired * mud * (1 - 0.06 * farmer.held.length);
   farmer.vx = v.x * sp; farmer.vy = v.y * sp;
   farmer.x += farmer.vx * dt; farmer.y += farmer.vy * dt;
   collide(farmer, farmer.r);
@@ -741,7 +761,7 @@ function findAction() {
       if (ne.length && F.y < HUTCH.y + 44) return { label: 'Collect ' + ne.length + ' egg' + (ne.length > 1 ? 's' : '') + ' from the nests', run: () => { F.basket += ne.length; eggs = eggs.filter(e => !e.inHutch); float(F.x, F.y - 18, '+' + ne.length + ' egg', '#fff4c2'); } };
     }
     if (key === 'house' && dist(F, { x: BED.x + BED.w / 2, y: BED.y + BED.h / 2 }) < 34) {
-      if (world.curfew || F.energy < 0.35) return { label: world.curfew ? 'Sleep until morning' : 'Take a nap', run: () => { F.sleeping = true; F.sleepKind = world.curfew ? 'night' : 'nap'; F.x = BED.x + 12; F.y = BED.y + 12; F.carry = null; F.scoops = 0; say(world.curfew ? 'You go to bed.' : 'You lie down for a nap.'); } };
+      if (world.curfew || F.energy < 0.35) return { label: world.curfew ? 'Sleep until morning' : 'Take a nap', run: () => { releaseAllHens(); F.sleeping = true; F.sleepKind = world.curfew ? 'night' : 'nap'; F.x = BED.x + 12; F.y = BED.y + 12; F.carry = null; F.scoops = 0; say(world.curfew ? 'You go to bed.' : 'You lie down for a nap.'); } };
       return { label: 'Too early to sleep', run: () => say('Not tired yet. Sleep opens at dusk, or when your energy is low.') };
     }
     if (key === 'barn' && dist(F, SACKS_PT) < 40 && F.carry !== 'water') {
@@ -750,14 +770,20 @@ function findAction() {
     }
     if (dist(F, b.door) < 30) return { label: 'Go outside', run: leaveBuilding };
     if (key === 'hutch' && hutch.dirt > 0.1) return { label: 'Clean the coop', run: () => { hutch.dirt = 0; float(F.x, F.y - 18, 'clean', '#cfe8ff'); } };
+    if (F.held.length) return { label: 'Put down hen (' + F.held.length + ')', run: putDown };
     return null;
   }
+  const ph = F.held.length < 3 ? pickableHen() : null;
+  const pickAct = ph ? { label: 'Pick up hen (' + (F.held.length + 1) + '/3)', run: () => pickUp(ph) } : null;
+  if (pickAct && F.sneakNow) return pickAct;
   const near = eggs.filter(e => !e.inHutch && dist(e, F) < 32);
   if (near.length) return { label: near.length > 1 ? 'Collect ' + near.length + ' eggs' : 'Collect egg', run: () => { eggs = eggs.filter(e => e.inHutch || dist(e, F) >= 32); F.basket += near.length; float(F.x, F.y - 18, '+' + near.length + ' egg', '#fff4c2'); } };
+  if (pickAct) return pickAct;
   if (dist(F, STAND_PT) < 64 && F.basket > 0) { const n = F.basket, pay = n * T.price; return { label: 'Sell ' + n + ' egg' + (n > 1 ? 's' : '') + ' at farm stand \u00b7 $' + pay, run: () => { F.money += pay; F.basket = 0; float(F.x, F.y - 18, '+$' + pay, '#b8f0a8'); } }; }
   if (dist(F, STALL_PT) < 60 && F.basket > 0 && marketOpen()) { const n = F.basket, pay = n * world.market; return { label: 'Sell ' + n + ' eggs at stall \u00b7 $' + pay, run: () => { F.money += pay; F.basket = 0; float(F.x, F.y - 18, '+$' + pay, '#b8f0a8'); } }; }
   if (dist(F, SHOP_PT) < 60) return { label: 'Bring the truck to buy feed', run: () => say('Drive the truck here to buy feed sacks.') };
   if (dist(F, truck) < 44) {
+    if (F.held.length) return { label: 'Put down hen (' + F.held.length + ') before driving', run: putDown };
     if (F.basket > 0 && truck.cargo < 150) return { label: 'Load ' + F.basket + ' egg' + (F.basket > 1 ? 's' : '') + ' into truck', run: () => { truck.cargo += F.basket; float(truck.x, truck.y - 20, '+' + F.basket + ' crated', '#fff4c2'); F.basket = 0; } };
     return { label: 'Drive truck', run: () => { F.driving = true; F.carry = null; F.scoops = 0; F.x = truck.x; F.y = truck.y; } };
   }
@@ -779,10 +805,25 @@ function findAction() {
   }
   if (dist(F, PUMP_PT) < 40 && F.carry !== 'feed') return { label: F.carry === 'water' ? 'Pump is here (can is full)' : 'Fill water can', run: () => { F.carry = 'water'; float(F.x, F.y - 18, 'can full', '#bfe3ff'); } };
   if (dist(F, GATE) < 56) return { label: gate.open ? 'Close gate' : 'Open gate', run: () => { gate.open = !gate.open; } };
+  if (F.held.length) return { label: 'Put down hen (' + F.held.length + ')', run: putDown };
   if (F.carry === 'feed') return { label: 'Scatter feed (' + F.scoops + ' scoops)', run: () => scatterFeed() };
   if (F.carry === 'water') return { label: 'Pour out water', run: () => { F.carry = null; } };
   return null;
 }
+const PICKBLOCK = { FLEE: 1, ROOST: 1, NEST: 1, CAUGHT: 1, HELD: 1, LAY: 1 };
+function pickableHen() { let b = null, bd = 24; for (const h of hens) { if (PICKBLOCK[h.state]) continue; const d = dist(h, farmer); if (d < bd) { bd = d; b = h; } } return b; }
+function pickUp(h) { h.state = 'HELD'; h.route = []; h.act = null; h.pile = null; h.pause = 0; h.vx = h.vy = 0; releaseBug(h); farmer.held.push(h); float(h.x, h.y - 12, 'bawk!', '#fff'); }
+function holdHens() {
+  const F = farmer, c = Math.cos(F.face), sn = Math.sin(F.face);
+  F.held.forEach((h, i) => { const o = [[13, -6], [13, 6], [5, 0]][i]; h.x = F.x + o[0] * c - o[1] * sn; h.y = F.y + o[0] * sn + o[1] * c; h.ang = F.face; });
+}
+function putDown() {
+  const F = farmer, h = F.held.pop(); if (!h) return;
+  h.state = 'WANDER'; h.x = F.x + Math.cos(F.face) * 16; h.y = F.y + Math.sin(F.face) * 16; h.vx = h.vy = 0; h.route = []; h.pause = rand(0.8, 1.6); h.ang = rand(0, TAU); h.lookA = h.ang;
+  collide(h, h.r); if (world.curfew) setReturn(h); float(h.x, h.y - 12, 'put down', '#fff');
+}
+function releaseAllHens() { while (farmer.held.length) putDown(); }
+function toggleSneak() { farmer.sneak = !farmer.sneak; $('btnSneak').setAttribute('aria-pressed', farmer.sneak ? 'true' : 'false'); float(farmer.x, farmer.y - 22, farmer.sneak ? 'sneaking' : 'walking', '#fff'); }
 function scatterFeed() {
   const F = farmer, amt = Math.min(F.scoops, 2); if (amt <= 0) return;
   const x = F.x + Math.cos(F.face) * 16, y = F.y + Math.sin(F.face) * 16;
@@ -801,6 +842,7 @@ addEventListener('keydown', e => {
   keys.add(k);
   if (k === 'f' || k === 'e' || (k === ' ' && tg !== 'BUTTON')) doAction();
   if (k === 'g') toggleDebug();
+  if (k === 'c' || k === 'shift') toggleSneak();
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 addEventListener('blur', () => keys.clear());
@@ -818,7 +860,7 @@ stick.addEventListener('pointermove', e => { if (e.pointerId === sid) stickMove(
 const stickEnd = e => { if (e.pointerId !== sid) return; sid = null; joy.x = joy.y = 0; knob.style.transform = ''; };
 stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd);
 $('btnAct').addEventListener('pointerdown', e => { e.preventDefault(); doAction(); });
-$('btnSneak').addEventListener('click', function () { farmer.sneak = !farmer.sneak; this.setAttribute('aria-pressed', farmer.sneak ? 'true' : 'false'); });
+$('btnSneak').addEventListener('click', toggleSneak);
 
 function toggleDebug() { debug = !debug; $('bDebug').setAttribute('aria-pressed', debug ? 'true' : 'false'); }
 $('bDebug').addEventListener('click', toggleDebug);
@@ -871,7 +913,7 @@ function update(dt) {
   /* farmer */
   if (!farmer.sleeping) farmer.energy = Math.max(0, farmer.energy - dt / (T.dayLen * 1.15));
   else farmer.energy = Math.min(1, farmer.energy + dt / (T.dayLen * 0.35));
-  if (!farmer.sleeping && farmer.energy <= 0) { farmer.driving = false; if (farmer.inside && farmer.inside !== 'house') leaveBuilding(); farmer.sleeping = true; farmer.sleepKind = 'faint'; farmer.carry = null; farmer.scoops = 0; say('You pass out from exhaustion.', true); }
+  if (!farmer.sleeping && farmer.energy <= 0) { releaseAllHens(); farmer.driving = false; if (farmer.inside && farmer.inside !== 'house') leaveBuilding(); farmer.sleeping = true; farmer.sleepKind = 'faint'; farmer.carry = null; farmer.scoops = 0; say('You pass out from exhaustion.', true); }
   if (farmer.sleeping) {
     const k = farmer.sleepKind;
     if ((k === 'night' && !world.curfew) || (k === 'nap' && farmer.energy >= 0.9) || (k === 'faint' && farmer.energy >= 0.6 && !world.curfew)) wakeUp();
@@ -884,11 +926,14 @@ function update(dt) {
   hutch.dirt = clamp(hutch.dirt + (roosting / 20) * dt / T.dayLen * 0.8, 0, 1);
   /* hens */
   let dead = false;
+  holdHens();
   for (const c of hens) {
     if (c.state === 'CAUGHT') continue;
-    c.thinkT -= dt;
-    if (c.thinkT <= 0) { think(c); c.thinkT = (dist(c, farmer) < 160 ? 0.06 : 0.2) + Math.random() * 0.03; }
-    steer(c, dt);
+    if (c.state !== 'HELD') {
+      c.thinkT -= dt;
+      if (c.thinkT <= 0) { think(c); c.thinkT = (dist(c, farmer) < 160 ? 0.06 : 0.2) + Math.random() * 0.03; }
+      steer(c, dt);
+    }
     c.fedCool -= dt;
     const rate = (c.state === 'ROOST' ? 0.5 : 1) / T.dayLen;
     c.hunger = Math.max(0, c.hunger - rate / 0.9 * dt); c.thirst = Math.max(0, c.thirst - rate / 0.7 * dt);
@@ -1084,6 +1129,16 @@ function drawDoors() {
   if (bn.roof > 0.5) { ctx.fillStyle = '#2b1a14'; ctx.fillRect(bn.door.x - 18, bn.door.y - 10, 36, 14); ctx.strokeStyle = '#d9c28a'; ctx.lineWidth = 1.5; ctx.strokeRect(bn.door.x - 18, bn.door.y - 10, 36, 14); }
   ctx.fillStyle = hutch.doorOpen ? '#5a8a4a' : '#b9402a'; ctx.beginPath(); ctx.arc(LATCH.x, LATCH.y, 4, 0, TAU); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1; ctx.stroke();
 }
+function drawCones() {
+  const show = debug ? 1e9 : farmer.sneakNow ? 170 : 0; if (!show) return;
+  const vis = T.fleeR * (farmer.sneakNow ? T.sneakK : 1) * (farmer.driving ? 1.4 : 1), half = T.fov * Math.PI / 360;
+  for (const c of hens) {
+    if (c.state === 'ROOST' || c.state === 'NEST' || c.state === 'HELD' || c.state === 'CAUGHT') continue;
+    if (dist(c, farmer) > show) continue;
+    ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.arc(c.x, c.y, vis, c.ang - half, c.ang + half); ctx.closePath();
+    ctx.fillStyle = 'rgba(255,240,170,.17)'; ctx.fill(); ctx.strokeStyle = 'rgba(255,240,170,.45)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+}
 function drawPile(p) {
   const n = Math.ceil(p.amt * 8);
   ctx.fillStyle = 'rgba(60,45,20,.28)'; ell(p.x, p.y + 1, 4 + p.amt * 2.4, 2.6 + p.amt); ctx.fill();
@@ -1169,7 +1224,7 @@ function drawTree(t) {
   ctx.fillStyle = '#33703a'; ctx.beginPath(); ctx.arc(t.x, t.y - 16, 26, 0, TAU); ctx.fill();
   ctx.fillStyle = '#438a47'; ctx.beginPath(); ctx.arc(t.x - 7, t.y - 22, 15, 0, TAU); ctx.fill();
 }
-const STATE_COL = { WANDER: '#ffffff', FORAGE: '#ffe27a', FLEE: '#ff7b6b', APPROACH: '#8df0a8', RETURN: '#8fc4ff', ROOST: '#c5a8ff', ESCAPE: '#ffb15c', EAT: '#ffd9a0', DRINK: '#9fd8ff', SHELTER: '#b6c2cf', CAUGHT: '#ff4d4d', LAY: '#fff4c2', NEST: '#fff4c2',
+const STATE_COL = { HELD: '#ffffff', WANDER: '#ffffff', FORAGE: '#ffe27a', FLEE: '#ff7b6b', APPROACH: '#8df0a8', RETURN: '#8fc4ff', ROOST: '#c5a8ff', ESCAPE: '#ffb15c', EAT: '#ffd9a0', DRINK: '#9fd8ff', SHELTER: '#b6c2cf', CAUGHT: '#ff4d4d', LAY: '#fff4c2', NEST: '#fff4c2',
   PROWL: '#ffb15c', STALK: '#ff7b6b', DIG: '#e2b78a', SCARED: '#8df0a8', LEAVE: '#cfcfcf' };
 function bubble(txt, x, y, strong) {
   ctx.font = '600 12px "DM Sans", sans-serif'; ctx.textAlign = 'center';
@@ -1197,11 +1252,13 @@ function render() {
     ctx.fillStyle = blink ? '#b9a98a' : '#fbf5e4'; ctx.strokeStyle = '#8a7a58'; ctx.lineWidth = 1; ell(e.x, e.y, 3.6, 4.6); ctx.fill(); ctx.stroke();
   }
   for (const p of piles) drawPile(p);
+  drawCones();
   /* entities sorted by y */
-  const list = hens.filter(h => h.state !== 'ROOST' && h.state !== 'NEST'); foxes.forEach(f => list.push(f));
+  const list = hens.filter(h => h.state !== 'ROOST' && h.state !== 'NEST' && h.state !== 'HELD'); foxes.forEach(f => list.push(f));
   if (!farmer.driving && !(farmer.sleeping && farmer.inside)) list.push(farmer);
   list.sort((a, b) => a.y - b.y);
   for (const o of list) o === farmer ? drawFarmer() : o.isFox ? drawFox(o) : drawHen(o);
+  for (const h of farmer.held) drawHen(h, { x: h.x, y: h.y, ang: h.ang, s: 0.85 });
   drawTruck(); drawRoofs(); drawDoors();
   for (const o of list) if (!o.isFox && o !== farmer && o.state === 'RETURN' && o.waiting) { ctx.fillStyle = '#fff'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('z z', o.x, o.y - 12); }
   for (const t of TREES) drawTree(t);
@@ -1232,6 +1289,7 @@ function render() {
   if (debug) renderDebug();
   if (action && !farmer.sleeping) bubble('F  ' + action.label, farmer.x, farmer.y - 24, true);
   else if (action) bubble('F  ' + action.label, W / 2, H / 2 + 52, true);
+  if (farmer.sneakNow) { ctx.fillStyle = 'rgba(20,28,22,.8)'; ctx.beginPath(); ctx.roundRect(W - 92, 12, 80, 22, 11); ctx.fill(); ctx.fillStyle = '#ffe9a8'; ctx.font = '700 11px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('SNEAKING', W - 52, 27); }
   if (toast.t > 0 && toast.txt) { ctx.globalAlpha = clamp(toast.t, 0, 1); bubble(toast.txt, W / 2, 34, false); ctx.globalAlpha = 1; }
 }
 function renderDebug() {
@@ -1282,12 +1340,17 @@ function hud(dt) {
   $('sFeeder').textContent = Math.round(FEEDER.level); setMeter('mFeeder', FEEDER.level / FEEDER.cap, 0.2);
   $('sWater').textContent = Math.round(WATERER.level); setMeter('mWater', WATERER.level / WATERER.cap, 0.2);
   $('sClean').textContent = Math.round((1 - hutch.dirt) * 100); setMeter('mClean', 1 - hutch.dirt, 0.3);
-  $('sBin').textContent = bin.stock; $('sCarry').textContent = truck.sacks ? '+' + truck.sacks * 50 + ' in truck' : farmer.carry === 'feed' ? farmer.scoops + ' in hand' : farmer.carry === 'water' ? 'can full' : '';
+  $('sBin').textContent = bin.stock;
+  const held = [];
+  if (truck.sacks) held.push('+' + truck.sacks * 50 + ' in truck');
+  if (farmer.carry === 'feed') held.push(farmer.scoops + ' scoops in hand'); else if (farmer.carry === 'water') held.push('can full');
+  if (farmer.held.length) held.push(farmer.held.length + '/3 hens held');
+  $('sCarry').textContent = held.length ? held.join(' · ') : '\u00a0';
   $('sMarket').textContent = world.market;
   $('mark').style.left = (world.t * 100).toFixed(2) + '%';
   $('buy').disabled = farmer.money < T.henCost || hens.length >= 200;
   const n = {}; hens.forEach(h => n[h.state] = (n[h.state] || 0) + 1);
-  $('states').innerHTML = ['WANDER', 'FORAGE', 'ESCAPE', 'EAT', 'DRINK', 'LAY', 'NEST', 'FLEE', 'APPROACH', 'SHELTER', 'RETURN', 'ROOST', 'CAUGHT'].map(s => '<span>' + s + ' <b>' + (n[s] || 0) + '</b></span>').join('');
+  $('states').innerHTML = ['WANDER', 'FORAGE', 'ESCAPE', 'EAT', 'DRINK', 'LAY', 'NEST', 'HELD', 'FLEE', 'APPROACH', 'SHELTER', 'RETURN', 'ROOST', 'CAUGHT'].map(s => '<span>' + s + ' <b>' + (n[s] || 0) + '</b></span>').join('');
 }
 
 /* ---------- loop ---------- */
