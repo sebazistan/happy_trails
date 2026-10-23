@@ -265,7 +265,7 @@ let S = 1, bg = null;
 /* ---------- tuning (every number the guide says to expose) ---------- */
 const T = { walk: 32, fleeMult: 3.6, fleeR: 70, attractR: 140, sep: 1.2, egg: 60, dayLen: 240, farmerSpeed: 105,
   sneakK: 0.5, fov: 150, hear: 34, wanderR: 60, pauseMin: 0.8, pauseMax: 3.2, forageR: 70, gateBias: 0.3, gateRange: 200, price: 2,
-  henCost: 14, rot: 150, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 105, carsRoad: 5, carsStand: 4, hawkPct: 5 };
+  henCost: 14, rot: 300, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 105, carsRoad: 5, carsStand: 4, hawkPct: 5 };
 const SLIDERS = [
   ['walk', 'Hen walk speed', 15, 70, 1, v => v + ' px/s'],
   ['fleeMult', 'Flee speed multiplier', 1.5, 6, 0.1, v => '×' + v.toFixed(1)],
@@ -404,7 +404,7 @@ const BLD = {
   barn: { name: 'barn', r: BARN, door: { x: 755, y: 132 }, out: { x: 755, y: 148 }, spawn: { x: 755, y: 118 }, roof: 1, wall: '#5a2218', floor: '#a9946a' }
 };
 const BED = { x: HOUSE.x + 10, y: HOUSE.y + 12, w: 38, h: 24 }, SACKS_PT = { x: BARN.x + 38, y: BARN.y + 54 };
-const NEST_CAP = 4;
+const boxCaps = [], boxCap = i => boxCaps[i] || (boxCaps[i] = 3 + Math.floor(Math.random() * 3));   /* each nest box holds 3 to 5 eggs */
 const nestCount = () => Math.floor((HUTCH.w - 12) / 18), spb = () => Math.floor((HUTCH.w - 28) / 11) + 1, coopCap = () => 3 * spb();
 const nestX = i => HUTCH.x + 16 + i * 18, nestY = () => HUTCH.y + 16;
 const BIN = { x: 540, y: 150, w: 26, h: 26 }, BIN_PT = { x: 553, y: 163 };
@@ -543,14 +543,16 @@ function henSees(c) {
 }
 function nearestPile(c, r) { let b = null, bd = r; for (const p of piles) { if (p.amt <= 0.01) continue; if (insidePen(p) !== insidePen(c)) continue; const d = dist(c, p); if (d < bd) { bd = d; b = p; } } return b; }
 function boxCount(i) { let n = 0; for (const e of eggs) if (e.inHutch && e.box === i) n++; return n; }
-function freeBox() { let b = -1, bn = NEST_CAP; for (let i = 0; i < nestCount(); i++) { const n = boxCount(i); if (n < bn) { bn = n; b = i; } } return b; }
+function freeBox() { let b = -1, bn = 1e9; for (let i = 0; i < nestCount(); i++) { const n = boxCount(i); if (n < boxCap(i) && n < bn) { bn = n; b = i; } } return b; }
 function resetEgg(c) { c.eggT = T.egg * rand(0.8, 1.2); }
+let nestFullDay = -1;
+function nestsFullNote() { if (nestFullDay !== world.day) { nestFullDay = world.day; say('The nest boxes are full. Hens are laying eggs out in the yard.', true); } }
 function layHere(c) { eggs.push({ x: c.x, y: c.y, age: 0 }); resetEgg(c); float(c.x, c.y - 12, 'egg', '#fff4c2'); if (c.state === 'LAY') { c.state = 'WANDER'; c.route = []; c.pause = rand(0.3, 1); } }
 function startLay(c) { c.state = 'LAY'; c.act = null; c.pile = null; c.pause = 0; releaseBug(c); c.route = [{ x: DOOR_OUT.x + rand(-6, 6), y: DOOR_OUT.y - 2 }]; }
 function layInNest(c) {
-  let b = c.nest; if (boxCount(b) >= NEST_CAP) b = freeBox();
+  let b = c.nest; if (boxCount(b) >= boxCap(b)) b = freeBox();
   if (b >= 0) eggs.push({ x: nestX(b) + rand(-3, 3), y: nestY() + rand(-2, 2), age: 0, inHutch: true, box: b });
-  else eggs.push({ x: DOOR_OUT.x + rand(-8, 8), y: DOOR_OUT.y + 6, age: 0 });
+  else { eggs.push({ x: DOOR_OUT.x + rand(-8, 8), y: DOOR_OUT.y + 6, age: 0 }); nestsFullNote(); }
   resetEgg(c); c.x = DOOR_OUT.x + rand(-8, 8); c.y = DOOR_OUT.y + 3; c.vx = c.vy = 0;
   if (farmer.inside === 'hutch') float(nestX(Math.max(b, 0)), nestY() - 14, 'egg', '#fff4c2');
   if (world.curfew) setReturn(c); else { c.state = 'WANDER'; c.route = []; c.pause = rand(0.4, 1.2); }
@@ -976,6 +978,12 @@ function wakeUp(msg) {
 }
 function enterBuilding(key) { const b = BLD[key]; farmer.inside = key; farmer.x = b.spawn.x; farmer.y = b.spawn.y; }
 function leaveBuilding() { const b = BLD[farmer.inside]; farmer.inside = null; farmer.x = b.out.x; farmer.y = b.out.y + 4; }
+function collectEggs(list) {
+  const good = list.filter(e => !e.rotten).length, bad = list.length - good;
+  eggs = eggs.filter(e => !list.includes(e)); farmer.basket += good;
+  if (good) float(farmer.x, farmer.y - 18, '+' + good + ' egg', '#fff4c2');
+  if (bad) { float(farmer.x, farmer.y - 32, bad + ' rotten, tossed', '#b6c98a'); say('You tossed ' + bad + ' rotten egg' + (bad > 1 ? 's' : '') + '.'); }
+}
 function nestEggs() { return eggs.filter(e => e.inHutch); }
 function findAction() {
   if (trip.on) return null;
@@ -993,7 +1001,7 @@ function findAction() {
     const key = F.inside, b = BLD[key];
     if (key === 'hutch') {
       const ne = nestEggs();
-      if (ne.length && F.y < HUTCH.y + 44) return { label: 'Collect ' + ne.length + ' egg' + (ne.length > 1 ? 's' : '') + ' from the nests', run: () => { F.basket += ne.length; eggs = eggs.filter(e => !e.inHutch); float(F.x, F.y - 18, '+' + ne.length + ' egg', '#fff4c2'); } };
+      if (ne.length && F.y < HUTCH.y + 44) return { label: 'Collect ' + ne.length + ' egg' + (ne.length > 1 ? 's' : '') + ' from the nests', run: () => collectEggs(ne) };
     }
     if (key === 'house' && dist(F, { x: BED.x + BED.w / 2, y: BED.y + BED.h / 2 }) < 34) {
       if (world.curfew || F.energy < 0.35) return { label: world.curfew ? 'Sleep until morning' : 'Take a nap', run: () => { releaseAllHens(); F.sleeping = true; F.sleepKind = world.curfew ? 'night' : 'nap'; F.x = BED.x + 12; F.y = BED.y + 12; F.carry = null; F.scoops = 0; say(world.curfew ? 'You go to bed.' : 'You lie down for a nap.'); } };
@@ -1016,7 +1024,7 @@ function findAction() {
   const pickAct = ph ? { label: 'Pick up hen (' + (F.held.length + 1) + '/3)', run: () => pickUp(ph) } : null;
   if (pickAct && F.sneakNow) return pickAct;
   const near = eggs.filter(e => !e.inHutch && dist(e, F) < 32);
-  if (near.length) return { label: near.length > 1 ? 'Collect ' + near.length + ' eggs' : 'Collect egg', run: () => { eggs = eggs.filter(e => e.inHutch || dist(e, F) >= 32); F.basket += near.length; float(F.x, F.y - 18, '+' + near.length + ' egg', '#fff4c2'); } };
+  if (near.length) return { label: near.length > 1 ? 'Collect ' + near.length + ' eggs' : 'Collect egg', run: () => collectEggs(near) };
   if (pickAct) return pickAct;
   if (dist(F, STAND_PT) < 64) {
     if (stand.till > 0) return { label: 'Collect $' + stand.till + ' from the till', run: () => collectMoney('stand') };
@@ -1916,6 +1924,12 @@ function update(dt) {
   piles = piles.filter(p => p.amt > 0.01);
   separateHens();
   if (dead) { hens = hens.filter(c => { if (c.dead) { world.lost++; say('A hen died of ' + c.dead + '.', true); return false; } return true; }); }
+  if (!hens.length && !world.curfew && world.flockDay !== world.day) {
+    world.flockDay = world.day;
+    const sellable = farmer.basket + fridge.stock + stand.stock + roadside.stock + eggs.length;
+    if (farmer.money < T.henCost && sellable === 0) { for (let i = 0; i < 3; i++) { const q = penPoint(); newHen(q.x, q.y); } say('The flock is gone and you cannot afford more. A neighbour drops off three hens to get you started again.', true); }
+    else say('You have no hens left. Use the Buy hen button to start a new flock.', true);
+  }
   /* foxes */
   for (const f of foxes) updateFox(f, dt);
   updatePets(dt);
@@ -1923,8 +1937,9 @@ function update(dt) {
   updateTrip(dt);
   updateEconomy(dt);
   if (build.on && (farmer.inside || farmer.driving || farmer.sleeping || farmer.away)) setBuild(false);
-  for (const e of eggs) e.age += dt;
-  eggs = eggs.filter(e => e.age < T.rot);
+  for (const e of eggs) { e.age += dt; if (e.age >= T.rot && !e.rotten) { e.rotten = true; if (e.inHutch) say('Eggs have gone bad in the nest boxes. Clear them out.', true); } }
+  eggs = eggs.filter(e => e.age < T.rot * 2.2);
+  if (!world.curfew && eggs.length && freeBox() < 0 && eggs.some(e => !e.inHutch)) nestsFullNote();
   for (const b of bugs) { if (!b.alive) { b.respawn -= dt; if (b.respawn <= 0) spawnBug(b); } }
   for (const f of floats) { f.t -= dt; f.y -= dt * 14; }
   floats = floats.filter(f => f.t > 0);
@@ -2018,7 +2033,7 @@ function drawGate() {
   }
 }
 function shadeBuildings() { for (const k in BLD) { const r = BLD[k].r; ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(r.x + 5, r.y + 6, r.w, r.h); } }
-function drawEgg(x, y, blink) { ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(x + 1, y + 3, 4, 2.4); ctx.fill(); ctx.fillStyle = blink ? '#b9a98a' : '#fbf5e4'; ctx.strokeStyle = '#8a7a58'; ctx.lineWidth = 1; ell(x, y, 3.6, 4.6); ctx.fill(); ctx.stroke(); }
+function drawEgg(x, y, blink) { ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(x + 1, y + 3, 4, 2.4); ctx.fill(); ctx.fillStyle = blink === 2 ? '#8f9a62' : blink ? '#b9a98a' : '#fbf5e4'; ctx.strokeStyle = '#8a7a58'; ctx.lineWidth = 1; ell(x, y, 3.6, 4.6); ctx.fill(); ctx.stroke(); }
 function interiorHutch(R) {
   const rnd = mulberry(11);
   ctx.lineWidth = 1;
@@ -2027,7 +2042,7 @@ function interiorHutch(R) {
   for (let k = 0; k < 3; k++) { ctx.fillStyle = '#6b4a2a'; ctx.fillRect(R.x + 8, R.y + 40 + k * 13, R.w - 16, 3); }
   const spots = Math.floor(hutch.dirt * 22);
   for (let i = 0; i < spots; i++) { ctx.fillStyle = 'rgba(70,48,22,.55)'; ctx.beginPath(); ctx.arc(R.x + 8 + rnd() * (R.w - 16), R.y + 30 + rnd() * (R.h - 38), 2 + rnd() * 2, 0, TAU); ctx.fill(); }
-  for (const e of eggs) if (e.inHutch) drawEgg(e.x, e.y, e.age > T.rot - 30 && Math.floor(world.clock * 4) % 2);
+  for (const e of eggs) if (e.inHutch) drawEgg(e.x, e.y, e.rotten ? 2 : e.age > T.rot - 30 && Math.floor(world.clock * 4) % 2);
   let slot = 0;
   for (const h of hens) {
     if (h.state === 'ROOST') { const bar = Math.floor(slot / spb()) % 3, col = slot % spb(); slot++; drawHen(h, { x: R.x + 14 + col * 11, y: R.y + 38 + bar * 13, ang: -1.57, s: 0.72 }); }
@@ -2313,9 +2328,9 @@ function render() {
   for (const b of bugs) if (b.alive) { const w = Math.sin(world.clock * 6 + b.ph) * 1.2; ctx.fillStyle = '#2b2218'; ctx.beginPath(); ctx.arc(b.x + w, b.y, 1.9, 0, TAU); ctx.fill(); }
   for (const e of eggs) {
     if (e.inHutch) continue;
-    const old = e.age > T.rot - 30, blink = old && Math.floor(world.clock * 4) % 2;
+    const old = e.age > T.rot - 30, blink = e.rotten ? 2 : old && Math.floor(world.clock * 4) % 2;
     ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(e.x + 1, e.y + 3, 4, 2.4); ctx.fill();
-    ctx.fillStyle = blink ? '#b9a98a' : '#fbf5e4'; ctx.strokeStyle = '#8a7a58'; ctx.lineWidth = 1; ell(e.x, e.y, 3.6, 4.6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = blink === 2 ? '#8f9a62' : blink ? '#b9a98a' : '#fbf5e4'; ctx.strokeStyle = '#8a7a58'; ctx.lineWidth = 1; ell(e.x, e.y, 3.6, 4.6); ctx.fill(); ctx.stroke();
   }
   for (const p of piles) drawPile(p);
   drawCars(); drawStallExtras(); drawBowls(); drawFeathers();
