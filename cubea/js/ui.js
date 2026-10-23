@@ -109,7 +109,7 @@
     const it = C.findInteract && C.findInteract(); if (it) hint += `<kbd>E</kbd> ${hintFor(it)}`; else hint += g.player && g.player.weaponOut ? 'Weapon drawn — click to fire' : '<kbd>X</kbd> draw weapon';
     $('hint').innerHTML = hint;
     updateLeftLive(); if (g.selected && !g.selected.gone) updateInspectorLive(); renderLog();
-    if (g.sea && g.sea.active) { $('hint').innerHTML = g.sea.phase === 'approach' ? `⛵ WASD steers · <kbd>E</kbd> land (when close to the shore) · running her aground also lands you` : `⛵ WASD walks the deck · <kbd>E</kbd> speaks to a man`; } else if (g.vehicle) { const v = g.vehicle; $('hint').innerHTML += `<br>🚗 ${v.def.n}: fuel ${Math.round(v.fuel)}/${v.def.tank} · speed ${Math.round(Math.abs(v.spd))} · <kbd>E</kbd> exit`; }
+    if (g.sea && g.sea.active && g.sea.phase === 'landing') { $('hint').innerHTML = `🔥 WASD runs · click fires · get to the trees north of the beach`; } else if (g.sea && g.sea.active) { $('hint').innerHTML = g.sea.phase === 'approach' ? `⛵ WASD steers · <kbd>E</kbd> land (when close to the shore) · running her aground also lands you` : `⛵ WASD walks the deck · <kbd>E</kbd> speaks to a man`; } else if (g.vehicle) { const v = g.vehicle; $('hint').innerHTML += `<br>🚗 ${v.def.n}: fuel ${Math.round(v.fuel)}/${v.def.tank} · speed ${Math.round(Math.abs(v.spd))} · <kbd>E</kbd> exit`; }
   };
   // Text describing what E would do on the nearest interactive thing.
   function hintFor(t) {

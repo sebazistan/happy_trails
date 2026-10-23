@@ -59,7 +59,7 @@
 
   // ------------------------------------------------------------------ the crossing
   // Real seconds per day at sea (seven days ≈ 56 s).
-  const DAY_LEN = 8;                                   // real seconds per day at sea
+  const DAY_LEN = 24;                                  // real seconds per day at sea
   // Calendar labels for the crossing (25 Nov – 2 Dec 1956).
   const DATES = ['25 Nov', '26 Nov', '27 Nov', '28 Nov', '29 Nov', '30 Nov', '1 Dec', '2 Dec'];
 
@@ -107,40 +107,40 @@
     if (g.sea.phase === 'cross' && rnd() < dt * 0.05) a.p.needs.energy = clamp(a.p.needs.energy - 1, 0, 100);
   };
 
-  function card(c) { C.ui.card(c); }
+  function card(c) { if (C.seaCardHook) C.seaCardHook(c); C.ui.card(c); }
   // THE SIX CROSSING EVENTS: seasickness (day 1), the leak (2), a man overboard (3), the storm (4), a plane (5), the ration fight (6). Each presents choices that move needs, trust, supplies or the chance of losing someone.
   const EVENTS = [
-    { day: 1, run: () => card({ title: 'The sea takes them', icon: '🤢', headline: 'Men are sick at the rail. The cook has lemons and a little sugar.', spots: [{ i: 0, label: 'Cook: lemons & sugar', u: -12, w: 5 }, { i: 1, label: 'Order silence', u: 14, w: 0 }], body: 'By the second night the yacht is rolling hard. Men are bent over the rail; the deck stinks of vomit. The cook has lemons and a little sugar. Someone says out loud that they should have waited for better weather.',
+    { id: 'sick', day: 1, run: () => card({ title: 'The sea takes them', icon: '🤢', headline: 'Men are sick at the rail. The cook has lemons and a little sugar.', spots: [{ i: 0, label: 'Cook: lemons & sugar', u: -12, w: 5 }, { i: 1, label: 'Order silence', u: 14, w: 0 }], body: 'By the second night the yacht is rolling hard. Men are bent over the rail; the deck stinks of vomit. The cook has lemons and a little sugar. Someone says out loud that they should have waited for better weather.',
       choices: [
         { label: 'Hand out the lemons and sugar (3 food)', fn: () => { G().res.food = Math.max(0, G().res.food - 3); setNeeds({ energy: 6 }, 4); } },
         { label: 'Order silence and discipline', sub: 'Some will respect it. Some will not forget it.', fn: () => { setNeeds(null, -3); everyone((p) => { if (p.traits.includes('idealist') || p.traits.includes('stoic')) C.addTrust(p, 2); else C.addTrust(p, -1); }); } },
         { label: 'Let them be', fn: () => { setNeeds({ energy: -4 }, -2); } },
       ] }) },
-    { day: 2, run: () => card({ title: 'She is taking water!', icon: '🚤', headline: 'Water in the bilge and the pump has jammed.', spots: [{ i: 0, label: 'Throw cargo over', u: -4, w: -6 }, { i: 1, label: 'Bail by hand', u: -18, w: 0 }], draw: (c, cam, z) => { const v = G().sea.veh, p = C.toScreen(cam, v.x, v.y + 18); c.save(); c.fillStyle = 'rgba(40,90,130,.55)'; c.beginPath(); c.ellipse(p.x, p.y, 7 * z, 3.4 * z, 0, 0, 6.3); c.fill(); c.restore(); }, body: 'She was built for a dozen passengers. Water is rising in the bilge, and the pump jams. Equipment is heavy and everyone is standing on everyone.',
+    { id: 'leak', day: 2, run: () => card({ title: 'She is taking water!', icon: '🚤', headline: 'Water in the bilge and the pump has jammed.', spots: [{ i: 0, label: 'Throw cargo over', u: -4, w: -6 }, { i: 1, label: 'Bail by hand', u: -18, w: 0 }], draw: (c, cam, z) => { const v = G().sea.veh, p = C.toScreen(cam, v.x, v.y + 18); c.save(); c.fillStyle = 'rgba(40,90,130,.55)'; c.beginPath(); c.ellipse(p.x, p.y, 7 * z, 3.4 * z, 0, 0, 6.3); c.fill(); c.restore(); }, body: 'She was built for a dozen passengers. Water is rising in the bilge, and the pump jams. Equipment is heavy and everyone is standing on everyone.',
       choices: [
         { label: 'Throw cargo overboard', sub: 'Lose a third of the cartridges and food. She rides higher.', fn: () => { const r = G().res; r.ammo = Math.floor(r.ammo * 0.67); r.food = Math.floor(r.food * 0.7); setNeeds(null, -3); C.log('You throw boxes into the sea.', 'warn'); } },
         { label: 'Bail by hand, in shifts, all night', sub: 'Everyone is exhausted; nothing is lost.', fn: () => { setNeeds({ energy: -14 }, 2); everyone((p) => { if (p.traits.includes('stoic') || p.traits.includes('brave')) C.addTrust(p, 1.5); }); } },
         { label: 'Press on and hope', sub: 'A gamble.', fn: () => { if (rnd() < 0.5) { const r = G().res; r.ammo = Math.floor(r.ammo * 0.5); r.med = Math.max(0, r.med - 2); C.log('A wave comes over the side. Boxes of cartridges are ruined.', 'bad'); setNeeds(null, -6); } else { C.log('She holds. Barely.', 'info'); } } },
       ] }) },
-    { day: 3, run: () => {
-      const cand = party().filter((p) => p.id !== C.W.player && !p.roster); const who = cand.length ? pick(cand) : null; if (!who) return;
+    { id: 'over', day: 3, run: (who0) => {
+      const cand = party().filter((p) => p.id !== C.W.player && !p.roster); const who = who0 || (cand.length ? pick(cand) : null); if (!who) return;
       card({ title: 'Man overboard!', icon: '🌊', secs: 25, spots: [{ i: 0, label: 'Helm: go back', u: 25, w: 0 }, { i: 1, label: 'Stern: throw the lifebuoy', u: -25, w: 0 }], draw: (c, cam, z, cur) => { const v = G().sea.veh, el = cur.secs - cur.left, p = C.toScreen(cam, v.x + 5 + Math.sin(el * 1.3) * 2, v.y + 34 + el * 7); const bob = Math.sin(el * 5) * 1.2 * z; c.save(); c.fillStyle = 'rgba(210,235,255,.5)'; c.beginPath(); c.ellipse(p.x, p.y + 3 * z, 6 * z, 2.4 * z, 0, 0, 6.3); c.fill(); c.fillStyle = '#d9a37a'; c.fillRect(p.x - 2.2 * z, p.y - 3 * z + bob, 4.4 * z, 4.4 * z); c.fillStyle = '#fff'; c.font = '700 ' + 11 + 'px system-ui'; c.textAlign = 'center'; c.fillText('¡Ayuda!', p.x, p.y - 8 * z + bob); c.restore(); }, headline: `${C.tagName(who)} went into the dark water. The yacht is already moving away.`, body: `In the dark, ${C.tagName(who)} lost his footing at the rail. Someone is shouting his name. The yacht is moving away from the place where he fell.`,
         choices: [
           { label: 'Go back', sub: 'Costs time and food, and every hour near the coast is a risk. He may live.', fn: () => { const g = G(); g.res.food = Math.max(0, g.res.food - 4); g.sea.t += DAY_LEN * 0.7; g.sea.alert += 0.08; if (rnd() < 0.7) { C.log(`${C.tagName(who)} is pulled from the water, coughing. The men cheer.`, 'good'); setNeeds(null, 6); everyone((p) => C.addTrust(p, 2.5)); } else { C.log(`${C.tagName(who)} is not found.`, 'bad'); C.killOffscreen(who, null, `${C.tagName(who)} was lost overboard on the way to Cuba`, 40, false); setNeeds(null, -5); } } },
           { label: 'Throw the lifebuoy', sub: 'Quick and cheap. He may reach it, or not.', fn: () => { if (rnd() < 0.55) { C.log(`${C.tagName(who)} gets a hand on the lifebuoy and is hauled aboard.`, 'good'); setNeeds(null, 4); everyone((p) => C.addTrust(p, 1.5)); } else { C.log(`The ring falls short. ${C.tagName(who)} is lost in the dark.`, 'bad'); C.killOffscreen(who, null, `${C.tagName(who)} was lost overboard at sea`, 55, false); everyone((p) => { C.addTrust(p, -2); p.morale = clamp(p.morale - 4, 0, 100); }); } } },
           { label: 'Continue on course', sub: 'The mission comes first. They will remember it.', fn: () => { C.log(`${C.tagName(who)} is left in the water.`, 'bad'); C.killOffscreen(who, null, `${C.tagName(who)} was left behind in the sea`, 55, false); everyone((p) => { C.addTrust(p, -3.5); p.morale = clamp(p.morale - 5, 0, 100); }); } },
         ] }); } },
-    { day: 4, run: () => card({ title: 'Storm!', icon: '⛈', headline: 'A norther is breaking over the bow.', spots: [{ i: 0, label: 'Helm: heave to', u: 24, w: 0 }], body: 'A norther comes up before dawn. The sea breaks over the bow. A boat this size should not be out in it.',
+    { id: 'storm', day: 4, run: () => card({ title: 'Storm!', icon: '⛈', headline: 'A norther is breaking over the bow.', spots: [{ i: 0, label: 'Helm: heave to', u: 24, w: 0 }], body: 'A norther comes up before dawn. The sea breaks over the bow. A boat this size should not be out in it.',
       choices: [
         { label: 'Heave to and ride it out', sub: 'Slower — but safer.', fn: () => { G().sea.t -= DAY_LEN * 0.35; G().weather.target = 1; setNeeds({ energy: -8 }, -2); } },
         { label: 'Keep your heading', sub: 'Faster. The sea decides who goes into it.', fn: () => { G().weather.target = 1; setNeeds({ energy: -12 }, -4); if (rnd() < 0.45) { const c = party().filter((p) => p.id !== C.W.player && !p.roster && p.needs.energy < 60); const who = c.length ? pick(c) : null; if (who) { C.log(`${C.tagName(who)} was swept off the deck.`, 'bad'); C.killOffscreen(who, null, `${C.tagName(who)} was swept overboard in a storm`, 50, false); } } } },
       ] }) },
-    { day: 5, run: () => card({ title: 'A plane, far off', icon: '✈', headline: 'A navy patrol plane crosses the horizon. It does not turn.', spots: [{ i: 0, label: 'Hatch: everyone below', u: 0, w: -6 }], body: 'A navy patrol plane crosses the horizon. It does not turn. It might not have seen you. It might have radioed anyway.',
+    { id: 'plane', day: 5, run: () => card({ title: 'A plane, far off', icon: '✈', headline: 'A navy patrol plane crosses the horizon. It does not turn.', spots: [{ i: 0, label: 'Hatch: everyone below', u: 0, w: -6 }], body: 'A navy patrol plane crosses the horizon. It does not turn. It might not have seen you. It might have radioed anyway.',
       choices: [
         { label: 'Everyone below, rifles hidden', fn: () => { setNeeds(null, -1); if (rnd() < 0.3) G().sea.alert += 0.1; } },
         { label: 'Hold your course and your nerve', fn: () => { if (rnd() < 0.55) G().sea.alert += 0.18; } },
       ] }) },
-    { day: 6, run: () => card({ title: 'Fight over the food', icon: '🍞', headline: 'A tin of condensed milk, and a man staring at the man who ate it.', spots: [{ i: 0, label: 'Ration box: share equally', u: -8, w: 6 }, { i: 1, label: 'Quartermaster: fighters first', u: 8, w: -6 }], body: 'The food is nearly gone. There is a fight over a tin of condensed milk, and a man who did not eat is staring at a man who did.',
+    { id: 'rations', day: 6, run: () => card({ title: 'Fight over the food', icon: '🍞', headline: 'A tin of condensed milk, and a man staring at the man who ate it.', spots: [{ i: 0, label: 'Ration box: share equally', u: -8, w: 6 }, { i: 1, label: 'Quartermaster: fighters first', u: 8, w: -6 }], body: 'The food is nearly gone. There is a fight over a tin of condensed milk, and a man who did not eat is staring at a man who did.',
       choices: [
         { label: 'Share equally — you eat the same as the rest', sub: 'Slow hunger for all.', fn: () => { const g = G(); g.res.food = Math.max(0, g.res.food - 4); everyone((p) => { C.addTrust(p, 2); }); } },
         { label: 'Fighters first, the sick last', sub: 'Efficient. Some will resent it.', fn: () => { everyone((p) => { if (p.hp < p.maxHp * 0.8 || p.needs.energy < 40) { p.needs.food = clamp(p.needs.food - 6, 0, 100); C.addTrust(p, -2); } else C.addTrust(p, 0.5); }); } },
@@ -148,6 +148,7 @@
       ] }) },
   ];
 
+  C.SEA_EVENTS = {}; EVENTS.forEach((e) => { C.SEA_EVENTS[e.id] = e; });
   // Per-frame crossing logic: sail north steadily (cross phase), fire the day's event, set the sea clock; at the end start the approach. In the approach phase it runs the dawn light and the patrol boat.
   C.seaUpdate = function (dt) {
     const g = G(), S = g.sea; if (!S || !S.active) return;
@@ -160,14 +161,14 @@
       v.y += (target - v.y) * Math.min(1, dt * 4); v.spd = 14;
       g.hour = (8 + 24 * (S.t / L)) % 24; g.min = g.hour * 60;
       S.label = `${DATES[Math.min(7, day)]} 1956 · at sea`;
-      for (const e of EVENTS) if (day >= e.day && !S.fired[e.day]) { S.fired[e.day] = true; e.run(); }
+      if (C.seaPressure) C.seaPressure(dt, day); else for (const e of EVENTS) if (day >= e.day && !S.fired[e.day]) { S.fired[e.day] = true; e.run(); }
       g.weather.rain += (Math.min(g.weather.target, 1) - g.weather.rain) * Math.min(1, dt * 0.5);
       if (S.t >= L * 7) startApproach();
     } else if (S.phase === 'approach') {
       g.hour = 4.2 + Math.min(2.5, (S.t - S.t0) / 70); g.min = g.hour * 60;
       S.label = '2 Dec 1956 · the coast';
       patrolUpdate(dt);
-    }
+    } else if (S.phase === 'landing' && C.landingTick) C.landingTick(dt);
   };
 
   // The helm unlocks: everyone goes below (into the vehicle), a patrol boat appears, and a card describes the four sites.
@@ -212,6 +213,7 @@
 
   // Outcome = threat + 0.55·alert + noise → ashore unseen / under fire / ambushed on the beach / massacre (60–100% of the party die; sometimes the player; sometimes everyone). Supplies are lost in proportion, the dead's families hear of it, survivors are shaken, and the story continues to Alegría de Pío with an enemy multiplier of 0.7–1.7.
   function resolveLanding(site, threat) {
+    if (C.ui.playLanding && C.playLanding) return C.playLanding(site, threat);
     const g = G(), S = g.sea;
     const risk = threat + S.alert * 0.55 + (rnd() - 0.5) * 0.4;
     const people = party().filter((p) => p.id !== C.W.player);

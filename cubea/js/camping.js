@@ -24,6 +24,8 @@
 
   // ---------------------------------------------------------------------------------------------------------------- exposure
   const hourly = (s, g) => {
+    if ((g.sea && g.sea.active) || s.type === 'road') return;                  // no camp at sea or on the road
+    if (!s.camp && !(s.things || []).some((t) => t.k === 'hammock' || t.k === 'fire')) return;
     const ppl = s.actors.filter((a) => !a.dead && (a.side === 'rebel' || a.isPlayer) && !a.inside); if (ppl.length < 3) return;
     const things = s.things || []; const fires = things.filter((t) => t.k === 'fire' && t.d.lit).length; const night = g.hour >= 19 || g.hour < 5.5;
     let e = TUNE.perHour + ppl.length / 10 * TUNE.perTenPeople + things.length * TUNE.things;

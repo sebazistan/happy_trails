@@ -7,7 +7,7 @@ const { open } = require('./common');
   await page.evaluate(() => { C.ui.liveCards = true; if (C.ui.closeModal) C.ui.closeModal(); C.G.paused = false; });
   out.sea = await page.evaluate(() => !!(C.G.sea && C.G.sea.active));
   // jump to day 3 (DAY_LEN 8 s)
-  await page.evaluate(() => { const S = C.G.sea; S.t = 8 * 3 - 0.1; S.fired = { 1: true, 2: true }; for (let i = 0; i < 10; i++) C.debug.update(1 / 20); });
+  await page.evaluate(() => { C.SEA_EVENTS.over.run(C.squadPeople().find((p) => !p.roster)); });
   out.sit = await page.evaluate(() => { const a = C.situation.active; return a ? { title: a.c.title, spots: a.c.spots.map((s) => s.label), choices: a.c.choices.map((c) => c.label), modal: C.G.modalOpen } : null; });
   // walk to the stern and press E
   await page.evaluate(() => { const g = C.G, v = g.sea.veh, d = g.player.deck; d.u = -25; d.w = 0; g.player.x = v.x; g.player.y = v.y + 25; });
@@ -15,7 +15,7 @@ const { open } = require('./common');
   await page.keyboard.press('e'); await page.waitForTimeout(300);
   out.afterE = await page.evaluate(() => ({ active: !!C.situation.active, log: C.G.log.slice(0, 3).map((l) => l.text.slice(0, 70)) }));
   // passive timeout: the storm day
-  await page.evaluate(() => { const S = C.G.sea; S.t = 8 * 4 + 0.1; for (let i = 0; i < 5; i++) C.debug.update(1 / 20); });
+  await page.evaluate(() => { C.SEA_EVENTS.storm.run(); });
   out.storm = await page.evaluate(() => { const a = C.situation.active; if (!a) return null; a.left = 0.2; return a.c.title; });
   await page.waitForTimeout(700); out.stormResolved = await page.evaluate(() => !C.situation.active);
   console.log(JSON.stringify(out, null, 1)); console.log('ERRORS', errors); await browser.close();
