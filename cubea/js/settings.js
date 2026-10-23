@@ -21,7 +21,7 @@
   // ------------------------------------------------------------------------------------------------------------------
   // 1. SETTINGS
   // ------------------------------------------------------------------------------------------------------------------
-  const DEFAULTS = { volume: 0.35, uiScale: 1, reduceShake: false, contrast: false, compactUI: true, spanish: 'auto', autosave: 5, keys: {} };
+  const DEFAULTS = { volume: 0.35, uiScale: 1, reduceShake: false, contrast: false, compactUI: true, autoSlow: true, spanish: 'auto', autosave: 5, keys: {} };
   C.settings = Object.assign({}, DEFAULTS, (() => { try { return JSON.parse(LS.get('cubea_settings') || '{}'); } catch (e) { return {}; } })());
   C.settings.keys = C.settings.keys || {};
   const persist = () => LS.set('cubea_settings', JSON.stringify(C.settings));
@@ -137,7 +137,7 @@
     const row = (id, label, inner) => `<div class="row"><label for="${id}">${label}</label>${inner}</div>`;
     let h = `<div class="box"><h2>${keysOnly ? 'Controls' : 'Settings'}</h2>`;
     if (!keysOnly) h += row('sVol', 'Volume', `<input type="range" id="sVol" min="0" max="1" step="0.05" value="${S.volume}">`) + row('sUi', 'Interface size', `<input type="range" id="sUi" min="0.8" max="1.4" step="0.05" value="${S.uiScale}">`)
-      + row('sShake', 'Reduce screen shake', `<input type="checkbox" id="sShake" ${S.reduceShake ? 'checked' : ''}>`) + row('sCmp', 'Compact interface (panels open on hover)', `<input type="checkbox" id="sCmp" ${S.compactUI !== false ? 'checked' : ''}>`) + row('sCon', 'High contrast', `<input type="checkbox" id="sCon" ${S.contrast ? 'checked' : ''}>`)
+      + row('sShake', 'Reduce screen shake', `<input type="checkbox" id="sShake" ${S.reduceShake ? 'checked' : ''}>`) + row('sCmp', 'Compact interface (panels open on hover)', `<input type="checkbox" id="sCmp" ${S.compactUI !== false ? 'checked' : ''}>`) + row('sSlow', 'Slow down when the shooting starts', `<input type="checkbox" id="sSlow" ${S.autoSlow !== false ? 'checked' : ''}>`) + row('sCon', 'High contrast', `<input type="checkbox" id="sCon" ${S.contrast ? 'checked' : ''}>`)
       + row('sEs', 'Spanish', `<select id="sEs"><option value="auto">Grows with the story</option><option value="0">English only</option><option value="1">Mixed</option><option value="2">Mostly Spanish</option></select>`)
       + row('sAuto', 'Autosave every (minutes, 0 = off)', `<input type="number" id="sAuto" min="0" max="30" value="${S.autosave}" style="width:60px">`);
     if (keysOnly) h += ACTIONS.map(([d, n]) => `<div class="keyrow"><span>${n}</span><button class="btn sm" data-k="${d}">${bindingOf(d).toUpperCase()}</button></div>`).join('') + `<div class="keyrow"><span style="opacity:.7">Fixed: WASD move, Shift run, Space pause, Esc menu, 1–9 groups, Wheel zoom</span></div><div class="row"><button class="btn sm" id="sReset">Reset all keys</button></div>`;
@@ -146,7 +146,7 @@
     const on = (id, f) => { const n = $(id); if (n) n.oninput = n.onchange = f; };
     if ($('sEs')) $('sEs').value = String(S.spanish);
     on('sVol', (e) => { S.volume = +e.target.value; C.applySettings(); }); on('sUi', (e) => { S.uiScale = +e.target.value; C.applySettings(); });
-    on('sShake', (e) => { S.reduceShake = e.target.checked; C.applySettings(); }); on('sCon', (e) => { S.contrast = e.target.checked; C.applySettings(); }); on('sCmp', (e) => { S.compactUI = e.target.checked; C.applySettings(); });
+    on('sShake', (e) => { S.reduceShake = e.target.checked; C.applySettings(); }); on('sCon', (e) => { S.contrast = e.target.checked; C.applySettings(); }); on('sCmp', (e) => { S.compactUI = e.target.checked; C.applySettings(); }); on('sSlow', (e) => { S.autoSlow = e.target.checked; C.applySettings(); });
     on('sEs', (e) => { S.spanish = e.target.value; C.applySettings(); }); on('sAuto', (e) => { S.autosave = +e.target.value; C.applySettings(); });
     el.querySelectorAll('[data-k]').forEach((b) => b.onclick = () => { rebinding = b.dataset.k; b.textContent = 'press a key…'; });
     if ($('sReset')) $('sReset').onclick = () => { S.keys = {}; C.applySettings(); openSettings(true); };

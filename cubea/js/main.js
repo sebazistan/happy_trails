@@ -490,13 +490,14 @@
     const g = G(), s = g.scene; if (!s) return;
     if (g.over) return;
     g.time += dt;
-    const prevMin = g.min; g.min += dt * g.minPerSec * (g.resting ? 12 : 1);
+    const prevMin = g.min; g.min += dt * g.minPerSec * (g.resting ? 12 : 1) * (C.waitMul ? C.waitMul() : 1);
     const prevDay = g.day; syncClock(); if (g.sea && g.sea.active) C.seaUpdate(dt);
     // meals
     for (const h of [7, 13, 19]) if (prevMin % 1440 < h * 60 && g.min % 1440 >= h * 60 || prevDay !== g.day && h === 7 && false) C.mealTime();
     if (C.huntTick) C.huntTick(s, g.min - prevMin);   // meat rots, snares fire (hunting.js)
     if (C.campTick) C.campTick(s, g.min - prevMin);   // camp life: hourly consequences of what is on the ground (camp.js)
     if (g.day !== prevDay) { dailyHooks(); }
+    if (C.timeTick) C.timeTick(s, dt); if (C.dutyTick) C.dutyTick(s);          // auto-slow, waiting, the duty board (convenience.js)
     if (C.moraleTick) C.moraleTick(s, dt);          // the guitar and other morale boosters (morale.js)
     if (C.sickTick) C.sickTick(s, dt);
     if (C.journeyTick) C.journeyTick(s, dt); if (C.muleTick) C.muleTick(s, dt); if (C.courierTick) C.courierTick(s, dt);   // the road, mule trains, couriers (journeys.js)

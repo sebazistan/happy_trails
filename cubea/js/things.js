@@ -133,6 +133,7 @@
     const groups = []; const gi = {};
     for (const e of verbs) { const key = e.v.id + '|' + (e.tg.kind === 'thing' ? e.tg.o.id : ''); if (gi[key] === undefined) { gi[key] = groups.length; groups.push({ v: e.v, tg: e.tg, list: [] }); } groups[gi[key]].list.push(e); }
     const actor0 = (who[0] && who[0].p) ? who[0] : g.player;
+    groups.sort((p, q) => (C.verbRank ? C.verbRank(q.v.id) - C.verbRank(p.v.id) : 0));   // the verbs you use most come first
     const whyOf = (e) => (e.v.check ? e.v.check(actor0, e.tg, e.v.param) : null);
     const node = (label, ang, R, why, fn, sub) => {
       const b = document.createElement('div'); b.className = 'vb' + (why ? ' off' : ''); b.innerHTML = label + (sub || why ? `<small>${why || sub}</small>` : '');
