@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one game column. Stats strip + day track on top, canvas stage, touch pad (phones only), tuning panel below. */
+/* Layout: one game column. Status cards with meters on top, canvas stage, touch pad (phones only), event log, tuning panel below. */
 :root {
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
@@ -44,15 +44,18 @@ body {
 header h1 { font-family: var(--font-display); font-size: 30px; line-height: 1.1; margin: 0; text-wrap: balance; }
 header p { margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 65ch; }
 
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
 .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-width: 0; }
 .stat .k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-.stat .v { font-family: var(--font-display); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .v { font-family: var(--font-display); font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stat .v small { font-family: var(--font-body); font-size: 12px; font-weight: 500; color: var(--muted); }
+.meter { height: 6px; border-radius: 3px; background: var(--line); margin-top: 4px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 50%; background: var(--good); transition: width .15s; }
+.meter.low i { background: var(--bad); }
+.stat.buy { display: flex; align-items: center; }
 
 .track { position: relative; height: 10px; border-radius: 5px; border: 1px solid var(--line);
-  background: linear-gradient(90deg,
-    var(--track-night) 0 25%, var(--track-day) 25% 75%, var(--track-night) 75% 100%); }
+  background: linear-gradient(90deg, var(--track-night) 0 25%, var(--track-day) 25% 75%, var(--track-night) 75% 100%); }
 .track i { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: var(--fg); transform: translateX(-2px); }
 .track-labels { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 8px; }
 
@@ -77,6 +80,11 @@ canvas { display: block; width: 100%; aspect-ratio: 16 / 10; touch-action: none;
 .keys { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 13px; }
 kbd { font-family: var(--font-mono); font-size: 11px; background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; color: var(--fg); }
 
+.log { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; margin: 0; list-style: none; font-size: 13px; min-height: 40px; }
+.log li { display: flex; gap: 10px; padding: 2px 0; }
+.log time { font-family: var(--font-mono); font-size: 11px; color: var(--muted); flex: none; padding-top: 1px; }
+.log li.bad { color: var(--bad); }
+
 details.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0 16px; }
 details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--font-display); font-weight: 700; font-size: 17px; }
 .panel-body { display: grid; gap: 16px; padding-bottom: 16px; }
@@ -89,21 +97,29 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
 .states { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; }
 .states span b { color: var(--fg); font-weight: 500; }
 .note { color: var(--muted); font-size: 13px; max-width: 70ch; margin: 0; }
+.howto { display: grid; gap: 6px; padding-bottom: 14px; font-size: 14px; max-width: 75ch; }
+.howto p { margin: 0; }
+.howto b { font-weight: 600; }
 </style>
 
 <main class="app">
   <header>
     <h1>Chicken Farmer</h1>
-    <p>2D test of the farm loop from the dev guide. Hens wander, flee, flock, head in at dusk and lay eggs. You collect, feed and sell.</p>
+    <p>2D test of the farm loop from the dev guide. Twenty hens, a coop with nest boxes, foxes at night, a truck to the roadside, and a farmhouse to sleep in. Walk into any building and its roof fades away.</p>
   </header>
 
   <section class="stats" aria-label="Farm status">
-    <div class="stat"><div class="k">Time</div><div class="v"><span id="sClock">07:12</span> <small id="sDay">Day 1</small></div></div>
-    <div class="stat"><div class="k">Basket</div><div class="v"><span id="sEggs">0</span> <small>eggs</small></div></div>
+    <div class="stat"><div class="k">Time</div><div class="v"><span id="sClock">07:12</span> <small id="sDay">Day 1</small></div><div class="k" id="sWeather" style="margin-top:2px">Clear</div></div>
     <div class="stat"><div class="k">Money</div><div class="v">$<span id="sMoney">0</span></div></div>
-    <div class="stat"><div class="k">Hens</div><div class="v"><span id="sHens">5</span></div></div>
-    <div class="stat"><div class="k">Feed</div><div class="v"><span id="sFeed">0</span> <small>scoops</small></div></div>
-    <div class="stat" style="display:flex;align-items:center"><button class="btn primary" id="buy" type="button" style="width:100%">Buy hen $14</button></div>
+    <div class="stat"><div class="k">Basket / truck</div><div class="v"><span id="sEggs">0</span> <small>/</small> <span id="sCargo">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px"><span id="sCoop">0</span> waiting in coop</div></div>
+    <div class="stat"><div class="k">Hens</div><div class="v"><span id="sHens">20</span> <small id="sLost"></small></div><div class="k" id="sNeeds" style="margin-top:2px">&nbsp;</div></div>
+    <div class="stat"><div class="k">Your energy</div><div class="v"><span id="sEnergy">100</span><small>%</small></div><div class="meter" id="mEnergy"><i></i></div></div>
+    <div class="stat"><div class="k">Feeder</div><div class="v"><span id="sFeeder">10</span><small>/20</small></div><div class="meter" id="mFeeder"><i></i></div></div>
+    <div class="stat"><div class="k">Water</div><div class="v"><span id="sWater">8</span><small>/12</small></div><div class="meter" id="mWater"><i></i></div></div>
+    <div class="stat"><div class="k">Coop clean</div><div class="v"><span id="sClean">90</span><small>%</small></div><div class="meter" id="mClean"><i></i></div></div>
+    <div class="stat"><div class="k">Feed in bin</div><div class="v"><span id="sBin">120</span> <small id="sCarry"></small></div></div>
+    <div class="stat"><div class="k">Egg stall price</div><div class="v">$<span id="sMarket">4</span><small>/egg</small></div></div>
+    <div class="stat buy"><button class="btn primary" id="buy" type="button" style="width:100%">Buy hen $14</button></div>
   </section>
 
   <div>
@@ -122,11 +138,23 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
   </section>
 
   <div class="keys">
-    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</span>
-    <span><kbd>F</kbd> act (egg, gate, feed, sell)</span>
+    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk or drive</span>
+    <span><kbd>F</kbd> act (see the bubble over you)</span>
     <span><kbd>Shift</kbd> sneak</span>
     <span><kbd>G</kbd> debug view</span>
   </div>
+
+  <ol class="log" id="log" aria-live="polite"></ol>
+
+  <details class="panel">
+    <summary>How a day works</summary>
+    <div class="howto">
+      <p><b>Morning.</b> The coop door opens at dawn. Open the pen gate so hens can range. Hens wake hungry. Take feed from the bin or the barn, then fill the feeder, or scatter feed on the ground and watch them peck it until it is gone. Fill the water trough from the pump (fill the can, then act at the trough). Hens with an empty belly or throat stop laying, and neglected hens eventually die.</p>
+      <p><b>Daytime.</b> Most hens lay in the coop nest boxes. Go inside the coop (the roof fades away) and collect from the nests. A few lay out in the yard. Collect eggs before they rot. Sell at the farm stand for a flat price, or load the truck and drive it to the roadside stall, where the price changes each day. The feed shop sells sacks that you drive back to the bin. Clean the coop when it gets dirty. Rain makes mud and sends hens under cover.</p>
+      <p><b>Dusk.</b> Hens head for the coop. The door shuts later in the evening, so get every hen in, close the gate, and check the fence. A hen left outside is fox food.</p>
+      <p><b>Night.</b> Foxes come. They dig under fence sections, slip through an open gate and steal eggs and hens. Walk at one to scare it off, then repair any hole in the fence. When your energy runs low, sleep in the farmhouse. If you pass out, you lose the night.</p>
+    </div>
+  </details>
 
   <details class="panel" open>
     <summary>Tuning and test tools</summary>
@@ -136,12 +164,15 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
         <button class="btn" id="bDebug" type="button" aria-pressed="false">Debug view</button>
         <button class="btn" id="bDusk" type="button">Skip to dusk</button>
         <button class="btn" id="bDawn" type="button">Skip to dawn</button>
+        <button class="btn" id="bFox" type="button">Send a fox</button>
+        <button class="btn" id="bRain" type="button">Make it rain</button>
+        <button class="btn" id="bCash" type="button">+$50</button>
         <button class="btn" id="bAdd10" type="button">+10 hens</button>
         <button class="btn" id="bSub10" type="button">&minus;10 hens</button>
         <button class="btn" id="bReset" type="button">Reset farm</button>
       </div>
       <div class="states" id="states"></div>
-      <p class="note">Covers roadmap steps 2 to 10: farmer and F-key actions, wander, flee with hysteresis, separation, day and night, the gate, eggs, selling, and feeding. Left out: roof occlusion (step 1), hatching (step 11) and everything after. Hens near the pen gate drift out when it is open, and at dusk any hen left outside a closed gate waits there until you open it.</p>
+      <p class="note">Roadmap coverage: farmer and context actions (2), wander, flee with hysteresis, separation, state machine (3 to 5), day and night with coop door (6), gate escape (7), eggs (8), economy with truck and roadside stall (9), feed approach (10), fox AI with fence digging (16), fence repair (17), rain and shelter (16), mud (15, simple version). Left out: roof occlusion, hatching, vehicle physics, a real moisture map.</p>
     </div>
   </details>
 </main>
@@ -162,17 +193,22 @@ const cv = $('c'), ctx = cv.getContext('2d');
 let S = 1, bg = null;
 
 /* ---------- tuning (every number the guide says to expose) ---------- */
-const T = { walk: 32, fleeMult: 3.6, fleeR: 70, attractR: 140, sep: 1.2, egg: 28, dayLen: 180, farmerSpeed: 105,
-  sneakK: 0.5, wanderR: 60, pauseMin: 0.8, pauseMax: 3.2, forageR: 70, gateBias: 0.3, gateRange: 200, feedBoost: 8, price: 2, henCost: 14, rot: 150 };
+const T = { walk: 32, fleeMult: 3.6, fleeR: 70, attractR: 140, sep: 1.2, egg: 60, dayLen: 240, farmerSpeed: 105,
+  sneakK: 0.5, wanderR: 60, pauseMin: 0.8, pauseMax: 3.2, forageR: 70, gateBias: 0.3, gateRange: 200, price: 2,
+  henCost: 14, rot: 150, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 190 };
 const SLIDERS = [
   ['walk', 'Hen walk speed', 15, 70, 1, v => v + ' px/s'],
   ['fleeMult', 'Flee speed multiplier', 1.5, 6, 0.1, v => '×' + v.toFixed(1)],
   ['fleeR', 'Flee radius (exit is 1.5×)', 30, 140, 1, v => v + ' px'],
   ['attractR', 'Feed attract radius', 60, 260, 1, v => v + ' px'],
   ['sep', 'Separation weight', 0, 3, 0.1, v => v.toFixed(1)],
-  ['egg', 'Egg interval', 8, 90, 1, v => v + ' s'],
-  ['dayLen', 'Day length', 40, 600, 5, v => v + ' s'],
-  ['farmerSpeed', 'Farmer speed', 50, 180, 1, v => v + ' px/s']
+  ['egg', 'Egg interval', 20, 140, 1, v => v + ' s'],
+  ['dayLen', 'Day length', 60, 600, 5, v => v + ' s'],
+  ['farmerSpeed', 'Farmer speed', 50, 180, 1, v => v + ' px/s'],
+  ['foxes', 'Foxes per night', 0, 4, 0.5, v => v.toFixed(1)],
+  ['foxSpeed', 'Fox speed multiplier', 0.6, 1.6, 0.05, v => '×' + v.toFixed(2)],
+  ['digRate', 'Fox dig rate', 4, 40, 1, v => v + ' hp/s'],
+  ['rainChance', 'Chance of rain per day', 0, 1, 0.05, v => Math.round(v * 100) + '%']
 ];
 (function buildSliders() {
   const box = $('sliders');
@@ -189,27 +225,66 @@ const SLIDERS = [
 
 /* ---------- world layout ---------- */
 const PEN = { x0: 86, y0: 166, x1: 397, y1: 467 };
-const FENCE = [
-  { x: 80, y: 160, w: 323, h: 6 }, { x: 80, y: 467, w: 323, h: 6 }, { x: 80, y: 160, w: 6, h: 313 },
-  { x: 397, y: 160, w: 6, h: 130 }, { x: 397, y: 350, w: 6, h: 123 }
-];
+const FENCE = [];
+(function buildFence() {
+  const add = (x, y, w, h, n) => {
+    const horiz = w > h, len = horiz ? w : h, cnt = Math.round(len / 26), a = len / cnt;
+    for (let i = 0; i < cnt; i++) {
+      const c = { x: horiz ? x + i * a : x, y: horiz ? y : y + i * a, w: horiz ? a : w, h: horiz ? h : a, n, hp: 100, broken: false };
+      c.cx = c.x + c.w / 2; c.cy = c.y + c.h / 2; FENCE.push(c);
+    }
+  };
+  add(80, 160, 323, 6, { x: 0, y: -1 }); add(80, 467, 323, 6, { x: 0, y: 1 }); add(80, 160, 6, 313, { x: -1, y: 0 });
+  add(397, 160, 6, 130, { x: 1, y: 0 }); add(397, 350, 6, 123, { x: 1, y: 0 });
+})();
 const GATE = { x: 400, y: 320, rect: { x: 397, y: 290, w: 6, h: 60 }, in: { x: 372, y: 320 }, out: { x: 434, y: 320 } };
-const HUTCH = { x: 104, y: 182, w: 92, h: 52 }, DOOR = { x: 150, y: 234 }, DOOR_OUT = { x: 150, y: 253 };
-const BARN = { x: 640, y: 36, w: 220, h: 96 };
+const HUTCH = { x: 100, y: 170, w: 120, h: 76 }, DOOR = { x: 160, y: 246 }, DOOR_OUT = { x: 160, y: 266 }, LATCH = { x: 196, y: 262 };
+const HOUSE = { x: 410, y: 26, w: 130, h: 86 };
+const BARN = { x: 650, y: 36, w: 210, h: 96 };
+/* every building has a roof that fades out while the farmer is inside */
+const BLD = {
+  hutch: { name: 'coop', r: HUTCH, door: { x: 160, y: 246 }, out: { x: 160, y: 266 }, spawn: { x: 160, y: 232 }, roof: 1, wall: '#7c2d1e', floor: '#c9b27a' },
+  house: { name: 'farmhouse', r: HOUSE, door: { x: 475, y: 112 }, out: { x: 475, y: 126 }, spawn: { x: 475, y: 98 }, roof: 1, wall: '#6b5a3c', floor: '#b58d58' },
+  barn: { name: 'barn', r: BARN, door: { x: 755, y: 132 }, out: { x: 755, y: 148 }, spawn: { x: 755, y: 118 }, roof: 1, wall: '#5a2218', floor: '#a9946a' }
+};
+const BED = { x: HOUSE.x + 10, y: HOUSE.y + 12, w: 38, h: 24 }, SACKS_PT = { x: BARN.x + 38, y: BARN.y + 54 };
+const NESTS = 6, NEST_CAP = 4;
+const nestX = i => HUTCH.x + 16 + i * 18, nestY = () => HUTCH.y + 16;
 const BIN = { x: 540, y: 150, w: 26, h: 26 }, BIN_PT = { x: 553, y: 163 };
+const PUMP = { x: 455, y: 200, w: 16, h: 16 }, PUMP_PT = { x: 463, y: 208 };
 const STAND = { x: 770, y: 330, w: 112, h: 30 }, STAND_PT = { x: 826, y: 345 };
-const TREES = [{ x: 640, y: 480 }, { x: 715, y: 520 }, { x: 40, y: 70 }, { x: 905, y: 500 }, { x: 560, y: 540 }, { x: 300, y: 60 }];
-const SOLIDS = FENCE.concat([HUTCH, BARN, BIN, STAND], TREES.map(t => ({ x: t.x - 8, y: t.y - 8, w: 16, h: 16 })));
+const STALL = { x: 790, y: 494, w: 110, h: 26 }, STALL_PT = { x: 845, y: 530 };
+const SHOP = { x: 110, y: 482, w: 110, h: 38 }, SHOP_PT = { x: 165, y: 530 };
+const ROAD = { y0: 538, y1: 584 };
+const FEEDER = { x: 190, y: 424, w: 62, h: 14, level: 10, cap: 20, pt: { x: 221, y: 413 } };
+const WATERER = { x: 318, y: 424, w: 52, h: 14, level: 8, cap: 12, pt: { x: 344, y: 413 } };
+const TREES = [{ x: 40, y: 70 }, { x: 300, y: 60 }, { x: 905, y: 230 }, { x: 55, y: 440 }, { x: 690, y: 230 }, { x: 390, y: 515 }];
+const MUD = [{ x: 445, y: 328, rx: 52, ry: 26 }, { x: 665, y: 440, rx: 84, ry: 30 }, { x: 560, y: 505, rx: 60, ry: 18 }];
+const STATIC = [HUTCH, HOUSE, BARN, BIN, PUMP, STAND, STALL, SHOP].concat(TREES.map(t => ({ x: t.x - 8, y: t.y - 8, w: 16, h: 16 })));
+const SHELTER_IN = { x0: 108, y0: 272, x1: 214, y1: 292 }, SHELTER_OUT = { x0: 660, y0: 142, x1: 850, y1: 158 };
 
 /* ---------- state ---------- */
-const world = { t: 0.30, day: 1, curfew: false, warned: false, clock: 0 };
+const world = { t: 0.30, day: 1, curfew: false, warned: false, clock: 0, doorShut: false, foxSpawned: false,
+  rain: 0, rainOn: false, rainAt: -1, rainLeft: 0, wet: 0, market: 4, lost: 0 };
 const gate = { open: false, anim: 0 };
-const farmer = { x: 500, y: 330, vx: 0, vy: 0, face: 0, r: 9, scoops: 0, basket: 0, money: 0, sneak: false, step: 0 };
-let hens = [], eggs = [], bugs = [], floats = [], toast = { txt: '', t: 0 }, nextId = 1;
+const hutch = { doorOpen: true, dirt: 0.15 };
+const LAYBLOCK = { ROOST: 1, NEST: 1, RETURN: 1, FLEE: 1, CAUGHT: 1, LAY: 1 };
+const bin = { stock: 120 };
+const farmer = { x: 500, y: 330, vx: 0, vy: 0, face: 0, r: 9, carry: null, scoops: 0, basket: 0, money: 0, sneak: false, sneakNow: false,
+  step: 0, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null };
+const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, sacks: 0 };
+let hens = [], foxes = [], eggs = [], bugs = [], piles = [], floats = [], toast = { txt: '', t: 0 }, nextId = 1, logItems = [];
 let debug = false, action = null, fps = 60;
 
 function insidePen(p) { return p.x > PEN.x0 && p.x < GATE.x && p.y > PEN.y0 && p.y < PEN.y1; }
-function blockedAt(x, y, m) { for (const R of SOLIDS) if (x > R.x - m && x < R.x + R.w + m && y > R.y - m && y < R.y + R.h + m) return true; return false; }
+function blockedAt(x, y, m) {
+  for (const R of STATIC) if (x > R.x - m && x < R.x + R.w + m && y > R.y - m && y < R.y + R.h + m) return true;
+  for (const R of FENCE) if (x > R.x - m && x < R.x + R.w + m && y > R.y - m && y < R.y + R.h + m) return true;
+  return false;
+}
+function inMud(p) { if (world.wet < 0.4) return false; for (const m of MUD) { const dx = (p.x - m.x) / m.rx, dy = (p.y - m.y) / m.ry; if (dx * dx + dy * dy < 1) return true; } return false; }
+function holdingFeed() { return farmer.carry === 'feed' && farmer.scoops > 0; }
+function nightNow() { return world.curfew; }
 
 function pushOut(p, r, R) {
   const cx = clamp(p.x, R.x, R.x + R.w), cy = clamp(p.y, R.y, R.y + R.h);
@@ -222,70 +297,124 @@ function pushOut(p, r, R) {
   }
   const d = Math.sqrt(d2), k = (r - d) / d; p.x += dx * k; p.y += dy * k;
 }
-function collide(p, r) {
+function collide(p, r, free) {
   for (let i = 0; i < 2; i++) {
-    for (let j = 0; j < SOLIDS.length; j++) pushOut(p, r, SOLIDS[j]);
+    for (let j = 0; j < STATIC.length; j++) pushOut(p, r, STATIC[j]);
+    for (let j = 0; j < FENCE.length; j++) if (!FENCE[j].broken) pushOut(p, r, FENCE[j]);
     if (!gate.open) pushOut(p, r, GATE.rect);
   }
-  p.x = clamp(p.x, r, W - r); p.y = clamp(p.y, r, H - r);
+  if (!free) { p.x = clamp(p.x, r, W - r); p.y = clamp(p.y, r, H - r); }
 }
+
+/* ---------- log and messages ---------- */
+function clockStr() { const h = world.t * 24, hh = Math.floor(h), mm = Math.floor((h - hh) * 60); return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); }
+function say(txt, bad) {
+  toast.txt = txt; toast.t = 4;
+  logItems.unshift({ txt, bad: !!bad, when: 'D' + world.day + ' ' + clockStr() }); if (logItems.length > 7) logItems.pop();
+  renderLog();
+}
+function renderLog() { $('log').innerHTML = logItems.map(i => '<li class="' + (i.bad ? 'bad' : '') + '"><time>' + i.when + '</time><span>' + i.txt + '</span></li>').join(''); }
+function float(x, y, txt, col) { floats.push({ x, y, txt, col: col || '#fff', t: 1.3 }); }
 
 /* ---------- spawning ---------- */
 const BREEDS = [{ body: '#f4efe2', wing: '#d9d1bd' }, { body: '#b9733c', wing: '#935626' }, { body: '#9aa0a4', wing: '#767d82' }];
 function newHen(x, y) {
   const c = { id: nextId++, x, y, vx: 0, vy: 0, ang: rand(0, TAU), r: 7, state: 'WANDER', route: [], pause: rand(0, 2), thinkT: rand(0, 0.2),
     eggT: T.egg * rand(0.3, 1), fedCool: 0, fleeOff: 0, breed: BREEDS[Math.floor(Math.random() * 3)], phase: rand(0, TAU),
-    stuckT: 0, sx: x, sy: y, waiting: false, gateSeen: gate.open, bug: null, eatBug: null, wx: 0, wy: 0 };
+    stuckT: 0, sx: x, sy: y, waiting: false, gateSeen: gate.open, bug: null, act: null, threat: null,
+    hunger: rand(0.3, 0.7), thirst: rand(0.5, 0.9), health: 1, pile: null, nest: 0, nestT: 0 };
   if (world.curfew) setReturn(c);
   hens.push(c); return c;
 }
-function penPoint() { for (let i = 0; i < 30; i++) { const x = rand(PEN.x0 + 14, PEN.x1 - 14), y = rand(PEN.y0 + 14, PEN.y1 - 14); if (!blockedAt(x, y, 12)) return { x, y }; } return { x: 250, y: 380 }; }
+function penPoint() { for (let i = 0; i < 30; i++) { const x = rand(PEN.x0 + 14, PEN.x1 - 14), y = rand(PEN.y0 + 14, PEN.y1 - 14); if (!blockedAt(x, y, 12) && !(y > 405)) return { x, y }; } return { x: 250, y: 330 }; }
 function spawnBug(b) {
   for (let i = 0; i < 30; i++) {
     const inPen = Math.random() < 0.55;
-    const x = inPen ? rand(PEN.x0 + 12, PEN.x1 - 12) : rand(20, W - 20), y = inPen ? rand(PEN.y0 + 12, PEN.y1 - 12) : rand(20, H - 20);
+    const x = inPen ? rand(PEN.x0 + 12, PEN.x1 - 12) : rand(20, W - 20), y = inPen ? rand(PEN.y0 + 12, PEN.y1 - 12) : rand(20, ROAD.y0 - 14);
     if (!blockedAt(x, y, 14) && (inPen || !(x > 70 && x < 410 && y > 150 && y < 480))) { b.x = x; b.y = y; b.alive = true; b.claim = null; return; }
   }
 }
 function resetFarm() {
-  Object.assign(world, { t: 0.30, day: 1, curfew: false, warned: false });
-  Object.assign(farmer, { x: 500, y: 330, vx: 0, vy: 0, scoops: 0, basket: 0, money: 0, sneak: false });
-  gate.open = false; gate.anim = 0; hens = []; eggs = []; floats = []; bugs = [];
-  for (let i = 0; i < 5; i++) { const p = penPoint(); newHen(p.x, p.y); }
-  for (let i = 0; i < 12; i++) { const b = { x: 0, y: 0, alive: true, claim: null, respawn: 0, ph: rand(0, TAU) }; spawnBug(b); bugs.push(b); }
+  Object.assign(world, { t: 0.30, day: 1, curfew: false, warned: false, doorShut: false, foxSpawned: false, rain: 0, rainOn: false, rainAt: -1, rainLeft: 0, wet: 0, market: 4, lost: 0 });
+  Object.assign(farmer, { x: 500, y: 330, vx: 0, vy: 0, carry: null, scoops: 0, basket: 0, money: 0, sneak: false, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null });
+  Object.values(BLD).forEach(b => b.roof = 1); piles = [];
+  Object.assign(truck, { x: 600, y: 492, ang: 0, v: 0, cargo: 0, sacks: 0 });
+  Object.assign(hutch, { doorOpen: true, dirt: 0.15 }); bin.stock = 120; FEEDER.level = 6; WATERER.level = 8;
+  FENCE.forEach(c => { c.hp = 100; c.broken = false; });
+  gate.open = false; gate.anim = 0; hens = []; foxes = []; eggs = []; floats = []; bugs = []; logItems = [];
+  for (let i = 0; i < 20; i++) { const p = penPoint(); newHen(p.x, p.y); }
+  for (let i = 0; i < 14; i++) { const b = { x: 0, y: 0, alive: true, claim: null, respawn: 0, ph: rand(0, TAU) }; spawnBug(b); bugs.push(b); }
+  for (let i = 0; i < 3; i++) { const b = i % NESTS; eggs.push({ x: nestX(b) + rand(-3, 3), y: nestY() + rand(-2, 2), age: 0, inHutch: true, box: b }); }
   for (let i = 0; i < 2; i++) { const p = penPoint(); eggs.push({ x: p.x, y: p.y, age: 0 }); }
   $('btnSneak').setAttribute('aria-pressed', 'false');
-  say('New farm. Pick up the eggs and open the gate to let the hens out.');
+  say('The hens are hungry. Take feed from the bin and fill the feeder, then check the coop for eggs.');
 }
-function say(txt) { toast.txt = txt; toast.t = 4; }
-function float(x, y, txt, col) { floats.push({ x, y, txt, col: col || '#fff', t: 1.3 }); }
 
 /* ---------- hen brain: state machine (guide section 05) ---------- */
 function setReturn(c) {
-  c.state = 'RETURN'; c.gateSeen = gate.open; c.waiting = false;
-  if (insidePen(c)) c.route = [{ x: DOOR_OUT.x + rand(-6, 6), y: DOOR_OUT.y }];
-  else if (gate.open) c.route = [{ x: GATE.out.x, y: GATE.out.y }, { x: GATE.in.x, y: GATE.in.y }, { x: DOOR_OUT.x + rand(-6, 6), y: DOOR_OUT.y }];
+  c.state = 'RETURN'; c.gateSeen = gate.open; c.waiting = false; c.act = null; releaseBug(c);
+  if (insidePen(c)) c.route = [{ x: DOOR_OUT.x + rand(-9, 9), y: DOOR_OUT.y + rand(0, 4) }];
+  else if (gate.open) c.route = [{ x: GATE.out.x, y: GATE.out.y }, { x: GATE.in.x, y: GATE.in.y }, { x: DOOR_OUT.x + rand(-9, 9), y: DOOR_OUT.y + rand(0, 4) }];
   else { c.waiting = true; c.route = [{ x: 425 + rand(0, 34), y: 296 + rand(0, 48) }]; }
 }
+function nearestFox(c, r) { let b = null, bd = r; for (const f of foxes) { if (f.state === 'LEAVE' && f.carry) continue; const d = dist(c, f); if (d < bd) { bd = d; b = f; } } return b; }
+function releaseBug(c) { if (c.bug) { c.bug.claim = null; c.bug = null; } if (c.act && c.act.k === 'bug') c.act = null; }
+function nearestPile(c, r) { let b = null, bd = r; for (const p of piles) { if (p.amt <= 0.01) continue; if (insidePen(p) !== insidePen(c)) continue; const d = dist(c, p); if (d < bd) { bd = d; b = p; } } return b; }
+function boxCount(i) { let n = 0; for (const e of eggs) if (e.inHutch && e.box === i) n++; return n; }
+function freeBox() { let b = -1, bn = NEST_CAP; for (let i = 0; i < NESTS; i++) { const n = boxCount(i); if (n < bn) { bn = n; b = i; } } return b; }
+function resetEgg(c) { c.eggT = T.egg * rand(0.8, 1.2); }
+function layHere(c) { eggs.push({ x: c.x, y: c.y, age: 0 }); resetEgg(c); float(c.x, c.y - 12, 'egg', '#fff4c2'); if (c.state === 'LAY') { c.state = 'WANDER'; c.route = []; c.pause = rand(0.3, 1); } }
+function startLay(c) { c.state = 'LAY'; c.act = null; c.pile = null; c.pause = 0; releaseBug(c); c.route = [{ x: DOOR_OUT.x + rand(-6, 6), y: DOOR_OUT.y - 2 }]; }
+function layInNest(c) {
+  let b = c.nest; if (boxCount(b) >= NEST_CAP) b = freeBox();
+  if (b >= 0) eggs.push({ x: nestX(b) + rand(-3, 3), y: nestY() + rand(-2, 2), age: 0, inHutch: true, box: b });
+  else eggs.push({ x: DOOR_OUT.x + rand(-8, 8), y: DOOR_OUT.y + 6, age: 0 });
+  resetEgg(c); c.x = DOOR_OUT.x + rand(-8, 8); c.y = DOOR_OUT.y + 3; c.vx = c.vy = 0;
+  if (farmer.inside === 'hutch') float(nestX(Math.max(b, 0)), nestY() - 14, 'egg', '#fff4c2');
+  if (world.curfew) setReturn(c); else { c.state = 'WANDER'; c.route = []; c.pause = rand(0.4, 1.2); }
+}
 function think(c) {
-  const dF = dist(c, farmer), fr = T.fleeR * (farmer.sneak ? T.sneakK : 1);
-  if (world.curfew) {
-    if (c.state === 'ROOST') return;
-    if (c.state !== 'RETURN') { setReturn(c); return; }
-    if (c.gateSeen !== gate.open || (!c.route.length && !c.waiting)) setReturn(c);
-    return;
+  if (c.state === 'CAUGHT' || c.state === 'NEST') return;
+  if (c.state === 'ROOST') {
+    if (world.curfew || !hutch.doorOpen) return;
+    c.x = DOOR_OUT.x + rand(-9, 9); c.y = DOOR_OUT.y + 5; c.state = 'WANDER'; c.route = []; c.pause = rand(0.2, 1); c.vx = c.vy = 0; return;
   }
-  if (c.state === 'ROOST') { c.x = DOOR_OUT.x + rand(-8, 8); c.y = DOOR_OUT.y + 4; c.state = 'WANDER'; c.route = []; c.pause = rand(0.2, 1); c.vx = c.vy = 0; return; }
+  const seen = !farmer.inside && !farmer.sleeping;
+  const dF = seen ? dist(c, farmer) : 1e9, fr = T.fleeR * (farmer.sneakNow ? T.sneakK : 1) * (farmer.driving ? 1.4 : 1);
+  const exitR = (c.state === 'FLEE' && c.threat && c.threat.isFox) ? T.foxFleeR * 1.5 : T.foxFleeR;
+  const fx = nearestFox(c, exitR);
+  if (fx) { c.state = 'FLEE'; c.threat = fx; c.route = []; c.pause = 0; c.waiting = false; c.pile = null; releaseBug(c); return; }
+  if (c.state === 'FLEE' && c.threat && c.threat.isFox) { c.threat = null; c.route = []; if (world.curfew) setReturn(c); else { c.state = 'WANDER'; c.pause = rand(0.3, 0.9); } return; }
+  if (world.curfew) {
+    if (c.state === 'RETURN') { if (c.gateSeen !== gate.open || (!c.route.length && !c.waiting)) setReturn(c); return; }
+    setReturn(c); return;
+  }
   if (c.state === 'RETURN') { c.state = 'WANDER'; c.route = []; c.waiting = false; }
-  if (farmer.scoops > 0 && dF < T.attractR) { if (c.state !== 'APPROACH') { c.state = 'APPROACH'; c.route = []; releaseBug(c); } return; }
-  if (c.state === 'APPROACH') { if (farmer.scoops > 0 && dF < T.attractR * 1.3) return; c.state = 'WANDER'; c.route = []; c.pause = rand(0.3, 1); }
-  if (c.state === 'FLEE') { if (dF > fr * 1.5) { c.state = 'WANDER'; c.route = []; c.pause = rand(0.3, 0.9); } return; }
-  if (farmer.scoops === 0 && dF < fr) { c.state = 'FLEE'; c.fleeOff = rand(-0.26, 0.26); c.route = []; c.pause = 0; releaseBug(c); return; }
+  if (c.state === 'LAY') { if (!hutch.doorOpen || !insidePen(c)) layHere(c); return; }
+  const farmerThreat = !holdingFeed() && seen;
+  if (c.state === 'FLEE') { if (!farmerThreat || dF > fr * 1.5) { c.state = 'WANDER'; c.threat = null; c.route = []; c.pause = rand(0.3, 0.9); } else return; }
+  if (farmerThreat && dF < fr) { c.state = 'FLEE'; c.threat = farmer; c.fleeOff = rand(-0.26, 0.26); c.route = []; c.pause = 0; c.act = null; c.pile = null; releaseBug(c); return; }
+  if (c.state === 'EAT' && c.pile && c.pile.amt <= 0.01) { c.pile = null; c.state = 'WANDER'; c.route = []; c.pause = 0.2; }
+  if (c.hunger < 0.95) {
+    if (c.state === 'EAT' && c.pile) return;
+    const p = nearestPile(c, 170);
+    if (p) { c.state = 'EAT'; c.pile = p; c.route = [{ x: p.x + rand(-10, 10), y: p.y + rand(-8, 8) }]; c.pause = 0; c.act = null; releaseBug(c); return; }
+  }
+  if (holdingFeed() && seen && dF < T.attractR) { if (c.state !== 'APPROACH') { c.state = 'APPROACH'; c.route = []; c.threat = null; releaseBug(c); } return; }
+  if (c.state === 'APPROACH') { if (holdingFeed() && seen && dF < T.attractR * 1.3) return; c.state = 'WANDER'; c.route = []; c.pause = rand(0.3, 1); }
+  if (c.state === 'SHELTER' && world.rain < 0.1) { c.state = 'WANDER'; c.route = []; c.pause = rand(0.2, 1); }
   if (c.pause <= 0 && !c.route.length) pickTarget(c);
 }
-function releaseBug(c) { if (c.bug) { c.bug.claim = null; c.bug = null; } c.eatBug = null; }
 function pickTarget(c) {
   const inside = insidePen(c);
+  if (inside) {
+    if (c.hunger < 0.5 && FEEDER.level >= 0.5) { c.state = 'EAT'; c.route = [{ x: FEEDER.pt.x + rand(-22, 22), y: FEEDER.pt.y - rand(0, 4) }]; return; }
+    if (c.thirst < 0.5 && WATERER.level >= 0.4) { c.state = 'DRINK'; c.route = [{ x: WATERER.pt.x + rand(-18, 18), y: WATERER.pt.y - rand(0, 4) }]; return; }
+  }
+  if (world.rain > 0.25 && c.hunger > 0.3 && c.thirst > 0.3) {
+    const Z = inside ? SHELTER_IN : SHELTER_OUT;
+    c.state = 'SHELTER'; c.route = [{ x: rand(Z.x0, Z.x1), y: rand(Z.y0, Z.y1) }]; return;
+  }
   if (Math.random() < 0.6) {
     let best = null, bd = T.forageR;
     for (const b of bugs) { if (!b.alive || b.claim) continue; if (insidePen(b) !== inside) continue; const d = dist(c, b); if (d < bd) { bd = d; best = b; } }
@@ -293,7 +422,7 @@ function pickTarget(c) {
   }
   if (gate.open) {
     if (inside && dist(c, GATE.in) < T.gateRange && Math.random() < T.gateBias) {
-      const g = { x: GATE.out.x + rand(24, 100), y: clamp(GATE.y + rand(-120, 120), 30, H - 30) };
+      const g = { x: GATE.out.x + rand(24, 100), y: clamp(GATE.y + rand(-120, 120), 30, ROAD.y0 - 30) };
       if (!blockedAt(g.x, g.y, 10)) { c.state = 'ESCAPE'; c.route = [{ x: GATE.in.x, y: GATE.in.y }, { x: GATE.out.x, y: GATE.out.y }, g]; return; }
     } else if (!inside && dist(c, GATE.out) < 150 && Math.random() < 0.15) {
       const g = penPoint(); c.state = 'WANDER'; c.route = [{ x: GATE.out.x, y: GATE.out.y }, { x: GATE.in.x, y: GATE.in.y }, g]; return;
@@ -303,7 +432,7 @@ function pickTarget(c) {
     const a = rand(0, TAU), d = rand(16, T.wanderR);
     let x = c.x + Math.cos(a) * d, y = c.y + Math.sin(a) * d;
     if (inside) { x = clamp(x, PEN.x0 + 12, PEN.x1 - 12); y = clamp(y, PEN.y0 + 12, PEN.y1 - 12); }
-    else { x = clamp(x, 16, W - 16); y = clamp(y, 16, H - 16); if (x > 74 && x < 410 && y > 154 && y < 478) continue; }
+    else { x = clamp(x, 16, W - 16); y = clamp(y, 16, ROAD.y0 - 12); if (x > 74 && x < 410 && y > 154 && y < 478) continue; }
     if (blockedAt(x, y, 10)) continue;
     c.state = 'WANDER'; c.route = [{ x, y }]; return;
   }
@@ -312,10 +441,33 @@ function pickTarget(c) {
 function arrive(c) {
   if (c.state === 'RETURN') {
     if (c.waiting) return;
+    if (!hutch.doorOpen) { c.waiting = true; return; }
     c.state = 'ROOST'; c.x = DOOR.x; c.y = DOOR.y - 14; c.vx = c.vy = 0; return;
   }
-  if (c.state === 'FORAGE') { c.pause = 0.6; c.eatBug = c.bug; return; }
+  if (c.state === 'FORAGE') { c.pause = 0.6; c.act = { k: 'bug', b: c.bug }; return; }
+  if (c.state === 'LAY') {
+    const b = freeBox();
+    if (b < 0 || !hutch.doorOpen) { layHere(c); return; }
+    c.state = 'NEST'; c.nest = b; c.nestT = rand(3, 5); c.x = DOOR.x + rand(-6, 6); c.y = DOOR.y - 6; c.vx = c.vy = 0; c.route = []; return;
+  }
+  if (c.state === 'EAT' && c.pile) { c.pause = 0.45; c.act = { k: 'pile', p: c.pile }; return; }
+  if (c.state === 'EAT') { c.pause = 1.5; c.act = { k: 'eat' }; return; }
+  if (c.state === 'DRINK') { c.pause = 1.2; c.act = { k: 'drink' }; return; }
+  if (c.state === 'SHELTER') { c.pause = rand(2, 5); return; }
   c.state = 'WANDER'; c.pause = rand(T.pauseMin, T.pauseMax);
+}
+function finishAct(c) {
+  const a = c.act; c.act = null;
+  if (a.k === 'bug') { const b = a.b; c.bug = null; if (b && b.alive) { b.alive = false; b.respawn = 18; c.eggT -= 4; c.hunger = Math.min(1, c.hunger + 0.12); float(c.x, c.y - 12, 'peck', '#ffe9a8'); } }
+  else if (a.k === 'pile') {
+    const p = a.p;
+    if (p.amt > 0.01) { p.amt -= 0.25; c.hunger = Math.min(1, c.hunger + 0.2); c.eggT -= 1.2; }
+    if (p.amt > 0.01 && c.hunger < 0.97) { c.state = 'EAT'; c.pile = p; c.route = [{ x: p.x + rand(-9, 9), y: p.y + rand(-7, 7) }]; return; }
+    c.pile = null;
+  }
+  else if (a.k === 'eat') { if (FEEDER.level >= 0.5) { FEEDER.level -= 0.5; c.hunger = Math.min(1, c.hunger + 0.55); } }
+  else if (a.k === 'drink') { if (WATERER.level >= 0.4) { WATERER.level -= 0.4; c.thirst = 1; } }
+  c.state = 'WANDER'; c.pause = rand(0.2, 0.8);
 }
 
 /* ---------- spatial grid for neighbour queries ---------- */
@@ -323,31 +475,28 @@ const CELL = 32, GW = Math.ceil(W / CELL), GH = Math.ceil(H / CELL);
 let grid = [];
 function buildGrid() {
   grid = new Array(GW * GH);
-  for (const c of hens) { if (c.state === 'ROOST') continue; const i = clamp(Math.floor(c.x / CELL), 0, GW - 1) + clamp(Math.floor(c.y / CELL), 0, GH - 1) * GW; (grid[i] || (grid[i] = [])).push(c); }
+  for (const c of hens) { if (c.state === 'ROOST' || c.state === 'CAUGHT' || c.state === 'NEST') continue; const i = clamp(Math.floor(c.x / CELL), 0, GW - 1) + clamp(Math.floor(c.y / CELL), 0, GH - 1) * GW; (grid[i] || (grid[i] = [])).push(c); }
 }
-
 function steer(c, dt) {
-  if (c.state === 'ROOST') return;
+  if (c.state === 'ROOST' || c.state === 'CAUGHT') return;
+  if (c.state === 'NEST') { c.nestT -= dt; if (c.nestT <= 0) layInNest(c); return; }
   let dx = 0, dy = 0, sp = 0;
+  const mudK = inMud(c) ? 0.6 : 1;
   if (c.state === 'FLEE') {
-    const a = Math.atan2(c.y - farmer.y, c.x - farmer.x) + c.fleeOff;
+    const th = c.threat || farmer;
+    const a = Math.atan2(c.y - th.y, c.x - th.x) + c.fleeOff;
     dx = Math.cos(a); dy = Math.sin(a); sp = T.walk * T.fleeMult;
   } else if (c.state === 'APPROACH') {
     const d = dist(c, farmer);
     if (d > 14) { dx = (farmer.x - c.x) / d; dy = (farmer.y - c.y) / d; sp = T.walk * 1.9 * Math.min(1, d / 30 + 0.3); }
   } else if (c.pause > 0) {
     c.pause -= dt;
-    if (c.pause <= 0 && c.eatBug) {
-      const b = c.eatBug; c.eatBug = null; c.bug = null;
-      if (b.alive) { b.alive = false; b.respawn = 18; c.eggT -= 4; float(c.x, c.y - 12, 'peck', '#ffe9a8'); }
-      c.state = 'WANDER'; c.pause = rand(0.2, 0.8);
-    }
+    if (c.pause <= 0 && c.act) finishAct(c);
   } else if (c.route.length) {
     const w = c.route[0], d = dist(c, w), last = c.route.length === 1;
     if (d < (last ? 5 : 9)) { c.route.shift(); if (!c.route.length) arrive(c); }
-    else { dx = (w.x - c.x) / d; dy = (w.y - c.y) / d; sp = c.state === 'RETURN' ? T.walk * 2.2 : T.walk; }
+    else { dx = (w.x - c.x) / d; dy = (w.y - c.y) / d; sp = (c.state === 'RETURN' || c.state === 'LAY') ? T.walk * 2.2 : T.walk; }
   }
-  /* separation */
   let sx = 0, sy = 0;
   const gx = Math.floor(c.x / CELL), gy = Math.floor(c.y / CELL), R = 15;
   for (let j = gy - 1; j <= gy + 1; j++) for (let i = gx - 1; i <= gx + 1; i++) {
@@ -359,7 +508,7 @@ function steer(c, dt) {
       if (d2 < R * R && d2 > 0.01) { const d = Math.sqrt(d2), k = (R - d) / R; sx += ex / d * k; sy += ey / d * k; }
     }
   }
-  const tx = dx * sp + sx * T.sep * 45, ty = dy * sp + sy * T.sep * 45;
+  const tx = dx * sp * mudK + sx * T.sep * 45, ty = dy * sp * mudK + sy * T.sep * 45;
   const a = Math.min(1, dt * 6);
   c.vx += (tx - c.vx) * a; c.vy += (ty - c.vy) * a;
   const ox = c.x, oy = c.y;
@@ -369,15 +518,149 @@ function steer(c, dt) {
   const spd = Math.hypot(c.vx, c.vy);
   if (spd > 5) { let da = Math.atan2(c.vy, c.vx) - c.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); c.ang += da * Math.min(1, dt * 10); }
   c.phase += spd * dt * 0.35;
-  /* stuck detection */
-  if (c.route.length && c.pause <= 0 && (c.state === 'WANDER' || c.state === 'FORAGE' || c.state === 'ESCAPE')) {
+  if (c.route.length && c.pause <= 0 && c.state !== 'FLEE' && c.state !== 'RETURN' && c.state !== 'LAY') {
     c.stuckT += dt;
     if (Math.hypot(c.x - c.sx, c.y - c.sy) > 6) { c.sx = c.x; c.sy = c.y; c.stuckT = 0; }
-    else if (c.stuckT > 2.2) { c.route = []; c.pause = 0.3; c.stuckT = 0; releaseBug(c); }
+    else if (c.stuckT > 2.2) { c.route = []; c.pause = 0.3; c.stuckT = 0; releaseBug(c); if (c.state === 'EAT' || c.state === 'DRINK' || c.state === 'LAY') { c.state = 'WANDER'; c.pile = null; } }
   } else { c.stuckT = 0; c.sx = c.x; c.sy = c.y; }
 }
 
-/* ---------- farmer, input, actions ---------- */
+/* ---------- foxes ---------- */
+function spawnFox() {
+  const e = Math.floor(Math.random() * 4);
+  const p = e === 0 ? { x: -14, y: rand(60, ROAD.y0 - 20) } : e === 1 ? { x: W + 14, y: rand(60, ROAD.y0 - 20) } : e === 2 ? { x: rand(40, W - 40), y: -14 } : { x: rand(40, W - 40), y: ROAD.y0 + 10 };
+  foxes.push({ id: nextId++, isFox: true, x: p.x, y: p.y, vx: 0, vy: 0, ang: 0, state: 'PROWL', route: [], thinkT: 0, r: 8, carry: null, scared: 0, strikes: 0,
+    dig: null, prey: null, stuckT: 0, sx: p.x, sy: p.y, avoid: 0, avoidDir: 1, eatT: 0, phase: 0 });
+  say('A fox is prowling near the farm.', true);
+}
+function routeFor(f, o) {
+  if (insidePen(f) === insidePen(o)) return [];
+  const fromOut = !insidePen(f);
+  if (gate.open) return fromOut ? [GATE.out, GATE.in] : [GATE.in, GATE.out];
+  let best = null, bd = 1e9;
+  for (const c of FENCE) if (c.broken) { const d = dist(f, { x: c.cx, y: c.cy }); if (d < bd) { bd = d; best = c; } }
+  if (best) {
+    const o1 = { x: best.cx + best.n.x * 20, y: best.cy + best.n.y * 20 }, i1 = { x: best.cx - best.n.x * 20, y: best.cy - best.n.y * 20 };
+    return fromOut ? [o1, i1] : [i1, o1];
+  }
+  return false;
+}
+function digPointFor(f, chunk) {
+  const s = insidePen(f) ? -1 : 1;
+  return { x: chunk.cx + chunk.n.x * 13 * s, y: chunk.cy + chunk.n.y * 13 * s };
+}
+function nearestChunk(x, y) { let b = null, bd = 1e9; for (const c of FENCE) { if (c.broken) continue; const d = Math.hypot(c.cx - x, c.cy - y); if (d < bd) { bd = d; b = c; } } return b; }
+function scareFox(f) {
+  if (f.carry) { const h = f.carry; f.carry = null; h.state = 'FLEE'; h.threat = farmer; h.route = []; h.vx = h.vy = 0; say('You scared the fox into dropping the hen.'); }
+  else if (f.strikes === 0) say('You scared the fox off.');
+  f.state = 'SCARED'; f.scared = 7; f.strikes++; f.route = []; f.dig = null; f.prey = null;
+}
+function edgeTarget(f) {
+  const d = [f.x, W - f.x, f.y, ROAD.y0 + 40 - f.y]; const m = Math.min.apply(null, d), i = d.indexOf(m);
+  return i === 0 ? { x: -40, y: f.y } : i === 1 ? { x: W + 40, y: f.y } : i === 2 ? { x: f.x, y: -40 } : { x: f.x, y: H + 40 };
+}
+function trimRoute(f) { while (f.route.length > 1 && dist(f, f.route[0]) < 19) f.route.shift(); }
+function foxThink(f) {
+  if (!world.curfew && f.state !== 'LEAVE' && f.state !== 'SCARED') { f.state = 'LEAVE'; f.route = []; f.dig = null; }
+  if (f.state === 'SCARED') return;
+  if (f.state === 'LEAVE' || f.carry) {
+    f.state = 'LEAVE';
+    const g = edgeTarget(f), r = routeFor(f, { x: g.x, y: g.y });
+    if (r === false) { f.dig = f.dig || nearestChunk(f.x, f.y); f.route = []; }
+    else { f.dig = null; f.route = r.map(p => ({ x: p.x, y: p.y })).concat([g]); trimRoute(f); }
+    return;
+  }
+  let best = null, bs = 1e9;
+  for (const h of hens) {
+    if (h.state === 'ROOST' || h.state === 'CAUGHT') continue;
+    const r = routeFor(f, h), sc = dist(f, h) + (r === false ? 220 : 0);
+    if (sc < bs) { bs = sc; best = { kind: 'hen', o: h, r }; }
+  }
+  for (const e of eggs) {
+    if (e.inHutch) continue;
+    const r = routeFor(f, e), sc = dist(f, e) + 60 + (r === false ? 220 : 0);
+    if (sc < bs) { bs = sc; best = { kind: 'egg', o: e, r }; }
+  }
+  if (!best) {
+    f.state = 'PROWL'; f.prey = null; f.dig = null;
+    if (!f.route.length) {
+      const a = Math.atan2(f.y - 316, f.x - 241) + rand(0.4, 0.8);
+      for (let i = 0; i < 8; i++) {
+        const x = 241 + Math.cos(a + i * 0.3) * rand(215, 250), y = 316 + Math.sin(a + i * 0.3) * rand(190, 215);
+        if (x > 10 && x < W - 10 && y > 10 && y < ROAD.y0 - 8 && !blockedAt(x, y, 12)) { f.route = [{ x, y }]; break; }
+      }
+    }
+    return;
+  }
+  f.prey = best;
+  if (best.r === false) { f.state = 'DIG'; f.dig = nearestChunk(best.o.x, best.o.y); f.route = []; }
+  else { f.state = 'STALK'; f.dig = null; f.route = best.r.map(p => ({ x: p.x, y: p.y })).concat([{ x: best.o.x, y: best.o.y }]); trimRoute(f); }
+}
+function updateFox(f, dt) {
+  f.thinkT -= dt;
+  if (!farmer.sleeping && !farmer.inside && (f.state !== 'SCARED' && f.state !== 'LEAVE' || (f.state === 'LEAVE' && f.carry))) {
+    if (dist(f, farmer) < (farmer.driving ? 95 : 62)) scareFox(f);
+  }
+  if (f.thinkT <= 0) { foxThink(f); f.thinkT = 0.2; }
+  let dx = 0, dy = 0, sp = 0;
+  const K = T.foxSpeed;
+  if (f.eatT > 0) { f.eatT -= dt; }
+  else if (f.state === 'SCARED') {
+    const a = Math.atan2(f.y - farmer.y, f.x - farmer.x); dx = Math.cos(a); dy = Math.sin(a); sp = 150 * K;
+    f.scared -= dt; if (f.scared <= 0) { f.state = f.strikes >= 2 ? 'LEAVE' : 'PROWL'; f.thinkT = 0; }
+  } else if (f.dig) {
+    const dp = digPointFor(f, f.dig), d = dist(f, dp);
+    if (d > 6) { dx = (dp.x - f.x) / d; dy = (dp.y - f.y) / d; sp = 60 * K; }
+    else {
+      f.dig.hp -= T.digRate * dt; f.digging = true;
+      if (f.dig.hp <= 0) { f.dig.broken = true; f.dig.hp = 0; f.dig = null; f.thinkT = 0; say('A fox dug a hole in the fence!', true); wakeAlert('You hear digging.'); }
+    }
+  } else if (f.route.length) {
+    const w = f.route[0], d = dist(f, w);
+    if (d < (f.route.length === 1 ? 6 : 10)) f.route.shift();
+    else {
+      let a = Math.atan2(w.y - f.y, w.x - f.x); if (f.avoid > 0) { f.avoid -= dt; a += f.avoidDir * 1.1; }
+      dx = Math.cos(a); dy = Math.sin(a);
+      sp = (f.carry ? 105 : f.state === 'STALK' ? (d < 90 && f.route.length === 1 ? 125 : 75) : f.state === 'LEAVE' ? 110 : 50) * K;
+    }
+  }
+  f.digging = f.digging && f.dig;
+  const a = Math.min(1, dt * 7);
+  f.vx += (dx * sp - f.vx) * a; f.vy += (dy * sp - f.vy) * a;
+  const ox = f.x, oy = f.y;
+  f.x += f.vx * dt; f.y += f.vy * dt;
+  const out = f.x < 0 || f.x > W || f.y < 0 || f.y > H;
+  collide(f, f.r, out || f.state === 'LEAVE');
+  if (dt > 0) { f.vx = (f.x - ox) / dt; f.vy = (f.y - oy) / dt; }
+  const spd = Math.hypot(f.vx, f.vy);
+  if (spd > 6) { let da = Math.atan2(f.vy, f.vx) - f.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); f.ang += da * Math.min(1, dt * 9); }
+  f.phase += spd * dt * 0.3;
+  if (sp > 0 && !f.dig && f.eatT <= 0) {
+    f.stuckT += dt;
+    if (Math.hypot(f.x - f.sx, f.y - f.sy) > 5) { f.sx = f.x; f.sy = f.y; f.stuckT = 0; }
+    else if (f.stuckT > 0.9) { f.avoid = 0.9; f.avoidDir = Math.random() < 0.5 ? -1 : 1; f.stuckT = 0; }
+  } else { f.stuckT = 0; f.sx = f.x; f.sy = f.y; }
+  /* catching */
+  if (f.state === 'STALK' && f.prey && !f.carry && f.eatT <= 0) {
+    const o = f.prey.o;
+    if (f.prey.kind === 'hen' && o.state !== 'ROOST' && o.state !== 'CAUGHT' && dist(f, o) < 13) {
+      o.state = 'CAUGHT'; o.route = []; o.act = null; releaseBug(o); f.carry = o; f.state = 'LEAVE'; f.route = []; f.thinkT = 0;
+      say('A fox caught a hen!', true); wakeAlert('A hen is screaming!');
+    } else if (f.prey.kind === 'egg' && dist(f, o) < 10) {
+      const i = eggs.indexOf(o); if (i >= 0) { eggs.splice(i, 1); f.eatT = 1.5; float(f.x, f.y - 12, 'egg stolen', '#ffd2a8'); f.thinkT = 0; }
+    }
+  }
+  if (f.carry) { f.carry.x = f.x + Math.cos(f.ang) * 10; f.carry.y = f.y + Math.sin(f.ang) * 10; }
+  if (out && (f.state === 'LEAVE' || f.state === 'PROWL' && world.t > 0.1 && !world.curfew)) {
+    if (f.carry) { const i = hens.indexOf(f.carry); if (i >= 0) hens.splice(i, 1); world.lost++; say('A fox got away with a hen.', true); }
+    f.gone = true;
+  }
+}
+function wakeAlert(msg) {
+  if (farmer.sleeping && farmer.sleepKind !== 'faint') wakeUp(msg);
+}
+
+/* ---------- farmer, truck, input, actions ---------- */
 const keys = new Set(), joy = { x: 0, y: 0 };
 function moveVec() {
   let x = joy.x, y = joy.y;
@@ -389,22 +672,124 @@ function moveVec() {
   return { x, y };
 }
 function updateFarmer(dt) {
+  if (farmer.sleeping) { farmer.sneakNow = false; return; }
   const v = moveVec(), sneak = farmer.sneak || keys.has('shift');
-  farmer.sneakNow = sneak;
-  const sp = T.farmerSpeed * (sneak ? 0.55 : 1);
+  if (farmer.inside) {
+    const R = BLD[farmer.inside].r, sp = T.farmerSpeed * 0.75;
+    farmer.x = clamp(farmer.x + v.x * sp * dt, R.x + 12, R.x + R.w - 12); farmer.y = clamp(farmer.y + v.y * sp * dt, R.y + 12, R.y + R.h - 9);
+    farmer.sneakNow = false;
+    if (Math.hypot(v.x, v.y) > 0.1) { farmer.face = Math.atan2(v.y, v.x); farmer.step += dt * sp * 0.12; }
+    return;
+  }
+  farmer.sneakNow = sneak && !farmer.driving;
+  if (farmer.driving) {
+    const mag = Math.hypot(v.x, v.y);
+    let target = 0;
+    if (mag > 0.15) {
+      const want = Math.atan2(v.y, v.x); let da = Math.atan2(Math.sin(want - truck.ang), Math.cos(want - truck.ang));
+      truck.ang += clamp(da, -3.4 * dt, 3.4 * dt);
+      target = T.truckSpeed * mag * Math.max(0.15, Math.cos(Math.min(Math.abs(da), 1.4)));
+    }
+    const mud = inMud(truck) ? 0.45 : 1, tired = farmer.energy < 0.2 ? 0.8 : 1;
+    target *= mud * tired;
+    truck.v += clamp(target - truck.v, -280 * dt, 200 * dt);
+    truck.x += Math.cos(truck.ang) * truck.v * dt; truck.y += Math.sin(truck.ang) * truck.v * dt;
+    const ox = truck.x, oy = truck.y; collide(truck, truck.r);
+    if (Math.hypot(truck.x - ox, truck.y - oy) > 0.5) truck.v *= 0.6;
+    farmer.x = truck.x; farmer.y = truck.y; farmer.face = truck.ang;
+    return;
+  }
+  truck.v *= Math.max(0, 1 - 4 * dt);
+  const tired = farmer.energy < 0.2 ? 0.65 : 1, mud = inMud(farmer) ? 0.7 : 1;
+  const sp = T.farmerSpeed * (sneak ? 0.55 : 1) * tired * mud;
   farmer.vx = v.x * sp; farmer.vy = v.y * sp;
   farmer.x += farmer.vx * dt; farmer.y += farmer.vy * dt;
   collide(farmer, farmer.r);
   if (Math.hypot(v.x, v.y) > 0.1) { farmer.face = Math.atan2(v.y, v.x); farmer.step += dt * sp * 0.12; }
 }
+function marketOpen() { return !world.curfew && world.t > 0.29 && world.t < 0.70; }
+function nearestBroken() { let b = null, bd = 46; for (const c of FENCE) if (c.broken) { const d = Math.hypot(c.cx - farmer.x, c.cy - farmer.y); if (d < bd) { bd = d; b = c; } } return b; }
+function wakeUp(msg) {
+  if (!farmer.sleeping) return;
+  farmer.sleeping = false; const k = farmer.sleepKind; farmer.sleepKind = null;
+  if (farmer.inside === 'house') { farmer.x = BLD.house.spawn.x; farmer.y = BLD.house.spawn.y; }
+  farmer.vx = farmer.vy = 0;
+  say(msg || (k === 'night' ? 'Good morning. You slept until dawn.' : 'You wake up rested.'), !!msg && /noise|digging|scream/i.test(msg));
+}
+function enterBuilding(key) { const b = BLD[key]; farmer.inside = key; farmer.x = b.spawn.x; farmer.y = b.spawn.y; }
+function leaveBuilding() { const b = BLD[farmer.inside]; farmer.inside = null; farmer.x = b.out.x; farmer.y = b.out.y + 4; }
+function nestEggs() { return eggs.filter(e => e.inHutch); }
 function findAction() {
-  const near = eggs.filter(e => dist(e, farmer) < 32);
-  if (near.length) return { label: near.length > 1 ? 'Collect ' + near.length + ' eggs' : 'Collect egg', run: () => { eggs = eggs.filter(e => dist(e, farmer) >= 32); farmer.basket += near.length; float(farmer.x, farmer.y - 18, '+' + near.length + ' egg', '#fff4c2'); } };
-  if (dist(farmer, STAND_PT) < 64 && farmer.basket > 0) { const n = farmer.basket, pay = n * T.price; return { label: 'Sell ' + n + ' egg' + (n > 1 ? 's' : '') + ' · $' + pay, run: () => { farmer.money += pay; farmer.basket = 0; float(farmer.x, farmer.y - 18, '+$' + pay, '#b8f0a8'); } }; }
-  if (dist(farmer, BIN_PT) < 46) return { label: farmer.scoops > 0 ? 'Refill feed' : 'Take feed', run: () => { farmer.scoops = 10; float(farmer.x, farmer.y - 18, 'feed ready', '#ffe9a8'); } };
-  if (dist(farmer, GATE) < 56) return { label: gate.open ? 'Close gate' : 'Open gate', run: () => { gate.open = !gate.open; } };
-  if (farmer.scoops > 0) return { label: 'Drop feed', run: () => { farmer.scoops = 0; } };
+  if (farmer.sleeping) return farmer.sleepKind === 'faint' ? null : { label: 'Wake up', run: () => wakeUp('You get up.') };
+  const F = farmer;
+  if (F.driving) {
+    if (dist(truck, STALL_PT) < 72) {
+      if (!marketOpen()) return { label: 'Stall is closed', run: () => say('The roadside stall is closed until morning.') };
+      if (truck.cargo > 0) { const n = truck.cargo, pay = n * world.market; return { label: 'Sell ' + n + ' eggs at stall · $' + pay, run: () => { F.money += pay; truck.cargo = 0; float(truck.x, truck.y - 20, '+$' + pay, '#b8f0a8'); say('Sold ' + n + ' eggs at the stall for $' + pay + '.'); } }; }
+    }
+    if (dist(truck, SHOP_PT) < 72) {
+      if (!marketOpen()) return { label: 'Feed shop is closed', run: () => say('The feed shop is closed until morning.') };
+      if (truck.sacks < 6) return { label: 'Buy feed sack $' + T.sackCost + ' (' + truck.sacks + ' aboard)', run: () => { if (F.money < T.sackCost) { say('Not enough money for a sack.'); return; } F.money -= T.sackCost; truck.sacks++; float(truck.x, truck.y - 20, '-$' + T.sackCost, '#ffb3a8'); } };
+    }
+    if (dist(truck, BIN_PT) < 78 && truck.sacks > 0) return { label: 'Unload ' + truck.sacks + ' sack' + (truck.sacks > 1 ? 's' : '') + ' (+' + truck.sacks * 50 + ' feed)', run: () => { bin.stock += truck.sacks * 50; say('Unloaded ' + truck.sacks + ' sacks into the feed bin.'); truck.sacks = 0; } };
+    return { label: 'Get out', run: () => { F.driving = false; F.x = truck.x + Math.cos(truck.ang + 1.57) * 24; F.y = truck.y + Math.sin(truck.ang + 1.57) * 24; collide(F, F.r); } };
+  }
+  if (F.inside) {
+    const key = F.inside, b = BLD[key];
+    if (key === 'hutch') {
+      const ne = nestEggs();
+      if (ne.length && F.y < HUTCH.y + 44) return { label: 'Collect ' + ne.length + ' egg' + (ne.length > 1 ? 's' : '') + ' from the nests', run: () => { F.basket += ne.length; eggs = eggs.filter(e => !e.inHutch); float(F.x, F.y - 18, '+' + ne.length + ' egg', '#fff4c2'); } };
+    }
+    if (key === 'house' && dist(F, { x: BED.x + BED.w / 2, y: BED.y + BED.h / 2 }) < 34) {
+      if (world.curfew || F.energy < 0.35) return { label: world.curfew ? 'Sleep until morning' : 'Take a nap', run: () => { F.sleeping = true; F.sleepKind = world.curfew ? 'night' : 'nap'; F.x = BED.x + 12; F.y = BED.y + 12; F.carry = null; F.scoops = 0; say(world.curfew ? 'You go to bed.' : 'You lie down for a nap.'); } };
+      return { label: 'Too early to sleep', run: () => say('Not tired yet. Sleep opens at dusk, or when your energy is low.') };
+    }
+    if (key === 'barn' && dist(F, SACKS_PT) < 40 && F.carry !== 'water') {
+      if (bin.stock <= 0) return { label: 'No feed in store', run: () => say('The feed store is empty. Drive to the shop.', true) };
+      return { label: F.carry === 'feed' ? 'Top up feed' : 'Take feed', run: () => { const n = Math.min(10 - F.scoops, bin.stock); F.carry = 'feed'; F.scoops += n; bin.stock -= n; float(F.x, F.y - 18, 'feed ready', '#ffe9a8'); } };
+    }
+    if (dist(F, b.door) < 30) return { label: 'Go outside', run: leaveBuilding };
+    if (key === 'hutch' && hutch.dirt > 0.1) return { label: 'Clean the coop', run: () => { hutch.dirt = 0; float(F.x, F.y - 18, 'clean', '#cfe8ff'); } };
+    return null;
+  }
+  const near = eggs.filter(e => !e.inHutch && dist(e, F) < 32);
+  if (near.length) return { label: near.length > 1 ? 'Collect ' + near.length + ' eggs' : 'Collect egg', run: () => { eggs = eggs.filter(e => e.inHutch || dist(e, F) >= 32); F.basket += near.length; float(F.x, F.y - 18, '+' + near.length + ' egg', '#fff4c2'); } };
+  if (dist(F, STAND_PT) < 64 && F.basket > 0) { const n = F.basket, pay = n * T.price; return { label: 'Sell ' + n + ' egg' + (n > 1 ? 's' : '') + ' at farm stand \u00b7 $' + pay, run: () => { F.money += pay; F.basket = 0; float(F.x, F.y - 18, '+$' + pay, '#b8f0a8'); } }; }
+  if (dist(F, STALL_PT) < 60 && F.basket > 0 && marketOpen()) { const n = F.basket, pay = n * world.market; return { label: 'Sell ' + n + ' eggs at stall \u00b7 $' + pay, run: () => { F.money += pay; F.basket = 0; float(F.x, F.y - 18, '+$' + pay, '#b8f0a8'); } }; }
+  if (dist(F, SHOP_PT) < 60) return { label: 'Bring the truck to buy feed', run: () => say('Drive the truck here to buy feed sacks.') };
+  if (dist(F, truck) < 44) {
+    if (F.basket > 0 && truck.cargo < 150) return { label: 'Load ' + F.basket + ' egg' + (F.basket > 1 ? 's' : '') + ' into truck', run: () => { truck.cargo += F.basket; float(truck.x, truck.y - 20, '+' + F.basket + ' crated', '#fff4c2'); F.basket = 0; } };
+    return { label: 'Drive truck', run: () => { F.driving = true; F.carry = null; F.scoops = 0; F.x = truck.x; F.y = truck.y; } };
+  }
+  const brk = nearestBroken();
+  if (brk) return { label: 'Repair fence \u00b7 $' + T.repairCost, run: () => { if (F.money < T.repairCost) { say('You need $' + T.repairCost + ' for planks.'); return; } F.money -= T.repairCost; brk.broken = false; brk.hp = 100; float(F.x, F.y - 18, 'fixed', '#e2c58f'); } };
+  for (const key of ['hutch', 'house', 'barn']) {
+    const b = BLD[key];
+    if (dist(F, b.out) < 26) {
+      if (key === 'hutch' && !hutch.doorOpen) return { label: 'Open coop door', run: () => { hutch.doorOpen = true; world.doorShut = true; } };
+      return { label: 'Go inside the ' + b.name, run: () => enterBuilding(key) };
+    }
+  }
+  if (dist(F, LATCH) < 22) return { label: hutch.doorOpen ? 'Close coop door' : 'Open coop door', run: () => { hutch.doorOpen = !hutch.doorOpen; if (hutch.doorOpen) world.doorShut = true; } };
+  if (F.carry === 'feed' && dist(F, FEEDER.pt) < 46 && FEEDER.level < FEEDER.cap) return { label: 'Fill feeder (' + F.scoops + ' scoops)', run: () => { const n = Math.min(F.scoops, FEEDER.cap - FEEDER.level); FEEDER.level += n; F.scoops -= n; if (F.scoops <= 0) F.carry = null; float(F.x, F.y - 18, '+' + Math.round(n) + ' feed', '#ffe9a8'); } };
+  if (F.carry === 'water' && dist(F, WATERER.pt) < 46) return { label: 'Pour water in trough', run: () => { WATERER.level = WATERER.cap; F.carry = null; float(F.x, F.y - 18, 'water', '#bfe3ff'); } };
+  if (dist(F, BIN_PT) < 46 && F.carry !== 'water') {
+    if (bin.stock <= 0) return { label: 'Feed bin is empty', run: () => say('The bin is empty. Drive to the feed shop.', true) };
+    return { label: F.carry === 'feed' ? 'Top up feed' : 'Take feed', run: () => { const n = Math.min(10 - F.scoops, bin.stock); F.carry = 'feed'; F.scoops += n; bin.stock -= n; float(F.x, F.y - 18, 'feed ready', '#ffe9a8'); } };
+  }
+  if (dist(F, PUMP_PT) < 40 && F.carry !== 'feed') return { label: F.carry === 'water' ? 'Pump is here (can is full)' : 'Fill water can', run: () => { F.carry = 'water'; float(F.x, F.y - 18, 'can full', '#bfe3ff'); } };
+  if (dist(F, GATE) < 56) return { label: gate.open ? 'Close gate' : 'Open gate', run: () => { gate.open = !gate.open; } };
+  if (F.carry === 'feed') return { label: 'Scatter feed (' + F.scoops + ' scoops)', run: () => scatterFeed() };
+  if (F.carry === 'water') return { label: 'Pour out water', run: () => { F.carry = null; } };
   return null;
+}
+function scatterFeed() {
+  const F = farmer, amt = Math.min(F.scoops, 2); if (amt <= 0) return;
+  const x = F.x + Math.cos(F.face) * 16, y = F.y + Math.sin(F.face) * 16;
+  const ex = piles.find(p => Math.hypot(p.x - x, p.y - y) < 14);
+  if (ex) ex.amt += amt; else if (piles.length < 40) piles.push({ x, y, amt, seed: Math.random() * 6 });
+  F.scoops -= amt; if (F.scoops <= 0) F.carry = null;
+  float(F.x, F.y - 18, 'scattered', '#ffe9a8');
 }
 function doAction() { const a = findAction(); if (a) a.run(); }
 
@@ -439,8 +824,11 @@ function toggleDebug() { debug = !debug; $('bDebug').setAttribute('aria-pressed'
 $('bDebug').addEventListener('click', toggleDebug);
 $('bDusk').addEventListener('click', () => { world.t = 0.70; });
 $('bDawn').addEventListener('click', () => { world.t = 0.255; world.day++; });
+$('bFox').addEventListener('click', () => { spawnFox(); });
+$('bRain').addEventListener('click', () => { world.rainOn = true; world.rainLeft = 40; say('It starts to rain.'); });
+$('bCash').addEventListener('click', () => { farmer.money += 50; });
 $('bAdd10').addEventListener('click', () => { for (let i = 0; i < 10 && hens.length < 200; i++) { const p = penPoint(); newHen(p.x, p.y); } });
-$('bSub10').addEventListener('click', () => { hens.splice(Math.max(0, hens.length - 10), 10); });
+$('bSub10').addEventListener('click', () => { const keep = []; let n = 10; for (let i = hens.length - 1; i >= 0; i--) { if (n > 0 && hens[i].state !== 'CAUGHT') { n--; continue; } keep.unshift(hens[i]); } hens = keep; });
 $('bReset').addEventListener('click', resetFarm);
 $('buy').addEventListener('click', () => {
   if (farmer.money < T.henCost || hens.length >= 200) return;
@@ -448,36 +836,78 @@ $('buy').addEventListener('click', () => {
 });
 
 /* ---------- simulation step ---------- */
+function newDay() { world.market = 3 + Math.floor(Math.random() * 3); }
 function update(dt) {
-  /* clock and day/night events */
+  /* clock, door, weather, foxes */
   world.t += dt / T.dayLen;
-  if (world.t >= 1) { world.t -= 1; world.day++; }
+  if (world.t >= 1) { world.t -= 1; world.day++; newDay(); }
   const curfew = world.t >= 0.72 || world.t < 0.27;
   if (curfew !== world.curfew) {
     world.curfew = curfew; world.warned = false;
-    say(curfew ? 'Dusk. The hens are heading in.' : 'Dawn. The hens are up.');
+    if (curfew) say('Dusk. The hens are heading in.');
+    else {
+      say('Dawn. The coop door opens.'); hutch.doorOpen = true; world.doorShut = false; world.foxSpawned = false; newDay();
+      world.rainAt = Math.random() < T.rainChance ? rand(0.34, 0.62) : -1;
+    }
   }
-  if (world.curfew && !world.warned && (world.t >= 0.80 || world.t < 0.27 && world.t > 0.02)) {
+  if (world.curfew && world.t >= 0.80 && world.t < 0.99 && !world.doorShut) { world.doorShut = true; if (hutch.doorOpen) { hutch.doorOpen = false; say('The coop door swings shut for the night.'); } }
+  if (world.t >= 0.75 && world.t < 0.99 && !world.foxSpawned) {
+    world.foxSpawned = true;
+    let n = Math.floor(T.foxes) + (Math.random() < T.foxes - Math.floor(T.foxes) ? 1 : 0);
+    for (let i = 0; i < n; i++) spawnFox();
+  }
+  if (world.curfew && !world.warned && world.t >= 0.81) {
     world.warned = true;
-    const out = hens.filter(h => h.state !== 'ROOST').length;
-    if (out) say(out + ' hen' + (out > 1 ? 's' : '') + ' still outside' + (gate.open ? '.' : '. Open the gate.'));
+    const out = hens.filter(h => h.state !== 'ROOST' && h.state !== 'CAUGHT').length;
+    if (out) say(out + ' hen' + (out > 1 ? 's' : '') + ' still outside. Foxes are about.', true);
   }
+  if (!world.rainOn && world.rainAt >= 0 && world.t >= world.rainAt && world.t < 0.7) { world.rainOn = true; world.rainLeft = rand(30, 65); world.rainAt = -1; say('Rain is coming in.'); }
+  if (world.rainOn) { world.rainLeft -= dt; if (world.rainLeft <= 0) { world.rainOn = false; say('The rain stops.'); } }
+  world.rain += ((world.rainOn ? 1 : 0) - world.rain) * Math.min(1, dt * 1.2);
+  world.wet = clamp(world.wet + (world.rain > 0.3 ? dt / 35 : -dt / 90), 0, 1);
+
   gate.anim += ((gate.open ? 1 : 0) - gate.anim) * Math.min(1, dt * 8);
+  for (const k in BLD) { const b = BLD[k]; b.roof += ((farmer.inside === k ? 0 : 1) - b.roof) * Math.min(1, dt * 7); }
+  /* farmer */
+  if (!farmer.sleeping) farmer.energy = Math.max(0, farmer.energy - dt / (T.dayLen * 1.15));
+  else farmer.energy = Math.min(1, farmer.energy + dt / (T.dayLen * 0.35));
+  if (!farmer.sleeping && farmer.energy <= 0) { farmer.driving = false; if (farmer.inside && farmer.inside !== 'house') leaveBuilding(); farmer.sleeping = true; farmer.sleepKind = 'faint'; farmer.carry = null; farmer.scoops = 0; say('You pass out from exhaustion.', true); }
+  if (farmer.sleeping) {
+    const k = farmer.sleepKind;
+    if ((k === 'night' && !world.curfew) || (k === 'nap' && farmer.energy >= 0.9) || (k === 'faint' && farmer.energy >= 0.6 && !world.curfew)) wakeUp();
+    else if (k === 'faint' && farmer.energy >= 0.6 && world.curfew && world.t < 0.27 && farmer.energy >= 0.95) wakeUp();
+  }
   updateFarmer(dt);
   buildGrid();
+  /* hutch dirt */
+  const roosting = hens.reduce((n, h) => n + (h.state === 'ROOST' || h.state === 'NEST' ? 1 : 0), 0);
+  hutch.dirt = clamp(hutch.dirt + (roosting / 20) * dt / T.dayLen * 0.8, 0, 1);
+  /* hens */
+  let dead = false;
   for (const c of hens) {
+    if (c.state === 'CAUGHT') continue;
     c.thinkT -= dt;
     if (c.thinkT <= 0) { think(c); c.thinkT = (dist(c, farmer) < 160 ? 0.06 : 0.2) + Math.random() * 0.03; }
     steer(c, dt);
     c.fedCool -= dt;
-    if (c.state !== 'ROOST') {
-      c.eggT -= dt;
-      if (c.eggT <= 0) { eggs.push({ x: c.x, y: c.y, age: 0 }); c.eggT = T.egg * rand(0.8, 1.2); float(c.x, c.y - 12, 'egg', '#fff4c2'); }
-    }
-    if (c.state === 'APPROACH' && farmer.scoops > 0 && c.fedCool <= 0 && dist(c, farmer) < farmer.r + c.r + 6) {
-      farmer.scoops--; c.fedCool = 1.2; c.eggT = Math.max(1, c.eggT - T.feedBoost); float(c.x, c.y - 12, 'fed', '#ffb3c1');
+    const rate = (c.state === 'ROOST' ? 0.5 : 1) / T.dayLen;
+    c.hunger = Math.max(0, c.hunger - rate / 0.9 * dt); c.thirst = Math.max(0, c.thirst - rate / 0.7 * dt);
+    if (c.hunger <= 0 || c.thirst <= 0) c.health -= dt / (T.dayLen * 0.8);
+    else if (c.hunger > 0.4 && c.thirst > 0.4) c.health = Math.min(1, c.health + dt / (T.dayLen * 2));
+    if (c.health <= 0) { dead = true; c.dead = c.thirst <= 0 ? 'thirst' : 'hunger'; }
+    if (c.hunger > 0.25 && c.thirst > 0.25 && !LAYBLOCK[c.state]) {
+      c.eggT -= dt * (hutch.dirt > 0.7 ? 0.6 : 1) * (world.rain > 0.3 ? 0.8 : 1);
+      if (c.eggT <= 0) {
+        if (insidePen(c) && hutch.doorOpen && freeBox() >= 0 && !world.curfew && Math.random() < 0.85) startLay(c);
+        else layHere(c);
+      }
     }
   }
+  piles = piles.filter(p => p.amt > 0.01);
+  if (dead) { hens = hens.filter(c => { if (c.dead) { world.lost++; say('A hen died of ' + c.dead + '.', true); return false; } return true; }); }
+  /* foxes */
+  for (const f of foxes) updateFox(f, dt);
+  foxes = foxes.filter(f => !f.gone);
   for (const e of eggs) e.age += dt;
   eggs = eggs.filter(e => e.age < T.rot);
   for (const b of bugs) { if (!b.alive) { b.respawn -= dt; if (b.respawn <= 0) spawnBug(b); } }
@@ -496,53 +926,181 @@ function buildBG() {
   for (let i = 0; i < 70; i++) { g.fillStyle = rnd() < 0.5 ? 'rgba(96,140,70,.35)' : 'rgba(150,185,100,.28)'; g.beginPath(); g.ellipse(rnd() * W, rnd() * H, 30 + rnd() * 60, 14 + rnd() * 30, rnd() * 3, 0, TAU); g.fill(); }
   g.lineWidth = 1;
   for (let i = 0; i < 1100; i++) { const x = rnd() * W, y = rnd() * H; g.strokeStyle = rnd() < 0.5 ? 'rgba(70,110,50,.55)' : 'rgba(170,205,120,.45)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 3, y - 3 - rnd() * 3); g.stroke(); }
+  /* road */
+  g.fillStyle = '#4b4f55'; g.fillRect(0, ROAD.y0, W, ROAD.y1 - ROAD.y0);
+  g.fillStyle = '#6b6f75'; g.fillRect(0, ROAD.y0 - 3, W, 3); g.fillRect(0, ROAD.y1, W, 3);
+  g.strokeStyle = '#e8c85c'; g.lineWidth = 2; g.setLineDash([22, 16]); g.beginPath(); g.moveTo(0, (ROAD.y0 + ROAD.y1) / 2); g.lineTo(W, (ROAD.y0 + ROAD.y1) / 2); g.stroke(); g.setLineDash([]);
   /* dirt paths */
   g.strokeStyle = 'rgba(176,148,100,.8)'; g.lineWidth = 34; g.lineCap = 'round'; g.lineJoin = 'round';
-  g.beginPath(); g.moveTo(420, 320); g.lineTo(520, 320); g.lineTo(553, 190); g.moveTo(520, 320); g.lineTo(826, 372); g.stroke();
+  g.beginPath(); g.moveTo(420, 320); g.lineTo(520, 320); g.lineTo(553, 190); g.moveTo(520, 320); g.lineTo(826, 372); g.moveTo(520, 320); g.lineTo(560, 520);
+  g.moveTo(475, 140); g.lineTo(475, 230); g.lineTo(520, 320); g.stroke();
   g.lineWidth = 1; g.lineCap = 'butt';
   /* pen floor */
   g.fillStyle = '#cdb88c'; g.fillRect(PEN.x0, PEN.y0, PEN.x1 - PEN.x0, PEN.y1 - PEN.y0);
   for (let i = 0; i < 420; i++) { const x = PEN.x0 + rnd() * (PEN.x1 - PEN.x0), y = PEN.y0 + rnd() * (PEN.y1 - PEN.y0); g.strokeStyle = rnd() < 0.5 ? 'rgba(230,205,130,.8)' : 'rgba(150,120,80,.45)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 5 + rnd() * 4, y + (rnd() - 0.5) * 3); g.stroke(); }
-  /* fence */
-  const post = (x, y) => { g.fillStyle = '#5f3d22'; g.fillRect(x - 4, y - 4, 8, 8); };
-  FENCE.forEach(R => {
-    g.fillStyle = '#946239'; g.fillRect(R.x, R.y, R.w, R.h);
-    g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(R.x, R.y + R.h, R.w, 2);
-    if (R.w > R.h) for (let x = R.x + 3; x <= R.x + R.w; x += 26) post(x, R.y + R.h / 2); else for (let y = R.y + 3; y <= R.y + R.h; y += 26) post(R.x + R.w / 2, y);
-  });
-  post(400, 290); post(400, 350);
-  /* hutch */
-  g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(HUTCH.x + 4, HUTCH.y + 5, HUTCH.w, HUTCH.h);
-  g.fillStyle = '#a8412c'; g.fillRect(HUTCH.x, HUTCH.y, HUTCH.w, HUTCH.h);
-  g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 1;
-  for (let y = HUTCH.y + 8; y < HUTCH.y + HUTCH.h; y += 8) { g.beginPath(); g.moveTo(HUTCH.x, y); g.lineTo(HUTCH.x + HUTCH.w, y); g.stroke(); }
-  g.fillStyle = '#7c2d1e'; g.fillRect(HUTCH.x, HUTCH.y + HUTCH.h / 2 - 2, HUTCH.w, 4);
-  g.fillStyle = '#1c120c'; g.beginPath(); g.moveTo(DOOR.x - 11, DOOR.y); g.lineTo(DOOR.x - 11, DOOR.y - 10); g.arc(DOOR.x, DOOR.y - 10, 11, Math.PI, 0); g.lineTo(DOOR.x + 11, DOOR.y); g.fill();
-  /* barn */
-  g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(BARN.x + 6, BARN.y + 7, BARN.w, BARN.h);
-  g.fillStyle = '#8f3a2b'; g.fillRect(BARN.x, BARN.y, BARN.w, BARN.h);
-  g.fillStyle = '#6f2a1e'; g.fillRect(BARN.x, BARN.y + BARN.h / 2 - 3, BARN.w, 6);
-  for (let x = BARN.x + 10; x < BARN.x + BARN.w; x += 14) { g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x, BARN.y, 2, BARN.h); }
-  g.fillStyle = '#efe6d2'; g.font = '600 13px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText('BARN', BARN.x + BARN.w / 2, BARN.y + BARN.h / 2 + 5);
+  g.textAlign = 'center';
   /* feed bin */
   g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(BIN.x + 15, BIN.y + 17, 15, 12, 0, 0, TAU); g.fill();
   g.fillStyle = '#566a8c'; g.beginPath(); g.arc(BIN.x + 13, BIN.y + 13, 14, 0, TAU); g.fill();
   g.fillStyle = '#e1c15c'; g.beginPath(); g.arc(BIN.x + 13, BIN.y + 13, 10, 0, TAU); g.fill();
   g.fillStyle = '#1b2a1d'; g.font = '600 10px "DM Sans", sans-serif'; g.fillText('FEED', BIN.x + 13, BIN.y + 40);
-  /* egg stand */
+  /* pump */
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(PUMP.x + 10, PUMP.y + 12, 11, 8, 0, 0, TAU); g.fill();
+  g.fillStyle = '#7a8591'; g.beginPath(); g.arc(PUMP.x + 8, PUMP.y + 8, 9, 0, TAU); g.fill();
+  g.fillStyle = '#4f93c4'; g.beginPath(); g.arc(PUMP.x + 8, PUMP.y + 8, 5.5, 0, TAU); g.fill();
+  g.strokeStyle = '#4c5560'; g.lineWidth = 3; g.beginPath(); g.moveTo(PUMP.x + 8, PUMP.y + 8); g.lineTo(PUMP.x + 21, PUMP.y + 3); g.stroke(); g.lineWidth = 1;
+  g.fillStyle = '#1b2a1d'; g.font = '600 10px "DM Sans", sans-serif'; g.fillText('PUMP', PUMP.x + 8, PUMP.y + 32);
+  /* farm stand */
   g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(STAND.x + 3, STAND.y + 4, STAND.w, STAND.h);
   g.fillStyle = '#a8743f'; g.fillRect(STAND.x, STAND.y, STAND.w, STAND.h);
   for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#f1ebdc' : '#b9402a'; g.fillRect(STAND.x - 4 + i * 15.5, STAND.y - 26, 15.5, 24); }
-  g.fillStyle = '#fff'; g.font = '700 11px "DM Sans", sans-serif'; g.fillText('EGGS $' + T.price, STAND.x + STAND.w / 2, STAND.y + 19);
+  g.fillStyle = '#fff'; g.font = '700 11px "DM Sans", sans-serif'; g.fillText('FARM STAND $' + T.price, STAND.x + STAND.w / 2, STAND.y + 19);
+  /* roadside egg stall */
+  g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(STALL.x + 3, STALL.y + 4, STALL.w, STALL.h);
+  g.fillStyle = '#9a6a3a'; g.fillRect(STALL.x, STALL.y, STALL.w, STALL.h);
+  for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#f1ebdc' : '#2f6fa8'; g.fillRect(STALL.x - 4 + i * 14.75, STALL.y - 22, 14.75, 20); }
+  g.fillStyle = '#fff'; g.font = '700 11px "DM Sans", sans-serif'; g.fillText('ROADSIDE EGGS', STALL.x + STALL.w / 2, STALL.y + 18);
+  /* feed shop */
+  g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(SHOP.x + 4, SHOP.y + 5, SHOP.w, SHOP.h);
+  g.fillStyle = '#6d7f52'; g.fillRect(SHOP.x, SHOP.y, SHOP.w, SHOP.h);
+  g.fillStyle = '#4c5c38'; g.fillRect(SHOP.x, SHOP.y, SHOP.w, 12);
+  g.fillStyle = '#f3ecd2'; g.font = '700 11px "DM Sans", sans-serif'; g.fillText('FEED & SEED', SHOP.x + SHOP.w / 2, SHOP.y + 29);
+  for (let i = 0; i < 4; i++) { g.fillStyle = '#d9c28a'; g.fillRect(SHOP.x + 8 + i * 24, SHOP.y + 14, 16, 8); }
 }
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (bg) buildBG(); });
 
 function ell(x, y, rx, ry) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU); }
-function drawHen(c) {
-  ctx.save(); ctx.translate(c.x, c.y);
+function drawFence() {
+  for (const c of FENCE) {
+    if (c.broken) {
+      ctx.fillStyle = '#6e5233'; ctx.fillRect(c.x - (c.n.x ? 2 : 0), c.y - (c.n.y ? 2 : 0), c.w + (c.n.x ? 4 : 0), c.h + (c.n.y ? 4 : 0));
+      ctx.fillStyle = '#4c3920'; ctx.fillRect(c.cx - 3, c.cy - 3, 6, 6);
+      continue;
+    }
+    const worn = c.hp < 100 ? (100 - c.hp) / 100 : 0;
+    ctx.fillStyle = '#946239'; ctx.fillRect(c.x, c.y, c.w, c.h);
+    if (worn) { ctx.fillStyle = 'rgba(40,20,5,' + (worn * 0.7).toFixed(2) + ')'; ctx.fillRect(c.x, c.y, c.w, c.h); }
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(c.x, c.y + c.h, c.w, 2);
+    ctx.fillStyle = '#5f3d22'; ctx.fillRect(c.x + (c.w > c.h ? 0 : 1) - 1, c.y + (c.h > c.w ? 0 : 1) - 1, 8, 8);
+  }
+  ctx.fillStyle = '#5f3d22'; ctx.fillRect(396, 286, 8, 8); ctx.fillRect(396, 346, 8, 8);
+}
+function drawGate() {
+  const a = gate.anim * Math.PI / 2, ex = 400 + Math.sin(a) * 60, ey = 290 + Math.cos(a) * 60;
+  ctx.strokeStyle = '#c28d56'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(400, 290); ctx.lineTo(ex, ey); ctx.stroke();
+  ctx.strokeStyle = '#8a5a30'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(400, 290); ctx.lineTo(ex, ey); ctx.stroke(); ctx.lineCap = 'butt';
+}
+function shadeBuildings() { for (const k in BLD) { const r = BLD[k].r; ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(r.x + 5, r.y + 6, r.w, r.h); } }
+function drawEgg(x, y, blink) { ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(x + 1, y + 3, 4, 2.4); ctx.fill(); ctx.fillStyle = blink ? '#b9a98a' : '#fbf5e4'; ctx.strokeStyle = '#8a7a58'; ctx.lineWidth = 1; ell(x, y, 3.6, 4.6); ctx.fill(); ctx.stroke(); }
+function interiorHutch(R) {
+  const rnd = mulberry(11);
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 70; i++) { const x = R.x + 6 + rnd() * (R.w - 12), y = R.y + 6 + rnd() * (R.h - 12); ctx.strokeStyle = rnd() < 0.5 ? 'rgba(235,210,140,.85)' : 'rgba(140,110,70,.45)'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 5 + rnd() * 4, y + (rnd() - 0.5) * 3); ctx.stroke(); }
+  for (let i = 0; i < NESTS; i++) { const bx = nestX(i) - 9, by = nestY() - 9; ctx.fillStyle = '#8a6038'; ctx.fillRect(bx, by, 18, 18); ctx.fillStyle = '#d8c08a'; ctx.fillRect(bx + 2, by + 2, 14, 14); }
+  for (let k = 0; k < 3; k++) { ctx.fillStyle = '#6b4a2a'; ctx.fillRect(R.x + 8, R.y + 40 + k * 13, R.w - 16, 3); }
+  const spots = Math.floor(hutch.dirt * 22);
+  for (let i = 0; i < spots; i++) { ctx.fillStyle = 'rgba(70,48,22,.55)'; ctx.beginPath(); ctx.arc(R.x + 8 + rnd() * (R.w - 16), R.y + 30 + rnd() * (R.h - 38), 2 + rnd() * 2, 0, TAU); ctx.fill(); }
+  for (const e of eggs) if (e.inHutch) drawEgg(e.x, e.y, e.age > T.rot - 30 && Math.floor(world.clock * 4) % 2);
+  let slot = 0;
+  for (const h of hens) {
+    if (h.state === 'ROOST') { const bar = Math.floor(slot / 9) % 3, col = slot % 9; slot++; drawHen(h, { x: R.x + 14 + col * 11, y: R.y + 38 + bar * 13, ang: -1.57, s: 0.72 }); }
+    else if (h.state === 'NEST') drawHen(h, { x: nestX(h.nest), y: nestY() + 1, ang: -1.57, s: 0.85 });
+  }
+}
+function interiorHouse(R) {
+  ctx.strokeStyle = 'rgba(0,0,0,.14)'; ctx.lineWidth = 1;
+  for (let y = R.y + 8; y < R.y + R.h; y += 9) { ctx.beginPath(); ctx.moveTo(R.x, y); ctx.lineTo(R.x + R.w, y); ctx.stroke(); }
+  ctx.fillStyle = '#8b3d36'; ell(R.x + 78, R.y + 56, 28, 14); ctx.fill(); ctx.fillStyle = '#a84c42'; ell(R.x + 78, R.y + 56, 20, 9); ctx.fill();
+  ctx.fillStyle = '#6e4526'; ctx.fillRect(BED.x - 2, BED.y - 2, BED.w + 4, BED.h + 4);
+  ctx.fillStyle = '#e9e4d6'; ctx.fillRect(BED.x, BED.y, BED.w, BED.h);
+  ctx.fillStyle = '#fff'; ctx.fillRect(BED.x + 2, BED.y + 3, 10, BED.h - 6);
+  ctx.fillStyle = '#b34a3a'; ctx.fillRect(BED.x + 14, BED.y, BED.w - 14, BED.h);
+  if (farmer.sleeping && farmer.inside === 'house') {
+    ctx.fillStyle = '#e8b890'; ctx.beginPath(); ctx.arc(BED.x + 7, BED.y + BED.h / 2, 4.2, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '700 11px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('z'.repeat(1 + Math.floor(world.clock * 1.5) % 3), BED.x + 22, BED.y - 4);
+  }
+  ctx.fillStyle = '#8a5a30'; ell(R.x + 94, R.y + 38, 12, 10); ctx.fill(); ctx.fillStyle = '#efe6d2'; ell(R.x + 94, R.y + 38, 4, 3); ctx.fill();
+  ctx.fillStyle = '#6e4526'; ctx.fillRect(R.x + 78, R.y + 36, 6, 6); ctx.fillRect(R.x + 106, R.y + 36, 6, 6);
+  ctx.fillStyle = '#3a3a3e'; ctx.fillRect(R.x + R.w - 28, R.y + 8, 18, 16);
+  ctx.fillStyle = world.curfew ? '#ff9a3a' : '#7a4a34'; ctx.fillRect(R.x + R.w - 24, R.y + 12, 10, 8);
+}
+function interiorBarn(R) {
+  const rnd = mulberry(23);
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 90; i++) { const x = R.x + 6 + rnd() * (R.w - 12), y = R.y + 6 + rnd() * (R.h - 12); ctx.strokeStyle = rnd() < 0.5 ? 'rgba(230,205,130,.8)' : 'rgba(120,95,60,.4)'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 5 + rnd() * 4, y + (rnd() - 0.5) * 3); ctx.stroke(); }
+  for (let i = 0; i < 5; i++) { const bx = R.x + R.w - 70 + (i % 3) * 22, by = R.y + 12 + Math.floor(i / 3) * 18; ctx.fillStyle = '#d9c067'; ctx.fillRect(bx, by, 20, 15); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.strokeRect(bx, by, 20, 15); }
+  const n = Math.min(14, Math.ceil(bin.stock / 14));
+  for (let i = 0; i < n; i++) { const sx = SACKS_PT.x - 26 + (i % 5) * 16, sy = SACKS_PT.y - 14 + Math.floor(i / 5) * 12; ctx.fillStyle = '#d9c28a'; ctx.fillRect(sx, sy, 14, 10); ctx.strokeStyle = '#8a7440'; ctx.strokeRect(sx, sy, 14, 10); }
+  ctx.fillStyle = 'rgba(30,22,10,.8)'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('FEED STORE · ' + bin.stock, SACKS_PT.x, SACKS_PT.y + 28);
+  ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(R.x + 120, R.y + 70); ctx.lineTo(R.x + 160, R.y + 80); ctx.stroke(); ctx.lineWidth = 1;
+}
+function drawInteriors() {
+  for (const k in BLD) {
+    const b = BLD[k]; if (b.roof > 0.98) continue; const R = b.r;
+    ctx.fillStyle = b.floor; ctx.fillRect(R.x, R.y, R.w, R.h);
+    if (k === 'hutch') interiorHutch(R); else if (k === 'house') interiorHouse(R); else interiorBarn(R);
+    ctx.strokeStyle = b.wall; ctx.lineWidth = 5; ctx.strokeRect(R.x + 2.5, R.y + 2.5, R.w - 5, R.h - 5);
+    ctx.fillStyle = b.floor; ctx.fillRect(b.door.x - 12, R.y + R.h - 5, 24, 5);
+  }
+}
+function drawRoofs() {
+  for (const k in BLD) {
+    const b = BLD[k], R = b.r; if (b.roof < 0.02) continue;
+    ctx.globalAlpha = b.roof;
+    if (k === 'hutch') {
+      ctx.fillStyle = '#a8412c'; ctx.fillRect(R.x - 3, R.y - 3, R.w + 6, R.h + 6);
+      ctx.strokeStyle = 'rgba(0,0,0,.22)'; ctx.lineWidth = 1;
+      for (let y = R.y + 5; y < R.y + R.h; y += 8) { ctx.beginPath(); ctx.moveTo(R.x - 3, y); ctx.lineTo(R.x + R.w + 3, y); ctx.stroke(); }
+      ctx.fillStyle = '#7c2d1e'; ctx.fillRect(R.x - 3, R.y + R.h / 2 - 2, R.w + 6, 4);
+      const asleep = hens.reduce((n, h) => n + (h.state === 'ROOST' || h.state === 'NEST' ? 1 : 0), 0);
+      if (asleep) { ctx.fillStyle = '#fff'; ctx.font = '600 12px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText((world.curfew ? 'z'.repeat(1 + Math.floor(world.clock * 1.5) % 3) + ' ' : '') + asleep + ' inside', R.x + R.w / 2, R.y + R.h / 2 + 22); }
+      ctx.fillStyle = '#efe6d2'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('COOP', R.x + R.w / 2, R.y + R.h / 2 - 10);
+    } else if (k === 'house') {
+      ctx.fillStyle = '#5d7088'; ctx.fillRect(R.x - 5, R.y - 5, R.w + 10, R.h + 10);
+      ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 1;
+      for (let x = R.x - 5; x < R.x + R.w + 5; x += 10) { ctx.beginPath(); ctx.moveTo(x, R.y - 5); ctx.lineTo(x, R.y + R.h + 5); ctx.stroke(); }
+      ctx.fillStyle = '#4a5a70'; ctx.fillRect(R.x - 5, R.y + R.h / 2 - 2, R.w + 10, 4);
+      ctx.fillStyle = '#7a4a34'; ctx.fillRect(R.x + 98, R.y + 6, 14, 18);
+      ctx.fillStyle = '#efe6d2'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('FARMHOUSE', R.x + R.w / 2, R.y + 22);
+    } else {
+      ctx.fillStyle = '#8f3a2b'; ctx.fillRect(R.x - 5, R.y - 5, R.w + 10, R.h + 10);
+      ctx.fillStyle = '#6f2a1e'; ctx.fillRect(R.x - 5, R.y + R.h / 2 - 3, R.w + 10, 6);
+      for (let x = R.x + 5; x < R.x + R.w + 5; x += 14) { ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(x, R.y - 5, 2, R.h + 10); }
+      ctx.fillStyle = '#efe6d2'; ctx.font = '600 13px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('BARN', R.x + R.w / 2, R.y + R.h / 2 + 5);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+function drawDoors() {
+  const H_ = BLD.hutch;
+  if (H_.roof > 0.5 || !hutch.doorOpen) {
+    ctx.fillStyle = hutch.doorOpen ? '#1c120c' : '#8a6038';
+    ctx.beginPath(); ctx.moveTo(DOOR.x - 11, DOOR.y); ctx.lineTo(DOOR.x - 11, DOOR.y - 10); ctx.arc(DOOR.x, DOOR.y - 10, 11, Math.PI, 0); ctx.lineTo(DOOR.x + 11, DOOR.y); ctx.fill();
+    if (!hutch.doorOpen) { ctx.strokeStyle = '#5a3d20'; ctx.lineWidth = 1; for (let x = DOOR.x - 8; x <= DOOR.x + 8; x += 4) { ctx.beginPath(); ctx.moveTo(x, DOOR.y - 2); ctx.lineTo(x, DOOR.y - 18); ctx.stroke(); } }
+  }
+  const hs = BLD.house;
+  if (hs.roof > 0.5) { ctx.fillStyle = '#6e4a2c'; ctx.fillRect(hs.door.x - 11, hs.door.y - 8, 22, 12); ctx.fillStyle = '#e8c85c'; ctx.beginPath(); ctx.arc(hs.door.x + 6, hs.door.y - 2, 1.5, 0, TAU); ctx.fill(); }
+  const bn = BLD.barn;
+  if (bn.roof > 0.5) { ctx.fillStyle = '#2b1a14'; ctx.fillRect(bn.door.x - 18, bn.door.y - 10, 36, 14); ctx.strokeStyle = '#d9c28a'; ctx.lineWidth = 1.5; ctx.strokeRect(bn.door.x - 18, bn.door.y - 10, 36, 14); }
+  ctx.fillStyle = hutch.doorOpen ? '#5a8a4a' : '#b9402a'; ctx.beginPath(); ctx.arc(LATCH.x, LATCH.y, 4, 0, TAU); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1; ctx.stroke();
+}
+function drawPile(p) {
+  const n = Math.ceil(p.amt * 8);
+  ctx.fillStyle = 'rgba(60,45,20,.28)'; ell(p.x, p.y + 1, 4 + p.amt * 2.4, 2.6 + p.amt); ctx.fill();
+  for (let i = 0; i < n; i++) { const a = p.seed + i * 2.4, r = Math.sqrt(i + 1) * 1.8; ctx.fillStyle = i % 3 ? '#e8c85e' : '#c9a23c'; ctx.beginPath(); ctx.arc(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r * 0.8, 1.6, 0, TAU); ctx.fill(); }
+}
+function drawTrough(T_, col, label) {
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(T_.x + 2, T_.y + 3, T_.w, T_.h);
+  ctx.fillStyle = '#7a5a36'; ctx.fillRect(T_.x, T_.y, T_.w, T_.h);
+  ctx.fillStyle = '#2f2418'; ctx.fillRect(T_.x + 2, T_.y + 2, T_.w - 4, T_.h - 4);
+  const f = clamp(T_.level / T_.cap, 0, 1); ctx.fillStyle = col; ctx.fillRect(T_.x + 2, T_.y + 2, (T_.w - 4) * f, T_.h - 4);
+  ctx.fillStyle = 'rgba(20,28,22,.75)'; ctx.font = '600 9px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(label, T_.x + T_.w / 2, T_.y + T_.h + 11);
+}
+function drawHen(c, o) {
+  ctx.save(); ctx.translate(o ? o.x : c.x, o ? o.y : c.y); if (o) ctx.scale(o.s, o.s);
   ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(0, 3, 8, 5); ctx.fill();
-  ctx.rotate(c.ang);
-  const bob = Math.sin(c.phase) * 0.9, peck = (c.pause > 0 && c.state !== 'ROOST') ? Math.max(0, Math.sin(world.clock * 9 + c.id)) * 2 : 0;
+  ctx.rotate(o ? o.ang : c.ang);
+  const bob = Math.sin(c.phase) * 0.9, peck = (c.pause > 0 && c.state !== 'ROOST' && c.state !== 'CAUGHT') ? Math.max(0, Math.sin(world.clock * 9 + c.id)) * 2 : 0;
   ctx.fillStyle = c.breed.body; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(-12, 0 + bob * 0.3); ctx.lineTo(-6, 3); ctx.fill();
   ell(0, bob * 0.4, 8, 6.4); ctx.fill(); ctx.stroke();
@@ -551,26 +1109,59 @@ function drawHen(c) {
   ctx.fillStyle = '#d33a2c'; ell(6.4 + peck, 0, 1.8, 1.2); ctx.fill();
   ctx.fillStyle = '#e8921c'; ctx.beginPath(); ctx.moveTo(9 + peck, -1.4); ctx.lineTo(12.5 + peck, 0); ctx.lineTo(9 + peck, 1.4); ctx.fill();
   ctx.restore();
+  if (!o && c.state !== 'ROOST' && c.state !== 'NEST' && c.state !== 'CAUGHT' && (c.hunger < 0.25 || c.thirst < 0.25)) {
+    ctx.fillStyle = '#d33a2c'; ctx.beginPath(); ctx.arc(c.x + 8, c.y - 11, 5, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '700 8px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(c.thirst < c.hunger ? 'w' : 'f', c.x + 8, c.y - 8.3);
+  }
+}
+function drawFox(f) {
+  ctx.save(); ctx.translate(f.x, f.y);
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ell(0, 4, 12, 6); ctx.fill();
+  ctx.rotate(f.ang);
+  const wag = Math.sin(f.phase * 1.4) * 2;
+  ctx.fillStyle = '#d9692a'; ctx.beginPath(); ctx.moveTo(-8, 0); ctx.quadraticCurveTo(-17, 4 + wag, -22, wag); ctx.quadraticCurveTo(-17, -4 + wag, -8, 0); ctx.fill();
+  ctx.fillStyle = '#f4efe2'; ctx.beginPath(); ctx.arc(-21.5, wag, 2.4, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#d9692a'; ell(0, 0, 10, 6); ctx.fill();
+  ctx.fillStyle = '#e07a38'; ctx.beginPath(); ctx.arc(8, 0, 4.4, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#d9692a'; ctx.beginPath(); ctx.moveTo(6, -3); ctx.lineTo(8, -8); ctx.lineTo(10, -3); ctx.moveTo(6, 3); ctx.lineTo(8, 8); ctx.lineTo(10, 3); ctx.fill();
+  ctx.fillStyle = '#f4efe2'; ctx.beginPath(); ctx.moveTo(10, -2); ctx.lineTo(14, 0); ctx.lineTo(10, 2); ctx.fill();
+  ctx.fillStyle = '#231a14'; ctx.beginPath(); ctx.arc(14, 0, 1.2, 0, TAU); ctx.fill();
+  ctx.restore();
+  if (f.state === 'DIG' && f.dig && dist(f, digPointFor(f, f.dig)) <= 6) {
+    ctx.fillStyle = '#6e5233'; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(f.x + Math.sin(world.clock * 14 + i * 2) * 6, f.y + 9 + Math.cos(world.clock * 12 + i) * 3, 1.8, 0, TAU); ctx.fill(); }
+  }
 }
 function drawFarmer() {
   const f = farmer;
   ctx.save(); ctx.translate(f.x, f.y);
   ctx.fillStyle = 'rgba(0,0,0,.22)'; ell(0, 4, 11, 7); ctx.fill();
+  if (f.sleeping) { ctx.rotate(1.57); ctx.fillStyle = '#2f5d94'; ell(0, 0, 6, 11); ctx.fill(); ctx.fillStyle = '#e3c36d'; ctx.beginPath(); ctx.arc(0, -12, 5, 0, TAU); ctx.fill(); ctx.restore(); return; }
   ctx.rotate(f.face);
   const sw = Math.sin(f.step) * 3;
   ctx.fillStyle = '#2f5d94'; ell(0, 0, 8, 10); ctx.fill();
   ctx.fillStyle = '#e8b890'; ctx.beginPath(); ctx.arc(5, -9 + sw * 0.2, 3, 0, TAU); ctx.arc(5, 9 - sw * 0.2, 3, 0, TAU); ctx.fill();
-  if (f.scoops > 0) { ctx.fillStyle = '#7a4f2a'; ctx.beginPath(); ctx.arc(13, 0, 5.5, 0, TAU); ctx.fill(); ctx.fillStyle = '#e8c85c'; ctx.beginPath(); ctx.arc(13, 0, 3.6, 0, TAU); ctx.fill(); }
+  if (f.carry === 'feed') { ctx.fillStyle = '#7a4f2a'; ctx.beginPath(); ctx.arc(13, 0, 5.5, 0, TAU); ctx.fill(); ctx.fillStyle = '#e8c85c'; ctx.beginPath(); ctx.arc(13, 0, 3.6, 0, TAU); ctx.fill(); }
+  if (f.carry === 'water') { ctx.fillStyle = '#6f7d8c'; ctx.beginPath(); ctx.arc(13, 0, 5.5, 0, TAU); ctx.fill(); ctx.fillStyle = '#58a6dc'; ctx.beginPath(); ctx.arc(13, 0, 3.6, 0, TAU); ctx.fill(); }
   ctx.fillStyle = '#e3c36d'; ctx.beginPath(); ctx.arc(0, 0, 8.6, 0, TAU); ctx.fill();
   ctx.strokeStyle = '#a98a3c'; ctx.lineWidth = 1.4; ctx.stroke();
   ctx.fillStyle = '#b4452f'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, TAU); ctx.fill();
   ctx.restore();
-  if (f.sneakNow) { ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.font = '600 9px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('sneak', f.x, f.y + 22); }
+  if (f.sneakNow) { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.font = '600 9px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('sneak', f.x, f.y + 22); }
+  if (f.energy < 0.2) { ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '600 9px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('tired', f.x, f.y - 14); }
 }
-function drawGate() {
-  const a = gate.anim * Math.PI / 2, ex = 400 + Math.sin(a) * 60, ey = 290 + Math.cos(a) * 60;
-  ctx.strokeStyle = '#c28d56'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(400, 290); ctx.lineTo(ex, ey); ctx.stroke();
-  ctx.strokeStyle = '#8a5a30'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(400, 290); ctx.lineTo(ex, ey); ctx.stroke();
+function drawTruck() {
+  ctx.save(); ctx.translate(truck.x, truck.y);
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-15, -7, 36, 22);
+  ctx.rotate(truck.ang);
+  ctx.fillStyle = '#222'; [[-10, -11], [-10, 7], [9, -11], [9, 7]].forEach(w => ctx.fillRect(w[0] - 4, w[1], 8, 4));
+  ctx.fillStyle = '#b9402a'; ctx.beginPath(); ctx.roundRect(-18, -9, 36, 18, 3); ctx.fill();
+  ctx.fillStyle = '#8f2f1e'; ctx.fillRect(-17, -8, 20, 16);
+  ctx.fillStyle = '#d8d2c0'; ctx.fillRect(4, -7, 11, 14);
+  ctx.fillStyle = '#6b8fb0'; ctx.fillRect(10, -6, 4, 12);
+  const crates = Math.min(6, Math.ceil(truck.cargo / 25)); ctx.fillStyle = '#e6d3a0';
+  for (let i = 0; i < crates; i++) ctx.fillRect(-15 + (i % 3) * 6, -6 + Math.floor(i / 3) * 7, 5, 6);
+  const sacks = Math.min(6, truck.sacks); ctx.fillStyle = '#d9c28a'; for (let i = 0; i < sacks; i++) ctx.fillRect(-15 + (i % 3) * 6, -6 + Math.floor(i / 3) * 7, 5, 6);
+  ctx.restore();
 }
 function drawTree(t) {
   ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(t.x + 6, t.y + 12, 26, 14); ctx.fill();
@@ -578,7 +1169,8 @@ function drawTree(t) {
   ctx.fillStyle = '#33703a'; ctx.beginPath(); ctx.arc(t.x, t.y - 16, 26, 0, TAU); ctx.fill();
   ctx.fillStyle = '#438a47'; ctx.beginPath(); ctx.arc(t.x - 7, t.y - 22, 15, 0, TAU); ctx.fill();
 }
-const STATE_COL = { WANDER: '#ffffff', FORAGE: '#ffe27a', FLEE: '#ff7b6b', APPROACH: '#8df0a8', RETURN: '#8fc4ff', ROOST: '#c5a8ff', ESCAPE: '#ffb15c' };
+const STATE_COL = { WANDER: '#ffffff', FORAGE: '#ffe27a', FLEE: '#ff7b6b', APPROACH: '#8df0a8', RETURN: '#8fc4ff', ROOST: '#c5a8ff', ESCAPE: '#ffb15c', EAT: '#ffd9a0', DRINK: '#9fd8ff', SHELTER: '#b6c2cf', CAUGHT: '#ff4d4d', LAY: '#fff4c2', NEST: '#fff4c2',
+  PROWL: '#ffb15c', STALK: '#ff7b6b', DIG: '#e2b78a', SCARED: '#8df0a8', LEAVE: '#cfcfcf' };
 function bubble(txt, x, y, strong) {
   ctx.font = '600 12px "DM Sans", sans-serif'; ctx.textAlign = 'center';
   const w = ctx.measureText(txt).width + 22, h = 22; x = clamp(x, w / 2 + 4, W - w / 2 - 4); y = clamp(y, h + 4, H - 6);
@@ -589,38 +1181,57 @@ function bubble(txt, x, y, strong) {
 function render() {
   ctx.setTransform(S, 0, 0, S, 0, 0);
   if (bg) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(bg, 0, 0); ctx.restore(); }
-  drawGate();
-  /* bugs */
+  /* mud */
+  if (world.wet > 0.05) for (const m of MUD) { ctx.fillStyle = 'rgba(88,62,38,' + (clamp(world.wet, 0, 1) * 0.62).toFixed(2) + ')'; ell(m.x, m.y, m.rx, m.ry); ctx.fill(); }
+  drawFence(); drawGate(); shadeBuildings(); drawInteriors();
+  drawTrough(FEEDER, '#e1c15c', 'FEED'); drawTrough(WATERER, '#58a6dc', 'WATER');
+  /* market signs */
+  ctx.font = '700 10px "DM Sans", sans-serif'; ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(20,28,22,.85)'; ctx.fillText(marketOpen() ? '$' + world.market + ' / egg' : 'closed', STALL.x + STALL.w / 2, STALL.y + 38);
+  ctx.fillText(marketOpen() ? 'sacks $' + T.sackCost : 'closed', SHOP.x + SHOP.w / 2, SHOP.y + SHOP.h + 12);
   for (const b of bugs) if (b.alive) { const w = Math.sin(world.clock * 6 + b.ph) * 1.2; ctx.fillStyle = '#2b2218'; ctx.beginPath(); ctx.arc(b.x + w, b.y, 1.9, 0, TAU); ctx.fill(); }
-  /* eggs */
   for (const e of eggs) {
+    if (e.inHutch) continue;
     const old = e.age > T.rot - 30, blink = old && Math.floor(world.clock * 4) % 2;
     ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(e.x + 1, e.y + 3, 4, 2.4); ctx.fill();
     ctx.fillStyle = blink ? '#b9a98a' : '#fbf5e4'; ctx.strokeStyle = '#8a7a58'; ctx.lineWidth = 1; ell(e.x, e.y, 3.6, 4.6); ctx.fill(); ctx.stroke();
   }
-  /* hutch occupants */
-  const asleep = hens.filter(h => h.state === 'ROOST').length;
-  if (asleep) { ctx.fillStyle = '#fff'; ctx.font = '600 12px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('z'.repeat(1 + Math.floor(world.clock * 1.5) % 3) + ' ' + asleep, HUTCH.x + HUTCH.w / 2, HUTCH.y + 18); }
+  for (const p of piles) drawPile(p);
   /* entities sorted by y */
-  const list = hens.filter(h => h.state !== 'ROOST'); list.push(farmer);
+  const list = hens.filter(h => h.state !== 'ROOST' && h.state !== 'NEST'); foxes.forEach(f => list.push(f));
+  if (!farmer.driving && !(farmer.sleeping && farmer.inside)) list.push(farmer);
   list.sort((a, b) => a.y - b.y);
-  for (const o of list) o === farmer ? drawFarmer() : drawHen(o);
-  for (const o of list) if (o !== farmer && o.state === 'RETURN' && o.waiting) { ctx.fillStyle = '#fff'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('z z', o.x, o.y - 12); }
+  for (const o of list) o === farmer ? drawFarmer() : o.isFox ? drawFox(o) : drawHen(o);
+  drawTruck(); drawRoofs(); drawDoors();
+  for (const o of list) if (!o.isFox && o !== farmer && o.state === 'RETURN' && o.waiting) { ctx.fillStyle = '#fff'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('z z', o.x, o.y - 12); }
   for (const t of TREES) drawTree(t);
   for (const f of floats) { ctx.globalAlpha = clamp(f.t / 0.5, 0, 1); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.font = '700 12px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.txt, f.x + 1, f.y + 1); ctx.fillStyle = f.col; ctx.fillText(f.txt, f.x, f.y); ctx.globalAlpha = 1; }
+  /* rain */
+  if (world.rain > 0.03) {
+    ctx.strokeStyle = 'rgba(200,220,255,' + (world.rain * 0.55).toFixed(2) + ')'; ctx.lineWidth = 1; ctx.beginPath();
+    for (let i = 0; i < 150; i++) { const x = (i * 97 + world.clock * 90) % (W + 40) - 20, y = (i * 53 + world.clock * 560) % (H + 20); ctx.moveTo(x, y); ctx.lineTo(x - 3, y + 10); }
+    ctx.stroke(); ctx.fillStyle = 'rgba(40,52,74,' + (world.rain * 0.2).toFixed(2) + ')'; ctx.fillRect(0, 0, W, H);
+  }
   /* night */
   const sun = Math.sin((world.t - 0.25) * TAU), light = clamp((sun + 0.15) / 0.5, 0, 1), dark = (1 - light) * (1 - light * 0.2);
   if (dark > 0.01) {
     ctx.fillStyle = 'rgba(8,12,44,' + (dark * 0.62).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
-    [[HUTCH.x + 46, HUTCH.y + 26, 90], [STAND.x + 56, STAND.y - 10, 110], [BARN.x + 110, BARN.y + 80, 100], [GATE.x, GATE.y, 60]].forEach(([x, y, r]) => {
+    [[HUTCH.x + 46, HUTCH.y + 26, 90], [STAND.x + 56, STAND.y - 10, 90], [HOUSE.x + 65, HOUSE.y + 70, 120], [STALL.x + 55, STALL.y, 90], [SHOP.x + 55, SHOP.y + 20, 80], [GATE.x, GATE.y, 60]].forEach(([x, y, r]) => {
       const gr = ctx.createRadialGradient(x, y, 2, x, y, r); gr.addColorStop(0, 'rgba(255,200,110,' + (dark * 0.45).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,200,110,0)');
       ctx.fillStyle = gr; ctx.fillRect(x - r, y - r, r * 2, r * 2);
     });
     ctx.globalCompositeOperation = 'source-over';
   }
+  if (farmer.sleeping) {
+    ctx.fillStyle = 'rgba(4,6,24,.55)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '700 28px "Bricolage Grotesque", sans-serif';
+    ctx.fillText('Zzz' + '.'.repeat(Math.floor(world.clock * 2) % 4), W / 2, H / 2 - 6);
+    ctx.font = '500 13px "DM Sans", sans-serif'; ctx.fillText(farmer.sleepKind === 'faint' ? 'You passed out. You wake when you have recovered.' : 'Sleeping. Noises will wake you.', W / 2, H / 2 + 18);
+  }
   if (debug) renderDebug();
-  if (action) bubble('F  ' + action.label, farmer.x, farmer.y - 22, true);
+  if (action && !farmer.sleeping) bubble('F  ' + action.label, farmer.x, farmer.y - 24, true);
+  else if (action) bubble('F  ' + action.label, W / 2, H / 2 + 52, true);
   if (toast.t > 0 && toast.txt) { ctx.globalAlpha = clamp(toast.t, 0, 1); bubble(toast.txt, W / 2, 34, false); ctx.globalAlpha = 1; }
 }
 function renderDebug() {
@@ -628,40 +1239,55 @@ function renderDebug() {
   ctx.strokeStyle = 'rgba(255,255,255,.14)';
   for (let x = 0; x <= W; x += CELL) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
   for (let y = 0; y <= H; y += CELL) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-  const fr = T.fleeR * (farmer.sneakNow ? T.sneakK : 1);
+  const fr = T.fleeR * (farmer.sneakNow ? T.sneakK : 1) * (farmer.driving ? 1.4 : 1);
   ctx.setLineDash([5, 4]);
   ctx.strokeStyle = 'rgba(255,120,100,.95)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, fr, 0, TAU); ctx.stroke();
   ctx.strokeStyle = 'rgba(255,120,100,.4)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, fr * 1.5, 0, TAU); ctx.stroke();
-  if (farmer.scoops > 0) { ctx.strokeStyle = 'rgba(120,240,160,.9)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, T.attractR, 0, TAU); ctx.stroke(); ctx.strokeStyle = 'rgba(120,240,160,.35)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, T.attractR * 1.3, 0, TAU); ctx.stroke(); }
+  if (holdingFeed()) { ctx.strokeStyle = 'rgba(120,240,160,.9)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, T.attractR, 0, TAU); ctx.stroke(); ctx.strokeStyle = 'rgba(120,240,160,.35)'; ctx.beginPath(); ctx.arc(farmer.x, farmer.y, T.attractR * 1.3, 0, TAU); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(255,170,60,.7)'; foxes.forEach(f => { ctx.beginPath(); ctx.arc(f.x, f.y, T.foxFleeR, 0, TAU); ctx.stroke(); });
   ctx.setLineDash([]);
   ctx.font = '500 9px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
   for (const c of hens) {
-    if (c.state === 'ROOST') continue;
+    if (c.state === 'ROOST' || c.state === 'NEST') continue;
     const col = STATE_COL[c.state] || '#fff';
     if (c.route.length) { ctx.strokeStyle = col; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.moveTo(c.x, c.y); c.route.forEach(w => ctx.lineTo(w.x, w.y)); ctx.stroke(); ctx.globalAlpha = 1; }
     ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + c.vx * 0.25, c.y + c.vy * 0.25); ctx.stroke();
-    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(c.x - 20, c.y - 22, 40, 11);
-    ctx.fillStyle = col; ctx.fillText(c.state, c.x, c.y - 14);
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(c.x - 22, c.y - 24, 44, 11);
+    ctx.fillStyle = col; ctx.fillText(c.state, c.x, c.y - 16);
   }
-  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(6, 6, 190, 36);
+  for (const f of foxes) {
+    const col = STATE_COL[f.state] || '#fff';
+    if (f.route.length) { ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(f.x, f.y); f.route.forEach(w => ctx.lineTo(w.x, w.y)); ctx.stroke(); }
+    ctx.fillStyle = 'rgba(0,0,0,.65)'; ctx.fillRect(f.x - 22, f.y - 26, 44, 11); ctx.fillStyle = col; ctx.fillText('FOX ' + f.state, f.x, f.y - 18);
+  }
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(6, 6, 200, 50);
   ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.font = '500 11px "JetBrains Mono", monospace';
-  ctx.fillText(Math.round(fps) + ' fps  ·  ' + hens.length + ' hens', 12, 21);
+  ctx.fillText(Math.round(fps) + ' fps  ·  ' + hens.length + ' hens  ·  ' + foxes.length + ' foxes', 12, 21);
   ctx.fillText('eggs ' + eggs.length + '  ·  bugs ' + bugs.filter(b => b.alive).length, 12, 35);
+  ctx.fillText('wet ' + world.wet.toFixed(2) + '  ·  rain ' + world.rain.toFixed(2), 12, 49);
 }
 
 /* ---------- HUD (DOM) ---------- */
 let hudT = 0;
+function setMeter(id, f, low) { const m = $(id); m.firstElementChild.style.width = (clamp(f, 0, 1) * 100).toFixed(0) + '%'; m.classList.toggle('low', f < low); }
 function hud(dt) {
   hudT -= dt; if (hudT > 0) return; hudT = 0.12;
-  const hrs = world.t * 24, hh = Math.floor(hrs), mm = Math.floor((hrs - hh) * 60);
-  $('sClock').textContent = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
-  $('sDay').textContent = 'Day ' + world.day;
-  $('sEggs').textContent = farmer.basket; $('sMoney').textContent = farmer.money;
-  $('sHens').textContent = hens.length; $('sFeed').textContent = farmer.scoops;
+  $('sClock').textContent = clockStr(); $('sDay').textContent = 'Day ' + world.day;
+  $('sWeather').textContent = world.rain > 0.3 ? 'Raining' : world.wet > 0.5 ? 'Muddy' : world.curfew ? 'Night' : 'Clear';
+  $('sCoop').textContent = eggs.reduce((n, e) => n + (e.inHutch ? 1 : 0), 0); $('sEggs').textContent = farmer.basket; $('sCargo').textContent = truck.cargo; $('sMoney').textContent = farmer.money;
+  $('sHens').textContent = hens.length; $('sLost').textContent = world.lost ? '(' + world.lost + ' lost)' : '';
+  const hungry = hens.filter(h => h.hunger < 0.25).length, thirsty = hens.filter(h => h.thirst < 0.25).length;
+  $('sNeeds').textContent = hungry || thirsty ? (hungry ? hungry + ' hungry' : '') + (hungry && thirsty ? ' · ' : '') + (thirsty ? thirsty + ' thirsty' : '') : 'All fed and watered';
+  $('sEnergy').textContent = Math.round(farmer.energy * 100); setMeter('mEnergy', farmer.energy, 0.25);
+  $('sFeeder').textContent = Math.round(FEEDER.level); setMeter('mFeeder', FEEDER.level / FEEDER.cap, 0.2);
+  $('sWater').textContent = Math.round(WATERER.level); setMeter('mWater', WATERER.level / WATERER.cap, 0.2);
+  $('sClean').textContent = Math.round((1 - hutch.dirt) * 100); setMeter('mClean', 1 - hutch.dirt, 0.3);
+  $('sBin').textContent = bin.stock; $('sCarry').textContent = truck.sacks ? '+' + truck.sacks * 50 + ' in truck' : farmer.carry === 'feed' ? farmer.scoops + ' in hand' : farmer.carry === 'water' ? 'can full' : '';
+  $('sMarket').textContent = world.market;
   $('mark').style.left = (world.t * 100).toFixed(2) + '%';
   $('buy').disabled = farmer.money < T.henCost || hens.length >= 200;
   const n = {}; hens.forEach(h => n[h.state] = (n[h.state] || 0) + 1);
-  $('states').innerHTML = ['WANDER', 'FORAGE', 'ESCAPE', 'FLEE', 'APPROACH', 'RETURN', 'ROOST'].map(s => '<span>' + s + ' <b>' + (n[s] || 0) + '</b></span>').join('');
+  $('states').innerHTML = ['WANDER', 'FORAGE', 'ESCAPE', 'EAT', 'DRINK', 'LAY', 'NEST', 'FLEE', 'APPROACH', 'SHELTER', 'RETURN', 'ROOST', 'CAUGHT'].map(s => '<span>' + s + ' <b>' + (n[s] || 0) + '</b></span>').join('');
 }
 
 /* ---------- loop ---------- */
@@ -670,7 +1296,9 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (dt > 0) fps += (1 / dt - fps) * 0.05;
   world.clock += dt;
-  update(dt); render(); hud(dt);
+  const steps = farmer.sleeping ? 5 : 1;
+  for (let i = 0; i < steps; i++) update(dt);
+  render(); hud(dt);
   requestAnimationFrame(frame);
 }
 function fit() {
@@ -679,7 +1307,8 @@ function fit() {
 }
 new ResizeObserver(fit).observe(cv);
 fit(); resetFarm();
-window.__farm = { world, farmer, gate, get hens() { return hens; }, get eggs() { return eggs; }, T, update, doAction };
+window.__farm = { world, farmer, truck, gate, hutch, bin, FEEDER, WATERER, FENCE, T, update, doAction, findAction, spawnFox, wakeUp,
+  get hens() { return hens; }, get eggs() { return eggs; }, get foxes() { return foxes; } };
 requestAnimationFrame(frame);
 })();
 </script>
