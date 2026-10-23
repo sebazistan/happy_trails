@@ -45,10 +45,15 @@ header h1 { font-family: var(--font-display); font-size: 30px; line-height: 1.1;
 header p { margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 65ch; }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
-.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-width: 0; }
+.stat { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-width: 0; }
 .stat .k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .stat .v { font-family: var(--font-display); font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stat .v small { font-family: var(--font-body); font-size: 12px; font-weight: 500; color: var(--muted); }
+.gain { position: absolute; right: 10px; top: 8px; font-family: var(--font-mono); font-size: 14px; font-weight: 500; color: var(--good); opacity: 0; pointer-events: none; }
+.gain.show { animation: gain 1.6s ease-out; }
+@keyframes gain { 0% { opacity: 1; transform: translateY(8px) scale(1.15); } 100% { opacity: 0; transform: translateY(-16px) scale(1); } }
+.stat.flash { animation: flash 1s ease-out; }
+@keyframes flash { 0% { box-shadow: 0 0 0 4px var(--accent); background: color-mix(in srgb, var(--accent) 40%, var(--panel)); } 100% { box-shadow: 0 0 0 0 transparent; background: var(--panel); } }
 .meter { height: 6px; border-radius: 3px; background: var(--line); margin-top: 4px; overflow: hidden; }
 .meter i { display: block; height: 100%; width: 50%; background: var(--good); transition: width .15s; }
 .meter.low i { background: var(--bad); }
@@ -110,7 +115,7 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
 
   <section class="stats" aria-label="Farm status">
     <div class="stat"><div class="k">Time</div><div class="v"><span id="sClock">07:12</span> <small id="sDay">Day 1</small></div><div class="k" id="sWeather" style="margin-top:2px">Clear</div></div>
-    <div class="stat"><div class="k">Money</div><div class="v">$<span id="sMoney">0</span></div></div>
+    <div class="stat" id="cardMoney"><div class="k">Money</div><div class="v">$<span id="sMoney">0</span></div><span class="gain" id="moneyGain"></span></div>
     <div class="stat"><div class="k">Basket / truck</div><div class="v"><span id="sEggs">0</span> <small>/</small> <span id="sCargo">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px"><span id="sCoop">0</span> waiting in coop</div></div>
     <div class="stat"><div class="k">Hens</div><div class="v"><span id="sHens">20</span> <small id="sLost"></small></div><div class="k" id="sNeeds" style="margin-top:2px">&nbsp;</div></div>
     <div class="stat"><div class="k">Your energy</div><div class="v"><span id="sEnergy">100</span><small>%</small></div><div class="meter" id="mEnergy"><i></i></div></div>
@@ -118,7 +123,9 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
     <div class="stat"><div class="k">Water</div><div class="v"><span id="sWater">8</span><small>/12</small></div><div class="meter" id="mWater"><i></i></div></div>
     <div class="stat"><div class="k">Coop clean</div><div class="v"><span id="sClean">90</span><small>%</small></div><div class="meter" id="mClean"><i></i></div></div>
     <div class="stat"><div class="k">Feed in bin</div><div class="v"><span id="sBin">120</span></div><div class="k" id="sCarry" style="margin-top:2px">&nbsp;</div></div>
-    <div class="stat"><div class="k">Egg stall price</div><div class="v">$<span id="sMarket">4</span><small>/egg</small></div></div>
+    <div class="stat"><div class="k">Fridge (barn)</div><div class="v"><span id="sFridge">0</span> <small>eggs</small></div></div>
+    <div class="stat"><div class="k">Farm stand</div><div class="v"><span id="sStandStock">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px">till $<span id="sStandTill">0</span> &middot; <span id="sStandOpen">closed</span></div></div>
+    <div class="stat"><div class="k">Roadside stall</div><div class="v"><span id="sRoadStock">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px">box $<span id="sRoadTill">0</span> &middot; $<span id="sMarket">24</span>/carton</div></div>
     <div class="stat buy"><button class="btn primary" id="buy" type="button" style="width:100%">Buy hen $14</button></div>
   </section>
 
@@ -150,7 +157,7 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
     <summary>How a day works</summary>
     <div class="howto">
       <p><b>Morning.</b> The coop door opens at dawn. Open the pen gate so hens can range. Hens wake hungry. Take feed from the bin or the barn, then fill the feeder, or scatter feed on the ground and watch them peck it until it is gone. Fill the water trough from the pump (fill the can, then act at the trough). Hens with an empty belly or throat stop laying, and neglected hens eventually die.</p>
-      <p><b>Daytime.</b> Most hens lay in the coop nest boxes. Go inside the coop (the roof fades away) and collect from the nests. A few lay out in the yard. Collect eggs before they rot. Sell at the farm stand for a flat price, or load the truck and drive it to the roadside stall, where the price changes each day. The feed shop sells sacks that you drive back to the bin. Clean the coop when it gets dirty. Rain makes mud and sends hens under cover.</p>
+      <p><b>Daytime.</b> Most hens lay in the coop nest boxes. Go inside the coop (the roof fades away) and collect from the nests. A few lay out in the yard. Collect eggs before they rot. Eggs do not sell themselves. Stock the farm stand and the roadside stall, and keep spares in the barn fridge. Customers buy cartons of six. Your wife serves at the farm stand from Monday to Friday and goes back to the house at night. The roadside stall runs on an honesty box. Money only counts once you collect it from the till or the box. The feed shop sells sacks that you drive back to the bin. Clean the coop when it gets dirty. Rain makes mud and sends hens under cover.</p>
       <p><b>Catching hens.</b> Hens see mostly straight ahead, and they only hear you when you move without sneaking. Press <b>C</b> (or the Sneak button) to switch sneaking on, creep up behind a hen and pick her up. You can carry three, a little slower for each. Carry them to the pen and put them down. Yellow cones show what nearby hens can see while you sneak.</p>
       <p><b>Dusk.</b> Hens head for the coop. The door shuts later in the evening, so get every hen in, close the gate, and check the fence. A hen left outside is fox food.</p>
       <p><b>Night.</b> Foxes come. They dig under fence sections, slip through an open gate and steal eggs and hens. Walk at one to scare it off, then repair any hole in the fence. When your energy runs low, sleep in the farmhouse. If you pass out, you lose the night.</p>
@@ -168,6 +175,9 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
         <button class="btn" id="bFox" type="button">Send a fox</button>
         <button class="btn" id="bRain" type="button">Make it rain</button>
         <button class="btn" id="bCash" type="button">+$50</button>
+        <button class="btn" id="bCarRoad" type="button">Send roadside car</button>
+        <button class="btn" id="bCarStand" type="button">Send stand customers</button>
+        <button class="btn" id="bSound" type="button" aria-pressed="true">Sound</button>
         <button class="btn" id="bAdd10" type="button">+10 hens</button>
         <button class="btn" id="bSub10" type="button">&minus;10 hens</button>
         <button class="btn" id="bReset" type="button">Reset farm</button>
@@ -196,7 +206,7 @@ let S = 1, bg = null;
 /* ---------- tuning (every number the guide says to expose) ---------- */
 const T = { walk: 32, fleeMult: 3.6, fleeR: 70, attractR: 140, sep: 1.2, egg: 60, dayLen: 240, farmerSpeed: 105,
   sneakK: 0.5, fov: 150, hear: 34, wanderR: 60, pauseMin: 0.8, pauseMax: 3.2, forageR: 70, gateBias: 0.3, gateRange: 200, price: 2,
-  henCost: 14, rot: 150, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 190 };
+  henCost: 14, rot: 150, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 105, carsRoad: 5, carsStand: 4 };
 const SLIDERS = [
   ['walk', 'Hen walk speed', 15, 70, 1, v => v + ' px/s'],
   ['fleeMult', 'Flee speed multiplier', 1.5, 6, 0.1, v => '×' + v.toFixed(1)],
@@ -208,6 +218,9 @@ const SLIDERS = [
   ['egg', 'Egg interval', 20, 140, 1, v => v + ' s'],
   ['dayLen', 'Day length', 60, 600, 5, v => v + ' s'],
   ['farmerSpeed', 'Farmer speed', 50, 180, 1, v => v + ' px/s'],
+  ['truckSpeed', 'Truck top speed', 50, 160, 1, v => v + ' px/s'],
+  ['carsRoad', 'Roadside cars per day', 0, 12, 1, v => v + ''],
+  ['carsStand', 'Farm stand visits per day', 0, 10, 1, v => v + ''],
   ['foxes', 'Foxes per night', 0, 4, 0.5, v => v.toFixed(1)],
   ['foxSpeed', 'Fox speed multiplier', 0.6, 1.6, 0.05, v => '×' + v.toFixed(2)],
   ['digRate', 'Fox dig rate', 4, 40, 1, v => v + ' hp/s'],
@@ -259,6 +272,8 @@ const STAND = { x: 770, y: 330, w: 112, h: 30 }, STAND_PT = { x: 826, y: 345 };
 const STALL = { x: 790, y: 494, w: 110, h: 26 }, STALL_PT = { x: 845, y: 530 };
 const SHOP = { x: 110, y: 482, w: 110, h: 38 }, SHOP_PT = { x: 165, y: 530 };
 const ROAD = { y0: 538, y1: 584 };
+const FRIDGE = { x: BARN.x + BARN.w - 70, y: BARN.y + 8, w: 56, h: 40 }, FRIDGE_PT = { x: BARN.x + BARN.w - 42, y: BARN.y + 64 };
+const STAND_BACK = { x: 826, y: 318 }, STAND_JAR = { x: STAND.x + STAND.w - 14, y: STAND.y + 15 }, ROADBOX = { x: STALL.x + STALL.w + 14, y: STALL.y + 14 };
 const FEEDER = { x: 190, y: 424, w: 62, h: 14, level: 10, cap: 20, pt: { x: 221, y: 413 } };
 const WATERER = { x: 318, y: 424, w: 52, h: 14, level: 8, cap: 12, pt: { x: 344, y: 413 } };
 const TREES = [{ x: 40, y: 70 }, { x: 300, y: 60 }, { x: 905, y: 230 }, { x: 55, y: 440 }, { x: 690, y: 230 }, { x: 390, y: 515 }];
@@ -275,7 +290,7 @@ const LAYBLOCK = { ROOST: 1, NEST: 1, RETURN: 1, FLEE: 1, CAUGHT: 1, LAY: 1, HEL
 const bin = { stock: 120 };
 const farmer = { x: 500, y: 330, vx: 0, vy: 0, face: 0, r: 9, carry: null, scoops: 0, basket: 0, money: 0, sneak: false, sneakNow: false,
   step: 0, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null, held: [] };
-const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, sacks: 0 };
+const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, sacks: 0, steer: 0 };
 let hens = [], foxes = [], eggs = [], bugs = [], piles = [], floats = [], toast = { txt: '', t: 0 }, nextId = 1, logItems = [];
 let debug = false, action = null, fps = 60;
 
@@ -317,7 +332,7 @@ function say(txt, bad) {
   renderLog();
 }
 function renderLog() { $('log').innerHTML = logItems.map(i => '<li class="' + (i.bad ? 'bad' : '') + '"><time>' + i.when + '</time><span>' + i.txt + '</span></li>').join(''); }
-function float(x, y, txt, col) { floats.push({ x, y, txt, col: col || '#fff', t: 1.3 }); }
+function float(x, y, txt, col, big) { floats.push({ x, y, txt, col: col || '#fff', t: big ? 2.2 : 1.3, big }); }
 
 /* ---------- spawning ---------- */
 const BREEDS = [{ body: '#f4efe2', wing: '#d9d1bd' }, { body: '#b9733c', wing: '#935626' }, { body: '#9aa0a4', wing: '#767d82' }];
@@ -342,8 +357,10 @@ function resetFarm() {
   Object.assign(world, { t: 0.30, day: 1, curfew: false, warned: false, doorShut: false, foxSpawned: false, rain: 0, rainOn: false, rainAt: -1, rainLeft: 0, wet: 0, market: 4, lost: 0 });
   Object.assign(farmer, { x: 500, y: 330, vx: 0, vy: 0, carry: null, scoops: 0, basket: 0, money: 0, sneak: false, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null, held: [] });
   Object.values(BLD).forEach(b => b.roof = 1); piles = [];
-  Object.assign(truck, { x: 600, y: 492, ang: 0, v: 0, cargo: 0, sacks: 0 });
+  Object.assign(truck, { x: 600, y: 492, ang: 0, v: 0, cargo: 0, sacks: 0, steer: 0 });
   Object.assign(hutch, { doorOpen: true, dirt: 0.15 }); bin.stock = 120; FEEDER.level = 6; WATERER.level = 8;
+  Object.assign(stand, { stock: 18, till: 0, warned: false }); Object.assign(roadside, { stock: 12, till: 0, warned: false }); fridge.stock = 0;
+  Object.assign(wife, { state: 'HOME', vis: false, route: [], x: 475, y: 126 }); cars = []; people = []; coins = [];
   FENCE.forEach(c => { c.hp = 100; c.broken = false; });
   gate.open = false; gate.anim = 0; hens = []; foxes = []; eggs = []; floats = []; bugs = []; logItems = [];
   for (let i = 0; i < 20; i++) { const p = penPoint(); newHen(p.x, p.y); }
@@ -703,19 +720,20 @@ function updateFarmer(dt) {
   }
   farmer.sneakNow = sneak && !farmer.driving;
   if (farmer.driving) {
-    const mag = Math.hypot(v.x, v.y);
-    let target = 0;
-    if (mag > 0.15) {
-      const want = Math.atan2(v.y, v.x); let da = Math.atan2(Math.sin(want - truck.ang), Math.cos(want - truck.ang));
-      truck.ang += clamp(da, -3.4 * dt, 3.4 * dt);
-      target = T.truckSpeed * mag * Math.max(0.15, Math.cos(Math.min(Math.abs(da), 1.4)));
-    }
-    const mud = inMud(truck) ? 0.45 : 1, tired = farmer.energy < 0.2 ? 0.8 : 1;
-    target *= mud * tired;
-    truck.v += clamp(target - truck.v, -280 * dt, 200 * dt);
+    /* car-like handling: up is throttle, down brakes then reverses, left and right steer; no turning on the spot */
+    const throttle = -v.y, steerIn = v.x;
+    const mud = inMud(truck) ? 0.5 : 1, tired = farmer.energy < 0.2 ? 0.85 : 1;
+    const maxF = T.truckSpeed * mud * tired, maxR = maxF * 0.3;
+    let acc;
+    if (throttle > 0.1) acc = (truck.v < -1 ? 120 : 52 * mud) * throttle;
+    else if (throttle < -0.1) acc = -(truck.v > 1 ? 110 : 40) * -throttle;
+    else acc = -Math.sign(truck.v) * Math.min(Math.abs(truck.v) / Math.max(dt, 1e-3), 34);
+    truck.v = clamp(truck.v + acc * dt, -maxR, maxF);
+    truck.steer += (steerIn * 0.52 - truck.steer) * Math.min(1, dt * 4);
+    truck.ang += (truck.v / 30) * Math.tan(truck.steer) * dt;
     truck.x += Math.cos(truck.ang) * truck.v * dt; truck.y += Math.sin(truck.ang) * truck.v * dt;
     const ox = truck.x, oy = truck.y; collide(truck, truck.r);
-    if (Math.hypot(truck.x - ox, truck.y - oy) > 0.5) truck.v *= 0.6;
+    if (Math.hypot(truck.x - ox, truck.y - oy) > 0.4) truck.v *= 0.5;
     farmer.x = truck.x; farmer.y = truck.y; farmer.face = truck.ang;
     return;
   }
@@ -744,8 +762,8 @@ function findAction() {
   const F = farmer;
   if (F.driving) {
     if (dist(truck, STALL_PT) < 72) {
-      if (!marketOpen()) return { label: 'Stall is closed', run: () => say('The roadside stall is closed until morning.') };
-      if (truck.cargo > 0) { const n = truck.cargo, pay = n * world.market; return { label: 'Sell ' + n + ' eggs at stall · $' + pay, run: () => { F.money += pay; truck.cargo = 0; float(truck.x, truck.y - 20, '+$' + pay, '#b8f0a8'); say('Sold ' + n + ' eggs at the stall for $' + pay + '.'); } }; }
+      if (roadside.till > 0) return { label: 'Collect $' + roadside.till + ' from the honesty box', run: () => collectMoney('road') };
+      if (truck.cargo > 0 && roadside.stock < roadside.cap) { const n = Math.min(truck.cargo, roadside.cap - roadside.stock); return { label: 'Stock the stall with ' + n + ' egg' + (n > 1 ? 's' : '') + ' from the truck', run: () => stockShelf(roadside, truck, 'cargo', 'roadside stall') }; }
     }
     if (dist(truck, SHOP_PT) < 72) {
       if (!marketOpen()) return { label: 'Feed shop is closed', run: () => say('The feed shop is closed until morning.') };
@@ -764,6 +782,10 @@ function findAction() {
       if (world.curfew || F.energy < 0.35) return { label: world.curfew ? 'Sleep until morning' : 'Take a nap', run: () => { releaseAllHens(); F.sleeping = true; F.sleepKind = world.curfew ? 'night' : 'nap'; F.x = BED.x + 12; F.y = BED.y + 12; F.carry = null; F.scoops = 0; say(world.curfew ? 'You go to bed.' : 'You lie down for a nap.'); } };
       return { label: 'Too early to sleep', run: () => say('Not tired yet. Sleep opens at dusk, or when your energy is low.') };
     }
+    if (key === 'barn' && dist(F, FRIDGE_PT) < 38) {
+      if (F.basket > 0 && fridge.stock < fridge.cap) { const n = Math.min(F.basket, fridge.cap - fridge.stock); return { label: 'Put ' + n + ' egg' + (n > 1 ? 's' : '') + ' in the fridge', run: () => { fridge.stock += n; F.basket -= n; float(F.x, F.y - 18, '-' + n + ' egg', '#cfe8ff'); } }; }
+      if (fridge.stock > 0 && F.basket < 60) { const n = Math.min(24, fridge.stock, 60 - F.basket); return { label: 'Take ' + n + ' egg' + (n > 1 ? 's' : '') + ' from the fridge', run: () => { fridge.stock -= n; F.basket += n; float(F.x, F.y - 18, '+' + n + ' egg', '#fff4c2'); } }; }
+    }
     if (key === 'barn' && dist(F, SACKS_PT) < 40 && F.carry !== 'water') {
       if (bin.stock <= 0) return { label: 'No feed in store', run: () => say('The feed store is empty. Drive to the shop.', true) };
       return { label: F.carry === 'feed' ? 'Top up feed' : 'Take feed', run: () => { const n = Math.min(10 - F.scoops, bin.stock); F.carry = 'feed'; F.scoops += n; bin.stock -= n; float(F.x, F.y - 18, 'feed ready', '#ffe9a8'); } };
@@ -779,8 +801,14 @@ function findAction() {
   const near = eggs.filter(e => !e.inHutch && dist(e, F) < 32);
   if (near.length) return { label: near.length > 1 ? 'Collect ' + near.length + ' eggs' : 'Collect egg', run: () => { eggs = eggs.filter(e => e.inHutch || dist(e, F) >= 32); F.basket += near.length; float(F.x, F.y - 18, '+' + near.length + ' egg', '#fff4c2'); } };
   if (pickAct) return pickAct;
-  if (dist(F, STAND_PT) < 64 && F.basket > 0) { const n = F.basket, pay = n * T.price; return { label: 'Sell ' + n + ' egg' + (n > 1 ? 's' : '') + ' at farm stand \u00b7 $' + pay, run: () => { F.money += pay; F.basket = 0; float(F.x, F.y - 18, '+$' + pay, '#b8f0a8'); } }; }
-  if (dist(F, STALL_PT) < 60 && F.basket > 0 && marketOpen()) { const n = F.basket, pay = n * world.market; return { label: 'Sell ' + n + ' eggs at stall \u00b7 $' + pay, run: () => { F.money += pay; F.basket = 0; float(F.x, F.y - 18, '+$' + pay, '#b8f0a8'); } }; }
+  if (dist(F, STAND_PT) < 64) {
+    if (stand.till > 0) return { label: 'Collect $' + stand.till + ' from the till', run: () => collectMoney('stand') };
+    if (F.basket > 0 && stand.stock < stand.cap) { const n = Math.min(F.basket, stand.cap - stand.stock); return { label: 'Stock the farm stand with ' + n + ' egg' + (n > 1 ? 's' : ''), run: () => stockShelf(stand, F, 'basket', 'farm stand') }; }
+  }
+  if (dist(F, STALL_PT) < 60) {
+    if (roadside.till > 0) return { label: 'Collect $' + roadside.till + ' from the honesty box', run: () => collectMoney('road') };
+    if (F.basket > 0 && roadside.stock < roadside.cap) { const n = Math.min(F.basket, roadside.cap - roadside.stock); return { label: 'Stock the roadside stall with ' + n + ' egg' + (n > 1 ? 's' : ''), run: () => stockShelf(roadside, F, 'basket', 'roadside stall') }; }
+  }
   if (dist(F, SHOP_PT) < 60) return { label: 'Bring the truck to buy feed', run: () => say('Drive the truck here to buy feed sacks.') };
   if (dist(F, truck) < 44) {
     if (F.held.length) return { label: 'Put down hen (' + F.held.length + ') before driving', run: putDown };
@@ -832,6 +860,140 @@ function scatterFeed() {
   F.scoops -= amt; if (F.scoops <= 0) F.carry = null;
   float(F.x, F.y - 18, 'scattered', '#ffe9a8');
 }
+/* ---------- selling: shelves, tills, customers and the farmer's wife ---------- */
+const CARTON = 6;
+const stand = { stock: 18, cap: 60, till: 0, warned: false }, roadside = { stock: 12, cap: 48, till: 0, warned: false }, fridge = { stock: 0, cap: 300 };
+const WIFE_ROUTE = [[475, 126], [475, 232], [520, 312], [700, 314], [780, 316], [826, 318]];
+const wife = { npc: true, kind: 'wife', x: 475, y: 126, state: 'HOME', route: [], vis: false, ang: 1.57, step: 0 };
+let cars = [], people = [], coins = [];
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const weekday = () => (world.day - 1) % 7;
+const standOpen = () => weekday() < 5 && wife.state === 'AT_STAND';
+const CAR_COLORS = ['#c0413a', '#3f6fb0', '#e0c14a', '#3f8a5a', '#8e8e96', '#e9e6dc', '#2b2f3a', '#d9792a'];
+const SHIRTS = ['#c0413a', '#3f6fb0', '#e0c14a', '#3f8a5a', '#8a5fb0', '#d9792a', '#2f8f9d'], HAIRS = ['#2b1d12', '#6b4423', '#d9b45a', '#8a8a8a', '#a8431f'];
+let soundOn = true, actx = null;
+function chime() {
+  if (!soundOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)(); const t = actx.currentTime;
+    [880, 1318].forEach((f, i) => { const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t + i * 0.09); g.gain.exponentialRampToValueAtTime(0.16, t + i * 0.09 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.09 + 0.4); o.connect(g); g.connect(actx.destination); o.start(t + i * 0.09); o.stop(t + i * 0.09 + 0.45); });
+  } catch (e) { /* audio is optional */ }
+}
+function stockShelf(shelf, src, key, name) {
+  const n = Math.min(src[key], shelf.cap - shelf.stock); if (n <= 0) return;
+  shelf.stock += n; src[key] -= n; shelf.warned = false;
+  float(farmer.x, farmer.y - 18, '-' + n + ' egg', '#fff4c2'); say('Stocked the ' + name + ' with ' + n + ' eggs (' + Math.floor(shelf.stock / CARTON) + ' cartons on the shelf).');
+}
+function coinBurst(src, amt) { const n = clamp(5 + Math.floor(amt / 10), 6, 18); for (let i = 0; i < n; i++) coins.push({ sx: src.x + rand(-6, 6), sy: src.y + rand(-4, 4), t: -i * 0.04, dur: 0.8 }); }
+function flashMoney(amt) {
+  const card = $('cardMoney'), g = $('moneyGain'); g.textContent = '+$' + amt;
+  card.classList.remove('flash'); g.classList.remove('show'); void card.offsetWidth; card.classList.add('flash'); g.classList.add('show');
+}
+function collectMoney(which) {
+  const shelf = which === 'road' ? roadside : stand, amt = shelf.till; if (amt <= 0) return;
+  shelf.till = 0; farmer.money += amt;
+  coinBurst(which === 'road' ? ROADBOX : STAND_JAR, amt); float(farmer.x, farmer.y - 26, '+$' + amt, '#ffe27a', true); flashMoney(amt); chime();
+  say('Collected $' + amt + ' from the ' + (which === 'road' ? 'honesty box' : 'farm stand till') + '.');
+}
+function pickCartons(road) { const r = Math.random(); if (road) return r < 0.45 ? 1 : r < 0.80 ? 2 : r < 0.92 ? 3 : r < 0.97 ? 4 : 5; return r < 0.6 ? 1 : r < 0.9 ? 2 : 3; }
+function pickGroup() { const r = Math.random(); return r < 0.35 ? 1 : r < 0.70 ? 2 : r < 0.90 ? 3 : 4; }
+function carDoor(c, i) { return { x: c.x + 4 - (i % 3) * 5, y: c.y - 15 }; }
+function spawnCar(kind) {
+  const pts = kind === 'road' ? [[1010, 556], [852, 548]] : [[1010, 556], [560, 556], [556, 470], [530, 385], [600, 385], [790, 398]];
+  const route = pts.map(p => ({ x: p[0], y: p[1] }));
+  cars.push({ id: nextId++, kind, x: route[0].x, y: route[0].y, ang: Math.PI, v: 0, route: route.slice(1), state: 'ARRIVE', leaving: false, col: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)], people: 0, maxV: kind === 'road' ? 80 : 62, gone: false });
+}
+function leaveCar(c) {
+  c.leaving = true; c.state = 'LEAVE';
+  const pts = c.kind === 'road' ? [[700, 556], [-90, 556]] : [[600, 385], [530, 385], [556, 470], [560, 556], [-90, 556]];
+  c.route = pts.map(p => ({ x: p[0], y: p[1] }));
+}
+function carArrived(c) {
+  const n = c.kind === 'road' ? 1 : pickGroup(); c.people = n;
+  for (let i = 0; i < n; i++) {
+    const d = carDoor(c, i), road = c.kind === 'road';
+    people.push({ npc: true, kind: 'cust', car: c, x: d.x, y: d.y, ang: 0, state: 'TO_STALL', delay: i * 0.7, hidden: true, timer: 0, step: rand(0, 6),
+      goal: road ? { x: STALL_PT.x + rand(-16, 16), y: STALL.y + STALL.h + 9 } : { x: 790 + i * 24 + rand(-4, 4), y: STAND.y + STAND.h + 12 + rand(0, 5) },
+      shirt: SHIRTS[Math.floor(Math.random() * SHIRTS.length)], hair: HAIRS[Math.floor(Math.random() * HAIRS.length)] });
+  }
+}
+function transact(p) {
+  const road = p.car.kind === 'road', shelf = road ? roadside : stand, spot = road ? ROADBOX : STAND_JAR;
+  if (!road && wife.state !== 'AT_STAND') { float(p.x, p.y - 16, 'closed', '#ffd2a8'); return; }
+  const take = Math.min(pickCartons(road), Math.floor(shelf.stock / CARTON));
+  if (take <= 0) {
+    float(p.x, p.y - 16, 'sold out', '#ffd2a8');
+    if (!shelf.warned) { shelf.warned = true; say(road ? 'A driver found the roadside stall empty.' : 'A customer found the farm stand empty.', true); }
+    return;
+  }
+  shelf.stock -= take * CARTON;
+  float(p.x, p.y - 16, take + (take > 1 ? ' cartons' : ' carton'), '#fff');
+  if (road && Math.random() < 0.06) { say('Someone took ' + take + (take > 1 ? ' cartons' : ' carton') + ' from the roadside stall and left no money.', true); float(spot.x, spot.y - 12, 'no pay', '#ffb3a8'); return; }
+  const pay = take * (road ? world.market : T.price) * CARTON;
+  shelf.till += pay; float(spot.x, spot.y - 12, '+$' + pay, '#e8d27a');
+}
+function updateCar(c, dt) {
+  if (c.state === 'PARKED') return;
+  const w = c.route[0]; if (!w) { c.gone = true; return; }
+  const dx = w.x - c.x, dy = w.y - c.y, d = Math.hypot(dx, dy);
+  let da = Math.atan2(dy, dx) - c.ang; da = Math.atan2(Math.sin(da), Math.cos(da));
+  c.ang += clamp(da, -2.4 * dt, 2.4 * dt);
+  const last = c.route.length === 1 && !c.leaving;
+  let target = last ? Math.min(c.maxV, d * 1.4 + 6) : c.maxV;
+  target *= Math.max(0.3, Math.cos(Math.min(Math.abs(da), 1.2)));
+  c.v += clamp(target - c.v, -80 * dt, 40 * dt);
+  c.x += Math.cos(c.ang) * c.v * dt; c.y += Math.sin(c.ang) * c.v * dt;
+  if (d < (last ? 5 : 16)) {
+    c.route.shift();
+    if (!c.route.length) { if (c.leaving) c.gone = true; else { c.state = 'PARKED'; c.v = 0; carArrived(c); } }
+  }
+}
+function updatePerson(p, dt) {
+  if (p.delay > 0) { p.delay -= dt; return; }
+  p.hidden = false;
+  if (p.state === 'SHOP') {
+    p.timer -= dt;
+    if (p.timer <= 0) { transact(p); p.state = 'BACK'; p.goal = carDoor(p.car, 0); }
+    return;
+  }
+  const dx = p.goal.x - p.x, dy = p.goal.y - p.y, d = Math.hypot(dx, dy);
+  if (d < 4) {
+    if (p.state === 'TO_STALL') { p.state = 'SHOP'; p.timer = rand(2, 4); p.ang = -1.57; }
+    else { p.gone = true; p.car.people--; if (p.car.people <= 0) leaveCar(p.car); }
+    return;
+  }
+  p.ang = Math.atan2(dy, dx); p.x += dx / d * 44 * dt; p.y += dy / d * 44 * dt; p.step += dt * 8;
+}
+function updateWife(dt) {
+  const work = weekday() < 5 && world.t >= 0.29 && world.t < 0.70, mk = a => a.map(p => ({ x: p[0], y: p[1] }));
+  if (wife.state === 'HOME' && work) { wife.state = 'WALK_OUT'; wife.vis = true; wife.x = BLD.house.out.x; wife.y = BLD.house.out.y; wife.route = mk(WIFE_ROUTE.slice(1)); }
+  else if ((wife.state === 'AT_STAND' || wife.state === 'WALK_OUT') && !work) { wife.state = 'WALK_HOME'; wife.route = mk(WIFE_ROUTE.slice().reverse()); if (!standOpenNote.shut) { standOpenNote.shut = true; say('Your wife closes the stand and heads home.'); } }
+  if (work) standOpenNote.shut = false;
+  if (wife.state === 'WALK_OUT' || wife.state === 'WALK_HOME') {
+    const w = wife.route[0];
+    if (!w) {
+      if (wife.state === 'WALK_OUT') { wife.state = 'AT_STAND'; wife.x = STAND_BACK.x; wife.y = STAND_BACK.y; wife.ang = 1.57; say('Your wife opens the farm stand.'); }
+      else { wife.state = 'HOME'; wife.vis = false; }
+      return;
+    }
+    const dx = w.x - wife.x, dy = w.y - wife.y, d = Math.hypot(dx, dy);
+    if (d < 4) wife.route.shift(); else { wife.ang = Math.atan2(dy, dx); wife.x += dx / d * 52 * dt; wife.y += dy / d * 52 * dt; wife.step += dt * 8; }
+  }
+}
+const standOpenNote = { shut: false };
+function updateEconomy(dt) {
+  updateWife(dt);
+  const day = !world.curfew && world.t > 0.31 && world.t < 0.68, per = T.dayLen * 0.37;
+  if (day && cars.length < 3) {
+    if (!cars.some(c => c.kind === 'road') && Math.random() < T.carsRoad / per * dt) spawnCar('road');
+    if (standOpen() && !cars.some(c => c.kind === 'stand') && Math.random() < T.carsStand / per * dt) spawnCar('stand');
+  }
+  for (const c of cars) updateCar(c, dt);
+  for (const p of people) updatePerson(p, dt);
+  cars = cars.filter(c => !c.gone); people = people.filter(p => !p.gone);
+  for (const k of coins) k.t += dt;
+  coins = coins.filter(k => k.t < k.dur);
+}
 function doAction() { const a = findAction(); if (a) a.run(); }
 
 addEventListener('keydown', e => {
@@ -869,6 +1031,9 @@ $('bDawn').addEventListener('click', () => { world.t = 0.255; world.day++; });
 $('bFox').addEventListener('click', () => { spawnFox(); });
 $('bRain').addEventListener('click', () => { world.rainOn = true; world.rainLeft = 40; say('It starts to rain.'); });
 $('bCash').addEventListener('click', () => { farmer.money += 50; });
+$('bCarRoad').addEventListener('click', () => { if (!cars.some(c => c.kind === 'road')) spawnCar('road'); });
+$('bCarStand').addEventListener('click', () => { if (!cars.some(c => c.kind === 'stand')) spawnCar('stand'); });
+$('bSound').addEventListener('click', function () { soundOn = !soundOn; this.setAttribute('aria-pressed', soundOn ? 'true' : 'false'); if (soundOn) chime(); });
 $('bAdd10').addEventListener('click', () => { for (let i = 0; i < 10 && hens.length < 200; i++) { const p = penPoint(); newHen(p.x, p.y); } });
 $('bSub10').addEventListener('click', () => { const keep = []; let n = 10; for (let i = hens.length - 1; i >= 0; i--) { if (n > 0 && hens[i].state !== 'CAUGHT') { n--; continue; } keep.unshift(hens[i]); } hens = keep; });
 $('bReset').addEventListener('click', resetFarm);
@@ -888,7 +1053,7 @@ function update(dt) {
     world.curfew = curfew; world.warned = false;
     if (curfew) say('Dusk. The hens are heading in.');
     else {
-      say('Dawn. The coop door opens.'); hutch.doorOpen = true; world.doorShut = false; world.foxSpawned = false; newDay();
+      say('Dawn. The coop door opens.'); if (weekday() >= 5) say('It is the weekend. The farm stand stays closed.'); hutch.doorOpen = true; world.doorShut = false; world.foxSpawned = false; newDay();
       world.rainAt = Math.random() < T.rainChance ? rand(0.34, 0.62) : -1;
     }
   }
@@ -953,6 +1118,7 @@ function update(dt) {
   /* foxes */
   for (const f of foxes) updateFox(f, dt);
   foxes = foxes.filter(f => !f.gone);
+  updateEconomy(dt);
   for (const e of eggs) e.age += dt;
   eggs = eggs.filter(e => e.age < T.rot);
   for (const b of bugs) { if (!b.alive) { b.respawn -= dt; if (b.respawn <= 0) spawnBug(b); } }
@@ -998,8 +1164,7 @@ function buildBG() {
   /* farm stand */
   g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(STAND.x + 3, STAND.y + 4, STAND.w, STAND.h);
   g.fillStyle = '#a8743f'; g.fillRect(STAND.x, STAND.y, STAND.w, STAND.h);
-  for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#f1ebdc' : '#b9402a'; g.fillRect(STAND.x - 4 + i * 15.5, STAND.y - 26, 15.5, 24); }
-  g.fillStyle = '#fff'; g.font = '700 11px "DM Sans", sans-serif'; g.fillText('FARM STAND $' + T.price, STAND.x + STAND.w / 2, STAND.y + 19);
+  g.fillStyle = '#fff'; g.font = '700 11px "DM Sans", sans-serif'; g.fillText('FARM STAND', STAND.x + STAND.w / 2, STAND.y + 22);
   /* roadside egg stall */
   g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(STALL.x + 3, STALL.y + 4, STALL.w, STALL.h);
   g.fillStyle = '#9a6a3a'; g.fillRect(STALL.x, STALL.y, STALL.w, STALL.h);
@@ -1068,12 +1233,24 @@ function interiorHouse(R) {
   ctx.fillStyle = '#6e4526'; ctx.fillRect(R.x + 78, R.y + 36, 6, 6); ctx.fillRect(R.x + 106, R.y + 36, 6, 6);
   ctx.fillStyle = '#3a3a3e'; ctx.fillRect(R.x + R.w - 28, R.y + 8, 18, 16);
   ctx.fillStyle = world.curfew ? '#ff9a3a' : '#7a4a34'; ctx.fillRect(R.x + R.w - 24, R.y + 12, 10, 8);
+  if (wife.state === 'HOME') drawWifeAt(R.x + 80, R.y + 62, 2.3);
+}
+function drawFridge() {
+  const F_ = FRIDGE;
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(F_.x + 3, F_.y + 4, F_.w, F_.h);
+  ctx.fillStyle = '#d7dde2'; ctx.fillRect(F_.x, F_.y, F_.w, F_.h);
+  ctx.fillStyle = '#b7c1c8'; ctx.fillRect(F_.x + F_.w / 2 - 1, F_.y, 2, F_.h); ctx.fillRect(F_.x, F_.y + F_.h - 6, F_.w, 2);
+  ctx.fillStyle = '#8b959c'; ctx.fillRect(F_.x + F_.w / 2 - 6, F_.y + 12, 3, 12); ctx.fillRect(F_.x + F_.w / 2 + 3, F_.y + 12, 3, 12);
+  ctx.fillStyle = '#17323f'; ctx.fillRect(F_.x + 6, F_.y + 4, F_.w - 12, 7);
+  ctx.fillStyle = '#7fd6ff'; ctx.font = '500 7px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.fillText(fridge.stock + ' eggs', F_.x + F_.w / 2, F_.y + 10);
+  ctx.fillStyle = 'rgba(30,22,10,.8)'; ctx.font = '600 9px "DM Sans", sans-serif'; ctx.fillText('EGG FRIDGE', F_.x + F_.w / 2, F_.y + F_.h + 11);
 }
 function interiorBarn(R) {
   const rnd = mulberry(23);
   ctx.lineWidth = 1;
   for (let i = 0; i < 90; i++) { const x = R.x + 6 + rnd() * (R.w - 12), y = R.y + 6 + rnd() * (R.h - 12); ctx.strokeStyle = rnd() < 0.5 ? 'rgba(230,205,130,.8)' : 'rgba(120,95,60,.4)'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 5 + rnd() * 4, y + (rnd() - 0.5) * 3); ctx.stroke(); }
-  for (let i = 0; i < 5; i++) { const bx = R.x + R.w - 70 + (i % 3) * 22, by = R.y + 12 + Math.floor(i / 3) * 18; ctx.fillStyle = '#d9c067'; ctx.fillRect(bx, by, 20, 15); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.strokeRect(bx, by, 20, 15); }
+  for (let i = 0; i < 4; i++) { const bx = R.x + 84 + (i % 2) * 22, by = R.y + 10 + Math.floor(i / 2) * 18; ctx.fillStyle = '#d9c067'; ctx.fillRect(bx, by, 20, 15); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.strokeRect(bx, by, 20, 15); }
+  drawFridge();
   const n = Math.min(14, Math.ceil(bin.stock / 14));
   for (let i = 0; i < n; i++) { const sx = SACKS_PT.x - 26 + (i % 5) * 16, sy = SACKS_PT.y - 14 + Math.floor(i / 5) * 12; ctx.fillStyle = '#d9c28a'; ctx.fillRect(sx, sy, 14, 10); ctx.strokeStyle = '#8a7440'; ctx.strokeRect(sx, sy, 14, 10); }
   ctx.fillStyle = 'rgba(30,22,10,.8)'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('FEED STORE · ' + bin.stock, SACKS_PT.x, SACKS_PT.y + 28);
@@ -1137,6 +1314,78 @@ function drawCones() {
     if (dist(c, farmer) > show) continue;
     ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.arc(c.x, c.y, vis, c.ang - half, c.ang + half); ctx.closePath();
     ctx.fillStyle = 'rgba(255,240,170,.17)'; ctx.fill(); ctx.strokeStyle = 'rgba(255,240,170,.45)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+}
+function drawWifeAt(x, y, ang) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(0, 3, 7, 4.5); ctx.fill();
+  ctx.rotate(ang);
+  ctx.fillStyle = '#6f9bd1'; ell(0, 0, 5.5, 8); ctx.fill();
+  ctx.fillStyle = '#f4f1e8'; ell(1.5, 0, 3.2, 5); ctx.fill();
+  ctx.fillStyle = '#4a2f1a'; ctx.beginPath(); ctx.arc(-1.5, 0, 4.3, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.arc(-5, 0, 2.2, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#e8b890'; ctx.beginPath(); ctx.arc(1, 0, 3.4, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+function drawPerson(o) {
+  if (o.kind === 'wife') { drawWifeAt(o.x, o.y, o.ang); return; }
+  ctx.save(); ctx.translate(o.x, o.y);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(0, 3, 6.5, 4.2); ctx.fill();
+  ctx.rotate(o.ang);
+  ctx.fillStyle = o.shirt; ell(0, 0, 4.8, 7); ctx.fill();
+  ctx.fillStyle = o.hair; ctx.beginPath(); ctx.arc(-0.8, 0, 4, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#e8b890'; ctx.beginPath(); ctx.arc(1.2, 0, 3.1, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+function drawCars() {
+  for (const c of cars) {
+    ctx.save(); ctx.translate(c.x, c.y);
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-14, -5, 30, 17);
+    ctx.rotate(c.ang);
+    ctx.fillStyle = c.col; ctx.beginPath(); ctx.roundRect(-16, -8, 32, 16, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(-9, -6.5, 15, 13);
+    ctx.fillStyle = '#9ec3dd'; ctx.fillRect(-7, -5.5, 4, 11); ctx.fillRect(3, -5.5, 3, 11);
+    ctx.fillStyle = '#fff3b0'; ctx.fillRect(14, -6, 2.5, 3); ctx.fillRect(14, 3, 2.5, 3);
+    ctx.fillStyle = '#c0392b'; ctx.fillRect(-16.5, -6, 1.8, 3); ctx.fillRect(-16.5, 3, 1.8, 3);
+    ctx.restore();
+  }
+}
+function tag(x, y, txt) {
+  ctx.font = '700 10px "DM Sans", sans-serif'; ctx.textAlign = 'center';
+  const w = ctx.measureText(txt).width + 14;
+  ctx.fillStyle = 'rgba(20,28,22,.88)'; ctx.beginPath(); ctx.roundRect(x - w / 2, y - 13, w, 15, 7.5); ctx.fill();
+  ctx.fillStyle = '#ffe27a'; ctx.beginPath(); ctx.arc(x - w / 2 + 7, y - 5.5, 3, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText(txt, x + 3, y - 2);
+}
+function drawShelf(R, stock, y) {
+  const n = Math.min(8, Math.floor(stock / CARTON));
+  for (let i = 0; i < n; i++) { const x = R.x + 6 + i * 13; ctx.fillStyle = '#e6d3a0'; ctx.fillRect(x, y, 11, 7); ctx.strokeStyle = '#8a7440'; ctx.lineWidth = 1; ctx.strokeRect(x, y, 11, 7); ctx.fillStyle = '#f7f1df'; ctx.fillRect(x + 2, y + 1.5, 7, 2); }
+}
+function drawStallExtras() {
+  drawShelf(STAND, stand.stock, STAND.y + 4); drawShelf(STALL, roadside.stock, STALL.y + 3);
+  /* till jar and honesty box */
+  ctx.fillStyle = '#cfe6ee'; ctx.fillRect(STAND_JAR.x - 6, STAND_JAR.y - 7, 12, 14); ctx.strokeStyle = '#7d98a3'; ctx.strokeRect(STAND_JAR.x - 6, STAND_JAR.y - 7, 12, 14);
+  if (stand.till > 0) { ctx.fillStyle = '#e8c85c'; ctx.fillRect(STAND_JAR.x - 5, STAND_JAR.y + 7 - Math.min(12, 3 + stand.till / 10), 10, Math.min(12, 3 + stand.till / 10)); tag(STAND_JAR.x, STAND_JAR.y - 12, '$' + stand.till); }
+  ctx.fillStyle = '#6e4a2a'; ctx.fillRect(ROADBOX.x - 8, ROADBOX.y - 6, 16, 12); ctx.fillStyle = '#2a1a0c'; ctx.fillRect(ROADBOX.x - 4, ROADBOX.y - 4, 8, 2); ctx.fillStyle = '#e8c85c'; ctx.fillRect(ROADBOX.x - 5, ROADBOX.y + 1, 10, 2);
+  if (roadside.till > 0) tag(ROADBOX.x, ROADBOX.y - 12, '$' + roadside.till);
+  /* open sign */
+  const open = standOpen(), wk = weekday() < 5;
+  const label = open ? 'OPEN' : (wk && (world.curfew || wife.state !== 'AT_STAND') ? 'CLOSED' : wk ? 'OPEN' : 'CLOSED · Mon–Fri');
+  ctx.font = '700 10px "DM Sans", sans-serif'; ctx.textAlign = 'center';
+  const w = ctx.measureText(label).width + 16, x = STAND.x + STAND.w / 2, y = STAND.y - 34;
+  ctx.fillStyle = open ? 'rgba(44,122,67,.95)' : 'rgba(150,56,40,.95)'; ctx.beginPath(); ctx.roundRect(x - w / 2, y - 14, w, 16, 8); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText(label, x, y - 2);
+}
+function drawStandAwning() {
+  ctx.globalAlpha = 0.6;
+  for (let i = 0; i < 8; i++) { ctx.fillStyle = i % 2 ? '#f1ebdc' : '#b9402a'; ctx.fillRect(STAND.x - 4 + i * 15.5, STAND.y - 26, 15.5, 24); }
+  ctx.globalAlpha = 1;
+}
+function drawCoins() {
+  for (const k of coins) {
+    if (k.t < 0) continue;
+    const u = clamp(k.t / k.dur, 0, 1), e = u * u * (3 - 2 * u), x = k.sx + (farmer.x - k.sx) * e, y = k.sy + (farmer.y - 10 - k.sy) * e - Math.sin(Math.PI * u) * 34;
+    ctx.globalAlpha = 1 - u * u * u * u; ctx.fillStyle = '#f2c94c'; ctx.strokeStyle = '#a67c00'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(x, y, 3.4, 0, TAU); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
   }
 }
 function drawPile(p) {
@@ -1242,7 +1491,7 @@ function render() {
   drawTrough(FEEDER, '#e1c15c', 'FEED'); drawTrough(WATERER, '#58a6dc', 'WATER');
   /* market signs */
   ctx.font = '700 10px "DM Sans", sans-serif'; ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(20,28,22,.85)'; ctx.fillText(marketOpen() ? '$' + world.market + ' / egg' : 'closed', STALL.x + STALL.w / 2, STALL.y + 38);
+  ctx.fillStyle = 'rgba(20,28,22,.85)'; ctx.fillText('$' + (world.market * CARTON) + ' / carton · honesty box', STALL.x + STALL.w / 2, STALL.y + 38);
   ctx.fillText(marketOpen() ? 'sacks $' + T.sackCost : 'closed', SHOP.x + SHOP.w / 2, SHOP.y + SHOP.h + 12);
   for (const b of bugs) if (b.alive) { const w = Math.sin(world.clock * 6 + b.ph) * 1.2; ctx.fillStyle = '#2b2218'; ctx.beginPath(); ctx.arc(b.x + w, b.y, 1.9, 0, TAU); ctx.fill(); }
   for (const e of eggs) {
@@ -1252,17 +1501,21 @@ function render() {
     ctx.fillStyle = blink ? '#b9a98a' : '#fbf5e4'; ctx.strokeStyle = '#8a7a58'; ctx.lineWidth = 1; ell(e.x, e.y, 3.6, 4.6); ctx.fill(); ctx.stroke();
   }
   for (const p of piles) drawPile(p);
+  drawCars(); drawStallExtras();
   drawCones();
   /* entities sorted by y */
   const list = hens.filter(h => h.state !== 'ROOST' && h.state !== 'NEST' && h.state !== 'HELD'); foxes.forEach(f => list.push(f));
+  if (wife.vis && wife.state !== 'HOME') list.push(wife); people.forEach(p => { if (!p.hidden) list.push(p); });
   if (!farmer.driving && !(farmer.sleeping && farmer.inside)) list.push(farmer);
   list.sort((a, b) => a.y - b.y);
-  for (const o of list) o === farmer ? drawFarmer() : o.isFox ? drawFox(o) : drawHen(o);
+  for (const o of list) o === farmer ? drawFarmer() : o.isFox ? drawFox(o) : o.npc ? drawPerson(o) : drawHen(o);
+  drawStandAwning();
   for (const h of farmer.held) drawHen(h, { x: h.x, y: h.y, ang: h.ang, s: 0.85 });
   drawTruck(); drawRoofs(); drawDoors();
   for (const o of list) if (!o.isFox && o !== farmer && o.state === 'RETURN' && o.waiting) { ctx.fillStyle = '#fff'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('z z', o.x, o.y - 12); }
   for (const t of TREES) drawTree(t);
-  for (const f of floats) { ctx.globalAlpha = clamp(f.t / 0.5, 0, 1); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.font = '700 12px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.txt, f.x + 1, f.y + 1); ctx.fillStyle = f.col; ctx.fillText(f.txt, f.x, f.y); ctx.globalAlpha = 1; }
+  for (const f of floats) { ctx.globalAlpha = clamp(f.t / 0.5, 0, 1); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.font = f.big ? '800 18px "DM Sans", sans-serif' : '700 12px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.txt, f.x + 1, f.y + 1); ctx.fillStyle = f.col; ctx.fillText(f.txt, f.x, f.y); ctx.globalAlpha = 1; }
+  drawCoins();
   /* rain */
   if (world.rain > 0.03) {
     ctx.strokeStyle = 'rgba(200,220,255,' + (world.rain * 0.55).toFixed(2) + ')'; ctx.lineWidth = 1; ctx.beginPath();
@@ -1330,7 +1583,7 @@ let hudT = 0;
 function setMeter(id, f, low) { const m = $(id); m.firstElementChild.style.width = (clamp(f, 0, 1) * 100).toFixed(0) + '%'; m.classList.toggle('low', f < low); }
 function hud(dt) {
   hudT -= dt; if (hudT > 0) return; hudT = 0.12;
-  $('sClock').textContent = clockStr(); $('sDay').textContent = 'Day ' + world.day;
+  $('sClock').textContent = clockStr(); $('sDay').textContent = DAYS[weekday()] + ' \u00b7 Day ' + world.day;
   $('sWeather').textContent = world.rain > 0.3 ? 'Raining' : world.wet > 0.5 ? 'Muddy' : world.curfew ? 'Night' : 'Clear';
   $('sCoop').textContent = eggs.reduce((n, e) => n + (e.inHutch ? 1 : 0), 0); $('sEggs').textContent = farmer.basket; $('sCargo').textContent = truck.cargo; $('sMoney').textContent = farmer.money;
   $('sHens').textContent = hens.length; $('sLost').textContent = world.lost ? '(' + world.lost + ' lost)' : '';
@@ -1346,7 +1599,9 @@ function hud(dt) {
   if (farmer.carry === 'feed') held.push(farmer.scoops + ' scoops in hand'); else if (farmer.carry === 'water') held.push('can full');
   if (farmer.held.length) held.push(farmer.held.length + '/3 hens held');
   $('sCarry').textContent = held.length ? held.join(' · ') : '\u00a0';
-  $('sMarket').textContent = world.market;
+  $('sMarket').textContent = world.market * CARTON;
+  $('sFridge').textContent = fridge.stock; $('sStandStock').textContent = stand.stock; $('sStandTill').textContent = stand.till; $('sStandOpen').textContent = standOpen() ? 'open' : weekday() >= 5 ? 'closed (weekend)' : 'closed';
+  $('sRoadStock').textContent = roadside.stock; $('sRoadTill').textContent = roadside.till;
   $('mark').style.left = (world.t * 100).toFixed(2) + '%';
   $('buy').disabled = farmer.money < T.henCost || hens.length >= 200;
   const n = {}; hens.forEach(h => n[h.state] = (n[h.state] || 0) + 1);
@@ -1371,6 +1626,7 @@ function fit() {
 new ResizeObserver(fit).observe(cv);
 fit(); resetFarm();
 window.__farm = { world, farmer, truck, gate, hutch, bin, FEEDER, WATERER, FENCE, T, update, doAction, findAction, spawnFox, wakeUp,
+  stand, roadside, fridge, wife, spawnCar, get cars() { return cars; }, get people() { return people; },
   get hens() { return hens; }, get eggs() { return eggs; }, get foxes() { return foxes; } };
 requestAnimationFrame(frame);
 })();
