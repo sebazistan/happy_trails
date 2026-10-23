@@ -211,7 +211,7 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
       <p><b>Catching hens.</b> Hens see mostly straight ahead, and they only hear you when you move without sneaking. Press <b>C</b> (or the Sneak button) to switch sneaking on, creep up behind a hen and pick her up. You can carry three, a little slower for each. Carry them to the pen and put them down. Yellow cones show what nearby hens can see while you sneak.</p>
       <p><b>Growing the farm.</b> The pen holds about one hen per 4,400 square pixels and the coop has a fixed number of roosts. Hens that cannot roost sleep out in the pen, where foxes find them easily. A feeder lets three hens eat at once and a water trough lets two drink at once, and they empty faster the more hens you keep. Drive west off the end of the road to Emil &amp; Gus Farm Supply in town. Buy fence sections, gates, feeders, troughs, coop lumber and feed, then drive home and unload at the bin or the barn. Press <b>B</b> for build mode: pick a tool, then click or tap the map to place. Remove puts a piece back in your supplies. Extend the coop from the plank sign on its east side.</p>
       <p><b>Dusk.</b> Hens head for the coop. The door shuts later in the evening, so get every hen in, close the gate, and check the fence. A hen left outside is fox food.</p>
-      <p><b>Pets.</b> Your wife puts food in the dog and cat bowls by the front door every morning and evening, and warns you when the food runs low. Buy a month of dog food and cat food at Emil &amp; Gus. A hungry dog wanders off for a few days and, if you keep neglecting him, leaves for good. Hungry cats start killing hens. Rats come for unattended eggs, mostly at night. Chase one, sneak up while it is eating, and catch it with F. Hens peck at them without much luck, the dog is too slow, and the cats are the real rat catchers, and a hungry cat is glad of the meal. Bugs only top up a hen's hunger; they never replace feed. Cats chase hens for fun now and then and hop over fences. The dog sleeps most of the night, but he will chase off a fox that comes close. He cannot catch the hawk that sometimes swoops in by day.</p>
+      <p><b>Pets.</b> Your wife puts food in the dog and cat bowls by the front door every morning and evening, and warns you when the food runs low. Buy a month of dog food and cat food at Emil &amp; Gus. A hungry dog wanders off for a few days and, if you keep neglecting him, leaves for good. Hungry cats start killing hens. Rats come for unattended eggs, mostly at night. Chase one, sneak up while it is eating, and catch it with F. Hens peck at them without much luck, the dog is too slow, and the cats are the real rat catchers, and a hungry cat is glad of the meal. With empty bowls the cats go ratting in the barn and fields and can keep going for a week or more, but the hunting gets worse every day. The dog can last about three days before he leaves. Bugs only top up a hen's hunger; they never replace feed. Cats chase hens for fun now and then and hop over fences. The dog sleeps most of the night, but he will chase off a fox that comes close. He cannot catch the hawk that sometimes swoops in by day.</p>
       <p><b>Night.</b> Foxes come. They dig under fence sections, slip through an open gate and steal eggs and hens. Walk at one to scare it off, then repair any hole in the fence. When your energy runs low, sleep in the farmhouse. If you pass out, you lose the night.</p>
     </div>
   </details>
@@ -1177,10 +1177,10 @@ function updateDog(dt) {
     }
     return;
   }
-  d.hunger = clamp(d.hunger - dt / (T.dayLen * 1.4), 0, 1);
+  d.hunger = clamp(d.hunger - dt / (T.dayLen * 2.6), 0, 1);
   if (d.hunger < 0.12 && bowls.dog < 0.03) d.starve += dt / T.dayLen; else d.starve = Math.max(0, d.starve - dt / T.dayLen * 0.4);
   if (d.hunger > 0.5) { d.goodT += dt / T.dayLen; if (d.goodT > 2) d.leaves = 0; } else d.goodT = 0;
-  if (d.starve > 0.6) { leaveDog(); return; }
+  if (d.starve > 1.5) { leaveDog(); return; }
   if (d.state === 'RETURN') { const dd = steerPet(d, WAIT_DOG.x, WAIT_DOG.y, 60, dt, false, true); if (dd < 20) { d.state = 'REST'; d.timer = 6; } return; }
   let fx = null, fd = 1e9;
   for (const f of foxes) { const dd = dist(d, f); if (dd < fd) { fd = dd; fx = f; } }
@@ -1248,16 +1248,19 @@ function killHen(h, by) {
 const huntable = h => !(h.state === 'ROOST' || h.state === 'NEST' || h.state === 'HELD' || h.state === 'CAUGHT');
 function updateCat(c, dt) {
   c.hunger = clamp(c.hunger - dt / (T.dayLen * 1.4), 0, 1);
-  if (c.hunger < 0.2 && bowls.cat < 0.03) c.starve += dt / T.dayLen; else if (c.hunger > 0.45) c.starve = Math.max(0, c.starve - dt / T.dayLen * 1.5);
+  c.noFood = bowls.cat < 0.03 ? (c.noFood || 0) + dt / T.dayLen : 0; c.prey = Math.max(0, (c.prey || 0) - dt / T.dayLen);   /* prey: days a catch keeps starvation at bay */
+  const gaunt = c.hunger < 0.35;
+  if (c.hunger < 0.2 && bowls.cat < 0.03 && c.prey <= 0) c.starve += dt / T.dayLen; else if (c.hunger > 0.45) c.starve = Math.max(0, c.starve - dt / T.dayLen * 1.5);
+  c.prowlCool = (c.prowlCool || 0) - dt;
   c.cool -= dt; c.timer -= dt; c.ratCool -= dt; c.keenT -= dt; if (c.keenT <= 0) { c.keenT = 6; c.keen = Math.random() < 0.45; } c.killCool = (c.killCool || 0) - dt;
   const night = world.curfew;
   const jumpCheck = () => { c.jump = false; for (const f of FENCE) if (!f.broken && c.x > f.x - 6 && c.x < f.x + f.w + 6 && c.y > f.y - 6 && c.y < f.y + f.h + 6) { c.jump = true; return; } for (const g of gates) if (!g.open && c.x > g.rect.x - 6 && c.x < g.rect.x + g.rect.w + 6 && c.y > g.rect.y - 6 && c.y < g.rect.y + g.rect.h + 6) { c.jump = true; return; } };
-  const rt = c.ratCool <= 0 && (c.keen || c.hunger < 0.6 || c.starve > 0.2) ? nearestRat(c, c.state === 'NAP' ? 130 : 230) : null;
+  const rt = c.ratCool <= 0 && (c.keen || c.hunger < 0.6 || c.starve > 0.2) ? nearestRat(c, (c.state === 'NAP' ? 130 : 230) * (gaunt ? 1.5 : 1)) : null;
   if (rt) {                                          /* cats like a rat, and a hungry cat is glad of the meal */
     if (c.state !== 'STALK') { c.state = 'STALK'; c.stalkT = 0; } c.stalkT += dt;
-    const d = steerPet(c, rt.x, rt.y, 108, dt, true); jumpCheck();
+    const d = steerPet(c, rt.x, rt.y, gaunt ? 132 : 108, dt, true); jumpCheck();
     if (d < 10) {
-      if (Math.random() < 0.7) { catchRat(rt, c.name + ' the cat'); c.hunger = Math.min(1, c.hunger + 0.5); c.starve = Math.max(0, c.starve - 0.3); c.ratCool = 12; c.state = 'SIT'; c.timer = 4; float(c.x, c.y - 12, 'rat!', '#ffd27a'); }
+      if (Math.random() < (gaunt ? 0.92 : 0.7)) { catchRat(rt, c.name + ' the cat'); c.hunger = Math.min(1, c.hunger + 0.5); c.starve = Math.max(0, c.starve - 0.3); c.prey += 2; c.ratCool = gaunt ? 3 : 12; c.state = 'SIT'; c.timer = 4; float(c.x, c.y - 12, 'rat!', '#ffd27a'); }
       else { rt.noticeT = 9; c.ratCool = 1.5; }
     }
     if (c.stalkT > 7) { c.ratCool = 10; c.state = 'SIT'; }
@@ -1276,6 +1279,21 @@ function updateCat(c, dt) {
   if (bowls.cat > 0.03 && c.hunger < 0.9) {
     c.state = 'EAT'; const d = steerPet(c, CAT_BOWL.x + (c.slot - 1) * 14, CAT_BOWL.y + 12, 48, dt, true); jumpCheck();
     if (d < 10) { const e = Math.min(bowls.cat, 0.04 * dt); bowls.cat -= e; c.hunger = Math.min(1, c.hunger + e * 1.8); }
+    return;
+  }
+  if (c.state === 'PROWL' || (c.hunger < 0.45 && bowls.cat < 0.03 && c.prowlCool <= 0 && !feedWindow())) {
+    /* nothing in the bowl: go ratting in the barn and fields. Rats get scarcer the longer the bowl stays empty */
+    if (c.state !== 'PROWL') { c.state = 'PROWL'; c.pt = null; c.prowlT = 0; }
+    if (!c.pt) { for (let i = 0; i < 8; i++) { const p = { x: rand(540, 910), y: rand(40, ROAD.y0 - 60) }; if (!blockedAt(p.x, p.y, 8)) { c.pt = p; break; } } if (!c.pt) c.pt = { x: 700, y: 200 }; }
+    const d = steerPet(c, c.pt.x, c.pt.y, 74, dt, true); jumpCheck();
+    c.prowlW = (c.state === 'PROWL' && c.pt ? (c.prowlW || 0) + dt : 0);
+    if (d < 10 || c.prowlW > 20) {                   /* arrived, or blocked on the way: hunt where it stands */
+      c.vx = c.vy = 0; c.jump = false; c.prowlT += dt;
+      if (c.prowlT > rand(5, 9)) {
+        c.prowlCool = T.dayLen * 0.04; c.state = 'SIT'; c.timer = 3; c.pt = null; c.prowlW = 0;
+        if (Math.random() < Math.min(0.9, 0.12 + 0.12 * (c.fails || 0)) * Math.max(0, 1 - c.noFood / 9)) { c.fails = 0; c.hunger = Math.min(1, c.hunger + 0.5); c.prey += 1; float(c.x, c.y - 12, 'caught one', '#ffd27a'); } else c.fails = (c.fails || 0) + 1;
+      }
+    }
     return;
   }
   if (feedWindow() || (c.hunger < 0.5 && !night)) { c.state = 'WAIT'; steerPet(c, WAIT_CAT.x + (c.slot - 1) * 16, WAIT_CAT.y + (c.slot % 2) * 9, 40, dt, true); jumpCheck(); return; }
@@ -1513,7 +1531,7 @@ function bubbleProblems() {
     if (k) out.push({ o: h, k, sev });
   }
   if (!dog.gone && dog.state !== 'AWAY' && dog.state !== 'LEAVING') {
-    if (dog.starve > 0.25) out.push({ o: dog, k: 'dog:starving', sev: 0 }); else if (dog.hunger < 0.25) out.push({ o: dog, k: 'dog:hungry', sev: dog.hunger });
+    if (dog.starve > 0.6) out.push({ o: dog, k: 'dog:starving', sev: 0 }); else if (dog.hunger < 0.25) out.push({ o: dog, k: 'dog:hungry', sev: dog.hunger });
   }
   for (const c of cats) { if (c.starve > 0.25) out.push({ o: c, k: 'cat:starving', sev: 0 }); else if (c.hunger < 0.25) out.push({ o: c, k: 'cat:hungry', sev: c.hunger }); }
   return out;
