@@ -48,6 +48,7 @@
     s.spawn = { x: 6 * T, y: mid * T }; s.title = `The road to ${C.SETTLEMENTS[to].name}`; s.road = { from, to, days, W, H, mid };
     return s;
   }
+  C.roadInternals = { makeRoad, roadY: (s, x) => (s.road.H / 2 + Math.sin(x / T * 0.08) * 3.4) * T };
   const A0n = (sid) => '→ ' + C.SETTLEMENTS[sid].name;
   const roadY = (s, x) => (s.road.H / 2 + Math.sin(x / T * 0.08) * 3.4) * T;
 

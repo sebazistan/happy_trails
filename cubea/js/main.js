@@ -499,7 +499,7 @@
     if (g.day !== prevDay) { dailyHooks(); }
     if (C.snd && C.snd.ambient) C.snd.ambient(dt);   // crickets, birds, rain, wind, fire, engine (audio.js)
     if (C.timeTick) C.timeTick(s, dt); if (C.dutyTick) C.dutyTick(s);
-    if (C.campingTick) C.campingTick(s); if (C.feastTick) C.feastTick(s); if (C.suspectTick) C.suspectTick(s, dt);          // auto-slow, waiting, the duty board (convenience.js)
+    if (C.ambushTick) C.ambushTick(s, dt); if (C.campingTick) C.campingTick(s); if (C.feastTick) C.feastTick(s); if (C.suspectTick) C.suspectTick(s, dt);          // auto-slow, waiting, the duty board (convenience.js)
     if (C.moraleTick) C.moraleTick(s, dt);          // the guitar and other morale boosters (morale.js)
     if (C.sickTick) C.sickTick(s, dt);
     if (C.journeyTick) C.journeyTick(s, dt); if (C.muleTick) C.muleTick(s, dt); if (C.courierTick) C.courierTick(s, dt);   // the road, mule trains, couriers (journeys.js)

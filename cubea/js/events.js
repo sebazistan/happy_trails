@@ -24,6 +24,7 @@
   // One random such person.
   function randomLocal(sid, filter) { const l = localPeople(sid, filter); return l.length ? l[(rnd() * l.length) | 0] : null; }
   // A public matter affecting a whole settlement: publishes one event with a wide public reach, so many townspeople gain a memory of it.
+  C.memoryAll = (...a) => memoryAll(...a);
   function memoryAll(sid, ev, sign, sev, pub) { // generic: a public matter affecting a whole settlement
     const l = localPeople(sid).filter((p) => C.ageOf(p) >= 14); if (!l.length) return;
     const v = l[(rnd() * l.length) | 0]; C.addEvent(Object.assign({ victim: v, x: 0, y: 0, settlement: sid, pub: pub === undefined ? 1 : pub }, ev, { val: sign, sev }));
@@ -113,7 +114,7 @@
   def({ id: 'army_requisition', cat: 'pressure', t: 3, cd: 22, layer: 3, w: (g) => g.regime.heat > 12 && C.isZafra(g.day) === false ? 2.5 : 0.6, run: (g) => {
     const sid = pick(['palmarito', 'cayo']); const nm = S(sid).name;
     return card({ title: `The army takes the food at ${nm}`, icon: '🪖', body: `A truck and six soldiers arrive at ${nm} and carry off rice, beans and two pigs "for the troops". Families come to you afterward.`, choices: [
-      { label: 'Ambush the truck on the road', sub: 'A fight. If it works, the food returns to the families.', fn: () => { g.flags.ambushTruck = sid; C.viejoSays('The truck leaves by the east road. We can reach the bend before they do.'); C.log('Mission: ambush the army truck.', 'warn'); } },
+      { label: 'Race to the bend', sub: 'Ambush the truck on the road. A fight. If it works, the food returns to the families.', fn: () => { g.flags.ambushTruck = sid; C.viejoSays('The truck leaves by the east road. We can reach the bend before they do.'); C.log('Mission: ambush the army truck.', 'warn'); if (C.startAmbush) C.startAmbush(sid); } },
       { label: 'Help families hide what is left', sub: 'No cost. They remember who helped.', fn: () => { memoryAll(sid, { type: 'aid', perpSide: 'rebel', positive: true, text: 'Rebels helped families hide food from the army', memText: 'Rebels helped hide our food' }, 1, 40, 1); C.deed(0, 3); C.deed(1, 2); } },
       { label: 'Do nothing', sub: 'You are not strong enough yet.', fn: () => { memoryAll(sid, { type: 'requisition', perpSide: 'army', text: `The army took food from ${nm}`, memText: 'The army took our food' }, 1, 45, 1); g.regime.legit -= 0.6; } },
     ] }); } });

@@ -7,6 +7,9 @@
    • A card with several choices becomes a situation with a timer (30 s of play, `secs` on the card overrides).
    • A card with one choice ("Carry on") is just a notice: it fades after a few seconds and its single outcome applies.
    • Big story beats stay as full pages: the prologue, Havana, 1961, the end of the regime, victory/defeat (MODAL below).
+   • SPOTS: a card may carry `spots: [{i, label, u,w | x,y | at()}]`, places in the world (deck coordinates u,w follow the yacht). Each is drawn as a
+     pulsing marker with its label; walk up to one and press E to give that answer (spot.i is the choice index). `draw(ctx,cam,z,cur)` lets a
+     card paint something in the world (a swimmer in the water). The hint chips stay as a fallback.
    • The speed drops to normal when a situation appears; further situations queue behind the one on screen.
    • Playwright test runs (navigator.webdriver) keep the old blocking cards so the older harnesses still click them; tests of this
      module set C.ui.liveCards = true.
@@ -50,7 +53,7 @@
     const what = c.headline !== undefined ? c.headline : first(c.body);
     el.className = 'panel' + (notice ? ' notice' : '');
     el.innerHTML = `<h3>${c.icon ? c.icon + ' ' : ''}${esc(c.title)}</h3>${what ? `<div class="what">${esc(what)}</div>` : ''}` +
-      (notice ? '' : `<div class="hint">${c.choices.map((ch, i) => `<button data-i="${i}" class="${ch.disabled ? 'dis' : ''}" title="${esc((ch.label || '') + (ch.sub ? ' — ' + ch.sub : ''))}"><kbd>${i + 1}</kbd>${esc(chip(ch.label))}</button>`).join('')}</div><div class="sub"></div><div class="def">no answer: ${esc(chip(c.choices[def].label))}</div>`) +
+      (notice ? '' : `<div class="hint">${c.choices.map((ch, i) => `<button data-i="${i}" class="${ch.disabled ? 'dis' : ''}" title="${esc((ch.label || '') + (ch.sub ? ' — ' + ch.sub : ''))}"><kbd>${i + 1}</kbd>${esc(chip(ch.label))}</button>`).join('')}</div><div class="sub"></div><div class="def">${c.spots ? 'walk to a marker and press E · ' : ''}no answer: ${esc(chip(c.choices[def].label))}</div>`) +
       (queue.length ? `<div class="more">+${queue.length} more</div>` : '') + `<div class="bar"></div>`;
     el.style.display = 'block';
     el.querySelectorAll('.hint button').forEach((b) => { b.onclick = () => choose(+b.dataset.i); const ch = c.choices[+b.dataset.i]; b.onmouseenter = b.onfocus = () => { el.querySelector('.sub').textContent = ch.sub || ch.label || ''; }; b.onmouseleave = () => { el.querySelector('.sub').textContent = ''; }; });
@@ -78,6 +81,20 @@
     cur.left -= 0.2; const b = el.querySelector('.bar'); if (b) b.style.width = Math.max(0, cur.left / cur.secs * 100) + '%';
     if (cur.left <= 0) finish(cur.def, true);
   }, 200);
+  const spotPos = (sp) => { const g = G(); if (sp.at) return sp.at(); if (sp.u !== undefined) { const v = g.sea && g.sea.veh; return v ? { x: v.x + sp.w, y: v.y - sp.u } : null; } return { x: sp.x, y: sp.y }; };
+  const nearSpot = () => { const g = G(), pl = g.player; if (!cur || !cur.c.spots || !pl) return null; let best = null, bd = 1e9; for (const sp of cur.c.spots) { const q = spotPos(sp); if (!q) continue; const d = Math.hypot(q.x - pl.x, q.y - pl.y); if (d < (sp.r || 15) && d < bd) { bd = d; best = sp; } } return best; };
+  /** Drawn from render.js: markers for the live situation's spots and anything the card paints itself. */
+  C.drawSituation = function (ctx, s, cam, W, H, z) {
+    if (!cur || cur.notice && !cur.c.spots) return; const t = performance.now() / 1000, c = cur.c; if (c.draw) { try { c.draw(ctx, cam, z, cur); } catch (e) { } }
+    if (!c.spots) return; const near = nearSpot();
+    for (const sp of c.spots) { const q = spotPos(sp); if (!q) continue; const p = C.toScreen(cam, q.x, q.y); const r = (8 + Math.sin(t * 4) * 1.5) * Math.max(1, z * 0.7), on = sp === near;
+      ctx.save(); ctx.strokeStyle = on ? '#ffe08a' : 'rgba(255,214,120,.85)'; ctx.fillStyle = on ? 'rgba(255,224,138,.35)' : 'rgba(255,214,120,.14)'; ctx.lineWidth = on ? 2.5 : 1.6; ctx.beginPath(); ctx.ellipse(p.x, p.y, r, r * 0.6, 0, 0, 6.3); ctx.fill(); ctx.stroke();
+      ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'center'; const label = (on ? '[E] ' : '') + sp.label, w = ctx.measureText(label).width + 10; ctx.fillStyle = 'rgba(20,15,10,.78)'; ctx.fillRect(p.x - w / 2, p.y - r - 22, w, 17); ctx.fillStyle = on ? '#ffe08a' : '#f3ead7'; ctx.fillText(label, p.x, p.y - r - 9); ctx.restore(); }
+  };
+  window.addEventListener('keydown', (e) => {
+    if (!cur || !cur.c.spots || e.key.toLowerCase() !== 'e' || e.ctrlKey || e.altKey || e.metaKey) return; if (e.target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    const sp = nearSpot(); if (sp) { e.preventDefault(); e.stopImmediatePropagation(); choose(sp.i); }
+  }, true);
   // number keys answer the live situation (capture phase: these keys otherwise recall control groups)
   window.addEventListener('keydown', (e) => {
     if (!cur || cur.notice || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return; if (e.target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;

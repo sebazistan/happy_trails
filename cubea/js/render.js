@@ -558,6 +558,7 @@
     for (const e of s.exits) { const sp = C.toScreen(cam, (e.x + e.w / 2) * T, (e.y + e.h / 2) * T); if (sp.x > -100 && sp.x < W + 100 && sp.y > -30 && sp.y < H + 30) outlinedText(ctx, '↗ ' + C.lab(e.label), sp.x, sp.y, bsz, '#ffe28a', true); }
     if (G.box) { ctx.strokeStyle = 'rgba(255,224,122,.9)'; ctx.fillStyle = 'rgba(255,224,122,.12)'; ctx.lineWidth = 1; const b = G.box; ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); }
     // day/night + weather overlays
+    if (C.drawSituation) C.drawSituation(ctx, s, cam, W, H, z);   // live situation markers (situations.js)
     if (C.drawLens) C.drawLens(ctx, s, cam, W, H, z);        // hold L: information lenses (lens.js)
     drawAtmosphere(ctx, G, W, H, t);
   };
