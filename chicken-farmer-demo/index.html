@@ -107,6 +107,13 @@ canvas { display: block; width: 100%; aspect-ratio: 16 / 10; touch-action: none;
 .keys { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 13px; }
 kbd { font-family: var(--font-mono); font-size: 11px; background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; color: var(--fg); }
 
+.todo { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; }
+.todo h2 { font-family: var(--font-display); font-size: 15px; margin: 0 0 4px; }
+.todo ol { list-style: none; margin: 0; padding: 0; font-size: 13px; display: grid; gap: 2px; }
+.todo li { display: flex; gap: 8px; align-items: baseline; }
+.todo .tag { flex: none; width: 46px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+.todo .now .tag { color: var(--bad); font-weight: 600; } .todo .soon .tag { color: var(--accent); } .todo .later .tag, .todo .none { color: var(--muted); }
+.todo .none { font-size: 13px; }
 .log { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; margin: 0; list-style: none; font-size: 13px; min-height: 40px; }
 .log li { display: flex; gap: 10px; padding: 2px 0; }
 .log time { font-family: var(--font-mono); font-size: 11px; color: var(--muted); flex: none; padding-top: 1px; }
@@ -134,6 +141,8 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
     <h1>Chicken Farmer</h1>
     <p>2D test of the farm loop from the dev guide. Twenty hens, a coop with nest boxes, foxes at night, a truck to the roadside, and a farmhouse to sleep in. Walk into any building and its roof fades away.</p>
   </header>
+
+  <section class="todo" aria-label="To do"><h2>To do</h2><ol id="todo"></ol></section>
 
   <section class="stats" aria-label="Farm status">
     <div class="stat"><div class="k">Time</div><div class="v"><span id="sClock">07:12</span> <small id="sDay">Day 1</small></div><div class="k" id="sWeather" style="margin-top:2px">Clear</div></div>
@@ -429,6 +438,7 @@ const bin = { stock: 120 };
 const farmer = { x: 500, y: 330, vx: 0, vy: 0, face: 0, r: 9, carry: null, scoops: 0, basket: 0, money: 40, sneak: false, sneakNow: false,
   step: 0, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null, held: [], away: false };
 const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, steer: 0, load: { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0 } };
+const todo = { shown: [], sortT: 0, calcT: 0, html: '' }, bubLog = {};
 let rats = []; const ratStats = { caught: 0, eggs: 0, t: 40, noteDay: -1 };
 let hens = [], foxes = [], eggs = [], bugs = [], piles = [], floats = [], toast = { txt: '', t: 0 }, nextId = 1, logItems = [];
 let debug = false, action = null, fps = 60;
@@ -1108,7 +1118,7 @@ function resetPets() {
   Object.assign(dog, { x: 430, y: 164, vx: 0, vy: 0, state: 'REST', timer: 4, wT: 0, hunger: 0.7, starve: 0, goodT: 0, leaves: 0, awayT: 0, gone: false, chaseT: 0, tired: 0, alert: 0, bark: 0, target: null });
   cats = CAT_DEFS.map((d, i) => ({ pet: 'cat', name: d.name, col: d.col, mark: d.mark, slot: i, x: 500 + i * 20, y: 156 + (i % 2) * 14, vx: 0, vy: 0, ang: rand(0, TAU), r: 5, state: 'SIT', timer: rand(2, 8), cool: rand(30, 90),
     hunger: 0.7, starve: 0, target: null, jump: false, phase: rand(0, 6), wT: 0, isFox: true, ratCool: 0, keenT: 0, keen: false }));
-  rats = []; ratStats.caught = 0; ratStats.eggs = 0; ratStats.t = 40; dog.ratCool = 0; dog.ratT = 0;
+  todo.shown = []; todo.sortT = 0; todo.calcT = 0; for (const k in bubLog) delete bubLog[k]; rats = []; ratStats.caught = 0; ratStats.eggs = 0; ratStats.t = 40; dog.ratCool = 0; dog.ratT = 0;
   hawks = []; feathers = []; bowls.dog = 1; bowls.cat = 1; food.dog = 14; food.cat = 14;
   world.fedAMDay = 0; world.fedPMDay = 0; world.hawkAt = -1;
 }
@@ -1431,8 +1441,117 @@ function drawRat(o) {
   ctx.fillStyle = '#111'; ctx.fillRect(6.2, -1.3, 1, 1); ctx.fillRect(6.2, 0.4, 1, 1);
   ctx.restore();
 }
+/* ---------- to-do list: most important first, reordered at most every 15 seconds ---------- */
+function computeTodo() {
+  const L = [], add = (id, text, score) => L.push({ id, text, score });
+  const pct = x => Math.round(x * 100) + '%';
+  const frac = a => { const c = a.reduce((n, t) => n + t.cap, 0); return c ? a.reduce((n, t) => n + t.level, 0) / c : 1; };
+  const loose = h => h.state !== 'ROOST' && h.state !== 'NEST' && h.state !== 'CAUGHT' && h.state !== 'HELD';
+  if (foxes.length) add('fox', 'Scare off the fox', 100);
+  const broken = FENCE.filter(c => c.broken).length;
+  if (broken) add('fence', 'Repair the broken fence (' + broken + ')', 94);
+  if (hens.length) {
+    const wf = frac(waterers), ff = frac(feeders);
+    if (wf < 0.4) add('water', 'Fill the water troughs (' + pct(wf) + ' left)', wf < 0.15 ? 95 : 70);
+    if (ff < 0.4) add('feed', 'Fill the feeders (' + pct(ff) + ' left)', ff < 0.15 ? 92 : 68);
+    if (bin.stock <= 0 && ff < 0.6) add('buyfeed', 'Buy chicken feed in town. The bin is empty', 90);
+    else if (bin.stock < 40) add('buyfeed', 'Buy chicken feed in town (' + bin.stock + ' left in the bin)', bin.stock < 15 ? 66 : 42);
+  }
+  const outside = hens.filter(h => loose(h) && !insidePen(h)).length;
+  if (outside) add('outside', outside + (outside > 1 ? ' hens are' : ' hen is') + ' outside the pen', world.curfew ? 90 : 56 + Math.min(outside, 10));
+  for (const [k, nm] of [['dog', 'dog'], ['cat', 'cat']]) {
+    const n = food[k];
+    if (n <= 6) add(k + 'food', 'Buy ' + nm + ' food in town (' + (n <= 0 ? 'none left' : n + ' meals left') + ')', n <= 0 ? 88 : n <= 2 ? 72 : 50);
+  }
+  const nest = nestEggs(), rot = nest.filter(e => e.rotten).length, fresh = nest.length - rot, yard = eggs.filter(e => !e.inHutch && !e.rotten).length;
+  if (freeBox() < 0) add('nestfull', 'The nest boxes are full. Collect the eggs', 78);
+  else if (fresh >= 4) add('nest', 'Collect ' + fresh + ' eggs from the nest boxes', 40 + Math.min(fresh, 20));
+  if (rot) add('rotten', 'Clear ' + rot + ' rotten egg' + (rot > 1 ? 's' : '') + ' from the nests', 64);
+  if (yard) add('yard', 'Collect ' + yard + ' egg' + (yard > 1 ? 's' : '') + ' lying in the yard', 36 + Math.min(yard, 20) + (rats.length ? 18 : 0));
+  if (rats.length && eggs.some(e => !e.rotten)) add('rat', 'A rat is after the eggs. Chase it or let the cats at it', 55);
+  if (farmer.basket >= CARTON) add('basket', 'Take the ' + farmer.basket + ' eggs in your basket to the stand, stall or fridge', 44);
+  if (roadside.stock < CARTON) add('road', 'The roadside stall is out of eggs', 52);
+  if (weekday() < 5 && stand.stock < CARTON) add('stand', 'The farm stand is out of eggs', 50);
+  const till = stand.till + roadside.till;
+  if (till >= 8) add('till', 'Collect the money ($' + till + ' waiting in the till and honesty box)', 30 + Math.min(till / 4, 25));
+  if (hutch.dirt > 0.6) add('clean', 'Clean the coop', hutch.dirt > 0.85 ? 72 : 48);
+  const load = LOADKEYS.reduce((n, k) => n + (truck.load[k] || 0), 0);
+  if (load > 0 && !trip.on) add('unload', 'Unload the supplies from the truck', 58);
+  if (world.penCount > pen.cap) add('crowd', 'The pen is too crowded. Add fence or sell hens', 58);
+  if (hens.length > coopCap()) add('roost', 'Not enough roosts for every hen. Extend the coop', 50);
+  if (farmer.energy < 0.3) add('sleep', 'Get some sleep in the farmhouse', farmer.energy < 0.15 ? 85 : 60);
+  else if (world.curfew && farmer.energy < 0.6) add('bed', 'It is night. Go to bed', 54);
+  return L;
+}
+function updateTodo(dt) {
+  todo.sortT -= dt; todo.calcT -= dt; if (todo.calcT > 0) return; todo.calcT = 0.5;
+  const L = computeTodo(), by = new Map(L.map(x => [x.id, x]));
+  todo.shown = todo.shown.filter(x => by.has(x.id)).map(x => by.get(x.id));       /* finished items drop out at once */
+  for (const x of L) if (!todo.shown.some(y => y.id === x.id)) todo.shown.push(x);  /* new ones wait at the bottom */
+  if (todo.sortT <= 0) { todo.shown.sort((a, b) => b.score - a.score); todo.sortT = 15; }
+  const h = todo.shown.length ? todo.shown.slice(0, 8).map(x => '<li class="' + (x.score >= 80 ? 'now' : x.score >= 55 ? 'soon' : 'later') + '"><span class="tag">' + (x.score >= 80 ? 'now' : x.score >= 55 ? 'soon' : 'later') + '</span><span>' + x.text + '</span></li>').join('') + (todo.shown.length > 8 ? '<li class="later"><span class="tag"></span><span>and ' + (todo.shown.length - 8) + ' more</span></li>' : '') : '<li class="none">Nothing pressing. The farm is in good shape.</li>';
+  if (h !== todo.html) { todo.html = h; $('todo').innerHTML = h; }
+}
+
+/* ---------- problem bubbles: a few animals speak up, not the whole flock ---------- */
+const BUB = {
+  'hen:hungry': ['hungry', 3, 'Some of the hens are hungry.'], 'hen:thirsty': ['thirsty', 3, 'Some of the hens are thirsty.'], 'hen:sick': ['unwell', 2, 'A hen is looking unwell.'],
+  'hen:crowd': ['crowded', 2, 'The hens are crowded in the pen.'], 'hen:cold': ['no roost', 2, 'Hens are sleeping outside with no roost.'], 'hen:locked': ['let me in!', 2, ''],
+  'dog:hungry': ['hungry', 1, ''], 'dog:starving': ['starving!', 1, ''], 'cat:hungry': ['hungry', 2, ''], 'cat:starving': ['starving!', 2, '']
+};
+function bubbleProblems() {
+  const out = [];
+  for (const h of hens) {
+    if (h.state === 'ROOST' || h.state === 'NEST' || h.state === 'CAUGHT' || h.state === 'HELD') continue;
+    let k = null, sev = 1;
+    if (h.health < 0.6) { k = 'hen:sick'; sev = h.health * 0.5; }
+    if (h.thirst < 0.25 && h.thirst < sev) { k = 'hen:thirsty'; sev = h.thirst; }
+    if (h.hunger < 0.25 && h.hunger < sev) { k = 'hen:hungry'; sev = h.hunger; }
+    if (!k && h.state === 'SLEEP' && world.curfew) { k = 'hen:cold'; sev = 0.4; }
+    if (!k && h.state === 'RETURN' && h.waiting) { k = 'hen:locked'; sev = 0.4; }
+    if (!k && world.penCount > pen.cap && insidePen(h)) { k = 'hen:crowd'; sev = 0.5; }
+    if (k) out.push({ o: h, k, sev });
+  }
+  if (!dog.gone && dog.state !== 'AWAY' && dog.state !== 'LEAVING') {
+    if (dog.starve > 0.25) out.push({ o: dog, k: 'dog:starving', sev: 0 }); else if (dog.hunger < 0.25) out.push({ o: dog, k: 'dog:hungry', sev: dog.hunger });
+  }
+  for (const c of cats) { if (c.starve > 0.25) out.push({ o: c, k: 'cat:starving', sev: 0 }); else if (c.hunger < 0.25) out.push({ o: c, k: 'cat:hungry', sev: c.hunger }); }
+  return out;
+}
+function updateBubbles(dt) {
+  for (const o of hens.concat(dog, cats)) { o.bubNext = (o.bubNext || 0) - dt; if (o.bub) { o.bub.t -= dt; if (o.bub.t <= 0) o.bub = null; } }
+  todo.bubT = (todo.bubT || 0) - dt; if (todo.bubT > 0) return; todo.bubT = 0.8;
+  const groups = {};
+  for (const p of bubbleProblems()) (groups[p.k] || (groups[p.k] = [])).push(p);
+  for (const k in groups) {
+    const [txt, cap, note] = BUB[k], g = groups[k];
+    let showing = g.filter(p => p.o.bub && p.o.bub.k === k).length;
+    for (let i = g.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [g[i], g[j]] = [g[j], g[i]]; }
+    for (const p of g) {
+      if (showing >= cap) break;
+      if (p.o.bub || p.o.bubNext > 0) continue;
+      p.o.bub = { k, txt, t: 4.2, max: 4.2, bad: p.sev < 0.12 }; p.o.bubNext = rand(14, 26); showing++;
+      if (note && bubLog[k] !== world.day) { bubLog[k] = world.day; say(note, true); }
+    }
+  }
+}
+function drawBubbles(list) {
+  ctx.font = '600 9px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const o of list) {
+    const b = o.bub; if (!b) continue;
+    const a = Math.min(1, b.t / 0.4, (b.max - b.t) / 0.25 + 0.01), w = ctx.measureText(b.txt).width + 12, x = o.x, y = o.y - (o.pet === 'dog' ? 28 : o.pet ? 22 : 24);
+    ctx.save(); ctx.globalAlpha = Math.max(0, a);
+    ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.strokeStyle = b.bad ? '#b9402a' : '#7a6a3a'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x - w / 2 + 4, y - 7); ctx.lineTo(x + w / 2 - 4, y - 7); ctx.quadraticCurveTo(x + w / 2, y - 7, x + w / 2, y - 3); ctx.lineTo(x + w / 2, y + 3); ctx.quadraticCurveTo(x + w / 2, y + 7, x + w / 2 - 4, y + 7);
+    ctx.lineTo(x + 3, y + 7); ctx.lineTo(x, y + 12); ctx.lineTo(x - 3, y + 7); ctx.lineTo(x - w / 2 + 4, y + 7); ctx.quadraticCurveTo(x - w / 2, y + 7, x - w / 2, y + 3); ctx.lineTo(x - w / 2, y - 3); ctx.quadraticCurveTo(x - w / 2, y - 7, x - w / 2 + 4, y - 7);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = b.bad ? '#b9402a' : '#3a3220'; ctx.fillText(b.txt, x, y + 0.5);
+    ctx.restore();
+  }
+  ctx.textBaseline = 'alphabetic';
+}
 function updatePets(dt) {
-  updateRats(dt);
+  updateRats(dt); updateBubbles(dt); updateTodo(dt);
   if (world.hawkAt >= 0 && !world.curfew && world.t >= world.hawkAt) { world.hawkAt = -1; spawnHawk(); }
   updateDog(dt);
   for (const c of cats) updateCat(c, dt);
@@ -2475,6 +2594,7 @@ function render() {
   for (const o of list) if (!o.isFox && !o.pet && o !== farmer && (o.state === 'SLEEP' || (o.state === 'RETURN' && o.waiting))) { ctx.fillStyle = '#fff'; ctx.font = '600 10px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('z z', o.x, o.y - 12); }
   for (const t of TREES) drawTree(t);
   drawHawks();
+  drawBubbles(list);
   for (const f of floats) { ctx.globalAlpha = clamp(f.t / 0.5, 0, 1); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.font = f.big ? '800 18px "DM Sans", sans-serif' : '700 12px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.txt, f.x + 1, f.y + 1); ctx.fillStyle = f.col; ctx.fillText(f.txt, f.x, f.y); ctx.globalAlpha = 1; }
   drawCoins(); drawBuild();
   /* rain */
@@ -2602,7 +2722,7 @@ function fit() {
 }
 new ResizeObserver(fit).observe(cv);
 fit(); resetFarm();
-window.__farm = { get rats() { return rats; }, ratStats, spawnRat, catchRat, bugs, dog, bowls, food, performFeeding, spawnHawk, featherBurst, get cats() { return cats; }, get hawks() { return hawks; }, get feathers() { return feathers; }, newHen, penPoint, troughUsers, separateHens, world, farmer, truck, gates, hutch, bin, feeders, waterers, FENCE, pen, inv, recomputePen, addFenceSection, makeGate, build, setBuild, setTool, buildClick, updateGhost, trip, startTrip, leaveTown, cart, cartAdd, shopBuy, truckLoad: truck.load, extendCoop, coopCap, nestCount, T, update, doAction, findAction, spawnFox, wakeUp,
+window.__farm = { todo, computeTodo, updateTodo, bubbleProblems, get rats() { return rats; }, ratStats, spawnRat, catchRat, bugs, dog, bowls, food, performFeeding, spawnHawk, featherBurst, get cats() { return cats; }, get hawks() { return hawks; }, get feathers() { return feathers; }, newHen, penPoint, troughUsers, separateHens, world, farmer, truck, gates, hutch, bin, feeders, waterers, FENCE, pen, inv, recomputePen, addFenceSection, makeGate, build, setBuild, setTool, buildClick, updateGhost, trip, startTrip, leaveTown, cart, cartAdd, shopBuy, truckLoad: truck.load, extendCoop, coopCap, nestCount, T, update, doAction, findAction, spawnFox, wakeUp,
   stand, roadside, fridge, wife, spawnCar, get cars() { return cars; }, get people() { return people; },
   get hens() { return hens; }, get eggs() { return eggs; }, get foxes() { return foxes; } };
 requestAnimationFrame(frame);
