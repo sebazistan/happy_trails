@@ -122,3 +122,6 @@ A guitar with a real carrying cost, played when safe (never with soldiers within
 * **Sound** (`audio.js`): procedural ambience (cicadas, frogs, wind, rain) and guitar notes in sync with the morale beat.
 * **Guided start** (`guide.js`): El Viejo speaks five short lines, each waiting for you to do the thing (walk, Q wheel, a verb, hold L, J). F2 skips; never runs on loaded games or `?auto=`.
 * **Developer overlay** (`devlens.js`): F3 shows fps, counts, clock and the hovered actor's raw state.
+
+## Round 11: events in real time (`situations.js`)
+Event cards no longer stop the game. A decision becomes a banner (headline, one line, small keyed hints such as "1 Go back · 2 Continue on course") with a timer; ignoring it applies the passive option. One-choice cards become fading notices. Story beats (prologue, Havana, 1961, collapse, victory/defeat) remain full pages. Number keys answer a live situation (they otherwise recall control groups). Test runs keep blocking cards (`navigator.webdriver`). Also fixed the log collapsing to a sliver on narrow screens. Next step in the same direction: give individual events a physical form in the world (a swimmer in the water, a truck on the road) so the response is an action, not a hint.

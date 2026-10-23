@@ -22,7 +22,8 @@
 #left:not(.compact) .chip{display:none}
 #cmdbar.idle{display:none!important}
 #cmdbar.compact:not(:hover):not(.armed) .tabs,#cmdbar.compact:not(:hover):not(.armed) .orders,#cmdbar.compact:not(:hover):not(.armed) .hintline{display:none}
-#log div:nth-last-child(n+4){display:none}`;
+#log div:nth-last-child(n+4){display:none}
+@media (max-width:1150px){#log{left:8px!important;right:8px!important;width:auto!important;bottom:62px!important}}`;
   document.head.appendChild(css);
   const on = () => !(C.settings && C.settings.compactUI === false);
   function states() {
