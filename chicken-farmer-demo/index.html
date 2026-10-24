@@ -72,7 +72,7 @@ header p { margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 65c
 canvas { display: block; width: 100%; aspect-ratio: 16 / 10; touch-action: none; }
 
 .touch { display: none; align-items: center; justify-content: space-between; gap: 16px; }
-@media (pointer: coarse), (max-width: 700px) { .touch { display: flex; } }
+body.mobile .touch { display: flex; }
 .stick { position: relative; width: 132px; height: 132px; border-radius: 50%; background: var(--panel); border: 2px solid var(--line); touch-action: none; flex: none; }
 .stick b { position: absolute; left: 40px; top: 40px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); pointer-events: none; }
 .pad { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
@@ -137,43 +137,93 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
 .howto { display: grid; gap: 6px; padding-bottom: 14px; font-size: 14px; max-width: 75ch; }
 .howto p { margin: 0; }
 .howto b { font-weight: 600; }
+
+/* ---- compact layout: one screen, menus behind buttons ---- */
+body { padding-block: 8px 12px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+.app { max-width: 1100px; gap: 6px; }
+.top { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+.top h1 { font-size: 20px; margin: 0; white-space: nowrap; }
+.chips { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; min-width: 0; }
+.chips .stat { padding: 3px 10px; flex: 1 1 96px; min-width: 0; }
+.chips .stat .k { font-size: 9px; letter-spacing: .1em; }
+.chips .stat .v { font-size: 17px; line-height: 1.2; }
+.chips .stat .meter { margin-top: 2px; height: 4px; }
+.chips #sNeeds { margin: 0 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.track { height: 6px; border-radius: 3px; }
+.track i { top: -3px; height: 12px; width: 3px; }
+.stage { width: min(100%, calc((100vh - 268px) * 1.6)); width: min(100%, calc((100dvh - 268px) * 1.6)); min-width: min(100%, 420px); margin-inline: auto; }
+.ticker { font-size: 13px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-height: 28px; }
+.ticker.bad { color: var(--bad); }
+.todo { padding: 4px 10px; border-radius: 8px; }
+.todo li { line-height: 1.35; }
+.todo .tag { width: 40px; }
+.todo .more { color: var(--muted); }
+.menubar { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.menubar .btn { padding: 6px 12px; font-size: 13px; }
+.menubar b { font-family: var(--font-mono); font-weight: 500; margin-left: 2px; }
+.sheet { position: fixed; inset: 0; z-index: 40; background: rgba(8, 14, 10, .5); display: grid; place-items: center; padding: 12px; }
+.sheet-panel { width: min(900px, 100%); max-height: calc(100% - 8px); overflow: auto; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 16px; display: grid; gap: 10px; align-content: start; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; position: sticky; top: -12px; background: var(--bg); padding: 4px 0; z-index: 1; }
+.sheet-head h2 { margin: 0; font-family: var(--font-display); font-size: 18px; }
+.sheet .stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.todo-all { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.todo-all li { display: flex; gap: 10px; align-items: baseline; }
+.todo-all .tag { flex: none; width: 46px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
+.todo-all .now .tag { color: var(--bad); font-weight: 600; } .todo-all .soon .tag { color: var(--accent); } .todo-all .later .tag { color: var(--muted); }
+/* phone layout: controls under the board, bottom-sheet menus */
+body.mobile { padding: 4px 0 8px; }
+body.mobile .app { gap: 4px; }
+body.mobile .top { padding-inline: 8px; gap: 4px; }
+body.mobile .top h1 { display: none; }
+body.mobile .chips { gap: 4px; flex-wrap: nowrap; }
+body.mobile .chips .stat { flex: 1 1 0; padding: 2px 6px; }
+body.mobile .chips .stat .k { font-size: 8px; letter-spacing: .04em; }
+body.mobile .chips .stat .v { font-size: 14px; }
+body.mobile .chips .stat .v small, body.mobile .chips #sDay { font-size: 9px; }
+body.mobile .chips #sNeeds, body.mobile .chips #sWeather, body.mobile .chips #sCoop, body.mobile .chips #sDay { display: none; }
+body.mobile .track { margin-inline: 8px; }
+body.mobile .stage { width: 100%; min-width: 0; border-radius: 0; border-inline: 0; }
+body.mobile .ticker, body.mobile .todo { margin-inline: 8px; }
+body.mobile .todo li:nth-child(n+2) { display: none; }
+body.mobile .touch { padding-inline: 12px; }
+body.mobile .stick { width: 112px; height: 112px; } body.mobile .stick b { left: 30px; top: 30px; }
+body.mobile .act { width: 84px; height: 84px; }
+body.mobile .menubar { margin-inline: 8px; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; }
+body.mobile .menubar .btn { flex: none; padding: 6px 10px; }
+body.mobile .sheet { align-items: end; padding: 0; }
+body.mobile .sheet-panel { width: 100%; max-height: 82%; border-radius: 14px 14px 0 0; }
+@media (max-width: 560px) { .top h1 { font-size: 17px; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  body.mobile .stage { width: min(100%, calc((100vh - 100px) * 1.6)); width: min(100%, calc((100dvh - 100px) * 1.6)); }
+  body.mobile .touch { position: fixed; left: 0; right: 0; bottom: 44px; padding: 0 10px; pointer-events: none; z-index: 5; }
+  body.mobile .touch > * { pointer-events: auto; }
+  body.mobile .ticker, body.mobile .todo { display: none; }
+}
 </style>
 
 <main class="app">
-  <header>
+  <header class="top">
     <h1>Chicken Farmer</h1>
-    <p>2D test of the farm loop from the dev guide. Twenty hens, a coop with nest boxes, foxes at night, a truck to the roadside, and a farmhouse to sleep in. Walk into any building and its roof fades away.</p>
-  </header>
-
-  <section class="todo" aria-label="To do"><h2>To do</h2><ol id="todo"></ol></section>
-
-  <section class="stats" aria-label="Farm status">
+    <section class="chips" aria-label="Farm status">
     <div class="stat"><div class="k">Time</div><div class="v"><span id="sClock">07:12</span> <small id="sDay">Day 1</small></div><div class="k" id="sWeather" style="margin-top:2px">Clear</div></div>
     <div class="stat" id="cardMoney"><div class="k">Money</div><div class="v">$<span id="sMoney">0</span></div><span class="gain" id="moneyGain"></span></div>
-    <div class="stat"><div class="k">Basket / truck</div><div class="v"><span id="sEggs">0</span> <small>/</small> <span id="sCargo">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px"><span id="sCoop">0</span> waiting in coop</div></div>
+    <div class="stat"><div class="k">Eggs</div><div class="v"><span id="sEggs">0</span> <small>/</small> <span id="sCargo">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px"><span id="sCoop">0</span> waiting in coop</div></div>
     <div class="stat"><div class="k">Hens</div><div class="v"><span id="sHens">20</span> <small id="sLost"></small></div><div class="k" id="sNeeds" style="margin-top:2px">&nbsp;</div></div>
     <div class="stat"><div class="k">Your energy</div><div class="v"><span id="sEnergy">100</span><small>%</small></div><div class="meter" id="mEnergy"><i></i></div></div>
-    <div class="stat"><div class="k" id="kFeeder">Feeders</div><div class="v"><span id="sFeeder">10</span><small>/<span id="sFeederCap">40</span></small></div><div class="meter" id="mFeeder"><i></i></div></div>
-    <div class="stat"><div class="k" id="kWater">Troughs</div><div class="v"><span id="sWater">8</span><small>/<span id="sWaterCap">24</span></small></div><div class="meter" id="mWater"><i></i></div></div>
-    <div class="stat"><div class="k">Coop clean</div><div class="v"><span id="sClean">90</span><small>%</small></div><div class="meter" id="mClean"><i></i></div></div>
-    <div class="stat"><div class="k">Feed in bin</div><div class="v"><span id="sBin">120</span></div><div class="k" id="sCarry" style="margin-top:2px">&nbsp;</div></div>
-    <div class="stat"><div class="k">Fridge (barn)</div><div class="v"><span id="sFridge">0</span> <small>eggs</small></div></div>
-    <div class="stat"><div class="k">Farm stand</div><div class="v"><span id="sStandStock">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px">till $<span id="sStandTill">0</span> &middot; <span id="sStandOpen">closed</span></div></div>
-    <div class="stat"><div class="k">Roadside stall</div><div class="v"><span id="sRoadStock">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px">box $<span id="sRoadTill">0</span> &middot; $<span id="sMarket">24</span>/carton</div></div>
-    <div class="stat"><div class="k">Pen space</div><div class="v"><span id="sPenCount">20</span><small>/<span id="sPenCap">20</span> hens</small></div><div class="meter" id="mPen"><i></i></div></div>
-    <div class="stat"><div class="k">Coop roosts</div><div class="v"><span id="sRoost">20</span><small>/<span id="sRoostCap">27</span></small></div><div class="meter" id="mRoost"><i></i></div><div class="k" id="sOutdoor" style="margin-top:2px">&nbsp;</div></div>
-    <div class="stat"><div class="k">Pets</div><div class="k" style="margin-top:4px;color:var(--fg)" id="sPets">dog and cats</div></div>
-    <div class="stat"><div class="k">Supplies in barn</div><div class="k" style="margin-top:4px;color:var(--fg)" id="sSupplies">none</div></div>
-    <div class="stat buy"><button class="btn primary" id="buy" type="button" style="width:100%">Buy hen $14</button></div>
-  </section>
-
-  <div>
-    <div class="track" aria-hidden="true"><i id="mark"></i></div>
-    <div class="track-labels" aria-hidden="true"><span>00</span><span>06 dawn</span><span>12</span><span>18 dusk</span><span>24</span></div>
-  </div>
+    </section>
+  </header>
+  <div class="track" aria-hidden="true"><i id="mark"></i></div>
 
   <div class="stage"><canvas id="c" aria-label="Chicken farm game board"></canvas><div class="choose" id="choose" hidden></div></div>
 
+  <section class="touch" aria-label="Touch controls">
+    <div class="stick" id="stick"><b id="knob"></b></div>
+    <div class="pad">
+      <button class="btn" id="btnBuild" type="button" aria-pressed="false">Build</button>
+      <button class="btn" id="btnSneak" type="button" aria-pressed="false">Sneak</button>
+      <button class="act" id="btnAct" type="button">F<small>Act</small></button>
+    </div>
+  </section>
   <section class="build" id="buildPanel" hidden aria-label="Build mode">
     <div class="build-tools" role="group" aria-label="Build tool">
       <button class="btn tool" type="button" data-tool="fence" aria-pressed="true">Fence <b id="iFence">0</b></button>
@@ -186,42 +236,56 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
     <p class="build-hint" id="buildHint">Move the pointer, then click or tap to place.</p>
   </section>
 
-  <section class="touch" aria-label="Touch controls">
-    <div class="stick" id="stick"><b id="knob"></b></div>
-    <div class="pad">
-      <button class="btn" id="btnBuild" type="button" aria-pressed="false">Build</button>
-      <button class="btn" id="btnSneak" type="button" aria-pressed="false">Sneak</button>
-      <button class="act" id="btnAct" type="button">F<small>Act</small></button>
-    </div>
-  </section>
+  <div class="ticker" id="ticker" role="button" tabindex="0" aria-live="polite" data-sheet="sheetLog">Welcome to the farm.</div>
+  <section class="todo" aria-label="To do"><ol id="todo"></ol></section>
 
+  <nav class="menubar" aria-label="Menus">
+    <button class="btn" type="button" data-sheet="sheetTodo">To do <b id="todoCount">0</b></button>
+    <button class="btn" type="button" data-sheet="sheetStatus">Status</button>
+    <button class="btn" id="bBuild" type="button" aria-pressed="false">Build</button>
+    <button class="btn" type="button" data-sheet="sheetLog">Log</button>
+    <button class="btn" type="button" data-sheet="sheetHelp">Help</button>
+    <button class="btn" type="button" data-sheet="sheetSettings">Settings</button>
+    <button class="btn" id="bView" type="button">Mobile view</button>
+  </nav>
+</main>
+
+<div class="sheet" id="sheetTodo" hidden role="dialog" aria-modal="true" aria-label="To do"><div class="sheet-panel"><div class="sheet-head"><h2>To do</h2><button class="btn" type="button" data-close>Close</button></div><p class="note">Most important first. The order refreshes every 15 seconds.</p><ol class="todo-all" id="todoAll"></ol></div></div>
+<div class="sheet" id="sheetStatus" hidden role="dialog" aria-modal="true" aria-label="Farm status"><div class="sheet-panel"><div class="sheet-head"><h2>Farm status</h2><button class="btn" type="button" data-close>Close</button></div><section class="stats">
+    <div class="stat"><div class="k" id="kFeeder">Feeders</div><div class="v"><span id="sFeeder">10</span><small>/<span id="sFeederCap">40</span></small></div><div class="meter" id="mFeeder"><i></i></div></div>
+    <div class="stat"><div class="k" id="kWater">Troughs</div><div class="v"><span id="sWater">8</span><small>/<span id="sWaterCap">24</span></small></div><div class="meter" id="mWater"><i></i></div></div>
+    <div class="stat"><div class="k">Coop clean</div><div class="v"><span id="sClean">90</span><small>%</small></div><div class="meter" id="mClean"><i></i></div></div>
+    <div class="stat"><div class="k">Feed in bin</div><div class="v"><span id="sBin">120</span></div><div class="k" id="sCarry" style="margin-top:2px">&nbsp;</div></div>
+    <div class="stat"><div class="k">Fridge (barn)</div><div class="v"><span id="sFridge">0</span> <small>eggs</small></div></div>
+    <div class="stat"><div class="k">Farm stand</div><div class="v"><span id="sStandStock">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px">till $<span id="sStandTill">0</span> &middot; <span id="sStandOpen">closed</span></div></div>
+    <div class="stat"><div class="k">Roadside stall</div><div class="v"><span id="sRoadStock">0</span> <small>eggs</small></div><div class="k" style="margin-top:2px">box $<span id="sRoadTill">0</span> &middot; $<span id="sMarket">24</span>/carton</div></div>
+    <div class="stat"><div class="k">Pen space</div><div class="v"><span id="sPenCount">20</span><small>/<span id="sPenCap">20</span> hens</small></div><div class="meter" id="mPen"><i></i></div></div>
+    <div class="stat"><div class="k">Coop roosts</div><div class="v"><span id="sRoost">20</span><small>/<span id="sRoostCap">27</span></small></div><div class="meter" id="mRoost"><i></i></div><div class="k" id="sOutdoor" style="margin-top:2px">&nbsp;</div></div>
+    <div class="stat"><div class="k">Pets</div><div class="k" style="margin-top:4px;color:var(--fg)" id="sPets">dog and cats</div></div>
+    <div class="stat"><div class="k">Supplies in barn</div><div class="k" style="margin-top:4px;color:var(--fg)" id="sSupplies">none</div></div>
+    <div class="stat buy"><button class="btn primary" id="buy" type="button" style="width:100%">Buy hen $14</button></div>
+</section></div></div>
+<div class="sheet" id="sheetLog" hidden role="dialog" aria-modal="true" aria-label="Log"><div class="sheet-panel"><div class="sheet-head"><h2>Log</h2><button class="btn" type="button" data-close>Close</button></div><ol class="log" id="log"></ol></div></div>
+<div class="sheet" id="sheetHelp" hidden role="dialog" aria-modal="true" aria-label="Help"><div class="sheet-panel"><div class="sheet-head"><h2>How to play</h2><button class="btn" type="button" data-close>Close</button></div>
   <div class="keys">
     <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk or drive</span>
-    <span><kbd>F</kbd> act (see the bubble over you)</span>
+    <span><kbd>F</kbd> act (see the bubble over you); <kbd>1</kbd>-<kbd>9</kbd> picks from the menu</span>
     <span><kbd>C</kbd> or <kbd>Shift</kbd> toggle sneak</span>
     <span><kbd>B</kbd> build mode</span>
     <span><kbd>G</kbd> debug view</span>
-    <button class="btn" id="bBuild" type="button" aria-pressed="false">Build mode</button>
   </div>
-
-  <ol class="log" id="log" aria-live="polite"></ol>
-
-  <details class="panel">
-    <summary>How a day works</summary>
-    <div class="howto">
+  <div class="howto">
       <p><b>Morning.</b> The coop door opens at dawn. Open the pen gate so hens can range. Hens wake hungry. Take feed from the bin or the barn, then fill the feeder, or scatter feed on the ground and watch them peck it until it is gone. Fill the water trough from the pump (fill the can, then act at the trough). Hens with an empty belly or throat stop laying, and neglected hens eventually die.</p>
       <p><b>Daytime.</b> Most hens lay in the coop nest boxes. Go inside the coop (the roof fades away) and collect from the nests. A few lay out in the yard. Collect eggs before they rot. Eggs do not sell themselves. Stock the farm stand and the roadside stall, and keep spares in the barn fridge. Customers buy cartons of six. Your wife serves at the farm stand from Monday to Friday and goes back to the house at night. The roadside stall runs on an honesty box. Money only counts once you collect it from the till or the box. The feed shop sells sacks that you drive back to the bin. Clean the coop when it gets dirty. Rain makes mud and sends hens under cover.</p>
       <p><b>Catching hens.</b> Hens see mostly straight ahead, and they only hear you when you move without sneaking. Press <b>C</b> (or the Sneak button) to switch sneaking on, creep up behind a hen and pick her up. You can carry three, a little slower for each. Carry them to the pen and put them down. Yellow cones show what nearby hens can see while you sneak.</p>
       <p><b>Growing the farm.</b> The pen holds about one hen per 4,400 square pixels and the coop has a fixed number of roosts. Hens that cannot roost sleep out in the pen, where foxes find them easily. A feeder lets three hens eat at once and a water trough lets two drink at once, and they empty faster the more hens you keep. Drive west off the end of the road to Emil &amp; Gus Farm Supply in town. Buy fence sections, gates, feeders, troughs, coop lumber and feed, then drive home and unload at the bin or the barn. Press <b>B</b> for build mode: pick a tool, then click or tap the map to place. Remove puts a piece back in your supplies. Extend the coop from the plank sign on its east side.</p>
       <p><b>Dusk.</b> Hens head for the coop. The door shuts later in the evening, so get every hen in, close the gate, and check the fence. A hen left outside is fox food.</p>
-      <p><b>Pets.</b> Your wife puts food in the dog and cat bowls by the front door every morning and evening, and warns you when the food runs low. Buy a month of dog food and cat food at Emil &amp; Gus. A hungry dog wanders off for a few days and, if you keep neglecting him, leaves for good. Hungry cats start killing hens. Rats come for unattended eggs, mostly at night. Chase one, sneak up while it is eating, and catch it with F. Hens peck at them without much luck, the dog is too slow, and the cats are the real rat catchers, and a hungry cat is glad of the meal. With empty bowls the cats go ratting in the barn and fields and can keep going for a week or more, but the hunting gets worse every day. The dog can last about three days before he leaves. Bugs only top up a hen's hunger; they never replace feed. Cats chase hens for fun now and then and hop over fences. The dog sleeps most of the night, but he will chase off a fox that comes close. He cannot catch the hawk that sometimes swoops in by day.</p>
+      <p><b>Tools.</b> You carry one tool at a time, and you pick them up where they lie: the <b>basket</b> by the front door (without it you can only carry 6 eggs), the <b>pitchfork</b> by the coop door (needed to clean the coop, which also uses a bale of straw from town and takes a few seconds), and the <b>bucket</b> at the pump. Water the troughs by filling the bucket at the pump and pouring it in, or pull out the <b>hose</b> from the reel beside the pump. The hose bends round buildings and fences, cannot go through a shut gate, and only stretches so far. When more than one thing is possible a small menu pops up. Pick with the mouse or press 1, 2, 3.</p>
+      <p><b>Pets.</b> Your wife puts food in the dog and cat bowls by the front door every morning and evening, and warns you when the food runs low. Buy a month of dog food and cat food at Emil &amp; Gus. A hungry dog wanders off for a few days and, if you keep neglecting him, leaves for good. Hungry cats start killing hens. Rats come for unattended eggs, mostly at night. Chase one, sneak up while it is eating, and catch it with F. Hens peck at them without much luck, the dog is too slow, and the cats are the real rat catchers, and a hungry cat is glad of the meal. With empty bowls the cats go ratting in the barn and fields and can keep going for a week or more, but the hunting gets worse every day. The dog can last about three days before he leaves. Bugs only top up a hen's hunger; they never replace feed. Cats chase hens for fun now and then and hop over fences. Biscuit sleeps in his dog house at night and for a nap at midday, and follows you around when he has nothing better to do. He is friendly: walk up and pet him, or buy him a bone at Emil &amp; Gus. Anyone who passes close, like your wife or a customer, stops to scratch him too. His tail wags when he is happy. Hens give him a wide berth. He will chase off a fox that comes close. He cannot catch the hawk that sometimes swoops in by day.</p>
       <p><b>Night.</b> Foxes come. They dig under fence sections, slip through an open gate and steal eggs and hens. Walk at one to scare it off, then repair any hole in the fence. When your energy runs low, sleep in the farmhouse. If you pass out, you lose the night.</p>
-    </div>
-  </details>
-
-  <details class="panel" open>
-    <summary>Tuning and test tools</summary>
-    <div class="panel-body">
+  </div></div></div>
+<div class="sheet" id="sheetSettings" hidden role="dialog" aria-modal="true" aria-label="Settings"><div class="sheet-panel"><div class="sheet-head"><h2>Settings and test tools</h2><button class="btn" type="button" data-close>Close</button></div>
+  <div class="panel-body">
       <div class="sliders" id="sliders"></div>
       <div class="tools">
         <button class="btn" id="bDebug" type="button" aria-pressed="false">Debug view</button>
@@ -241,9 +305,7 @@ details.panel summary { cursor: pointer; padding: 12px 0; font-family: var(--fon
       </div>
       <div class="states" id="states"></div>
       <p class="note">Roadmap coverage: farmer and context actions (2), wander, flee with hysteresis, separation, state machine (3 to 5), day and night with coop door (6), gate escape (7), eggs (8), economy with truck and roadside stall (9), feed approach (10), fox AI with fence digging (16), fence repair (17), rain and shelter (16), mud (15, simple version). Left out: roof occlusion, hatching, vehicle physics, a real moisture map.</p>
-    </div>
-  </details>
-</main>
+  </div></div></div>
 
 <div class="shop" id="shop" hidden role="dialog" aria-modal="true" aria-labelledby="shopTitle">
   <div class="shop-panel">
@@ -485,7 +547,10 @@ function say(txt, bad) {
   logItems.unshift({ txt, bad: !!bad, when: 'D' + world.day + ' ' + clockStr() }); if (logItems.length > 7) logItems.pop();
   renderLog();
 }
-function renderLog() { $('log').innerHTML = logItems.map(i => '<li class="' + (i.bad ? 'bad' : '') + '"><time>' + i.when + '</time><span>' + i.txt + '</span></li>').join(''); }
+function renderLog() {
+  $('log').innerHTML = logItems.map(i => '<li class="' + (i.bad ? 'bad' : '') + '"><time>' + i.when + '</time><span>' + i.txt + '</span></li>').join('');
+  const t = logItems[0]; if (t) { $('ticker').textContent = t.when + '  ' + t.txt; $('ticker').classList.toggle('bad', t.bad); }
+}
 function float(x, y, txt, col, big) { floats.push({ x, y, txt, col: col || '#fff', t: big ? 2.2 : 1.3, big }); }
 
 /* ---------- spawning ---------- */
@@ -1550,7 +1615,9 @@ function updateTodo(dt) {
   for (const x of L) if (!todo.shown.some(y => y.id === x.id)) todo.shown.push(x);  /* new ones wait at the bottom */
   if (todo.sortT <= 0) { todo.shown.sort((a, b) => b.score - a.score); todo.sortT = 15; }
   const h = todo.shown.length ? todo.shown.slice(0, 8).map(x => '<li class="' + (x.score >= 80 ? 'now' : x.score >= 55 ? 'soon' : 'later') + '"><span class="tag">' + (x.score >= 80 ? 'now' : x.score >= 55 ? 'soon' : 'later') + '</span><span>' + x.text + '</span></li>').join('') + (todo.shown.length > 8 ? '<li class="later"><span class="tag"></span><span>and ' + (todo.shown.length - 8) + ' more</span></li>' : '') : '<li class="none">Nothing pressing. The farm is in good shape.</li>';
-  if (h !== todo.html) { todo.html = h; $('todo').innerHTML = h; }
+  const li = x => '<li class="' + (x.score >= 80 ? 'now' : x.score >= 55 ? 'soon' : 'later') + '"><span class="tag">' + (x.score >= 80 ? 'now' : x.score >= 55 ? 'soon' : 'later') + '</span><span>' + x.text + '</span></li>';
+  const top = todo.shown.length ? todo.shown.slice(0, 3).map(li).join('') + (todo.shown.length > 3 ? '<li class="more"><span class="tag"></span><span>and ' + (todo.shown.length - 3) + ' more (menu: To do)</span></li>' : '') : '<li class="none">Nothing pressing. The farm is in good shape.</li>';
+  if (top !== todo.html) { todo.html = top; $('todo').innerHTML = top; $('todoAll').innerHTML = todo.shown.length ? todo.shown.map(li).join('') : '<li class="later"><span class="tag"></span><span>Nothing pressing.</span></li>'; $('todoCount').textContent = todo.shown.length; }
 }
 
 /* ---------- problem bubbles: a few animals speak up, not the whole flock ---------- */
@@ -2256,6 +2323,24 @@ stick.addEventListener('pointerdown', e => { sid = e.pointerId; stick.setPointer
 stick.addEventListener('pointermove', e => { if (e.pointerId === sid) stickMove(e); });
 const stickEnd = e => { if (e.pointerId !== sid) return; sid = null; joy.x = joy.y = 0; knob.style.transform = ''; };
 stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd);
+/* ---------- menus (sheets) and the phone/desktop view switch ---------- */
+function openSheet(id) { document.querySelectorAll('.sheet').forEach(el => { el.hidden = el.id !== id; }); }
+function closeSheets() { document.querySelectorAll('.sheet').forEach(el => { el.hidden = true; }); }
+document.addEventListener('click', e => {
+  const o = e.target.closest('[data-sheet]'); if (o) { openSheet(o.dataset.sheet); return; }
+  if (e.target.closest('[data-close]') || (e.target.classList && e.target.classList.contains('sheet'))) closeSheets();
+});
+$('ticker').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openSheet('sheetLog'); });
+addEventListener('keydown', e => { if (e.key === 'Escape') closeSheets(); });
+/* Manual for now. Later: call setView(matchMedia('(pointer: coarse) and (max-width: 900px)').matches ? 'mobile' : 'desktop') on load and on resize. */
+function setView(v) {
+  document.body.classList.toggle('mobile', v === 'mobile');
+  $('bView').textContent = v === 'mobile' ? 'Desktop view' : 'Mobile view';
+  try { localStorage.setItem('chickenFarmView', v); } catch (e) { }
+  fit();
+}
+$('bView').addEventListener('click', () => setView(document.body.classList.contains('mobile') ? 'desktop' : 'mobile'));
+let savedView = 'desktop'; try { savedView = localStorage.getItem('chickenFarmView') || 'desktop'; } catch (e) { }
 $('btnAct').addEventListener('pointerdown', e => { e.preventDefault(); doAction(); });
 $('choose').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const i = +b.dataset.i; if (i < 0) closeChoice(); else chooseOption(i); });
 $('btnSneak').addEventListener('click', toggleSneak);
@@ -2928,8 +3013,8 @@ function fit() {
   cv.width = Math.max(2, Math.round(r.width * dpr)); cv.height = Math.round(cv.width * H / W); S = cv.width / W; penDirty = true; buildBG();
 }
 new ResizeObserver(fit).observe(cv);
-fit(); resetFarm();
-window.__farm = { tools, hose, REEL, setHand, dropHand, findActions, doAction, startTask, collectEggs, updateHose, get choice() { return choice; }, chooseOption, todo, computeTodo, updateTodo, bubbleProblems, get rats() { return rats; }, ratStats, spawnRat, catchRat, bugs, dog, bowls, food, performFeeding, spawnHawk, featherBurst, get cats() { return cats; }, get hawks() { return hawks; }, get feathers() { return feathers; }, newHen, penPoint, troughUsers, separateHens, world, farmer, truck, gates, hutch, bin, feeders, waterers, FENCE, pen, inv, recomputePen, addFenceSection, makeGate, build, setBuild, setTool, buildClick, updateGhost, trip, startTrip, leaveTown, cart, cartAdd, shopBuy, truckLoad: truck.load, extendCoop, coopCap, nestCount, T, update, doAction, findAction, spawnFox, wakeUp,
+fit(); resetFarm(); if (savedView === 'mobile') setView('mobile');
+window.__farm = { setView, openSheet, closeSheets, tools, hose, REEL, setHand, dropHand, findActions, doAction, startTask, collectEggs, updateHose, get choice() { return choice; }, chooseOption, todo, computeTodo, updateTodo, bubbleProblems, get rats() { return rats; }, ratStats, spawnRat, catchRat, bugs, dog, bowls, food, performFeeding, spawnHawk, featherBurst, get cats() { return cats; }, get hawks() { return hawks; }, get feathers() { return feathers; }, newHen, penPoint, troughUsers, separateHens, world, farmer, truck, gates, hutch, bin, feeders, waterers, FENCE, pen, inv, recomputePen, addFenceSection, makeGate, build, setBuild, setTool, buildClick, updateGhost, trip, startTrip, leaveTown, cart, cartAdd, shopBuy, truckLoad: truck.load, extendCoop, coopCap, nestCount, T, update, doAction, findAction, spawnFox, wakeUp,
   stand, roadside, fridge, wife, spawnCar, get cars() { return cars; }, get people() { return people; },
   get hens() { return hens; }, get eggs() { return eggs; }, get foxes() { return foxes; } };
 requestAnimationFrame(frame);
