@@ -467,8 +467,8 @@ function pickTrough(list, c, need) {
   for (const t of list) { if (t.level < need || !insidePen(t.pt)) continue; const sc = Math.hypot(t.pt.x - c.x, t.pt.y - c.y) + 45 * troughUsers(t); if (sc < bs) { bs = sc; b = t; } }
   return b;
 }
-const inv = { fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, straw: 0, bone: 0 };
-const LOADKEYS = ['feed', 'fence', 'gate', 'feeder', 'trough', 'lumber', 'dogfood', 'catfood', 'straw', 'bone'];
+const inv = { fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, straw: 0, bone: 0, milk: 0 };
+const LOADKEYS = ['feed', 'fence', 'gate', 'feeder', 'trough', 'lumber', 'dogfood', 'catfood', 'straw', 'bone', 'milk'];
 const HUTCH = { x: 100, y: 170, w: 120, h: 76 }, DOOR = { x: 160, y: 246 }, DOOR_OUT = { x: 160, y: 266 }, LATCH = { x: 196, y: 262 };
 const HOUSE = { x: 410, y: 26, w: 130, h: 86 };
 const BARN = { x: 650, y: 36, w: 210, h: 96 };
@@ -502,7 +502,7 @@ const LAYBLOCK = { ROOST: 1, NEST: 1, RETURN: 1, FLEE: 1, CAUGHT: 1, LAY: 1, HEL
 const bin = { stock: 120 };
 const farmer = { x: 500, y: 330, vx: 0, vy: 0, face: 0, r: 9, carry: null, scoops: 0, basket: 0, money: 40, sneak: false, sneakNow: false,
   step: 0, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null, held: [], away: false };
-const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, steer: 0, load: { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0, straw: 0, bone: 0 } };
+const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, steer: 0, load: { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0, straw: 0, bone: 0, milk: 0 } };
 const todo = { shown: [], sortT: 0, calcT: 0, html: '' }, bubLog = {};
 const tools = { basket: { x: 536, y: 136 }, pitchfork: { x: 126, y: 268 }, bucket: { x: 484, y: 224 } }, REEL = { x: 442, y: 228 };
 const hose = { out: false, end: { x: 442, y: 228 }, pts: [], len: 330 };
@@ -1188,8 +1188,8 @@ function scatterFeed() {
   float(F.x, F.y - 18, 'scattered', '#ffe9a8');
 }
 /* ---------- farm animals: the dog, three cats, the hawk and the feathers they leave behind ---------- */
-const DOG_BOWL = { x: 446, y: 142 }, CAT_BOWL = { x: 504, y: 142 }, FEED_SPOT = { x: 475, y: 150 }, WAIT_DOG = { x: 428, y: 162 }, WAIT_CAT = { x: 522, y: 162 };
-const bowls = { dog: 1, cat: 1 }, food = { dog: 14, cat: 14 };
+const MILK_BOWL = { x: 526, y: 146 }, DOG_BOWL = { x: 446, y: 142 }, CAT_BOWL = { x: 504, y: 142 }, FEED_SPOT = { x: 475, y: 150 }, WAIT_DOG = { x: 428, y: 162 }, WAIT_CAT = { x: 522, y: 162 };
+const bowls = { dog: 1, cat: 1, milk: 0 }, food = { dog: 14, cat: 14 };
 const dog = { pet: 'dog', name: 'Biscuit', x: 430, y: 164, vx: 0, vy: 0, ang: 0, r: 9, state: 'REST', timer: 4, wT: 0, hunger: 0.7, starve: 0, goodT: 0, leaves: 0, awayT: 0, gone: false,
   chaseT: 0, tired: 0, alert: 0, bark: 0, target: null, phase: 0, stuckT: 0, sx: 0, sy: 0 };
 const CAT_DEFS = [{ name: 'Mittens', col: '#d98b3a', mark: '#fff2e0' }, { name: 'Pepper', col: '#2c2c33', mark: '#4a4a55' }, { name: 'Ginger', col: '#b9bdc6', mark: '#ffffff' }];
@@ -1199,9 +1199,9 @@ function feedWindow() { const t = world.t; return (t > 0.255 && t < 0.33 && worl
 function resetPets() {
   Object.assign(dog, { x: 430, y: 164, vx: 0, vy: 0, state: 'REST', timer: 4, wT: 0, hunger: 0.7, starve: 0, goodT: 0, leaves: 0, awayT: 0, gone: false, chaseT: 0, tired: 0, alert: 0, bark: 0, target: null });
   cats = CAT_DEFS.map((d, i) => ({ pet: 'cat', name: d.name, col: d.col, mark: d.mark, slot: i, x: 500 + i * 20, y: 156 + (i % 2) * 14, vx: 0, vy: 0, ang: rand(0, TAU), r: 5, state: 'SIT', timer: rand(2, 8), cool: rand(30, 90),
-    hunger: 0.7, starve: 0, target: null, jump: false, phase: rand(0, 6), wT: 0, isFox: true, ratCool: 0, keenT: 0, keen: false }));
+    hunger: 0.7, starve: 0, target: null, jump: false, phase: rand(0, 6), wT: 0, isFox: true, ratCool: 0, keenT: 0, keen: false, petT: 0, happyT: 0, askCool: rand(30, 120), askT: 0, purrT: 0 }));
   todo.shown = []; todo.sortT = 0; todo.calcT = 0; for (const k in bubLog) delete bubLog[k]; rats = []; ratStats.caught = 0; ratStats.eggs = 0; ratStats.t = 40; dog.ratCool = 0; dog.ratT = 0;
-  hawks = []; feathers = []; bowls.dog = 1; bowls.cat = 1; food.dog = 14; food.cat = 14;
+  hawks = []; feathers = []; bowls.dog = 1; bowls.cat = 1; bowls.milk = 0; food.dog = 14; food.cat = 14;
   world.fedAMDay = 0; world.fedPMDay = 0; world.hawkAt = -1;
 }
 function performFeeding() {
@@ -1233,8 +1233,23 @@ function barkSound() {
     [0, 0.17].forEach(o => { const os = actx.createOscillator(), g = actx.createGain(); os.type = 'sawtooth'; os.frequency.setValueAtTime(190, t + o); os.frequency.exponentialRampToValueAtTime(110, t + o + 0.12); g.gain.setValueAtTime(0.0001, t + o); g.gain.exponentialRampToValueAtTime(0.1, t + o + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + o + 0.14); os.connect(g); g.connect(actx.destination); os.start(t + o); os.stop(t + o + 0.16); });
   } catch (e) { /* audio is optional */ }
 }
+function tone(f0, f1, dur, type, vol, delay) {
+  if (!soundOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)(); const t = actx.currentTime + (delay || 0), os = actx.createOscillator(), g = actx.createGain();
+    os.type = type; os.frequency.setValueAtTime(f0, t); os.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    os.connect(g); g.connect(actx.destination); os.start(t); os.stop(t + dur + 0.02);
+  } catch (e) { /* audio is optional */ }
+}
+const lastSnd = {};
+function quiet(k, gap) { const n = performance.now(); if (lastSnd[k] && n - lastSnd[k] < gap) return false; lastSnd[k] = n; return true; }
+function purrSound() { if (!quiet('purr', 1400)) return; for (let i = 0; i < 6; i++) tone(70, 62, 0.11, 'triangle', 0.07, i * 0.14); }
+function meowSound() { if (!quiet('meow', 2500)) return; tone(520, 780, 0.18, 'triangle', 0.06); tone(780, 420, 0.3, 'triangle', 0.06, 0.18); }
+function cheepSound() { if (!quiet('cheep', 700)) return; tone(2300, 3100, 0.06, 'sine', 0.035); tone(2500, 3300, 0.06, 'sine', 0.03, 0.1); }
+function crowSound() { if (!quiet('crow', 6000)) return; tone(400, 620, 0.2, 'sawtooth', 0.05); tone(620, 560, 0.22, 'sawtooth', 0.05, 0.22); tone(560, 300, 0.45, 'sawtooth', 0.05, 0.48); }
 function dogBark(kind) {
-  dog.bark = rand(0.9, 1.7); float(dog.x, dog.y - 16, 'WOOF!', '#ffe9a8'); barkSound();
+  dog.bark = rand(0.9, 1.7); float(dog.x, dog.y - 16, kind === 'herd' ? 'woof' : 'WOOF!', '#ffe9a8'); barkSound();
   if (kind === 'fox' && farmer.sleeping && farmer.sleepKind !== 'faint') wakeUp(dog.name + ' is barking!');
 }
 function dogBed() {
@@ -1300,6 +1315,24 @@ function updateDog(dt) {
     return;
   }
   if (d.state === 'RAT') { d.state = 'REST'; d.timer = 3; d.ratT = 0; }
+  if (!world.curfew && !feedWindow() && d.hunger > 0.3 && !farmer.sleeping) {   /* herding: he does his best, which is not very good */
+    d.herdCool = (d.herdCool || 0) - dt;
+    let stray = null, sd = 360; for (const h of hens) { if (h.state !== 'WANDER' && h.state !== 'FORAGE' && h.state !== 'ESCAPE') continue; if (insidePen(h)) continue; const q = dist(d, h); if (q < sd) { sd = q; stray = h; } }
+    const gt = stray ? nearestGate(stray, true) : null;
+    if (stray && gt && d.herdCool <= 0) {
+      d.state = 'HERD'; d.herdT = (d.herdT || 0) + dt;
+      if (!d.herdAng || d.herdAngT <= 0) { d.herdAng = Math.random() < 0.4 ? rand(-1.4, 1.4) : rand(-0.3, 0.3); d.herdAngT = 3; } d.herdAngT -= dt;
+      const base = Math.atan2(stray.y - gt.out.y, stray.x - gt.out.x) + d.herdAng, tx = stray.x + Math.cos(base) * 36, ty = stray.y + Math.sin(base) * 36;
+      steerPet(d, tx, ty, 72, dt);
+      if (dist(d, stray) < 46 && (stray.herdCool || 0) <= 0) {
+        stray.herdCool = 4; if (d.bark <= 0) dogBark('herd');
+        if (Math.random() < 0.35) { stray.state = 'WANDER'; stray.act = null; stray.pause = 0; stray.route = [{ x: gt.out.x, y: gt.out.y }, { x: gt.in.x, y: gt.in.y }, penPoint()]; }
+      }
+      if (d.herdT > 30) { d.herdCool = 25; d.herdT = 0; }
+      return;
+    }
+  }
+  if (d.state === 'HERD') { d.state = 'REST'; d.timer = 3; d.herdT = 0; }
   if (d.petT > 0) { d.state = 'PET'; d.vx = d.vy = 0; if (d.petBy) d.ang = Math.atan2(d.petBy.y - d.y, d.petBy.x - d.x); return; }
   if (d.state === 'PET') { d.state = 'REST'; d.timer = 4; }
   if (d.chewT > 0) {                                /* a bone: carry it off and chew it, delighted */
@@ -1357,7 +1390,9 @@ function updateCat(c, dt) {
   c.noFood = bowls.cat < 0.03 ? (c.noFood || 0) + dt / T.dayLen : 0; c.prey = Math.max(0, (c.prey || 0) - dt / T.dayLen);   /* prey: days a catch keeps starvation at bay */
   const gaunt = c.hunger < 0.35;
   if (c.hunger < 0.2 && bowls.cat < 0.03 && c.prey <= 0) c.starve += dt / T.dayLen; else if (c.hunger > 0.45) c.starve = Math.max(0, c.starve - dt / T.dayLen * 1.5);
-  c.prowlCool = (c.prowlCool || 0) - dt;
+  c.prowlCool = (c.prowlCool || 0) - dt; c.petT = Math.max(0, c.petT - dt); c.happyT = Math.max(0, c.happyT - dt); c.askCool -= dt; c.purrT -= dt;
+  const purring = c.petT > 0 || c.state === 'EAT' || c.state === 'MILK';
+  if (purring && c.purrT <= 0) { c.purrT = rand(1.1, 1.8); float(c.x + rand(-4, 4), c.y - 12, '\u266a', '#ffd2e0'); if (dist(c, farmer) < 260) purrSound(); }
   c.cool -= dt; c.timer -= dt; c.ratCool -= dt; c.keenT -= dt; if (c.keenT <= 0) { c.keenT = 6; c.keen = Math.random() < 0.45; } c.killCool = (c.killCool || 0) - dt;
   const night = world.curfew;
   const jumpCheck = () => { c.jump = false; for (const f of FENCE) if (!f.broken && c.x > f.x - 6 && c.x < f.x + f.w + 6 && c.y > f.y - 6 && c.y < f.y + f.h + 6) { c.jump = true; return; } for (const g of gates) if (!g.open && c.x > g.rect.x - 6 && c.x < g.rect.x + g.rect.w + 6 && c.y > g.rect.y - 6 && c.y < g.rect.y + g.rect.h + 6) { c.jump = true; return; } };
@@ -1373,6 +1408,8 @@ function updateCat(c, dt) {
     return;
   }
   if (c.state === 'STALK') { c.state = 'SIT'; c.timer = 2; }
+  if (c.petT > 0 && c.starve <= 0.5) { c.state = 'PET'; c.vx = c.vy = 0; if (c.petBy) c.ang = Math.atan2(c.petBy.y - c.y, c.petBy.x - c.x); return; }
+  if (c.state === 'PET') { c.state = 'SIT'; c.timer = 4; c.askCool = rand(100, 220); }
   if (c.starve > 0.5) {                              /* a starving cat starts killing hens */
     if (!c.target || !hens.includes(c.target) || !huntable(c.target)) { let b = null, bd = 450; for (const h of hens) if (huntable(h)) { const d = dist(c, h); if (d < bd) { bd = d; b = h; } } c.target = b; }
     if (c.target) { c.state = 'HUNT'; const d = steerPet(c, c.target.x, c.target.y, 118, dt, true); jumpCheck(); if (d < 12 && c.killCool <= 0) { killHen(c.target, c.name + ' the cat'); c.killCool = T.dayLen * 0.12; c.target = null; } return; }
@@ -1382,6 +1419,12 @@ function updateCat(c, dt) {
     if (c.timer <= 0 || night || !c.target || !hens.includes(c.target) || !huntable(c.target)) { c.state = 'SIT'; c.timer = rand(3, 8); c.cool = rand(40, 110); c.target = null; }
     else { steerPet(c, c.target.x, c.target.y, 82, dt, true); jumpCheck(); return; }
   }
+  if (bowls.milk > 0.03) {                           /* a bowl of milk: the best thing ever */
+    c.state = 'MILK'; const d = steerPet(c, MILK_BOWL.x + (c.slot - 1) * 9, MILK_BOWL.y + 11, 52, dt, true); jumpCheck();
+    if (d < 10) { const e = Math.min(bowls.milk, 0.03 * dt); bowls.milk -= e; c.hunger = Math.min(1, c.hunger + e * 1.5); c.happyT = Math.max(c.happyT, 6); c.starve = Math.max(0, c.starve - e); }
+    return;
+  }
+  if (c.state === 'MILK') { c.state = 'SIT'; c.timer = 4; }
   if (bowls.cat > 0.03 && c.hunger < 0.9) {
     c.state = 'EAT'; const d = steerPet(c, CAT_BOWL.x + (c.slot - 1) * 14, CAT_BOWL.y + 12, 48, dt, true); jumpCheck();
     if (d < 10) { const e = Math.min(bowls.cat, 0.04 * dt); bowls.cat -= e; c.hunger = Math.min(1, c.hunger + e * 1.8); }
@@ -1407,6 +1450,14 @@ function updateCat(c, dt) {
     const sx = 458 + c.slot * 24, sy = 152 + (c.slot % 2) * 12, d = steerPet(c, sx, sy, 40, dt, true); jumpCheck();
     c.state = d < 8 ? 'NAP' : 'WANDER'; return;
   }
+  if (c.state === 'ASK') {                           /* wandering up to the farmer for a stroke */
+    if (farmer.inside || farmer.driving || farmer.sleeping || dist(c, farmer) > 320) { c.state = 'SIT'; c.timer = 3; }
+    else {
+      const dd = steerPet(c, farmer.x + 16, farmer.y + 8, 62, dt, true); jumpCheck();
+      if (dd < 16) { c.vx = c.vy = 0; c.askT += dt; c.ang = Math.atan2(farmer.y - c.y, farmer.x - c.x); if (c.askT > 12) { c.state = 'SIT'; c.timer = 3; c.askCool = rand(100, 200); } }
+      return;
+    }
+  } else if (c.askCool <= 0 && !farmer.inside && !farmer.driving && !farmer.sleeping && !night && dist(c, farmer) < 300 && Math.random() < dt * 0.06) { c.state = 'ASK'; c.askT = 0; float(c.x, c.y - 14, 'mew', '#fff'); meowSound(); return; }
   if (c.cool <= 0 && c.timer <= 0 && Math.random() < dt * 0.2) {
     let b = null, bd = 190; for (const h of hens) if (huntable(h)) { const d = dist(c, h); if (d < bd) { bd = d; b = h; } }
     if (b) { c.state = 'CHASE'; c.target = b; c.timer = 5; return; }
@@ -1698,6 +1749,7 @@ function drawDogHouse() {
 }
 function drawBowls() {
   drawDogHouse();
+  if (bowls.milk > 0.03) { const b = MILK_BOWL; ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(b.x + 1, b.y + 3, 9, 6); ctx.fill(); ctx.fillStyle = '#e9edf2'; ell(b.x, b.y, 9, 6); ctx.fill(); ctx.fillStyle = '#fbfbf6'; ell(b.x, b.y, 7 * Math.min(1, 0.4 + bowls.milk * 0.6), 4.6 * Math.min(1, 0.4 + bowls.milk * 0.6)); ctx.fill(); ctx.fillStyle = 'rgba(20,28,22,.75)'; ctx.font = '600 8px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('MILK', b.x, b.y + 16); }
   [[DOG_BOWL, bowls.dog, '#8a5a2a', 'DOG'], [CAT_BOWL, bowls.cat, '#d9792a', 'CAT']].forEach(([b, lv, col, label]) => {
     ctx.fillStyle = 'rgba(0,0,0,.22)'; ell(b.x + 1, b.y + 3, 12, 8); ctx.fill();
     ctx.fillStyle = '#7d8793'; ell(b.x, b.y, 11, 7.5); ctx.fill(); ctx.fillStyle = '#4a5260'; ell(b.x, b.y, 8.5, 5.6); ctx.fill();
@@ -1736,7 +1788,7 @@ function drawCat(c) {
   ctx.save(); ctx.translate(c.x, c.y);
   ctx.fillStyle = 'rgba(0,0,0,.2)'; ell(0, 3, 7, 4); ctx.fill();
   ctx.translate(0, lift); ctx.scale(sc, sc); ctx.rotate(napping ? 0.4 : c.ang);
-  const sway = Math.sin(world.clock * 4 + c.slot) * 2.4;
+  const happyC = c.petT > 0 || c.happyT > 0 || c.state === 'MILK' || c.state === 'EAT', sway = Math.sin(world.clock * (happyC ? 9 : 4) + c.slot) * (happyC ? 3.4 : 2.4);
   ctx.strokeStyle = c.col; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-5, 0); ctx.quadraticCurveTo(-9, napping || sit ? 5 : sway, -12, napping || sit ? 3 : sway * 1.6 - 1); ctx.stroke(); ctx.lineCap = 'butt';
   ctx.fillStyle = c.col; ell(0, 0, napping ? 5.5 : sit ? 5 : 7, napping ? 4.6 : 3.8); ctx.fill();
   ctx.fillStyle = c.mark; ell(-1, 0, 2.6, 1.6); ctx.fill();
@@ -1853,8 +1905,14 @@ const dogFree = () => !dog.gone && !dogBusy[dog.state];
 function maybePet(n, dt) {                          /* anyone who passes close to the dog stops for a scratch behind the ears */
   if (n.petT > 0) { n.petT -= dt; if (n.petT <= 0) n.petCool = 50; return true; }
   n.petCool = (n.petCool || 0) - dt;
-  if (n.petCool > 0 || !dogFree() || dog.petT > 0 || dist(n, dog) > 30) return false;
+  if (n.petCool > 0) return false;
+  if (!dogFree() || dog.petT > 0 || dist(n, dog) > 30) return maybePetCat(n, dt);
   n.petT = rand(2, 3.5); dog.petT = n.petT + 0.3; dog.petBy = n; n.ang = Math.atan2(dog.y - n.y, dog.x - n.x); return true;
+}
+function maybePetCat(n, dt) {                       /* cats are friendly too, just less often than the dog */
+  if (n.petT > 0 || (n.petCool || 0) > 0) return false;
+  for (const c of cats) if (catFree(c) && c.petT <= 0 && dist(n, c) < 26 && Math.random() < dt * 0.3) { n.petT = rand(1.8, 3); n.petCool = 60; c.petT = n.petT + 0.2; c.happyT = 6; c.petBy = n; n.ang = Math.atan2(c.y - n.y, c.x - n.x); return true; }
+  return false;
 }
 function petDog() { startTask('pet', 2, () => { dog.petT = 0; float(farmer.x, farmer.y - 20, '\u2665', '#ff7a8a'); }); dog.petT = 2.4; dog.petBy = farmer; }
 function giveBone() {
@@ -2067,9 +2125,10 @@ const STORE = [
   { id: 'dogfood', name: 'Dog food, one month', note: 'Sixty meals, enough for about a month of mornings and evenings.', price: 24, size: 4 },
   { id: 'catfood', name: 'Cat food, one month', note: 'Sixty meals for the three cats, about a month.', price: 18, size: 3 },
   { id: 'straw', name: 'Straw bale', note: 'Fresh bedding. Cleaning the coop uses one bale.', price: 5, size: 2 },
+  { id: 'milk', name: 'Milk, one bottle', note: 'Pour a bowl for the cats. They adore it.', price: 4, size: 1 },
   { id: 'bone', name: 'Dog bone', note: 'Biscuit will be thrilled and go off to chew it for a while.', price: 3, size: 1 }
 ];
-const TRUCK_CAP = 60, cart = { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0, straw: 0, bone: 0 }, trip = { on: false, phase: '', t: 0, dur: 7 };
+const TRUCK_CAP = 60, cart = { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0, straw: 0, bone: 0, milk: 0 }, trip = { on: false, phase: '', t: 0, dur: 7 };
 const loadUnits = () => STORE.reduce((n, it) => n + it.size * truck.load[it.id], 0);
 const cartUnits = () => STORE.reduce((n, it) => n + it.size * cart[it.id], 0);
 const cartCost = () => STORE.reduce((n, it) => n + it.price * cart[it.id], 0);
@@ -2173,14 +2232,14 @@ function drawTown() {
   sceneNight();
 }
 function drawTripScene() { ctx.save(); ctx.setTransform(S, 0, 0, S, 0, 0); if (trip.phase === 'SHOP') drawTown(); else drawDrive(); ctx.restore(); }
-const LABELS = { feed: 'feed sacks', fence: 'fence sections', gate: 'gates', feeder: 'feeders', trough: 'water troughs', lumber: 'lumber bundles', dogfood: 'bags of dog food', catfood: 'bags of cat food', straw: 'straw bales', bone: 'dog bones' };
+const LABELS = { feed: 'feed sacks', fence: 'fence sections', gate: 'gates', feeder: 'feeders', trough: 'water troughs', lumber: 'lumber bundles', dogfood: 'bags of dog food', catfood: 'bags of cat food', straw: 'straw bales', bone: 'dog bones', milk: 'bottles of milk' };
 const loadCount = () => LOADKEYS.reduce((n, k) => n + truck.load[k], 0);
 function unloadTruck() {
   const L = truck.load, parts = LOADKEYS.filter(k => L[k]).map(k => L[k] + ' ' + LABELS[k]);
   if (L.feed) bin.stock += L.feed * 50;
   if (L.dogfood) food.dog += L.dogfood * 60;
   if (L.catfood) food.cat += L.catfood * 60;
-  ['fence', 'gate', 'feeder', 'trough', 'lumber', 'straw', 'bone'].forEach(k => { inv[k] += L[k]; });
+  ['fence', 'gate', 'feeder', 'trough', 'lumber', 'straw', 'bone', 'milk'].forEach(k => { inv[k] += L[k]; });
   LOADKEYS.forEach(k => L[k] = 0);
   say('Unloaded ' + parts.join(', ') + '.');
 }
@@ -2217,7 +2276,11 @@ function showChoice(L) {
 function chooseOption(i) { const c = choice; closeChoice(); if (c && c.list[i]) c.list[i].run(); }
 function closeChoice() { choice = null; $('choose').hidden = true; }
 function startTask(k, dur, fn) { farmer.task = { k, dur, t: 0, fn }; }
+const catFree = c => c.state !== 'HUNT' && c.state !== 'STALK' && c.state !== 'CHASE' && c.state !== 'PROWL' && c.starve <= 0.5;
+function petCat(c) { startTask('pet', 1.8, () => { float(farmer.x, farmer.y - 20, '\u2665', '#ff7a8a'); }); c.petT = 2.2; c.happyT = 8; c.petBy = farmer; c.askCool = rand(100, 200); }
 function dogActions(add) {
+  for (const c of cats) if (catFree(c) && dist(farmer, c) < 30) { add('Pet ' + c.name, () => petCat(c)); break; }
+  if (inv.milk > 0 && dist(farmer, CAT_BOWL) < 46 && bowls.milk < 0.5) add('Pour milk for the cats', () => { inv.milk--; bowls.milk = 1; float(farmer.x, farmer.y - 18, 'milk!', '#fff'); say('The cats come running for the milk.'); });
   if (!dogFree() || dist(farmer, dog) > 34) return;
   if (inv.bone > 0) add('Give ' + dog.name + ' a bone', giveBone);
   add('Pet ' + dog.name, petDog);
@@ -2353,7 +2416,7 @@ $('bFox').addEventListener('click', () => { spawnFox(); });
 $('bHawk').addEventListener('click', () => { spawnHawk(); });
 $('bRain').addEventListener('click', () => { world.rainOn = true; world.rainLeft = 40; say('It starts to rain.'); });
 $('bCash').addEventListener('click', () => { farmer.money += 50; });
-$('bSupplies').addEventListener('click', () => { inv.fence += 20; inv.gate += 2; inv.feeder += 2; inv.trough += 2; inv.lumber += 10; inv.straw += 5; inv.bone += 3; });
+$('bSupplies').addEventListener('click', () => { inv.fence += 20; inv.gate += 2; inv.feeder += 2; inv.trough += 2; inv.lumber += 10; inv.straw += 5; inv.bone += 3; inv.milk += 3; });
 $('bBuild').addEventListener('click', () => setBuild(!build.on));
 $('btnBuild').addEventListener('click', () => setBuild(!build.on));
 $('bBuildDone').addEventListener('click', () => setBuild(false));
@@ -2985,7 +3048,7 @@ function hud(dt) {
   const sl = hens.filter(h => h.state === 'SLEEP').length, over = hens.length - coopCap();
   $('sOutdoor').textContent = sl ? sl + ' sleeping outside' : over > 0 ? over + ' too many for the roosts' : '\u00a0';
   $('iFence').textContent = inv.fence; $('iGate').textContent = inv.gate; $('iFeeder').textContent = inv.feeder; $('iTrough').textContent = inv.trough;
-  const sup = [['fence', 'fence'], ['gate', 'gates'], ['feeder', 'feeders'], ['trough', 'troughs'], ['lumber', 'lumber'], ['straw', 'straw'], ['bone', 'bones']].filter(a => inv[a[0]] > 0).map(a => inv[a[0]] + ' ' + a[1]);
+  const sup = [['fence', 'fence'], ['gate', 'gates'], ['feeder', 'feeders'], ['trough', 'troughs'], ['lumber', 'lumber'], ['straw', 'straw'], ['bone', 'bones'], ['milk', 'milk']].filter(a => inv[a[0]] > 0).map(a => inv[a[0]] + ' ' + a[1]);
   $('sSupplies').textContent = sup.length ? sup.join(' \u00b7 ') : 'none yet (buy in town)';
   const dogS = dog.gone ? 'gone for good' : dog.state === 'AWAY' ? 'away' : dog.hunger < 0.2 ? 'starving' : dog.hunger < 0.5 ? 'hungry' : 'content';
   const hungryCats = cats.filter(c => c.hunger < 0.35).length;
