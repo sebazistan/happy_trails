@@ -295,6 +295,8 @@ body.mobile .sheet-panel { width: 100%; max-height: 82%; border-radius: 14px 14p
         <button class="btn" id="bFox" type="button">Send a fox</button>
         <button class="btn" id="bHawk" type="button">Send a hawk</button>
         <button class="btn" id="bRain" type="button">Make it rain</button>
+        <button class="btn" id="bEvent" type="button">Next weather event</button>
+        <button class="btn" id="bSeason" type="button">Next season</button>
         <button class="btn" id="bCash" type="button">+$50</button>
         <button class="btn" id="bSupplies" type="button">Free supplies</button>
         <button class="btn" id="bCarRoad" type="button">Send roadside car</button>
@@ -340,8 +342,10 @@ let S = 1, bg = null;
 /* ---------- tuning (every number the guide says to expose) ---------- */
 const T = { walk: 32, fleeMult: 3.6, fleeR: 70, attractR: 140, sep: 1.2, egg: 60, dayLen: 240, farmerSpeed: 105,
   sneakK: 0.5, fov: 150, hear: 34, wanderR: 60, pauseMin: 0.8, pauseMax: 3.2, forageR: 70, gateBias: 0.3, gateRange: 200, price: 2,
-  henCost: 14, rot: 300, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 105, carsRoad: 5, carsStand: 4, hawkPct: 5, rats: 3, hatchDays: 2, growDays: 3 };
+  henCost: 14, rot: 300, foxes: 1, foxFleeR: 110, foxSpeed: 1, digRate: 10, rainChance: 0.45, sackCost: 10, repairCost: 4, truckSpeed: 105, carsRoad: 5, carsStand: 4, hawkPct: 5, rats: 3, hatchDays: 2, growDays: 3, seasonDays: 8, events: 1 };
 const SLIDERS = [
+  ['seasonDays', 'Days per season', 3, 20, 1, v => v + ' d'],
+  ['events', 'Weather event frequency', 0, 3, 0.25, v => '\u00d7' + v.toFixed(2)],
   ['rats', 'Most rats at once', 0, 6, 1, v => v],
   ['hatchDays', 'Days for eggs to hatch', 0.5, 6, 0.5, v => v + ' d'],
   ['growDays', 'Days for chicks to grow up', 1, 8, 0.5, v => v + ' d'],
@@ -470,8 +474,8 @@ function pickTrough(list, c, need) {
   for (const t of list) { if (t.level < need || !insidePen(t.pt)) continue; const sc = Math.hypot(t.pt.x - c.x, t.pt.y - c.y) + 45 * troughUsers(t); if (sc < bs) { bs = sc; b = t; } }
   return b;
 }
-const inv = { fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, straw: 0, bone: 0, milk: 0 };
-const LOADKEYS = ['feed', 'fence', 'gate', 'feeder', 'trough', 'lumber', 'dogfood', 'catfood', 'straw', 'bone', 'milk', 'chicks', 'fancychicks', 'rooster'];
+const inv = { fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, straw: 0, bone: 0, milk: 0, heater: 0 };
+const LOADKEYS = ['feed', 'fence', 'gate', 'feeder', 'trough', 'lumber', 'dogfood', 'catfood', 'straw', 'bone', 'milk', 'chicks', 'fancychicks', 'rooster', 'heater'];
 const HUTCH = { x: 100, y: 170, w: 120, h: 76 }, DOOR = { x: 160, y: 246 }, DOOR_OUT = { x: 160, y: 266 }, LATCH = { x: 196, y: 262 };
 const HOUSE = { x: 410, y: 26, w: 130, h: 86 };
 const BARN = { x: 650, y: 36, w: 210, h: 96 };
@@ -499,14 +503,22 @@ const SHELTER_IN = { x0: 108, y0: 272, x1: 214, y1: 292 }, SHELTER_OUT = { x0: 6
 
 /* ---------- state ---------- */
 const world = { t: 0.30, day: 1, curfew: false, warned: false, clock: 0, doorShut: false, foxSpawned: false,
-  rain: 0, rainOn: false, rainAt: -1, rainLeft: 0, wet: 0, market: 4, lost: 0, penCount: 20, crowdWarned: false, fedAMDay: 0, fedPMDay: 0, hawkAt: -1 };
-const hutch = { doorOpen: true, dirt: 0.15, level: 1 };
+  rain: 0, rainOn: false, rainAt: -1, rainLeft: 0, wet: 0, market: 4, lost: 0, penCount: 20, crowdWarned: false, fedAMDay: 0, fedPMDay: 0, hawkAt: -1, event: null, forecast: null, storm: 0, flash: 0, snow: 0, stormHits: 0, lastSeason: 0 };
+const hutch = { doorOpen: true, dirt: 0.15, level: 1, heater: false, warm: 0 };
 const LAYBLOCK = { ROOST: 1, NEST: 1, RETURN: 1, FLEE: 1, CAUGHT: 1, LAY: 1, HELD: 1, SLEEP: 1 };
 const bin = { stock: 120 };
 const farmer = { x: 500, y: 330, vx: 0, vy: 0, face: 0, r: 9, carry: null, scoops: 0, basket: 0, money: 40, sneak: false, sneakNow: false,
   step: 0, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null, held: [], away: false };
-const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, steer: 0, load: { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0, straw: 0, bone: 0, milk: 0, chicks: 0, fancychicks: 0, rooster: 0 } };
+const truck = { x: 600, y: 492, ang: 0, v: 0, r: 13, cargo: 0, steer: 0, load: { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0, straw: 0, bone: 0, milk: 0, chicks: 0, fancychicks: 0, rooster: 0, heater: 0 } };
 const todo = { shown: [], sortT: 0, calcT: 0, html: '' }, bubLog = {};
+const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter'], BASE_TEMP = [13, 25, 10, 1];
+const seasonIdx = () => Math.floor(((world.day - 1) / T.seasonDays) % 4);
+const EVT = { cold: 'cold snap', heat: 'heat wave', storm: 'storm' };
+function temp() {
+  const diurnal = Math.sin((world.t - 0.3) * TAU) * 4.5 - 0.5, e = world.event;
+  return BASE_TEMP[seasonIdx()] + diurnal + (e ? (e.type === 'cold' ? -13 : e.type === 'heat' ? 11 : -3) : 0);
+}
+const coldness = () => clamp(-temp() / 10, 0, 1.5), hotness = () => clamp((temp() - 29) / 8, 0, 1), warmCoop = () => hutch.heater || hutch.warm > 0.05;
 let chicks = []; const BROODER = { x: 214, y: 300 }, brood = { t: 40 };
 const tools = { basket: { x: 536, y: 136 }, pitchfork: { x: 126, y: 268 }, bucket: { x: 484, y: 224 } }, REEL = { x: 442, y: 228 };
 const hose = { out: false, end: { x: 442, y: 228 }, pts: [], len: 330 };
@@ -593,7 +605,7 @@ function resetFarm() {
   Object.assign(farmer, { x: 500, y: 330, vx: 0, vy: 0, carry: null, scoops: 0, basket: 0, money: 40, sneak: false, energy: 1, sleeping: false, sleepKind: null, driving: false, inside: null, held: [], hand: null, task: null });
   Object.values(BLD).forEach(b => b.roof = 1); piles = [];
   Object.assign(truck, { x: 600, y: 492, ang: 0, v: 0, cargo: 0, steer: 0 }); LOADKEYS.forEach(k => truck.load[k] = 0); Object.keys(inv).forEach(k => inv[k] = 0); inv.straw = 2; resetTools();
-  Object.assign(hutch, { doorOpen: true, dirt: 0.15, level: 1 }); HUTCH.w = 120; bin.stock = 120; farmer.away = false;
+  Object.assign(hutch, { doorOpen: true, dirt: 0.15, level: 1, heater: false, warm: 0 }); Object.assign(world, { event: null, forecast: null, storm: 0, flash: 0, snow: 0, stormHits: 0, lastSeason: 0 }); HUTCH.w = 120; bin.stock = 120; farmer.away = false;
   Object.assign(stand, { stock: 18, till: 0, warned: false }); Object.assign(roadside, { stock: 12, till: 0, warned: false }); fridge.stock = 0;
   Object.assign(wife, { state: 'HOME', vis: false, route: [], x: 475, y: 126 }); cars = []; people = []; coins = [];
   initFence(); initTroughs(); trip.on = false; trip.phase = ''; resetCart(); resetPets(); setBuild(false); $('shop').hidden = true; world.crowdWarned = false; hens = []; foxes = []; eggs = []; chicks = []; brood.t = 40; floats = []; bugs = []; logItems = [];
@@ -693,7 +705,7 @@ function think(c) {
   }
   if (holdingFeed() && seen && dF < T.attractR) { if (c.state !== 'APPROACH') { c.state = 'APPROACH'; c.route = []; c.threat = null; releaseBug(c); } return; }
   if (c.state === 'APPROACH') { if (holdingFeed() && seen && dF < T.attractR * 1.3) return; c.state = 'WANDER'; c.route = []; c.pause = rand(0.3, 1); }
-  if (c.state === 'SHELTER' && world.rain < 0.1) { c.state = 'WANDER'; c.route = []; c.pause = rand(0.2, 1); }
+  if (c.state === 'SHELTER' && world.rain < 0.1 && hotness() < 0.3) { c.state = 'WANDER'; c.route = []; c.pause = rand(0.2, 1); }
   if (c.pause <= 0 && !c.route.length) pickTarget(c);
 }
 function pickTarget(c) {
@@ -702,7 +714,7 @@ function pickTarget(c) {
     if (c.hunger < 0.5) { const t = pickTrough(feeders, c, 0.5); if (t) { c.state = 'EAT'; c.trough = t; c.retry = 0; c.route = [{ x: t.pt.x + rand(-26, 26), y: t.pt.y - rand(0, 4) }]; return; } }
     if (c.thirst < 0.5) { const t = pickTrough(waterers, c, 0.4); if (t) { c.state = 'DRINK'; c.trough = t; c.retry = 0; c.route = [{ x: t.pt.x + rand(-22, 22), y: t.pt.y - rand(0, 4) }]; return; } }
   }
-  if (world.rain > 0.25 && c.hunger > 0.3 && c.thirst > 0.3) {
+  if ((world.rain > 0.25 || hotness() > 0.5) && c.hunger > 0.3 && c.thirst > 0.3) {
     const Z = inside ? SHELTER_IN : SHELTER_OUT;
     c.state = 'SHELTER'; c.route = [{ x: rand(Z.x0, Z.x1), y: rand(Z.y0, Z.y1) }]; return;
   }
@@ -1681,6 +1693,11 @@ function computeTodo() {
   if (weekday() < 5 && stand.stock < CARTON) add('stand', 'The farm stand is out of eggs', 50);
   const till = stand.till + roadside.till;
   if (till >= 8) add('till', 'Collect the money ($' + till + ' waiting in the till and honesty box)', 30 + Math.min(till / 4, 25));
+  const ev = world.event, fc = world.forecast, wantCold = ev && ev.type === 'cold' || fc && fc.type === 'cold';
+  if (wantCold && !hutch.heater && hutch.warm < 0.3) add('cold', (ev ? 'Cold snap! ' : 'Cold snap coming. ') + (inv.straw > 0 || inv.heater > 0 ? 'Spread straw or fit the heater in the coop' : 'Buy straw or a heater in town'), ev ? 96 : 82);
+  if (ev && ev.type === 'heat' || fc && fc.type === 'heat') add('heat', 'Heat wave: keep the troughs full', 84);
+  if (fc && fc.type === 'storm') add('storm', 'Storm due this afternoon. Check the fences afterwards', 60);
+  if (chicks.length && coldness() > 0.1 && !warmCoop()) add('chickcold', 'The chicks are cold. Straw or a heater, quickly', 94);
   if (hutch.dirt > 0.6) add(inv.straw < 1 ? 'straw' : 'clean', inv.straw < 1 ? 'Buy straw in town to clean the coop' : 'Clean the coop (pitchfork and straw)', hutch.dirt > 0.85 ? 72 : 48);
   const load = LOADKEYS.reduce((n, k) => n + (truck.load[k] || 0), 0);
   if (load > 0 && !trip.on) add('unload', 'Unload the supplies from the truck', 58);
@@ -1812,8 +1829,10 @@ function updateChicks(dt) {
     k.hunger = clamp(k.hunger - dt / (T.dayLen * 0.9) + (eatF ? dt * 0.03 : 0), 0, 1); k.thirst = clamp(k.thirst - dt / (T.dayLen * 0.7) + (eatW ? dt * 0.03 : 0), 0, 1);
     if (eatF) { const t = feeders.find(t => t.level > 0.2); if (t) t.level = Math.max(0, t.level - 0.004 * dt); }
     if (eatW) { const t = waterers.find(t => t.level > 0.2); if (t) t.level = Math.max(0, t.level - 0.003 * dt); }
+    k.thirst = clamp(k.thirst - dt / (T.dayLen * 0.7) * hotness() * 1.2, 0, 1);
+    { const cold = coldness(); if (cold > 0 && !warmCoop()) k.health -= cold * dt / (T.dayLen * 0.6) * (k.state === 'INSIDE' ? 0.6 : 1); }
     if (k.hunger <= 0 || k.thirst <= 0) k.health -= dt / (T.dayLen * 0.5); else k.health = Math.min(1, k.health + dt / (T.dayLen * 2));
-    if (k.health <= 0) { chicks.splice(chicks.indexOf(k), 1); world.lostChicks = (world.lostChicks || 0) + 1; say('A chick died of ' + (k.thirst <= 0 ? 'thirst' : 'hunger') + '.', true); continue; }
+    if (k.health <= 0) { chicks.splice(chicks.indexOf(k), 1); world.lostChicks = (world.lostChicks || 0) + 1; say('A chick died of ' + (k.thirst <= 0 ? 'thirst' : k.hunger <= 0 ? 'hunger' : 'the cold') + '.', true); continue; }
     if (k.age >= T.growDays) { growUp(k); continue; }
     if (k.state === 'INSIDE') { if (!(k.mother && k.mother.brood) && !world.curfew && hutch.doorOpen) emerge(k); continue; }
     if (k.cheepT <= 0) { k.cheepT = rand(3, 8); if (dist(k, farmer) < 240) { float(k.x, k.y - 9, 'cheep', '#ffe27a'); cheepSound(); } }
@@ -2098,7 +2117,7 @@ function updateEconomy(dt) {
   updateWife(dt);
   const day = !world.curfew && world.t > 0.31 && world.t < 0.68, per = T.dayLen * 0.37;
   if (day && cars.length < 3) {
-    if (!cars.some(c => c.kind === 'road') && Math.random() < T.carsRoad / per * dt) spawnCar('road');
+    if (!cars.some(c => c.kind === 'road') && Math.random() < T.carsRoad * [1, 1.3, 1, 0.7][seasonIdx()] / per * dt) spawnCar('road');
     if (standOpen() && !cars.some(c => c.kind === 'stand') && Math.random() < T.carsStand / per * dt) spawnCar('stand');
   }
   for (const c of cars) updateCar(c, dt);
@@ -2249,10 +2268,11 @@ const STORE = [
   { id: 'chicks', name: 'Chicks, pack of five', note: 'Yellow and fluffy. They need feed, water and warmth, and grow up in a few days.', price: 20, size: 2 },
   { id: 'fancychicks', name: 'Fancy chicks, box of three', note: 'Silkies, Polish, Brahmas, Easter Eggers and Sebrights. Their eggs are worth two or three times as much.', price: 45, size: 2 },
   { id: 'rooster', name: 'Rooster', note: 'Crows at dawn. With a rooster about, some eggs are fertile, and a broody hen will hatch them.', price: 28, size: 2 },
+  { id: 'heater', name: 'Coop heater', note: 'Keeps the roosts warm through a cold snap. You fit it inside the coop, and it stays.', price: 45, size: 6 },
   { id: 'milk', name: 'Milk, one bottle', note: 'Pour a bowl for the cats. They adore it.', price: 4, size: 1 },
   { id: 'bone', name: 'Dog bone', note: 'Biscuit will be thrilled and go off to chew it for a while.', price: 3, size: 1 }
 ];
-const TRUCK_CAP = 60, cart = { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0, straw: 0, bone: 0, milk: 0, chicks: 0, fancychicks: 0, rooster: 0 }, trip = { on: false, phase: '', t: 0, dur: 7 };
+const TRUCK_CAP = 60, cart = { feed: 0, fence: 0, gate: 0, feeder: 0, trough: 0, lumber: 0, dogfood: 0, catfood: 0, straw: 0, bone: 0, milk: 0, chicks: 0, fancychicks: 0, rooster: 0, heater: 0 }, trip = { on: false, phase: '', t: 0, dur: 7 };
 const loadUnits = () => STORE.reduce((n, it) => n + it.size * truck.load[it.id], 0);
 const cartUnits = () => STORE.reduce((n, it) => n + it.size * cart[it.id], 0);
 const cartCost = () => STORE.reduce((n, it) => n + it.price * cart[it.id], 0);
@@ -2356,7 +2376,7 @@ function drawTown() {
   sceneNight();
 }
 function drawTripScene() { ctx.save(); ctx.setTransform(S, 0, 0, S, 0, 0); if (trip.phase === 'SHOP') drawTown(); else drawDrive(); ctx.restore(); }
-const LABELS = { feed: 'feed sacks', fence: 'fence sections', gate: 'gates', feeder: 'feeders', trough: 'water troughs', lumber: 'lumber bundles', dogfood: 'bags of dog food', catfood: 'bags of cat food', straw: 'straw bales', bone: 'dog bones', milk: 'bottles of milk', chicks: 'packs of chicks', fancychicks: 'boxes of fancy chicks', rooster: 'roosters' };
+const LABELS = { feed: 'feed sacks', fence: 'fence sections', gate: 'gates', feeder: 'feeders', trough: 'water troughs', lumber: 'lumber bundles', dogfood: 'bags of dog food', catfood: 'bags of cat food', straw: 'straw bales', bone: 'dog bones', milk: 'bottles of milk', chicks: 'packs of chicks', fancychicks: 'boxes of fancy chicks', rooster: 'roosters', heater: 'coop heaters' };
 const loadCount = () => LOADKEYS.reduce((n, k) => n + truck.load[k], 0);
 function unloadTruck() {
   const L = truck.load, parts = LOADKEYS.filter(k => L[k]).map(k => L[k] + ' ' + LABELS[k]);
@@ -2366,7 +2386,7 @@ function unloadTruck() {
   if (L.chicks) spawnChickBatch(L.chicks * 5, false);
   if (L.fancychicks) spawnChickBatch(L.fancychicks * 3, true);
   for (let i = 0; i < (L.rooster || 0); i++) { const p = penPoint(); newHen(p.x, p.y, { rooster: true }); }
-  ['fence', 'gate', 'feeder', 'trough', 'lumber', 'straw', 'bone', 'milk'].forEach(k => { inv[k] += L[k]; });
+  ['fence', 'gate', 'feeder', 'trough', 'lumber', 'straw', 'bone', 'milk', 'heater'].forEach(k => { inv[k] += L[k]; });
   LOADKEYS.forEach(k => L[k] = 0);
   say('Unloaded ' + parts.join(', ') + '.');
 }
@@ -2374,7 +2394,7 @@ function cleanAction() {
   const F = farmer;
   if (F.hand !== 'pitchfork') return { label: 'Clean the coop (needs the pitchfork)', run: () => hint('Fetch the pitchfork. It leans against the coop wall outside the door.') };
   if (inv.straw < 1) return { label: 'Clean the coop (needs straw)', run: () => hint('Buy straw at Emil & Gus Farm Supply.') };
-  return { label: 'Muck out the coop (1 straw)', run: () => startTask('muck', 4, () => { inv.straw--; hutch.dirt = 0; float(F.x, F.y - 18, 'clean', '#cfe8ff'); say('The coop is clean and freshly bedded.'); }) };
+  return { label: 'Muck out the coop (1 straw)', run: () => startTask('muck', 4, () => { inv.straw--; hutch.dirt = 0; float(F.x, F.y - 18, 'clean', '#cfe8ff'); hutch.warm = 1; say('The coop is clean and freshly bedded.'); }) };
 }
 function findActions() {
   const base = findAction(), list = base ? [base] : [], F = farmer;
@@ -2382,6 +2402,8 @@ function findActions() {
     const add = (label, run) => { if (!list.some(a => a.label === label)) list.push({ label, run }); };
     for (const k in tools) if (F.hand !== k && dist(F, tools[k]) < 30) add('Pick up the ' + k, () => setHand(k));
     if (F.inside === 'hutch' && hutch.dirt > 0.1) { const c = cleanAction(); add(c.label, c.run); }
+    if (F.inside === 'hutch' && inv.straw > 0 && hutch.warm < 0.6) add('Spread fresh straw for warmth (1 straw)', () => startTask('straw', 2.5, () => { inv.straw--; hutch.warm = 1; float(F.x, F.y - 18, 'cosy', '#ffe9a8'); say('Fresh straw keeps the coop warm for a day or so.'); }));
+    if (F.inside === 'hutch' && inv.heater > 0 && !hutch.heater) add('Fit the coop heater', () => startTask('heater', 3, () => { inv.heater--; hutch.heater = true; float(F.x, F.y - 18, 'heater on', '#ffb070'); say('The heater is fitted. The roosts will stay warm.'); }));
     if (!F.inside) {
       if (dist(F, REEL) < 34) { if (F.hand !== 'hose' && !hose.out) add('Pull out the hose', () => setHand('hose')); if (hose.out) add('Reel the hose in', reelIn); }
       if (hose.out && F.hand !== 'hose' && dist(F, hose.end) < 30) add('Pick up the hose end', () => setHand('hose'));
@@ -2541,9 +2563,11 @@ $('bDusk').addEventListener('click', () => { world.t = 0.70; });
 $('bDawn').addEventListener('click', () => { world.t = 0.255; world.day++; });
 $('bFox').addEventListener('click', () => { spawnFox(); });
 $('bHawk').addEventListener('click', () => { spawnHawk(); });
+$('bEvent').addEventListener('click', () => { if (world.event) { world.event.left = 0; return; } const order = ['cold', 'heat', 'storm'], i = (world.evtTest = ((world.evtTest ?? -1) + 1) % 3); world.forecast = null; startEvent(order[i]); });
+$('bSeason').addEventListener('click', () => { world.day += T.seasonDays - ((world.day - 1) % T.seasonDays); world.t = 0.3; newDay(); });
 $('bRain').addEventListener('click', () => { world.rainOn = true; world.rainLeft = 40; say('It starts to rain.'); });
 $('bCash').addEventListener('click', () => { farmer.money += 50; });
-$('bSupplies').addEventListener('click', () => { inv.fence += 20; inv.gate += 2; inv.feeder += 2; inv.trough += 2; inv.lumber += 10; inv.straw += 5; inv.bone += 3; inv.milk += 3; });
+$('bSupplies').addEventListener('click', () => { inv.fence += 20; inv.gate += 2; inv.feeder += 2; inv.trough += 2; inv.lumber += 10; inv.straw += 5; inv.bone += 3; inv.milk += 3; inv.heater += 1; });
 $('bBuild').addEventListener('click', () => setBuild(!build.on));
 $('btnBuild').addEventListener('click', () => setBuild(!build.on));
 $('bBuildDone').addEventListener('click', () => setBuild(false));
@@ -2567,7 +2591,51 @@ $('buy').addEventListener('click', () => {
 });
 
 /* ---------- simulation step ---------- */
-function newDay() { world.market = 3 + Math.floor(Math.random() * 3); }
+function newDay() {
+  world.market = 3 + Math.floor(Math.random() * 3);
+  const si = seasonIdx();
+  if (si !== world.lastSeason) { world.lastSeason = si; say(SEASONS[si] + ' begins.'); buildBG(); }
+  planWeather();
+}
+const EVT_ODDS = { cold: [0.08, 0, 0.12, 0.45], heat: [0.04, 0.45, 0.05, 0], storm: [0.22, 0.2, 0.25, 0.1] };
+function planWeather() {
+  if (world.event || world.forecast) return;
+  const si = seasonIdx();
+  for (const type of ['cold', 'heat', 'storm']) {
+    if (Math.random() < EVT_ODDS[type][si] * T.events) { startForecast(type); return; }
+  }
+}
+function startForecast(type) {
+  world.forecast = { type, startT: type === 'storm' ? 0.5 : 0.58 };
+  say(type === 'cold' ? 'Forecast: a cold snap is coming this evening. Spread straw in the coop or fit a heater.' : type === 'heat' ? 'Forecast: a heat wave is on the way. Keep the water troughs full.' : 'Forecast: a storm is due this afternoon. Expect fence damage.', true);
+}
+function startEvent(type) {
+  world.forecast = null; world.event = { type, left: type === 'storm' ? 0.2 : 1.8 }; world.stormHits = 0;
+  say(type === 'cold' ? 'The cold snap has arrived.' : type === 'heat' ? 'The heat wave has arrived.' : 'The storm hits!', true);
+  if (type === 'storm') { world.rainOn = true; world.rainLeft = T.dayLen * 0.2; }
+}
+function thunder() { if (!quiet('thunder', 3000)) return; tone(90, 40, 0.9, 'sawtooth', 0.08); tone(60, 30, 1.2, 'triangle', 0.08, 0.15); }
+function updateWeather(dt) {
+  if (world.forecast && !world.curfew && world.t >= world.forecast.startT) startEvent(world.forecast.type);
+  const e = world.event;
+  if (e) {
+    e.left -= dt / T.dayLen;
+    if (e.type === 'storm') {
+      world.rainOn = true; world.rainLeft = Math.max(world.rainLeft, 4);
+      if (world.flash <= 0 && Math.random() < dt * 0.25) { world.flash = 1; thunder(); }
+      if (world.stormHits < 3 && Math.random() < dt * 0.1) {
+        const ok = FENCE.filter(c => !c.broken); if (ok.length) { const c = ok[Math.floor(Math.random() * ok.length)]; c.broken = true; c.hp = 0; world.stormHits++; say('The wind tore down a fence section!', true); float(c.cx, c.cy - 10, 'crash!', '#fff', true); }
+        if (Math.random() < 0.3) { const g = gates[Math.floor(Math.random() * gates.length)]; if (g && !g.open) { g.open = true; say('A gate blew open!', true); } }
+      }
+    }
+    if (e.left <= 0) { say('The ' + EVT[e.type] + ' is over.'); world.event = null; if (e.type === 'storm') world.rainLeft = Math.min(world.rainLeft, 6); }
+  }
+  world.flash = Math.max(0, world.flash - dt * 2.5);
+  world.storm += ((e && e.type === 'storm' ? 1 : 0) - world.storm) * Math.min(1, dt * 0.8);
+  hutch.warm = Math.max(0, hutch.warm - dt / (T.dayLen * 1.5));
+  const snowing = seasonIdx() === 3 && temp() < 2 && (world.rain > 0.3 || (e && e.type === 'cold'));
+  world.snow = clamp(world.snow + (snowing ? dt / 40 : (temp() > 3 ? -dt / 20 : -dt / 160)), 0, 1);
+}
 function update(dt) {
   /* clock, door, weather, foxes */
   world.t += dt / T.dayLen;
@@ -2596,11 +2664,12 @@ function update(dt) {
   if (world.rainOn) { world.rainLeft -= dt; if (world.rainLeft <= 0) { world.rainOn = false; say('The rain stops.'); } }
   world.rain += ((world.rainOn ? 1 : 0) - world.rain) * Math.min(1, dt * 1.2);
   world.wet = clamp(world.wet + (world.rain > 0.3 ? dt / 35 : -dt / 90), 0, 1);
+  updateWeather(dt);
 
   for (const g of gates) g.anim += ((g.open ? 1 : 0) - g.anim) * Math.min(1, dt * 8);
   for (const k in BLD) { const b = BLD[k]; b.roof += ((farmer.inside === k ? 0 : 1) - b.roof) * Math.min(1, dt * 7); }
   /* farmer */
-  if (!farmer.sleeping) farmer.energy = Math.max(0, farmer.energy - dt / (T.dayLen * 1.15));
+  if (!farmer.sleeping) farmer.energy = Math.max(0, farmer.energy - dt / (T.dayLen * 1.15) * (1 + hotness() * 0.5));
   else farmer.energy = Math.min(1, farmer.energy + dt / (T.dayLen * 0.35));
   if (!farmer.sleeping && farmer.energy <= 0) { releaseAllHens(); farmer.driving = false; if (farmer.inside && farmer.inside !== 'house') leaveBuilding(); farmer.sleeping = true; farmer.sleepKind = 'faint'; farmer.carry = null; farmer.scoops = 0; say('You pass out from exhaustion.', true); }
   if (farmer.sleeping) {
@@ -2632,13 +2701,15 @@ function update(dt) {
     }
     c.fedCool -= dt;
     const rate = (c.state === 'ROOST' || c.brood ? 0.5 : 1) / T.dayLen;
-    c.hunger = Math.max(0, c.hunger - rate / 0.9 * dt); c.thirst = Math.max(0, c.thirst - rate / 0.7 * dt);
+    const hotK = hotness();
+    c.hunger = Math.max(0, c.hunger - rate / 0.9 * dt); c.thirst = Math.max(0, c.thirst - rate / 0.7 * dt * (1 + hotK * 1.2));
+    { const cold = coldness(); if (cold > 0) { const inCoop = c.state === 'ROOST' || (c.state === 'NEST' && c.brood); if (!(inCoop && warmCoop())) c.health -= cold * dt / (T.dayLen * 0.9) * (inCoop ? 0.6 : world.curfew ? 1.4 : 0.25); } }
     if (c.hunger <= 0 || c.thirst <= 0) c.health -= dt / (T.dayLen * 0.8);
     else if (c.hunger > 0.4 && c.thirst > 0.4) c.health = Math.min(1, c.health + dt / (T.dayLen * 2));
     if (crowd > 1.1 && (c.state === 'ROOST' || insidePen(c))) c.health -= dt / (T.dayLen * 1.2) * (crowd - 1);
-    if (c.health <= 0) { dead = true; c.dead = c.thirst <= 0 ? 'thirst' : c.hunger <= 0 ? 'hunger' : 'overcrowding'; }
+    if (c.health <= 0) { dead = true; c.dead = c.thirst <= 0 ? 'thirst' : c.hunger <= 0 ? 'hunger' : coldness() > 0.1 ? 'cold' : 'overcrowding'; }
     if (c.hunger > 0.25 && c.thirst > 0.25 && !LAYBLOCK[c.state]) {
-      c.eggT -= dt * (hutch.dirt > 0.7 ? 0.6 : 1) * (world.rain > 0.3 ? 0.8 : 1) * (crowd > 1 ? 1 / (crowd * crowd) : 1);
+      c.eggT -= dt * (hutch.dirt > 0.7 ? 0.6 : 1) * (world.rain > 0.3 ? 0.8 : 1) * [1.1, 1, 0.8, 0.6][seasonIdx()] * (1 - hotK * 0.4) * (crowd > 1 ? 1 / (crowd * crowd) : 1);
       if (c.eggT <= 0) {
         if (insidePen(c) && hutch.doorOpen && freeBox() >= 0 && !world.curfew && Math.random() < 0.85) startLay(c);
         else layHere(c);
@@ -2664,7 +2735,7 @@ function update(dt) {
   for (const e of eggs) { if (e.inHutch && e.fertile && boxBrooded(e.box)) continue; e.age += dt; if (e.age >= T.rot && !e.rotten) { e.rotten = true; if (e.inHutch) say('Eggs have gone bad in the nest boxes. Clear them out.', true); } }
   eggs = eggs.filter(e => e.age < T.rot * 2.2);
   if (!world.curfew && eggs.length && freeBox() < 0 && eggs.some(e => !e.inHutch)) nestsFullNote();
-  for (const b of bugs) { if (!b.alive) { b.respawn -= dt; if (b.respawn <= 0) spawnBug(b); } }
+  for (const b of bugs) { if (!b.alive) { b.respawn -= dt * (seasonIdx() === 3 ? 0.25 : 1); if (b.respawn <= 0) spawnBug(b); } }
   for (const f of floats) { f.t -= dt; f.y -= dt * 14; }
   floats = floats.filter(f => f.t > 0);
   toast.t -= dt;
@@ -2677,10 +2748,12 @@ function buildBG() {
   bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
   const g = bg.getContext('2d'), rnd = mulberry(7);
   g.scale(S, S);
-  g.fillStyle = '#7ea25a'; g.fillRect(0, 0, W, H);
-  for (let i = 0; i < 70; i++) { g.fillStyle = rnd() < 0.5 ? 'rgba(96,140,70,.35)' : 'rgba(150,185,100,.28)'; g.beginPath(); g.ellipse(rnd() * W, rnd() * H, 30 + rnd() * 60, 14 + rnd() * 30, rnd() * 3, 0, TAU); g.fill(); }
+  const SP = [['#7ea25a', 'rgba(96,140,70,.35)', 'rgba(150,185,100,.28)'], ['#8aa74c', 'rgba(110,140,60,.35)', 'rgba(190,200,100,.3)'], ['#a29a54', 'rgba(150,110,50,.34)', 'rgba(200,150,70,.3)'], ['#a9b8a2', 'rgba(150,170,150,.35)', 'rgba(240,244,248,.4)']][seasonIdx()];
+  g.fillStyle = SP[0]; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 70; i++) { g.fillStyle = rnd() < 0.5 ? SP[1] : SP[2]; g.beginPath(); g.ellipse(rnd() * W, rnd() * H, 30 + rnd() * 60, 14 + rnd() * 30, rnd() * 3, 0, TAU); g.fill(); }
   g.lineWidth = 1;
   for (let i = 0; i < 1100; i++) { const x = rnd() * W, y = rnd() * H; g.strokeStyle = rnd() < 0.5 ? 'rgba(70,110,50,.55)' : 'rgba(170,205,120,.45)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 3, y - 3 - rnd() * 3); g.stroke(); }
+  if (seasonIdx() === 0) for (let i = 0; i < 120; i++) { g.fillStyle = ['#fff5a8', '#ffffff', '#ffb6d0', '#c8b0ff'][i % 4]; g.beginPath(); g.arc(rnd() * W, rnd() * (ROAD.y0 - 8), 1.4, 0, TAU); g.fill(); }
   /* road */
   g.fillStyle = '#4b4f55'; g.fillRect(0, ROAD.y0, W, ROAD.y1 - ROAD.y0);
   g.fillStyle = '#6b6f75'; g.fillRect(0, ROAD.y0 - 3, W, 3); g.fillRect(0, ROAD.y1, W, 3);
@@ -3084,6 +3157,21 @@ function render() {
     for (let i = 0; i < 150; i++) { const x = (i * 97 + world.clock * 90) % (W + 40) - 20, y = (i * 53 + world.clock * 560) % (H + 20); ctx.moveTo(x, y); ctx.lineTo(x - 3, y + 10); }
     ctx.stroke(); ctx.fillStyle = 'rgba(40,52,74,' + (world.rain * 0.2).toFixed(2) + ')'; ctx.fillRect(0, 0, W, H);
   }
+  /* seasons and weather */
+  { const si = seasonIdx(), hot = hotness(), cold = coldness();
+    if (world.snow > 0.02) { ctx.fillStyle = 'rgba(243,248,255,' + (world.snow * 0.38).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (si === 3 && temp() < 3) { ctx.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 70; i++) { const x = (i * 83 + Math.sin(world.clock * 0.9 + i) * 14 + world.clock * 14) % (W + 20), y = (i * 47 + world.clock * 38 + (i % 5) * 20) % (H + 10); ctx.fillRect(x, y, 2, 2); } }
+    if (si === 2) { for (let i = 0; i < 26; i++) { const x = (i * 71 + world.clock * 26 + Math.sin(world.clock * 1.3 + i) * 20) % (W + 20), y = (i * 37 + world.clock * 30) % (H + 10); ctx.fillStyle = i % 3 ? '#c9742a' : '#d9a92a'; ctx.beginPath(); ctx.ellipse(x, y, 3.2, 1.8, world.clock * 2 + i, 0, TAU); ctx.fill(); } }
+    if (cold > 0.2) { ctx.fillStyle = 'rgba(120,165,235,' + (Math.min(1, cold) * 0.16).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (hot > 0.05) { ctx.fillStyle = 'rgba(255,196,80,' + (hot * 0.13).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (world.storm > 0.02) {
+      ctx.fillStyle = 'rgba(20,26,44,' + (world.storm * 0.38).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(210,225,255,' + (world.storm * 0.55).toFixed(2) + ')'; ctx.lineWidth = 1.2; ctx.beginPath();
+      for (let i = 0; i < 160; i++) { const x = (i * 61 + world.clock * 260) % (W + 80) - 40, y = (i * 29 + world.clock * 700) % (H + 30); ctx.moveTo(x, y); ctx.lineTo(x - 9, y + 13); }
+      ctx.stroke();
+    }
+    if (world.flash > 0.01) { ctx.fillStyle = 'rgba(255,255,240,' + (world.flash * 0.6).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+  }
   /* night */
   const sun = Math.sin((world.t - 0.25) * TAU), light = clamp((sun + 0.15) / 0.5, 0, 1), dark = (1 - light) * (1 - light * 0.2);
   if (dark > 0.01) {
@@ -3148,7 +3236,7 @@ function setMeter(id, f, low) { const m = $(id); m.firstElementChild.style.width
 function hud(dt) {
   hudT -= dt; if (hudT > 0) return; hudT = 0.12;
   $('sClock').textContent = clockStr(); $('sDay').textContent = DAYS[weekday()] + ' \u00b7 Day ' + world.day;
-  $('sWeather').textContent = world.rain > 0.3 ? 'Raining' : world.wet > 0.5 ? 'Muddy' : world.curfew ? 'Night' : 'Clear';
+  $('sWeather').textContent = SEASONS[seasonIdx()] + ' \u00b7 ' + Math.round(temp()) + '\u00b0C' + (world.event ? ' \u00b7 ' + EVT[world.event.type] : world.rain > 0.3 ? ' \u00b7 rain' : world.snow > 0.3 ? ' \u00b7 snow' : '');
   $('sCoop').textContent = eggs.reduce((n, e) => n + (e.inHutch ? 1 : 0), 0); $('sEggs').textContent = farmer.basket; $('sCargo').textContent = truck.cargo; $('sMoney').textContent = farmer.money;
   $('sHens').textContent = hens.length; $('sLost').textContent = world.lost ? '(' + world.lost + ' lost)' : '';
   const hungry = hens.filter(h => h.hunger < 0.25).length, thirsty = hens.filter(h => h.thirst < 0.25).length;
@@ -3205,7 +3293,7 @@ function fit() {
 }
 new ResizeObserver(fit).observe(cv);
 fit(); resetFarm(); if (savedView === 'mobile') setView('mobile');
-window.__farm = { get chicks() { return chicks; }, FANCY, BREEDS, spawnChickBatch, spawnChick, hatchEgg, boxBrooded, mkEgg, brood, setView, openSheet, closeSheets, tools, hose, REEL, setHand, dropHand, findActions, doAction, startTask, collectEggs, updateHose, get choice() { return choice; }, chooseOption, todo, computeTodo, updateTodo, bubbleProblems, get rats() { return rats; }, ratStats, spawnRat, catchRat, bugs, dog, bowls, food, performFeeding, spawnHawk, featherBurst, get cats() { return cats; }, get hawks() { return hawks; }, get feathers() { return feathers; }, newHen, penPoint, troughUsers, separateHens, world, farmer, truck, gates, hutch, bin, feeders, waterers, FENCE, pen, inv, recomputePen, addFenceSection, makeGate, build, setBuild, setTool, buildClick, updateGhost, trip, startTrip, leaveTown, cart, cartAdd, shopBuy, truckLoad: truck.load, extendCoop, coopCap, nestCount, T, update, doAction, findAction, spawnFox, wakeUp,
+window.__farm = { temp, seasonIdx, startEvent, startForecast, planWeather, updateWeather, newDay, SEASONS, get chicks() { return chicks; }, FANCY, BREEDS, spawnChickBatch, spawnChick, hatchEgg, boxBrooded, mkEgg, brood, setView, openSheet, closeSheets, tools, hose, REEL, setHand, dropHand, findActions, doAction, startTask, collectEggs, updateHose, get choice() { return choice; }, chooseOption, todo, computeTodo, updateTodo, bubbleProblems, get rats() { return rats; }, ratStats, spawnRat, catchRat, bugs, dog, bowls, food, performFeeding, spawnHawk, featherBurst, get cats() { return cats; }, get hawks() { return hawks; }, get feathers() { return feathers; }, newHen, penPoint, troughUsers, separateHens, world, farmer, truck, gates, hutch, bin, feeders, waterers, FENCE, pen, inv, recomputePen, addFenceSection, makeGate, build, setBuild, setTool, buildClick, updateGhost, trip, startTrip, leaveTown, cart, cartAdd, shopBuy, truckLoad: truck.load, extendCoop, coopCap, nestCount, T, update, doAction, findAction, spawnFox, wakeUp,
   stand, roadside, fridge, wife, spawnCar, get cars() { return cars; }, get people() { return people; },
   get hens() { return hens; }, get eggs() { return eggs; }, get foxes() { return foxes; } };
 requestAnimationFrame(frame);
